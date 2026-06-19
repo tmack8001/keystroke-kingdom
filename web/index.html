@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keystroke Kingdom</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/levels.css">
+<link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<canvas class="invaders-canvas" id="invaders-canvas"></canvas>
+<div class="arcade-dots" id="arcade-dots"></div>
+
+<!-- TITLE SCREEN -->
+<div class="screen" id="title-screen">
+  <div class="title-marquee">
+    <h1>KEYSTROKE<span class="kingdom">KINGDOM</span></h1>
+  </div>
+  <div class="insert-coin" id="insert-coin">INSERT COIN<br><span class="coin-hint">PRESS SPACE OR ENTER</span></div>
+  <div class="reboot-hint" id="reboot-hint">PRESS R TO REBOOT CABINET</div>
+  <div class="wopr-text" id="wopr-text"></div>
+  <div class="name-setup hidden" id="name-setup">
+    <div class="name-label">ENTER YOUR NAME</div>
+    <input
+      type="text"
+      class="name-input"
+      id="player-name-input"
+      placeholder="PLAYER ONE"
+      maxlength="16"
+      autocomplete="nope"
+      data-1p-ignore
+      data-lpignore="true"
+      data-form-type="other"
+      spellcheck="false"
+      aria-label="player nickname"
+    >
+    <div class="ready-text">PRESS <kbd>ENTER</kbd> TO START</div>
+  </div>
+</div>
+
+<!-- READY SCREEN -->
+<div class="screen hidden" id="ready-screen">
+  <div class="ready-player">READY</div>
+  <div class="ready-name" id="ready-name">PLAYER ONE</div>
+  <div class="level-intro" id="level-intro"></div>
+  <div class="start-prompt">PRESS SPACE TO BEGIN</div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen hidden" id="game-screen">
+  <div class="level-badge">
+    <div class="level-badge-text" id="level-badge-text">LEVEL 1</div>
+  </div>
+  <div class="hud">
+    <div class="hud-line"><span class="hud-value" id="hud-name">PLAYER ONE</span></div>
+    <div class="hud-line">ACCURACY <span class="hud-value" id="hud-accuracy">100%</span></div>
+    <div class="hud-line">STREAK <span class="hud-value" id="hud-streak">0</span></div>
+  </div>
+  <div class="game-area">
+    <div class="prompt-area">
+      <div class="prompt-label">TYPE THE LETTER</div>
+      <div class="prompt-sequence" id="prompt-sequence"></div>
+      <div class="finger-hint" id="finger-hint"></div>
+    </div>
+    <div>
+      <div class="keyboard-guide" id="keyboard-guide"></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAUSE MODAL -->
+<div class="pause-overlay hidden" id="pause-overlay">
+  <div class="pause-modal">
+    <div class="pause-title">PAUSED</div>
+    <div class="pause-option">PRESS <kbd>ESC</kbd> TO CONTINUE</div>
+    <div class="pause-option">PRESS <kbd>Q</kbd> TO QUIT</div>
+  </div>
+</div>
+
+<!-- LEVEL SELECT (WarGames) -->
+<div class="screen hidden" id="select-screen">
+  <div class="select-title">GREETINGS PROFESSOR FALKEN</div>
+  <div class="select-subtitle">SHALL WE PLAY A GAME?</div>
+  <div class="select-cabinets" id="select-cabinets"></div>
+  <div class="select-prompt">PRESS 1-4 OR USE ARROWS</div>
+  <div class="select-hint">ENTER TO START / ESC TO CANCEL</div>
+</div>
+
+<!-- LEVEL COMPLETE OVERLAY -->
+<div class="complete-overlay hidden" id="complete-overlay">
+  <div class="complete-modal">
+    <div class="complete-title">LEVEL COMPLETE</div>
+    <div class="complete-stats">
+      <div class="complete-stat">TIME <span class="val" id="final-time">0:00</span></div>
+      <div class="complete-stat">ACCURACY <span class="val" id="final-accuracy">100%</span></div>
+      <div class="complete-stat">BEST STREAK <span class="val" id="final-streak">0</span></div>
+      <div class="complete-stat">KEYS MASTERED <span class="val" id="final-keys">J F</span></div>
+    </div>
+    <div class="complete-prompt" id="complete-prompt">PRESS SPACE TO CONTINUE</div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
