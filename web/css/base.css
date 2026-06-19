@@ -1,0 +1,134 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --crt-green: #39ff14;
+  --crt-green-dim: #1a7a0a;
+  --crt-amber: #ffb000;
+  --crt-amber-dim: #7a5500;
+  --atari-white: #e0e0e0;
+  --atari-dim: #555;
+  --nudge-red: #ff4444;
+  --bg: #0a0a0a;
+  --level-accent: #39ff14;
+  --level-accent-dim: #1a7a0a;
+}
+
+body {
+  background: var(--bg);
+  color: var(--atari-white);
+  font-family: 'Press Start 2P', monospace;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.crt-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.hidden { display: none !important; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Stars (Atari-era decoration) */
+.star {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: #444;
+  pointer-events: none;
+}
+
+.star.bright {
+  background: #666;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Canvas for background themes */
+.invaders-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Arcade dots (Pac-Man level decoration) */
+.arcade-dots {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.arcade-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #333;
+  border-radius: 50%;
+}

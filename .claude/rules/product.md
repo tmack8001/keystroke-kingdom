@@ -1,6 +1,6 @@
 # Product Design Document
 ## [Working Title: Home Row Heroes / Keystroke Kingdom]
-*Built by [Dad] & Oona*
+*Built by Trevor & Oona - a father and daughter game*
 
 ---
 
