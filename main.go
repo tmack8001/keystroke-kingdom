@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"fmt"
-	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -12,17 +11,12 @@ import (
 	"runtime"
 )
 
-//go:embed all:web
+//go:embed index.html all:css all:js
 var content embed.FS
 
 func main() {
-	webFS, err := fs.Sub(content, "web")
-	if err != nil {
-		panic(err)
-	}
-
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.FS(webFS)))
+	mux.Handle("/", http.FileServer(http.FS(content)))
 
 	listener, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
