@@ -1,4 +1,12 @@
 let ctx = null;
+let enabled = true;
+
+// settings.js owns the persisted value; this is just the runtime gate every
+// play function below consults. Muting never touches gameplay logic — the
+// wrong-key contract and survival timers run identically with sound off.
+export function setEnabled(v) {
+  enabled = !!v;
+}
 
 function getCtx() {
   if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -6,6 +14,7 @@ function getCtx() {
 }
 
 function play(freq, duration, type, vol) {
+  if (!enabled) return;
   const c = getCtx();
   const osc = c.createOscillator();
   const gain = c.createGain();
@@ -44,4 +53,29 @@ export function start() {
   play(440, 0.1, 'square', 0.05);
   setTimeout(() => play(660, 0.1, 'square', 0.05), 100);
   setTimeout(() => play(880, 0.15, 'square', 0.05), 200);
+}
+
+// SURVIVAL ONLY. Fires when a pattern's timer runs out — gentle but dramatic,
+// never harsh. This is not the wrong-key sound's job: wrong keys never cost
+// anything, even in survival. This sting only ever follows a clock, not a
+// keypress.
+export function timeout() {
+  wrong();
+  setTimeout(() => wrong(), 140);
+}
+
+// SURVIVAL ONLY. The mercy-mechanic chime — a quarter earned back on a
+// 15-streak. Bright and small, an arcade "bonus life" wink.
+export function bonusQuarter() {
+  play(1046, 0.09, 'square', 0.05);
+  setTimeout(() => play(1568, 0.14, 'square', 0.05), 90);
+}
+
+// SURVIVAL ONLY. Warm, not mean — this is the game's only failure state and
+// it must never mock the player.
+export function gameOver() {
+  const notes = [392, 330, 262];
+  notes.forEach((n, i) => {
+    setTimeout(() => play(n, 0.3, 'triangle', 0.05), i * 180);
+  });
 }

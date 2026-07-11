@@ -62,6 +62,14 @@ body {
   );
 }
 
+/* Settings: CRT EFFECT toggle. Applied to <html> (not <body>) because
+   applyLevelTheme() in ui/screens.js resets body.className on every level
+   change — putting this class on the root element keeps it independent of
+   that reset. */
+html.no-crt .crt-overlay {
+  display: none;
+}
+
 .screen {
   position: relative;
   z-index: 2; /* above canvas (z-index: 1); transparent bg lets canvas show through */

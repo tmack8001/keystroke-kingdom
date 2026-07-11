@@ -35,6 +35,16 @@ function updateArcadeDots(level) {
 export function renderReadyScreen(state, level) {
   const intro = $('level-intro');
 
+  if (state.freePlay) {
+    intro.innerHTML = `
+      <div>${level.name}</div>
+      <div style="margin-top: 8px; font-size: 7px; color: #444;">${level.era}</div>
+      <div style="margin-top: 12px;">FREE PLAY</div>
+      <div style="margin-top: 8px;">EVERY KEY. FULL SENTENCES. HOW FAST CAN YOU GO?</div>
+    `;
+    return;
+  }
+
   const newKeysHtml = level.newKeys.map(k => {
     let label;
     if (k === ';') label = 'THE EIGHTH KEY';
