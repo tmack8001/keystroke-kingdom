@@ -88,6 +88,13 @@ already exist inline in `.claude/rules/levels.md` (each level's "Music:" line).
 
 ## 4 — Tooling / process
 
+- **`arcade-historian` agent** (`.claude/agents/arcade-historian.md`) — reusable research
+  agent encoding the citation standard (2-4 live-verified sources per claim, institutional-
+  first hierarchy, no URLs from memory, [fetched]/unverified labels, corrections sections,
+  downstream flags for player-facing text). Use for ANY new historical content: future
+  history cards, easter eggs, Act 6 cabinet research, Lyria-prompt era research. Registry
+  loads at session start — available from the session after its creation (2026-07-11).
+
 - **Chrome DevTools MCP** — registered in project config; connects on next Claude Code session
   (this session predated the registration). Prefer it over the Playwright fallback when live.
 - **Screenshot regeneration** — `node docs/screenshots/capture-all.js` (server must be running;
