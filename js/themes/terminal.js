@@ -32,6 +32,12 @@ const POOL_FRAGMENTS = [
   '> BYTES: 10',
   '> BIT 1 0',
   '> RUN 10',
+  // Hacker-history whispers — see .claude/rules/easter-eggs.md
+  '> XYZZY',
+  '> 2600 HZ',
+  '> ELIZA: HI',
+  '> MOTH: 1947',
+  '> 42',
 ];
 
 function init() {
