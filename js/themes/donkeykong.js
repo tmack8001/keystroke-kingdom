@@ -10,7 +10,9 @@ const STEPS_TO_WIN = 32;
 
 let barrels = [], barrelTimer = 0;
 let dkArmFrame = 0, dkArmTimer = 0;
+let dkBeatFrame = 0, dkBeatTimer = 0;  // chest-beat idle animation
 let jumpFlash = 0;   // brief glow when keystroke fires
+let sparks = [];     // keystroke particle burst
 let score = 0;
 
 // Layout (computed on start/resize)
@@ -20,6 +22,8 @@ let ladders = [];    // { x, y1, y2 }
 let dkPos = {};
 let paulinePos = {};
 let path = [];       // waypoints Mario walks through
+let skyBands = [];   // precomputed dithered sky gradient bands
+let girderCity = []; // precomputed distant background girder silhouettes (parallax)
 
 function getCanvas() {
   if (!canvas) { canvas = document.getElementById('invaders-canvas'); ctx = canvas.getContext('2d'); }
@@ -62,6 +66,33 @@ function buildLayout() {
     { x: ladders[2].x - 8,  y: floors[3].y - 16 },            // climb ladder 2
     { x: paulinePos.x - 4,  y: floors[3].y - 16 },            // reach Pauline
   ];
+
+  buildSkyBands();
+  buildGirderCity();
+}
+
+// NES-era banding: discrete horizontal color steps instead of a smooth canvas
+// gradient (era authenticity — no gradients in Act 2). Precomputed once.
+function buildSkyBands() {
+  skyBands = [];
+  const bandCount = 6;
+  const stops = ['#0a0500', '#160800', '#220c00', '#2e1200', '#3a1800', '#160800'];
+  for (let i = 0; i < bandCount; i++) {
+    skyBands.push({ y: Math.floor((H * 0.0) + (i / bandCount) * H * 0.86), col: stops[i] });
+  }
+}
+
+// Distant silhouette of girder floors behind the main structure — cheap parallax
+// depth cue (precomputed, static; only drawn, never recomputed per frame).
+function buildGirderCity() {
+  girderCity = [];
+  for (let i = 0; i < 3; i++) {
+    girderCity.push({
+      y: Math.floor(H * 0.2) + i * Math.floor(H * 0.16),
+      xa: Math.floor(W * 0.02),
+      xb: Math.floor(W * 0.98),
+    });
+  }
 }
 
 function getMarioPos() {
@@ -140,8 +171,33 @@ function drawPx(shape, x, y, size, col, flipH = false) {
 // ─── Draw functions ───────────────────────────────────────────────────────────
 
 function drawBackground() {
+  // Dithered banding (era-authentic stand-in for a gradient)
+  skyBands.forEach((b, i) => {
+    const next = skyBands[i + 1];
+    const bandH = (next ? next.y : H * 0.86) - b.y;
+    ctx.fillStyle = b.col;
+    ctx.fillRect(0, b.y, W, bandH);
+  });
   ctx.fillStyle = '#0a0500';
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, Math.floor(H * 0.86), W, H - Math.floor(H * 0.86));
+
+  // Distant girder city — faint background floors for parallax depth
+  ctx.strokeStyle = 'rgba(160, 70, 20, 0.18)';
+  ctx.lineWidth = 3;
+  girderCity.forEach(g => {
+    ctx.beginPath();
+    ctx.moveTo(g.xa, g.y);
+    ctx.lineTo(g.xb, g.y);
+    ctx.stroke();
+  });
+
+  // A few dim background window lights (dithered pixels, not glow)
+  ctx.fillStyle = 'rgba(255, 180, 60, 0.12)';
+  for (let i = 0; i < 10; i++) {
+    const wx = (i * 97 + 40) % W;
+    const wy = Math.floor(H * 0.08) + (i % 3) * Math.floor(H * 0.05);
+    ctx.fillRect(wx, wy, 4, 4);
+  }
 }
 
 function drawFloor(f, idx) {
@@ -187,14 +243,16 @@ function drawLadder(l) {
 
 function drawDK() {
   const sp = (dkArmFrame > 0) ? DK_THROW : DK_SPRITE;
-  drawPx(sp, dkPos.x, dkPos.y, PX - 1, '#8B4513');
+  // Idle chest-beat: brief vertical squash/stretch bounce between throws
+  const beatBounce = dkBeatFrame > 0 ? -2 : 0;
+  drawPx(sp, dkPos.x, dkPos.y + beatBounce, PX - 1, '#8B4513');
   // Eyes
   ctx.fillStyle = '#fff';
-  ctx.fillRect(dkPos.x + 6, dkPos.y + 4, 4, 3);
-  ctx.fillRect(dkPos.x + 14, dkPos.y + 4, 4, 3);
+  ctx.fillRect(dkPos.x + 6, dkPos.y + 4 + beatBounce, 4, 3);
+  ctx.fillRect(dkPos.x + 14, dkPos.y + 4 + beatBounce, 4, 3);
   ctx.fillStyle = '#000';
-  ctx.fillRect(dkPos.x + 7, dkPos.y + 5, 2, 2);
-  ctx.fillRect(dkPos.x + 15, dkPos.y + 5, 2, 2);
+  ctx.fillRect(dkPos.x + 7, dkPos.y + 5 + beatBounce, 2, 2);
+  ctx.fillRect(dkPos.x + 15, dkPos.y + 5 + beatBounce, 2, 2);
 }
 
 function drawPauline() {
@@ -226,15 +284,28 @@ function drawMario() {
   ctx.shadowBlur = 0;
 }
 
+// Barrel roll cycle — 4 rotation frames give the barrel a rolling motion
+// instead of a static box (multi-frame animation, precomputed per barrel).
 function drawBarrels() {
   barrels.forEach(b => {
+    const rollFrame = Math.floor(b.rollPhase || 0) % 4;
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(b.x - 5, b.y - 5, 10, 10);
     ctx.fillStyle = '#D2691E';
     ctx.fillRect(b.x - 4, b.y - 4, 8, 8);
+    // Rolling stave bands rotate position each frame to sell motion
     ctx.fillStyle = '#8B4513';
-    ctx.fillRect(b.x - 2, b.y - 5, 4, 2);
-    ctx.fillRect(b.x - 2, b.y + 3, 4, 2);
+    if (rollFrame === 0 || rollFrame === 2) {
+      ctx.fillRect(b.x - 2, b.y - 5, 4, 2);
+      ctx.fillRect(b.x - 2, b.y + 3, 4, 2);
+    } else {
+      ctx.fillRect(b.x - 5, b.y - 2, 2, 4);
+      ctx.fillRect(b.x + 3, b.y - 2, 2, 4);
+    }
+    // Highlight dot that spins around the barrel face
+    const ang = (b.rollPhase || 0) * (Math.PI / 2);
+    ctx.fillStyle = '#f0a050';
+    ctx.fillRect(b.x + Math.cos(ang) * 2 - 1, b.y + Math.sin(ang) * 2 - 1, 2, 2);
   });
 }
 
@@ -264,6 +335,7 @@ function updateBarrels() {
         x: dkPos.x + 20, y: dkPos.y + 10,
         vx: 1.4, vy: 0,
         floor: 3,
+        rollPhase: 0,
       });
     }
   }
@@ -273,6 +345,7 @@ function updateBarrels() {
     b.vy += 0.18;
     b.x += b.vx;
     b.y += b.vy;
+    b.rollPhase = (b.rollPhase || 0) + Math.abs(b.vx) * 0.35;
 
     // Check floor landing
     for (let fi = b.floor; fi >= 0; fi--) {
@@ -301,6 +374,39 @@ function updateBarrels() {
   });
 
   if (--dkArmTimer <= 0) { dkArmFrame ^= 1; dkArmTimer = 45; }
+  if (--dkBeatTimer <= 0) { dkBeatFrame ^= 1; dkBeatTimer = dkBeatFrame ? 6 : 70; }
+}
+
+// Keystroke feedback particles — small steel-rivet sparks that burst from
+// Mario's position and fall with gravity. Capped well under the 150 budget.
+function spawnSparks(x, y) {
+  for (let i = 0; i < 6; i++) {
+    sparks.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 3,
+      vy: -Math.random() * 2.5 - 0.5,
+      life: 16,
+    });
+  }
+}
+
+function updateSparks() {
+  sparks = sparks.filter(s => s.life > 0);
+  sparks.forEach(s => {
+    s.vy += 0.15;
+    s.x += s.vx;
+    s.y += s.vy;
+    s.life--;
+  });
+}
+
+function drawSparks() {
+  sparks.forEach(s => {
+    ctx.globalAlpha = Math.max(s.life / 16, 0);
+    ctx.fillStyle = '#ffcc60';
+    ctx.fillRect(s.x - 1, s.y - 1, 3, 3);
+  });
+  ctx.globalAlpha = 1;
 }
 
 function render() {
@@ -315,10 +421,12 @@ function render() {
   drawPauline();
   drawBarrels();
   drawMario();
+  drawSparks();
   drawScore();
 
   if (jumpFlash > 0) jumpFlash--;
   updateBarrels();
+  updateSparks();
 
   animId = requestAnimationFrame(render);
 }
@@ -331,8 +439,8 @@ export function start() {
   canvas.height = window.innerHeight;
   W = canvas.width; H = canvas.height;
   active = true; victoryMode = false; frame = 0; progress = 0;
-  barrels = []; barrelTimer = 0; score = 0;
-  dkArmFrame = 0; dkArmTimer = 45;
+  barrels = []; barrelTimer = 0; score = 0; sparks = [];
+  dkArmFrame = 0; dkArmTimer = 45; dkBeatFrame = 0; dkBeatTimer = 70;
   buildLayout();
   render();
 }
@@ -341,7 +449,7 @@ export function stop() {
   active = false;
   if (animId) cancelAnimationFrame(animId);
   if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-  barrels = [];
+  barrels = []; sparks = [];
 }
 
 export function keystroke() {
@@ -349,6 +457,8 @@ export function keystroke() {
   progress++;
   score += 100;
   jumpFlash = 8;
+  const mp = getMarioPos();
+  spawnSparks(mp.x + 8, mp.y + 8);
 }
 
 export function miss() {}

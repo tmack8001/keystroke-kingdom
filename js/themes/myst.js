@@ -12,6 +12,9 @@ let gearSpeed = 1;       // multiplier — spikes briefly on keystroke
 let gearAngle = 0;
 let victoryAlpha = 0;    // golden fill overlay for victory
 let wisps = [];          // slow drifting mist bands
+let islands = [];        // far parallax island silhouettes, multiple depths
+let ripples = [];        // water ripple rings (ambient + keystroke-triggered)
+let rippleTimer = 0;
 
 const PAGES_TO_WIN = 22;
 
@@ -25,6 +28,7 @@ function resize() {
   canvas.height = window.innerHeight;
   W = canvas.width; H = canvas.height;
   initWisps();
+  initIslands();
 }
 
 function initWisps() {
@@ -37,6 +41,22 @@ function initWisps() {
       speed: 0.18 + Math.random() * 0.22,
       alpha: 0.03 + Math.random() * 0.05,
     });
+  }
+}
+
+// Two depth layers of island/rock silhouettes along the horizon — parallax at different speeds
+function initIslands() {
+  islands = [];
+  for (let layer = 0; layer < 2; layer++) {
+    const count = 4;
+    for (let i = 0; i < count; i++) {
+      islands.push({
+        layer,
+        bx: (i / count) * W * 1.4 + Math.random() * 100,
+        w: 90 + Math.random() * 140,
+        h: 24 + Math.random() * (layer === 0 ? 30 : 50),
+      });
+    }
   }
 }
 
@@ -56,33 +76,104 @@ function panelY()    { return H * 0.72; }
 // ─── Draw helpers ──────────────────────────────────────────────────────────────
 
 function drawBackground() {
-  // Sky — dark grey-black gradient (top half)
+  // Sky — moody dusk gradient, richer multi-stop (top half)
   const sky = ctx.createLinearGradient(0, 0, 0, H * 0.50);
-  sky.addColorStop(0, '#0a0a0e');
-  sky.addColorStop(1, '#1a1e28');
+  sky.addColorStop(0, '#080810');
+  sky.addColorStop(0.5, '#161c2e');
+  sky.addColorStop(0.85, '#2a2e46');
+  sky.addColorStop(1, '#3a3450');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H * 0.50);
 
-  // Stars — tiny dots, static
-  ctx.fillStyle = 'rgba(200,210,230,0.5)';
-  // Deterministic positions derived from canvas size so they don't shift on repaint
-  for (let i = 0; i < 40; i++) {
+  // A faint moon — soft glow, warm library-adjacent light source
+  const moonX = W * 0.78, moonY = H * 0.14, moonR = 26;
+  const moonGlow = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, moonR * 3);
+  moonGlow.addColorStop(0, 'rgba(230,220,180,0.25)');
+  moonGlow.addColorStop(1, 'rgba(230,220,180,0)');
+  ctx.fillStyle = moonGlow;
+  ctx.fillRect(moonX - moonR * 3, moonY - moonR * 3, moonR * 6, moonR * 6);
+  ctx.fillStyle = '#e8e0c0';
+  ctx.beginPath(); ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(160,150,120,0.4)';
+  ctx.beginPath(); ctx.arc(moonX - 8, moonY - 4, 7, 0, Math.PI * 2); ctx.fill();
+
+  // Stars — tiny dots, static, twinkling gently
+  for (let i = 0; i < 50; i++) {
     const sx = ((i * 137.5) % 1) * W;
     const sy = ((i * 97.3) % 1) * H * 0.42;
+    const tw = 0.35 + 0.35 * Math.sin(frame * 0.02 + i * 1.7);
+    ctx.fillStyle = `rgba(210,220,240,${tw})`;
     ctx.fillRect(sx, sy, 1, 1);
   }
 
-  // Water / ground — dark slate (bottom half)
+  // Layer 1 (far islands, slowest drift): dim, hazy silhouettes near horizon
+  ctx.fillStyle = 'rgba(50,60,90,0.55)';
+  islands.filter(is => is.layer === 0).forEach(is => {
+    const x = ((is.bx - frame * 0.02) % (W * 1.4)) - W * 0.2;
+    drawIslandShape(x, H * 0.46, is.w, is.h);
+  });
+
+  // Layer 2 (near islands, slightly faster drift): darker, closer, more defined
+  ctx.fillStyle = 'rgba(20,26,42,0.85)';
+  islands.filter(is => is.layer === 1).forEach(is => {
+    const x = ((is.bx - frame * 0.05) % (W * 1.4)) - W * 0.2;
+    drawIslandShape(x, H * 0.48, is.w, is.h);
+  });
+
+  // Water — dark slate with subtle color banding for depth (bottom half)
   const water = ctx.createLinearGradient(0, H * 0.50, 0, H);
-  water.addColorStop(0, '#0d1220');
-  water.addColorStop(0.4, '#111830');
-  water.addColorStop(1, '#0a0e1a');
+  water.addColorStop(0, '#161c30');
+  water.addColorStop(0.15, '#111830');
+  water.addColorStop(0.5, '#0c1224');
+  water.addColorStop(1, '#070a14');
   ctx.fillStyle = water;
   ctx.fillRect(0, H * 0.50, W, H * 0.50);
 
-  // Horizon mist
-  ctx.fillStyle = 'rgba(80,100,140,0.08)';
-  ctx.fillRect(0, H * 0.46, W, H * 0.10);
+  // Moon reflection shimmer on water
+  const reflGrad = ctx.createLinearGradient(0, H * 0.5, 0, H * 0.7);
+  reflGrad.addColorStop(0, 'rgba(220,210,170,0.12)');
+  reflGrad.addColorStop(1, 'rgba(220,210,170,0)');
+  ctx.fillStyle = reflGrad;
+  ctx.fillRect(moonX - 40, H * 0.5, 80, H * 0.2);
+
+  drawRipples();
+
+  // Horizon mist band
+  const mistGrad = ctx.createLinearGradient(0, H * 0.44, 0, H * 0.54);
+  mistGrad.addColorStop(0, 'rgba(120,130,160,0)');
+  mistGrad.addColorStop(0.5, 'rgba(120,130,160,0.10)');
+  mistGrad.addColorStop(1, 'rgba(120,130,160,0)');
+  ctx.fillStyle = mistGrad;
+  ctx.fillRect(0, H * 0.44, W, H * 0.10);
+}
+
+function drawIslandShape(x, baseY, w, h) {
+  ctx.beginPath();
+  ctx.moveTo(x, baseY);
+  ctx.lineTo(x + w * 0.15, baseY - h * 0.5);
+  ctx.lineTo(x + w * 0.4, baseY - h);
+  ctx.lineTo(x + w * 0.65, baseY - h * 0.6);
+  ctx.lineTo(x + w * 0.85, baseY - h * 0.75);
+  ctx.lineTo(x + w, baseY);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawRipples() {
+  ripples = ripples.filter(r => r.age < r.life);
+  ripples.forEach(r => {
+    r.age++;
+    const t = r.age / r.life;
+    ctx.strokeStyle = `rgba(200,210,230,${(1 - t) * 0.25})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(r.x, r.y, r.r * t, r.r * t * 0.3, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+}
+
+function spawnRipple(x, y, big = false) {
+  ripples.push({ x, y, r: big ? 60 : 30, age: 0, life: big ? 50 : 34 });
 }
 
 function drawWisps() {
@@ -304,6 +395,13 @@ function render() {
   drawVictoryOverlay();
   drawHUD();
 
+  // Ambient ripple — occasional, keeps the water alive even without input
+  rippleTimer--;
+  if (rippleTimer <= 0) {
+    spawnRipple(W * (0.15 + Math.random() * 0.7), H * (0.62 + Math.random() * 0.3));
+    rippleTimer = 90 + Math.random() * 90;
+  }
+
   // Decay timers
   if (bookPulse > 0) bookPulse--;
   if (bookMiss > 0)  bookMiss--;
@@ -325,6 +423,7 @@ export function start() {
   active = true; victoryMode = false; frame = 0;
   pagesRead = 0; bookPulse = 0; bookMiss = 0;
   gearSpeed = 1; gearAngle = 0; victoryAlpha = 0;
+  ripples = []; rippleTimer = 60;
   render();
 }
 
@@ -332,7 +431,7 @@ export function stop() {
   active = false;
   if (animId) cancelAnimationFrame(animId);
   if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-  wisps = [];
+  wisps = []; ripples = [];
 }
 
 export function keystroke() {
@@ -340,6 +439,7 @@ export function keystroke() {
   pagesRead++;
   bookPulse = 18;
   gearSpeed = 5;   // spin up briefly
+  spawnRipple(pedestalX(), H * 0.82, true);
 }
 
 export function miss() {

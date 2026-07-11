@@ -1,5 +1,9 @@
 // Terminal / Command Line — 1960s–∞ — Level 20
 // Classic green CRT terminal. Each keystroke types a character. Binary revealed as HELLO.
+// This level deliberately stays a minimal CRT — the terminal IS the drama, no scenery —
+// but is perfected with era-authentic CRT physics: barrel-curved edges (screens of this
+// era were never perfectly flat), phosphor bloom on bright text, and an occasional
+// horizontal refresh-line flicker, the way real analog monitors misbehaved.
 
 let canvas, ctx, animId;
 let active = false;
@@ -8,6 +12,10 @@ let cursorVisible = true;
 let cursorTimer = 0;
 let chars = 0;
 let scanY = 0;
+let flickerT = 0;
+let refreshGlitch = 0; // brief random horizontal glitch line
+let bgLayer = null;    // offscreen canvas for the precomputed vignette + curvature mask
+let bgLayerW = 0, bgLayerH = 0;
 const WIN_CHARS = 25;
 
 // Pre-set terminal lines for atmosphere
@@ -45,23 +53,79 @@ function init() {
   ctx    = canvas.getContext('2d');
   chars  = 0;
   scanY  = 0;
+  flickerT = 0;
+  refreshGlitch = 0;
 
   lines = [...BOOT_LINES];
+  buildBarrelMask(canvas.width, canvas.height);
 }
 
 // ─── Drawing ──────────────────────────────────────────────────────────────────
 
+// Precompute the barrel/curvature vignette once (and on resize) rather than
+// per-frame — a real CRT's glass bows outward, darkening and softening the
+// corners more than the center. We approximate that with a radial darkening
+// mask that's noticeably stronger at the corners than a plain circular vignette.
+function buildBarrelMask(W, H) {
+  bgLayer = document.createElement('canvas');
+  bgLayer.width = W;
+  bgLayer.height = H;
+  bgLayerW = W;
+  bgLayerH = H;
+  const bctx = bgLayer.getContext('2d');
+
+  bctx.fillStyle = 'rgba(0,0,0,0)';
+  bctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2;
+  const maxDist = Math.sqrt(cx * cx + cy * cy);
+
+  // Corner darkening — sampled at coarse resolution and upscaled via fillRect
+  // blocks (cheap, avoids a full per-pixel pass every frame).
+  const step = 16;
+  for (let y = 0; y < H; y += step) {
+    for (let x = 0; x < W; x += step) {
+      const dx = (x + step / 2 - cx) / cx;
+      const dy = (y + step / 2 - cy) / cy;
+      // Barrel falloff: distance in "squared" elliptical space pushes corners
+      // darker faster than a simple radial gradient would.
+      const d = Math.pow(Math.min(1, Math.sqrt(dx * dx + dy * dy)), 2.2);
+      const alpha = d * 0.62;
+      if (alpha > 0.01) {
+        bctx.fillStyle = `rgba(0,0,0,${alpha})`;
+        bctx.fillRect(x, y, step, step);
+      }
+    }
+  }
+
+  // Subtle green-black edge tint to sell the phosphor-glass curvature
+  const edgeGrad = bctx.createRadialGradient(cx, cy, maxDist * 0.55, cx, cy, maxDist);
+  edgeGrad.addColorStop(0, 'rgba(0,20,0,0)');
+  edgeGrad.addColorStop(1, 'rgba(0,25,5,0.35)');
+  bctx.fillStyle = edgeGrad;
+  bctx.fillRect(0, 0, W, H);
+}
+
 function drawScreen(W, H) {
+  if (bgLayerW !== W || bgLayerH !== H) buildBarrelMask(W, H);
+
   // Deep black background
   ctx.fillStyle = '#000400';
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle phosphor vignette
+  // Subtle phosphor vignette (soft glow toward center, kept from the original feel)
   const vign = ctx.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, Math.max(W, H) * 0.75);
   vign.addColorStop(0, 'rgba(0,0,0,0)');
   vign.addColorStop(1, 'rgba(0,20,0,0.5)');
   ctx.fillStyle = vign;
   ctx.fillRect(0, 0, W, H);
+}
+
+// Composited last (on top of text) so the curvature darkening reads as glass
+// in front of the phosphor, not behind it — precomputed mask, single drawImage.
+function drawBarrelCurvature() {
+  if (!bgLayer) return;
+  ctx.drawImage(bgLayer, 0, 0);
 }
 
 function drawScanLine(W, H) {
@@ -81,6 +145,23 @@ function drawCRTLines(W, H) {
     ctx.fillRect(0, y, W, 1);
   }
 }
+
+// Occasional single-frame horizontal refresh glitch — the way an old analog
+// monitor's sync would hiccup for an instant. Rare and brief; never obscures text.
+function updateRefreshGlitch(W, H) {
+  flickerT++;
+  if (refreshGlitch > 0) {
+    ctx.globalAlpha = refreshGlitch;
+    ctx.fillStyle = 'rgba(140, 255, 120, 0.5)';
+    ctx.fillRect(0, glitchY, W, 2);
+    ctx.globalAlpha = 1;
+    refreshGlitch -= 0.25;
+  } else if (flickerT % 240 === 0 && Math.random() < 0.6) {
+    refreshGlitch = 1;
+    glitchY = Math.random() * H;
+  }
+}
+let glitchY = 0;
 
 function drawTerminalLines(W, H) {
   const fontSize = Math.max(10, Math.floor(W * 0.013));
@@ -106,8 +187,20 @@ function drawTerminalLines(W, H) {
     ctx.globalAlpha = alpha;
     ctx.fillStyle = '#39ff14';
     ctx.shadowColor = '#39ff14';
-    ctx.shadowBlur = isLast ? 8 : 3;
-    ctx.fillText(line, marginX, y);
+    // Phosphor bloom on the active (brightest) line: a wide soft under-glow
+    // pass plus a tight sharp pass on top — real phosphor bleeds light into
+    // the glass around bright characters, it doesn't just get a bigger blur.
+    if (isLast) {
+      ctx.shadowBlur = 16;
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.fillText(line, marginX, y);
+      ctx.globalAlpha = alpha;
+      ctx.shadowBlur = 6;
+      ctx.fillText(line, marginX, y);
+    } else {
+      ctx.shadowBlur = 3;
+      ctx.fillText(line, marginX, y);
+    }
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   });
@@ -118,6 +211,10 @@ function drawTerminalLines(W, H) {
   if (blinkOn) {
     ctx.fillStyle = '#39ff14';
     ctx.shadowColor = '#39ff14';
+    ctx.shadowBlur = 10;
+    ctx.globalAlpha = 0.5;
+    ctx.fillRect(marginX, cursorY, Math.round(fontSize * 0.6), fontSize);
+    ctx.globalAlpha = 1;
     ctx.shadowBlur = 6;
     ctx.fillRect(marginX, cursorY, Math.round(fontSize * 0.6), fontSize);
     ctx.shadowBlur = 0;
@@ -190,6 +287,8 @@ function render() {
   drawTerminalLines(W, H);
   if (chars >= WIN_CHARS) drawBinaryReveal(W, H);
   drawProgress(W, H);
+  updateRefreshGlitch(W, H);
+  drawBarrelCurvature();
 
   animId = requestAnimationFrame(render);
 }
