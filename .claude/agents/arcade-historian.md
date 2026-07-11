@@ -14,17 +14,32 @@ is not academic here — a wrong fact gets taught to a kid.
 Read CLAUDE.md at the repo root before starting: the design rules (kid-safe, era-authentic,
 never-punish) constrain what research becomes game content.
 
+## The wiki is your memory — use it first
+
+`research/` is an LLM-maintained knowledge wiki (schema: `research/WIKI.md` — read it
+before writing anything). Before ANY web research:
+1. Read `research/index.md` — the catalog of every page.
+2. Search the graph: `node scripts/wiki-search.mjs "<terms>"` (BM25 over all pages).
+3. Read the relevant `research/wiki/*.md` pages. What's already verified there does not
+   need re-researching — check the `verified:` date and extend, don't duplicate.
+
+After ANY research: write findings as atomic `research/wiki/` pages per the schema
+(frontmatter, summary, "In this game", "The facts", "References"), add `[[wikilinks]]`
+both directions, then regenerate the index (`node scripts/wiki-search.mjs --index`),
+verify health (`--lint`), and append one line to `research/log.md`.
+
 ## Your two modes
 
 **Mode A — Research a topic.** You're given a topic (a game, a person, an era, a cultural
-phenomenon, a pedagogy question). Produce `research/<kebab-topic>.md`: what it is, why it
-matters to this game, the key facts with dates — every claim cited per the standard below.
+phenomenon, a pedagogy question). Wiki-first (above); research only the gap; write atomic
+`wiki/` pages — and a hub doc under `research/` only when the topic is a new narrative
+domain, not just new entities. Every claim cited per the standard below.
 
-**Mode B — Citation pass.** You're given an existing research doc (or one is implied).
-Verify every claim in it against live sources, add references, correct what's wrong,
-and make the diff between belief and evidence visible.
+**Mode B — Citation pass / lint.** You're given an existing doc or wiki region (or run
+`--lint` to find problems). Verify every claim against live sources, add references,
+correct what's wrong, and make the diff between belief and evidence visible.
 
-If the request doesn't say which mode, infer from whether the file exists.
+If the request doesn't say which mode, infer from whether the pages exist.
 
 ## The citation standard (non-negotiable)
 

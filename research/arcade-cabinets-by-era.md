@@ -6,7 +6,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ## 1970s: The Dawn of Arcade Gaming
 
-### Pong (1972)
+### [[pong|Pong]] (1972)
 
 | Field | Details |
 |-------|---------|
@@ -31,7 +31,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Breakout (1976)
+### [[breakout|Breakout]] (1976)
 
 | Field | Details |
 |-------|---------|
@@ -54,7 +54,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Space Invaders (1978)
+### [[space-invaders|Space Invaders]] (1978)
 
 | Field | Details |
 |-------|---------|
@@ -78,7 +78,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Asteroids (1979)
+### [[asteroids|Asteroids]] (1979)
 
 | Field | Details |
 |-------|---------|
@@ -103,7 +103,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Galaxian (1979)
+### [[galaxian|Galaxian]] (1979)
 
 | Field | Details |
 |-------|---------|
@@ -129,7 +129,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ## Early 1980s: The Golden Age
 
-### Pac-Man (1980)
+### [[pac-man|Pac-Man]] (1980)
 
 | Field | Details |
 |-------|---------|
@@ -150,7 +150,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Donkey Kong (1981)
+### [[donkey-kong|Donkey Kong]] (1981)
 
 | Field | Details |
 |-------|---------|
@@ -173,7 +173,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Galaga (1981)
+### [[galaga|Galaga]] (1981)
 
 | Field | Details |
 |-------|---------|
@@ -194,7 +194,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Centipede (1981)
+### [[centipede|Centipede]] (1981)
 
 | Field | Details |
 |-------|---------|
@@ -219,7 +219,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Frogger (1981)
+### [[frogger|Frogger]] (1981)
 
 | Field | Details |
 |-------|---------|
@@ -241,7 +241,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Defender (1981)
+### [[defender|Defender]] (1981)
 
 | Field | Details |
 |-------|---------|
@@ -265,7 +265,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Q*bert (1982)
+### [[q-bert|Q*bert]] (1982)
 
 | Field | Details |
 |-------|---------|
@@ -290,7 +290,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Dig Dug (1982)
+### [[dig-dug|Dig Dug]] (1982)
 
 | Field | Details |
 |-------|---------|
@@ -312,7 +312,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Tempest (1981)
+### [[tempest|Tempest]] (1981)
 
 | Field | Details |
 |-------|---------|
@@ -334,7 +334,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Joust (1982)
+### [[joust|Joust]] (1982)
 
 | Field | Details |
 |-------|---------|
@@ -357,7 +357,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Tron (1982)
+### [[tron|Tron]] (1982)
 
 | Field | Details |
 |-------|---------|
@@ -382,7 +382,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ## Mid-to-Late 1980s: Evolution & Expansion
 
-### Dragon's Lair (1983)
+### [[dragons-lair|Dragon's Lair]] (1983)
 
 | Field | Details |
 |-------|---------|
@@ -406,7 +406,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Gauntlet (1985)
+### [[gauntlet|Gauntlet]] (1985)
 
 | Field | Details |
 |-------|---------|
@@ -431,7 +431,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Bubble Bobble (1986)
+### [[bubble-bobble|Bubble Bobble]] (1986)
 
 | Field | Details |
 |-------|---------|
@@ -456,7 +456,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### OutRun (1986)
+### [[out-run|OutRun]] (1986)
 
 | Field | Details |
 |-------|---------|
@@ -480,7 +480,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Contra (1987)
+### [[contra|Contra]] (1987)
 
 | Field | Details |
 |-------|---------|
@@ -503,7 +503,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Double Dragon (1987)
+### [[double-dragon|Double Dragon]] (1987)
 
 | Field | Details |
 |-------|---------|
@@ -526,7 +526,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Tetris (1988 arcade)
+### [[tetris|Tetris]] (1988 arcade)
 
 | Field | Details |
 |-------|---------|
@@ -555,7 +555,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ## 1990s: The Fighter Era & Beyond
 
-### Street Fighter II: The World Warrior (1991)
+### [[street-fighter-ii|Street Fighter II: The World Warrior]] (1991)
 
 | Field | Details |
 |-------|---------|
@@ -579,7 +579,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Mortal Kombat (1992)
+### [[mortal-kombat|Mortal Kombat]] (1992)
 
 | Field | Details |
 |-------|---------|
@@ -604,7 +604,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### NBA Jam (1993)
+### [[nba-jam|NBA Jam]] (1993)
 
 | Field | Details |
 |-------|---------|
@@ -629,7 +629,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Metal Slug (1996)
+### [[metal-slug|Metal Slug]] (1996)
 
 | Field | Details |
 |-------|---------|
@@ -654,7 +654,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Time Crisis (1995)
+### [[time-crisis|Time Crisis]] (1995)
 
 | Field | Details |
 |-------|---------|
@@ -679,7 +679,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 ---
 
-### Dance Dance Revolution (1998)
+### [[dance-dance-revolution|Dance Dance Revolution]] (1998)
 
 | Field | Details |
 |-------|---------|

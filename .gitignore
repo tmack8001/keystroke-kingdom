@@ -25,3 +25,7 @@ vendor/
 .idea/
 *.swp
 *.swo
+
+# Obsidian workspace (personal plugin/layout choices)
+.obsidian/
+research/.smart-env/

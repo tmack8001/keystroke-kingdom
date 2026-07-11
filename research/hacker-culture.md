@@ -32,17 +32,17 @@ plainly instead of papering over the gap.
 
 | Reference | Year | What it is | In-game use |
 |---|---|---|---|
-| WOPR / "Shall we play a game?" | 1983 | WarGames' NORAD computer; the film that taught a generation that terminals talk back | The original secret: `wopr`/`wargames`/`shallweplayagame` → level-select screen styled as the WOPR terminal ("GREETINGS PROFESSOR FALKEN") |
-| XYZZY | 1976–77 | Colossal Cave Adventure's magic word; the canonical response elsewhere is "Nothing happens." | Title screen: typing it → `NOTHING HAPPENS.` — the joke IS the accuracy |
-| Warren Robinett / Adventure | 1979 (hidden)/1980 (released) | The first widely-cited video game easter egg — Robinett hid his name in a secret room because Atari didn't credit developers. He wrote it in 1979, the same year our arcade is set; the game itself shipped March 1980 | `adventure` → `WARREN ROBINETT WAS HERE. 1979.` — correct, since it names the year he hid it, not the ship date. The most thematically perfect egg in the game |
-| IDDQD | 1993 | Doom's god-mode cheat (distinct from IDKFA, the weapons/keys/ammo cheat) | Refused, on principle: `GOD MODE DENIED. THIS GAME NEVER TAKES LIVES.` — the no-punishment rule as a punchline |
-| ELIZA | 1966 | Joseph Weizenbaum's early chatbot (MIT); Rogerian therapist script built from pattern-matching | `eliza` → `HOW DOES TYPING MAKE YOU FEEL?` Also whispers on the L20 terminal |
-| Konami Code | 1986 | ↑↑↓↓←→←→BA — Kazuhisa Hashimoto's test cheat for the NES port of Gradius; later famous for granting 30 lives in Contra (1988), not Gradius itself | 30 extra *stars* (we grant light, not lives) |
-| 2600 Hz | ~1960s–70s | The phone-phreak tone (Captain Crunch whistle) that could seize AT&T long-distance trunk lines; namesake of 2600 Magazine. The Atari 2600 connection is folklore/wordplay, not documented history | Terminal whisper `> 2600 HZ` |
-| The Mark II moth | 1947 | The literal first logged "bug" — a moth taped into the Harvard Mark II logbook: "First actual case of bug being found." Grace Hopper did not write the entry herself, but she was present on the team and spent decades popularizing the anecdote and the "debugging" term | Terminal whisper `> MOTH: 1947`; full story on the Level 13 history card; a hide-and-seek moth is proposed egg #1 |
-| 42 | 1978 (radio)/1979 (novel) | Deep Thought's Answer — from Douglas Adams' Hitchhiker's Guide to the Galaxy, first the 1978 BBC radio series, then the 1979 novel | Terminal whisper `> 42` |
-| HELLO / binary | — | `01001000…` = HELLO in ASCII binary; bookends the game (Mystery Cabinet says it; Level 20 decodes it) | `hello` typed on the title → the Mystery Cabinet's own greeting echoed back; binary HTML comment decodes to SHALL WE PLAY |
-| View source / console culture | — | "Curious people read the page source" is a foundational piece of self-taught web/hacker culture — View Source and, later, the JS console are widely credited as the on-ramp for a generation of self-taught developers | Console banner (WOPR-styled, hints at title eggs); binary comment atop index.html |
+| [[wopr-wargames|WOPR / "Shall we play a game?"]] | 1983 | WarGames' NORAD computer; the film that taught a generation that terminals talk back | The original secret: `wopr`/`wargames`/`shallweplayagame` → level-select screen styled as the WOPR terminal ("GREETINGS PROFESSOR FALKEN") |
+| [[xyzzy|XYZZY]] | 1976–77 | [[colossal-cave-adventure|Colossal Cave Adventure]]'s magic word; the canonical response elsewhere is "Nothing happens." | Title screen: typing it → `NOTHING HAPPENS.` — the joke IS the accuracy |
+| [[warren-robinett|Warren Robinett]] / [[atari-adventure|Adventure]] | 1979 (hidden)/1980 (released) | The first widely-cited video game easter egg — Robinett hid his name in a secret room because Atari didn't credit developers. He wrote it in 1979, the same year our arcade is set; the game itself shipped March 1980 | `adventure` → `WARREN ROBINETT WAS HERE. 1979.` — correct, since it names the year he hid it, not the ship date. The most thematically perfect egg in the game |
+| [[iddqd-doom|IDDQD]] | 1993 | Doom's god-mode cheat (distinct from IDKFA, the weapons/keys/ammo cheat) | Refused, on principle: `GOD MODE DENIED. THIS GAME NEVER TAKES LIVES.` — the no-punishment rule as a punchline |
+| [[eliza|ELIZA]] | 1966 | Joseph Weizenbaum's early chatbot (MIT); Rogerian therapist script built from pattern-matching | `eliza` → `HOW DOES TYPING MAKE YOU FEEL?` Also whispers on the L20 terminal |
+| [[konami-code|Konami Code]] | 1986 | ↑↑↓↓←→←→BA — Kazuhisa Hashimoto's test cheat for the NES port of Gradius; later famous for granting 30 lives in Contra (1988), not Gradius itself | 30 extra *stars* (we grant light, not lives) |
+| [[phone-phreaking-2600hz|2600 Hz]] | ~1960s–70s | The phone-phreak tone (Captain Crunch whistle) that could seize AT&T long-distance trunk lines; namesake of 2600 Magazine. The Atari 2600 connection is folklore/wordplay, not documented history | Terminal whisper `> 2600 HZ` |
+| [[mark-ii-moth-1947|The Mark II moth]] | 1947 | The literal first logged "bug" — a moth taped into the Harvard Mark II logbook: "First actual case of bug being found." Grace Hopper did not write the entry herself, but she was present on the team and spent decades popularizing the anecdote and the "debugging" term | Terminal whisper `> MOTH: 1947`; full story on the Level 13 history card; a hide-and-seek moth is proposed egg #1 |
+| [[forty-two|42]] | 1978 (radio)/1979 (novel) | Deep Thought's Answer — from Douglas Adams' Hitchhiker's Guide to the Galaxy, first the 1978 BBC radio series, then the 1979 novel | Terminal whisper `> 42` |
+| HELLO / binary | — | `01001000…` = HELLO in [[ascii|ASCII]] binary; bookends the game (Mystery Cabinet says it; Level 20 decodes it) | `hello` typed on the title → the Mystery Cabinet's own greeting echoed back; binary HTML comment decodes to SHALL WE PLAY |
+| [[view-source-culture|View source / console culture]] | — | "Curious people read the page source" is a foundational piece of self-taught web/hacker culture — View Source and, later, the JS console are widely credited as the on-ramp for a generation of self-taught developers | Console banner (WOPR-styled, hints at title eggs); binary comment atop index.html |
 
 ### References
 
@@ -109,17 +109,20 @@ This single source substantially supports the claim as written; no second corrob
 
 ## Researched, proposed, not yet built (menu in easter-eggs.md)
 
+*Full menu synthesized at [[proposed-egg-references]].*
+
 - **sudo** (Unix, + xkcd 149 "sudo make me a sandwich") → softened into kid empowerment:
   "PERMISSION GRANTED. YOU ALWAYS HAD IT."
 - **The white rabbit** (The Matrix, 1999 — Command Center era-correct)
 - **Rubber duck debugging** (popularized by The Pragmatic Programmer, 1999)
 - **Dial-up modem handshake** (BBS era — Computer Wing door sound)
-- **Y2K** (a monitor frozen at 12/31/99 23:59)
-- **All your base are belong to us** (Zero Wing — 1989 Japanese arcade original; the
+- **Y2K** (a monitor frozen at 12/31/99 23:59) — see [[y2k-bug]] for the sourced event
+- **All your base are belong to us** ([[zero-wing|Zero Wing]] — 1989 Japanese arcade original; the
   mistranslated English version is from the 1991 European Mega Drive port, Basement era) →
   inverted: "ALL YOUR KEYS ARE BELONG TO YOU."
 - **hello world** (popularized by K&R, 1978; the example itself traces to Kernighan's 1972
-  Bell Labs "B" tutorial) — awaits the Level 25 free-type mode
+  Bell Labs "B" tutorial) — awaits the Level 25 free-type mode; see [[hello-world]] for the
+  already-built history-card version of this same research
 - **The eighth-key confession** — the semicolon's identity revealed only after Level 20,
   as a programmer's rite: "PROGRAMMERS END EVERY LINE WITH IT;"
 - **Themed 404** ("LEVEL NOT FOUND. INSERT COIN TO CONTINUE.")
