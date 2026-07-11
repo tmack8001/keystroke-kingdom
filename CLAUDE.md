@@ -110,3 +110,4 @@ Pattern tokens: lowercase chars/digits/symbols, uppercase A–Z (= Shift+letter,
 - Oona may add new visual themes later — keep theming modular and extensible
 - The Go binary embeds js/css at compile time — `go build -o keystroke-kingdom .` and restart after ANY asset change, or the server serves stale code
 - **Start of session:** skim `docs/ROADMAP.md` for outstanding work. **End of session:** update `docs/ROADMAP.md` (and any touched design docs) to reflect what changed — a hook will remind you
+- **Research anything historical via the `arcade-historian` agent** (`.claude/agents/arcade-historian.md`): pass it a topic (or an existing research doc for a citation pass) and it produces `research/*.md` with 2-4 live-verified references per claim, no URLs from memory, and downstream-impact flags for player-facing text. Never write research prose from model knowledge and trust it uncited.
