@@ -119,9 +119,9 @@ Agents: read this file first, then drill into pages. Schema: [[WIKI]].*
 - [[touch-typing-pedagogy]] *(concept, 8 refs, verified 2026-07-11)* — Touch-typing curricula — from a 50-year-old standard keyboarding textbook through every major commercial and educational typing tutor — teach keys in the same order for the same physiological reason: home row first (wher
 - [[typingclub]] *(entity, 3 refs, verified 2026-07-11)* — TypingClub is a contemporary, web-based touch-typing tutor used widely in K-12 schools, carrying forward the same home-row-first curriculum as the older canon tutors into the modern browser-based era.
 
-## Journal & planning (project memory — append-only)
+## Journal & planning (project memory)
 
-- [[failures]] — - **F2 — The canvas z-index bug (June 2025 — dating WRONG, see F15; actual: 2026-06-25).** Levels 6–15 shipped with the letter prompt and keyboard guide completely hidden behind the canvas for an entire build session bef
-- [[learnings]] — - **L1 — The Go binary embeds assets at compile time.** Any js/css/html change requires `go build -o keystroke-kingdom .` + server restart or you are testing stale code. This bit us repeatedly until it became a checklist
-- [[observations]] — - **O1 — Subagents are injection-suspicious by default, and that's good.** Two agents independently flagged sibling agents' edits as "changes I cannot vouch for" and one refused to act on a coordinator message's authorit
+- [[JOURNAL]] — journal schema · [[dashboard]] — live Dataview status board
+- 64 journal entries (1 OPEN) — views: [[learnings]] · [[observations]] · [[failures]]
+  - OPEN [medium] [[F21-levels-md-regrew-past-budget|F21: levels.md regrew past the 40k budget that motivated its own split]]
 - [[ROADMAP]] — *Captured 2026-07-11 at the end of the Act 5 / Free Play / Settings / Graphics build session. Everything below is discussed-and-agreed direction or discovered-and-deferred work. Update this file as items land or change; 
