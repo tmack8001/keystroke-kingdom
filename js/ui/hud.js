@@ -2,14 +2,83 @@ import { FINGER_MAP } from '../levels.js';
 
 const $ = (id) => document.getElementById(id);
 
-export function updateHUD(state) {
+// WPM is informational only — never enforced, never a failure condition.
+// Standard convention: one "word" = 5 correct keystrokes. Returns null until
+// 10 seconds have elapsed (not enough signal yet to show a meaningful rate).
+export function computeWPM(state) {
+  const elapsedMin = state.startTime ? (Date.now() - state.startTime) / 60000 : 0;
+  if (elapsedMin < 10 / 60) return null;
+  return Math.round((state.totalCorrect / 5) / elapsedMin);
+}
+
+function totalMistakeCount(state) {
+  return Object.values(state.mistakes || {}).reduce((sum, n) => sum + n, 0);
+}
+
+// mistakeDisplay setting: 'hidden' removes the accuracy line entirely,
+// 'small' is the original shipped behavior, 'prominent' brightens the line
+// and adds a running mistake-count line. Never alarming — see product.md
+// "Stats Are Present But Never Looming."
+export function updateHUD(state, settings) {
+  const mistakeDisplay = settings ? settings.mistakeDisplay : 'small';
+  const statsVisible = settings ? settings.statsVisible : true;
+
   const acc = state.totalAttempts > 0
     ? Math.round((state.totalCorrect / state.totalAttempts) * 100)
     : 100;
+
+  const accLine = $('hud-accuracy-line');
+  const missLine = $('hud-mistakes-line');
+  if (accLine) {
+    accLine.classList.toggle('hidden', !statsVisible || mistakeDisplay === 'hidden');
+    accLine.classList.toggle('mistakes-prominent', mistakeDisplay === 'prominent');
+  }
+  if (missLine) {
+    missLine.classList.toggle('hidden', !statsVisible || mistakeDisplay !== 'prominent');
+  }
   $('hud-accuracy').textContent = acc + '%';
+  $('hud-mistakes').textContent = String(totalMistakeCount(state));
   $('hud-streak').textContent = state.streak;
+
+  if (state.freePlay) {
+    const wpm = computeWPM(state);
+    $('hud-wpm').textContent = wpm === null ? '--' : String(wpm);
+  }
 }
 
+// SURVIVAL ONLY. Renders the quarters (lives) line as filled/empty dots —
+// same "small corner scoreboard" HUD language as everything else. Never a
+// lives-lost punishment display; it only appears when the player opted in.
+export function renderQuarters(remaining, total) {
+  const line = $('hud-quarters-line');
+  if (!line) return;
+  const dots = [];
+  for (let i = 0; i < total; i++) {
+    dots.push(i < remaining ? '●' : '○');
+  }
+  $('hud-quarters').textContent = dots.join(' ');
+}
+
+export function flashBonusQuarter() {
+  const el = $('hud-bonus');
+  if (!el) return;
+  el.classList.remove('hidden');
+  void el.offsetWidth;
+  el.classList.remove('hidden');
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = '';
+  setTimeout(() => el.classList.add('hidden'), 1500);
+}
+
+// hintStyle setting adjusts WHEN a hint appears, not what it says:
+//  - 'obvious'  : main.js also calls this proactively when a new pattern
+//                 renders (handled in main.js, not here)
+//  - 'moderate' : original shipped behavior — hint on every wrong key
+//  - 'subtle'   : main.js only calls this after 2+ mistakes on the same
+//                 expected letter (the counting lives in main.js, since it
+//                 already tracks state.mistakes)
+// This function only ever renders; main.js decides whether to call it.
 export function showFingerHint(expectedKey) {
   const hint = $('finger-hint');
   const label = /^[A-Z]$/.test(expectedKey)

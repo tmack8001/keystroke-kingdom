@@ -58,6 +58,22 @@
   text-shadow: 0 0 4px rgba(57, 255, 20, 0.2);
 }
 
+.settings-hint {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 6px;
+  color: #777;
+  letter-spacing: 2px;
+  transition: color 0.3s;
+}
+
+.settings-hint:hover {
+  color: var(--crt-amber-dim);
+  text-shadow: 0 0 4px rgba(255, 176, 0, 0.2);
+}
+
 .name-setup {
   margin-bottom: 30px;
 }
@@ -146,6 +162,17 @@
   }
 }
 
+.survival-tag {
+  display: inline-block;
+  font-size: 7px;
+  color: var(--nudge-red);
+  border: 1px solid var(--nudge-red);
+  text-shadow: 0 0 6px rgba(255, 68, 68, 0.5);
+  letter-spacing: 2px;
+  padding: 5px 10px;
+  margin-top: 16px;
+}
+
 .level-intro {
   font-size: 8px;
   color: var(--atari-dim);
@@ -210,6 +237,35 @@
   text-shadow: 0 0 4px color-mix(in srgb, var(--level-accent) 20%, transparent);
 }
 
+/* MISTAKES SHOWN: 'prominent' variant — brighter than the default hud-value,
+   still dim enough to honor "never displayed alarmingly" (product.md). */
+.hud-line.mistakes-prominent .hud-value {
+  color: var(--nudge-red);
+  text-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
+}
+
+/* SURVIVAL: quarters + mercy-mechanic flash. Same "dim corner, never
+   looming" HUD language as everything else — this is not a lives-lost
+   punishment display, it's an opt-in arcade scoreboard. */
+#hud-quarters {
+  letter-spacing: 3px;
+}
+
+.hud-bonus {
+  margin-top: 6px;
+  font-size: 7px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 8px var(--crt-amber);
+  animation: bonusFlash 1.5s ease-out forwards;
+}
+
+@keyframes bonusFlash {
+  0% { opacity: 0; transform: translateY(-4px); }
+  15% { opacity: 1; transform: translateY(0); }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .level-badge {
   position: absolute;
   top: 20px;
@@ -243,6 +299,31 @@
   background: rgba(0, 0, 0, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 24px 48px 16px;
+  position: relative;
+}
+
+/* SURVIVAL: countdown bar along the bottom edge of the scrim panel.
+   Time pressure only — never affects the wrong-key contract above it. */
+.survival-timer-track {
+  margin-top: 18px;
+  height: 4px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.survival-timer-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--level-accent);
+  box-shadow: 0 0 6px var(--level-accent);
+  transform-origin: left center;
+  transition: width 0.1s linear, background-color 0.3s;
+}
+
+.survival-timer-bar.low {
+  background: var(--nudge-red);
+  box-shadow: 0 0 8px var(--nudge-red);
 }
 
 .prompt-label {
@@ -310,6 +391,20 @@
 .finger-hint {
   margin-top: 30px;
   min-height: 30px;
+}
+
+/* History card sparkle — ambient only, never a pause. Typing a level's
+   "moment word" mid-play triggers this brief soft gold shimmer on the
+   prompt panel and nothing else: no modal, no sound beyond the normal
+   correct-keystroke feedback, no interruption to flow (the One Rule). */
+.prompt-area.card-glint {
+  animation: cardGlint 1s ease-out;
+}
+
+@keyframes cardGlint {
+  0% { box-shadow: 0 0 0 rgba(232, 224, 200, 0); }
+  30% { box-shadow: 0 0 30px rgba(232, 200, 120, 0.55), inset 0 0 20px rgba(232, 200, 120, 0.15); }
+  100% { box-shadow: 0 0 0 rgba(232, 224, 200, 0); }
 }
 
 .finger-hint-text {
@@ -461,6 +556,148 @@
   color: var(--level-accent);
   text-shadow: 0 0 6px var(--level-accent);
   animation: blink 1.2s step-end infinite;
+}
+
+/* ===== SURVIVAL: GAME OVER OVERLAY =====
+   The only failure state in the game, and it exists strictly behind the
+   opt-in SURVIVAL toggle. Warm amber, not red/alarming — "challenging,
+   never cruel" applies here more than anywhere else. */
+
+.gameover-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.gameover-modal {
+  text-align: center;
+  padding: 48px 64px;
+  border: 2px solid var(--crt-amber);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.92);
+  box-shadow:
+    0 0 30px rgba(0, 0, 0, 0.8),
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    0 0 15px var(--crt-amber);
+  animation: modalPop 0.3s ease-out;
+}
+
+.gameover-title {
+  font-size: 20px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 20px var(--crt-amber), 0 0 60px rgba(255, 176, 0, 0.5);
+  letter-spacing: 4px;
+  margin-bottom: 32px;
+}
+
+.gameover-line {
+  font-size: 9px;
+  color: var(--atari-dim);
+  line-height: 2.6;
+  letter-spacing: 1px;
+}
+
+.gameover-line .val {
+  color: var(--crt-amber);
+  text-shadow: 0 0 8px var(--crt-amber);
+}
+
+.gameover-warm {
+  color: var(--crt-green);
+  margin-bottom: 28px;
+}
+
+.gameover-insert {
+  font-size: 9px;
+  color: var(--crt-green);
+  text-shadow: 0 0 8px var(--crt-green);
+  animation: blink 1.2s step-end infinite;
+  margin-bottom: 16px;
+}
+
+.gameover-prompt {
+  font-size: 7px;
+  color: var(--atari-dim);
+  letter-spacing: 1px;
+}
+
+/* ===== HISTORY CARD ("picked up off the arcade floor") ===== */
+
+.history-card {
+  position: relative;
+  max-width: 280px;
+  margin: 0 auto 32px;
+  padding: 16px 18px 14px;
+  background: #e8e0c8;
+  border: 3px double #2a2418;
+  border-radius: 2px;
+  transform: rotate(-1.5deg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 0 rgba(0, 0, 0, 0.2);
+  text-align: left;
+  animation: cardDrop 0.4s ease-out;
+}
+
+@keyframes cardDrop {
+  from { transform: rotate(-1.5deg) translateY(-10px); opacity: 0; }
+  to { transform: rotate(-1.5deg) translateY(0); opacity: 1; }
+}
+
+.history-card-new {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--nudge-red);
+  color: #fff;
+  font-size: 7px;
+  letter-spacing: 1px;
+  padding: 4px 7px;
+  transform: rotate(8deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.history-card-header {
+  font-size: 6px;
+  letter-spacing: 1px;
+  color: #6b5f43;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.history-card-word {
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #2a2418;
+  text-align: center;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.history-card-meta {
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #4a4030;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.history-card-fact {
+  font-size: 7px;
+  line-height: 1.9;
+  color: #2a2418;
+  text-align: left;
+}
+
+.history-card-count {
+  font-size: 6px;
+  letter-spacing: 1px;
+  color: #6b5f43;
+  text-align: right;
+  margin-top: 12px;
 }
 
 /* ===== PAUSE MODAL ===== */
@@ -683,4 +920,107 @@
 
 .kbp-start-prompt {
   display: none;
+}
+
+/* ===== SETTINGS SCREEN ===== */
+
+#settings-screen {
+  text-align: center;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.settings-title {
+  font-size: 14px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 14px var(--crt-amber), 0 0 40px rgba(255, 176, 0, 0.35);
+  letter-spacing: 5px;
+  margin-bottom: 36px;
+}
+
+.settings-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 420px;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: baseline;
+  gap: 14px;
+  text-align: left;
+  padding: 4px 0;
+}
+
+.settings-row-cursor {
+  color: var(--crt-green);
+  text-shadow: 0 0 8px var(--crt-green);
+  font-size: 10px;
+  opacity: 0;
+}
+
+.settings-row.selected .settings-row-cursor {
+  opacity: 1;
+  animation: blink 1s step-end infinite;
+}
+
+.settings-row-label {
+  font-size: 9px;
+  color: #8a8a8a;
+  letter-spacing: 1px;
+}
+
+.settings-row.selected .settings-row-label {
+  color: var(--crt-green);
+  text-shadow: 0 0 6px var(--crt-green);
+}
+
+.settings-row-value {
+  font-size: 9px;
+  color: var(--crt-amber);
+  letter-spacing: 1px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.settings-row.inactive .settings-row-label,
+.settings-row.inactive .settings-row-value {
+  color: #4a4a4a;
+  text-shadow: none;
+}
+
+.settings-row-descriptor {
+  grid-column: 2 / 4;
+  font-size: 6px;
+  color: #999;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.settings-row.inactive .settings-row-descriptor {
+  color: #555;
+}
+
+.settings-erase-confirm {
+  margin-top: 24px;
+  font-size: 9px;
+  color: var(--nudge-red);
+  text-shadow: 0 0 8px rgba(255, 68, 68, 0.4);
+  letter-spacing: 1px;
+}
+
+.settings-erase-confirm kbd {
+  color: var(--atari-white);
+  border: 1px solid #666;
+  padding: 2px 6px;
+  margin: 0 2px;
+}
+
+.settings-hint-bottom {
+  margin-top: 40px;
+  font-size: 6px;
+  color: var(--atari-dim);
+  letter-spacing: 1px;
 }

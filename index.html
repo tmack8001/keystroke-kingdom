@@ -27,6 +27,7 @@
   </div>
   <div class="insert-coin" id="insert-coin">INSERT COIN<br><span class="coin-hint">PRESS SPACE OR <span data-enter-key>ENTER</span></span></div>
   <div class="reboot-hint" id="reboot-hint">PRESS R TO REBOOT CABINET</div>
+  <div class="settings-hint" id="settings-hint">PRESS TAB FOR SETTINGS</div>
   <div class="wopr-text" id="wopr-text"></div>
   <div class="name-setup hidden" id="name-setup">
     <div class="name-label">ENTER YOUR NAME</div>
@@ -51,6 +52,7 @@
 <div class="screen hidden" id="ready-screen">
   <div class="ready-player">READY</div>
   <div class="ready-name" id="ready-name">PLAYER ONE</div>
+  <div class="survival-tag hidden" id="survival-tag">SURVIVAL MODE</div>
   <div class="level-intro" id="level-intro"></div>
   <div class="start-prompt">PRESS SPACE TO BEGIN</div>
 </div>
@@ -77,16 +79,34 @@
   </div>
   <div class="hud">
     <div class="hud-line"><span class="hud-value" id="hud-name">PLAYER ONE</span></div>
-    <div class="hud-line">ACCURACY <span class="hud-value" id="hud-accuracy">100%</span></div>
+    <div class="hud-line hidden" id="hud-accuracy-line">ACCURACY <span class="hud-value" id="hud-accuracy">100%</span></div>
+    <div class="hud-line hidden" id="hud-mistakes-line">MISSES <span class="hud-value" id="hud-mistakes">0</span></div>
     <div class="hud-line">STREAK <span class="hud-value" id="hud-streak">0</span></div>
+    <div class="hud-line hidden" id="hud-wpm-line">SPEED <span class="hud-value" id="hud-wpm">--</span> WPM</div>
+    <div class="hud-line hidden" id="hud-quarters-line">QUARTERS <span class="hud-value" id="hud-quarters">● ● ●</span></div>
+    <div class="hud-bonus hidden" id="hud-bonus">BONUS QUARTER</div>
   </div>
   <div class="game-area">
     <div class="prompt-area">
       <div class="prompt-label">TYPE THE LETTER</div>
       <div class="prompt-sequence" id="prompt-sequence"></div>
       <div class="finger-hint" id="finger-hint"></div>
+      <div class="survival-timer-track hidden" id="survival-timer-track">
+        <div class="survival-timer-bar" id="survival-timer-bar"></div>
+      </div>
     </div>
     <div class="keyboard-guide" id="keyboard-guide"></div>
+  </div>
+</div>
+
+<!-- SURVIVAL: GAME OVER OVERLAY -->
+<div class="gameover-overlay hidden" id="gameover-overlay">
+  <div class="gameover-modal">
+    <div class="gameover-title">GAME OVER</div>
+    <div class="gameover-line">YOU TYPED <span class="val" id="gameover-count">0</span> LETTERS.</div>
+    <div class="gameover-line gameover-warm">THE ARCADE REMEMBERS.</div>
+    <div class="gameover-insert">INSERT COIN</div>
+    <div class="gameover-prompt">SPACE: TRY AGAIN &nbsp;&middot;&nbsp; ESC: THE ARCADE</div>
   </div>
 </div>
 
@@ -95,8 +115,19 @@
   <div class="pause-modal">
     <div class="pause-title">PAUSED</div>
     <div class="pause-option">PRESS <kbd>ESC</kbd> TO CONTINUE</div>
+    <div class="pause-option">PRESS <kbd>TAB</kbd> FOR SETTINGS</div>
     <div class="pause-option">PRESS <kbd>Q</kbd> TO QUIT</div>
   </div>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div class="screen hidden" id="settings-screen">
+  <div class="settings-title">SETTINGS</div>
+  <div class="settings-rows" id="settings-rows"></div>
+  <div class="settings-erase-confirm hidden" id="settings-erase-confirm">
+    ERASE EVERYTHING? <kbd>Y</kbd> / <kbd>N</kbd>
+  </div>
+  <div class="settings-hint-bottom">&uarr; &darr; SELECT &nbsp;&middot;&nbsp; &larr; &rarr; CHANGE &nbsp;&middot;&nbsp; ESC SAVE &amp; EXIT</div>
 </div>
 
 <!-- LEVEL SELECT (WarGames) -->
@@ -107,7 +138,7 @@
   <div class="select-act-label" id="select-act-label"></div>
   <div class="select-cabinets" id="select-cabinets"></div>
   <div class="select-act-next" id="select-act-next"></div>
-  <div class="select-prompt">1-5 OR &lt; &gt; TO SELECT  ·  ↑ ↓ TO CHANGE ACT</div>
+  <div class="select-prompt" id="select-prompt">1-5 OR &lt; &gt; TO SELECT  ·  ↑ ↓ TO CHANGE ACT</div>
   <div class="select-hint"><span data-enter-key>ENTER</span> TO START / ESC TO CANCEL</div>
 </div>
 
@@ -120,6 +151,15 @@
       <div class="complete-stat">ACCURACY <span class="val" id="final-accuracy">100%</span></div>
       <div class="complete-stat">BEST STREAK <span class="val" id="final-streak">0</span></div>
       <div class="complete-stat">KEYS MASTERED <span class="val" id="final-keys">J F</span></div>
+      <div class="complete-stat hidden" id="final-wpm-row">SPEED <span class="val" id="final-wpm">0</span> WPM</div>
+    </div>
+    <div class="history-card hidden" id="history-card">
+      <div class="history-card-new hidden" id="history-card-new">NEW!</div>
+      <div class="history-card-header">FOUND ON THE ARCADE FLOOR</div>
+      <div class="history-card-word" id="history-card-word">ADA</div>
+      <div class="history-card-meta"><span id="history-card-title">ADA LOVELACE</span> · <span id="history-card-year">1843</span></div>
+      <div class="history-card-fact" id="history-card-fact">Fact goes here.</div>
+      <div class="history-card-count" id="history-card-count">CARD 1 OF 17</div>
     </div>
     <div class="complete-prompt" id="complete-prompt">PRESS SPACE TO CONTINUE</div>
   </div>

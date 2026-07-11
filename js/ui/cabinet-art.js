@@ -942,7 +942,15 @@ export function renderSelectScreen(state) {
   const act = getActForLevel(state.selectedLevel);
   const actIdx = ACTS.indexOf(act);
 
-  $('select-act-label').textContent = `ACT ${act.num}  ·  ${act.name}  ·  ${act.era}`;
+  const freePlayPrefix = state.freePlay ? 'FREE PLAY · ' : '';
+  $('select-act-label').textContent = `${freePlayPrefix}ACT ${act.num}  ·  ${act.name}  ·  ${act.era}`;
+
+  const promptEl = $('select-prompt');
+  if (promptEl.dataset.base === undefined) {
+    promptEl.dataset.base = promptEl.textContent;
+  }
+  promptEl.textContent = promptEl.dataset.base
+    + (state.freePlay ? '  ·  F: FREE PLAY ON' : '  ·  F: FREE PLAY OFF');
 
   const prevAct = ACTS[actIdx - 1];
   $('select-act-prev').textContent = prevAct
