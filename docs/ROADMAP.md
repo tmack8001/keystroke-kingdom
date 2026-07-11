@@ -5,6 +5,15 @@
 Everything below is discussed-and-agreed direction or discovered-and-deferred work.
 Update this file as items land or change; each item notes where the detail lives.*
 
+*2026-07-11 (later): citation pass completed across all research/ files — every claim now
+carries 2-4 verified sources with [fetched]/unverified labels and per-file "Corrections from
+citation pass" sections. Player-facing fix applied: the Level 13 Grace Hopper card no longer
+says she taped the moth herself (Smithsonian object record). Also corrected: MTT 1992,
+Z-rarest-not-Q (levels.md), Adventure hidden-1979/shipped-1980, ENIAC programmer names,
+pinball NOVICE/EXPERT switch claim debunked (tiers stay, justification removed). Pending
+from the final citation agent: fix levels.md's Myst "rendered on SGI" claim (actually Mac
+Quadras + StrataVision; SGI was Riven).*
+
 **Current state:** all 25 levels playable end-to-end with act cinematics, Free Play,
 Survival (opt-in), history cards, easter eggs, and era-progressive graphics — all on the
 `act5-full-circle` branch. **Not merged to main** until Trevor's playthrough approves.

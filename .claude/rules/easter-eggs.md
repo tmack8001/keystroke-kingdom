@@ -37,7 +37,7 @@ Typed blind on the attract screen; answer appears in the WOPR text line for 5s:
 |---|---|---|
 | `xyzzy` | NOTHING HAPPENS. | Colossal Cave Adventure, 1976 — the canonical non-response |
 | `iddqd` | GOD MODE DENIED. THIS GAME NEVER TAKES LIVES. | Doom, 1993 — refused because of our one rule |
-| `adventure` | WARREN ROBINETT WAS HERE. 1979. | The first video game easter egg — hidden in 1979, the year our arcade lives in |
+| `adventure` | WARREN ROBINETT WAS HERE. 1979. | The first video game easter egg — Robinett hid his name in 1979 (the year our arcade lives in); the game shipped March 1980 |
 | `eliza` | HOW DOES TYPING MAKE YOU FEEL? | ELIZA, 1966 — the first chatbot |
 | `hello` | HELLO. YOU FOUND ME. COME IN. | The Mystery Cabinet's own greeting, echoed back |
 
