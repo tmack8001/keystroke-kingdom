@@ -83,6 +83,9 @@ already exist inline in `.claude/rules/levels.md` (each level's "Music:" line).
   helper module under docs/ or scripts/.
 - **Performance pass** — upgraded themes (particles, parallax, projection) target 60fps and
   were spot-checked headless; verify on a low-end machine, esp. Acts 3-4.
+- **levels.md size budget regressed** — split at 40k in June (→ transitions.md), now 40,970
+  bytes with no enforcement. Either re-split (Act 5 level sections could move) or add a
+  size check to the doc-currency hook. (Journal F21.)
 - **Level 24 pattern crowding** — level 24 now injects BOTH the player's name (twice) and the
   'Eniac' card word; fine in testing, but watch pacing when Oona plays it.
 

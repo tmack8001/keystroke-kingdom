@@ -1,0 +1,6 @@
+{
+  "userIgnoreFilters": [
+    "js/", "css/", "scripts/", "docs/screenshots/", "docs/a11y/",
+    "memory/", "skill-observations/", "node_modules/", ".smart-env/"
+  ]
+}
