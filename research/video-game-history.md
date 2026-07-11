@@ -7,6 +7,9 @@ is `research/arcade-cabinets-by-era.md`. This file records the history research 
 the visual escalation and the newer cabinet picks.*
 
 ## The core principle it serves
+
+*Internal design principle (see .claude/rules/levels.md "Progressive Graphic Quality");
+the historical claims it rests on are cited under "Era fidelity targets" below.*
 Graphics fidelity escalates act-by-act because that's what actually happened, 1976→present.
 A child learning her first two keys sees 1976; by full sentences she sees the modern era.
 The game teaches gaming history *while* teaching the keyboard (levels.md "Progressive
@@ -57,6 +60,8 @@ for Act 5 in this cycle.)
 | 23 | **Missile Command** (Atari, 1980; Dave Theurer) | Trackball defense classic. IMPORTANT adaptation: in our version cities architecturally cannot be destroyed (no-punishment rule) — keystrokes only intercept; fireworks, not war |
 | 24 | High-score entry screen (the AAA initials ritual) | Not a licensed game — the shared cultural memory of typing three initials; here the player types their whole name via Shift |
 | 25 | Word processor | The keyboard's destination: writing. Modern, calm, paper-white |
+
+*(Corner Cabinets rationale below is internal narrative design — no external citation applicable.)*
 
 **Corner Cabinets rationale (21-23):** the leftover physical keys (`- = [ ] \ ` '`) are the
 keyboard's corners; the levels that teach them are the arcade's forgotten corner machines —

@@ -10,7 +10,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 | Field | Details |
 |-------|---------|
-| **Developer** | Atari |
+| **Developer** | Atari (concept assigned by Nolan Bushnell; designed and built by engineer Allan Alcorn) |
 | **Year** | 1972 |
 | **Era** | Pre-microprocessor era |
 | **Screen Orientation** | Horizontal |
@@ -20,6 +20,14 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Input Method** | Rotary knob (paddle controller) — one per player. Analog, continuous movement. |
 | **Iconic Elements** | The "bip" and "bop" sound effects generated from the sync generator circuit. The ball accelerating the longer a rally continues. Paddles that cannot quite reach the top of the screen (a hardware limitation kept as a feature). |
 | **Technical Characteristics** | No microprocessor — built entirely from transistor-transistor logic (TTL) circuits. Wires soldered onto boards. No software, no ROM, no RAM. Display elements generated directly by discrete logic hardware. The entire game existed as a physical circuit. |
+
+**References**
+- [Pong — CHM Revolution, Computer History Museum](https://www.computerhistory.org/revolution/story/183) — institutional record: Alcorn designed and engineered Pong for Atari in 1972 on Bushnell's assignment. **[fetched]**
+- [50 Years of Fun With Pong — Computer History Museum](https://computerhistory.org/blog/50-years-of-fun-with-pong/) — corroborates Bushnell assigning Alcorn the build as a "training exercise" and the Andy Capp's Tavern coin-jam story. *(search result only, not fetched)*
+- [Pong — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/pong) — institutional arcade record: Bushnell concept, Alcorn build, ~November 1972 release. *(search result only, not fetched)*
+- [Original Pong had no code or microprocessor — Hacker News discussion of pong-story.com circuit analysis](https://news.ycombinator.com/item?id=31511719) — community-technical corroboration of the pure-TTL (~60–66 chips), no-CPU/no-software claim from circuit-level analysis. *(search result only, not fetched)*
+
+*Note: "no ROM, no RAM" is a sound inference from the well-sourced no-microprocessor/no-software fact, but no source found this pass states it in those literal words — treat as inference, not quotation.*
 
 ---
 
@@ -85,6 +93,14 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Iconic Elements** | The "heartbeat" soundtrack that quickens as gameplay intensifies. The triangular ship. Asteroids fracturing into smaller, faster pieces. The screen-wrap mechanic. 13 hand-wired sound effects (no sound chip). Vector glow — the distinctive bright phosphor bloom of the vector monitor. |
 | **Technical Characteristics** | MOS 6502 CPU. Atari QuadraScan / Digital Vector Generator (DVG) — draws geometric lines rather than raster pixels. Resolution is effectively infinite (continuous vector coordinates, not a pixel grid). Maximum 26 asteroids on-screen simultaneously. No sprite hardware — all objects are line segments calculated and drawn by the DVG. |
 
+**References**
+- [Asteroids — The Strong National Museum of Play](https://www.museumofplay.org/games/asteroids/) — institutional confirmation: Ed Logg as designer, Lyle Rains as concept originator, November 1979 release, vector display. **[fetched]**
+- [Asteroids — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/asteroids) — institutional record; lists Wendi Allen (credited historically as Howard Delman) as Project Engineer of the vector display hardware. **[fetched]**
+- [Atari Asteroids: Creating a Vector Arcade Classic — The Arcade Blogger](https://arcadeblogger.com/2018/10/24/atari-asteroids-creating-a-vector-arcade-classic/) — corroborates the Rains (concept) / Logg (design and program) split, and the vector hardware adapted from Lunar Lander. **[fetched]**
+- [Asteroids (video game) — Wikipedia](https://en.wikipedia.org/wiki/Asteroids_(video_game)) — MOS 6502 CPU, QuadraScan/DVG vector system, the 13 hand-wired sound effects (no sound chip), and the 26-asteroid on-screen cap (large asteroids at the cap split into one medium piece instead of two to enforce it). Used alongside the museum sources, not alone. **[fetched]**
+
+*Note: the engineer who hand-wired the sound board and built the vector generator is credited on older sources as Howard Delman and on arcade-museum.com's current people page as Wendi Allen (her current name) — use "Wendi Allen" if a hardware credit is ever added to game copy.*
+
 ---
 
 ### Galaxian (1979)
@@ -95,12 +111,19 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Year** | September 1979 (Japan), February 1980 (North America) |
 | **Era** | Late 70s — bridge to the golden age |
 | **Screen Orientation** | Vertical (portrait) |
-| **Visual Style** | One of the first games with true RGB color graphics and animated multi-color sprites. Scrolling starfield background. Colorful alien formation at top (red, blue, purple flagships with escorts). The player's white Galaxip at the bottom. Rich color compared to the monochrome era it replaced. |
-| **Color Palette** | Full RGB color — revolutionary for 1979 |
+| **Visual Style** | The first game with multi-colored sprites — individual pixels within a single sprite could be different colors, a genuine first for the era (color itself was not new: Atari's Color Gotcha, 1973, and Indy 800, 1975, predate it). Scrolling starfield background. Colorful alien formation at top (red, blue, purple flagships with escorts). The player's white Galaxip at the bottom. Rich color compared to the monochrome era it replaced. |
+| **Color Palette** | Full RGB color with multi-colored sprites — a major step for 1979 (per-pixel sprite color was the new part, not color itself) |
 | **Gameplay Objective** | Destroy all aliens in the formation. Enemies break from formation to dive-bomb the player while firing projectiles. Clear the wave to advance. |
 | **Input Method** | Two-way joystick (left/right) plus fire button. Single shot only — must wait for projectile to hit or leave screen before firing again. |
 | **Iconic Elements** | The scrolling starfield (a first for arcade games). Flagship aliens with escorts offering bonus points when destroyed together. Sound effects inspired by Star Wars space battles. The Galaxian flagship appears as the 6th bonus fruit in Pac-Man. First Namco game composed with a synthesizer. |
 | **Technical Characteristics** | Pioneering tilemap hardware system (the first to use tile-based rendering). 8x8 pixel tiles, animated multi-color sprites over scrolling background. Reduced processing/memory requirements by up to 64x compared to Space Invaders' bitmap approach. This hardware directly influenced Nintendo's Donkey Kong board and ultimately the Famicom/NES architecture. |
+
+**References**
+- [Galaxian — Wikipedia](https://en.wikipedia.org/wiki/Galaxian) — September 15, 1979 Japan release (sourced there to 1981 Midway court records) / February 1980 North America; the tilemap-hardware claim (8x8 tiles, up-to-64x memory/processing reduction vs. Space Invaders' framebuffer); influence on the Radar Scope/Donkey Kong boards and Famicom/NES architecture; the Galaxian flagship as Pac-Man's sixth bonus fruit. Cross-checked, not used alone. **[fetched]**
+- [What Was The First "True" Color Arcade Video Game? — The Golden Age Arcade Historian (All In Color For A Quarter)](http://allincolorforaquarter.blogspot.com/2012/09/what-was-first-true-color-arcade-video.html) — specialist arcade-history analysis disputing the "first true color" superlative (Atari's Color Gotcha 1973 and Indy 800 1975 predate it) and reframing Galaxian's real first as multi-colored sprites. **[fetched]**
+- [Galaxian — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/galaxian) — institutional arcade record for the Namco/Midway release. *(search result only, not fetched)*
+
+*Date discrepancy disclosed: Wikipedia (court-record-sourced) gives Japan September 15, 1979; arcade-history.com gives October 31, 1979 (that page returned a 403 on direct fetch this pass, so it is noted but not cited as read). "September 1979" above follows the stronger-sourced date.*
 
 ---
 
@@ -186,13 +209,21 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Iconic Elements** | The segmented centipede splitting when shot in the middle. The mushroom field growing denser over time. Scorpions poisoning mushrooms (causing centipedes to dive straight down). The trackball control giving uniquely fluid movement. The approachable, colorful aesthetic that attracted non-traditional arcade players. |
 | **Technical Characteristics** | Custom Atari arcade hardware. Multiple independent autonomous sprites (each centipede segment tracks independently). Destructible/persistent mushroom field objects that accumulate between lives. The design supported many simultaneous on-screen elements without slowdown. |
 
+**References**
+- [Centipede — The Strong National Museum of Play](https://www.museumofplay.org/games/centipede/) — institutional confirmation of the deliberately pastel palette ("to make the game compelling and look appealing in a dark arcade") and the trackball's broad-audience appeal. **[fetched]**
+- [Centipede — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/centipede) — institutional record crediting Dona Bailey (Co-Developer and Programmer) and Ed Logg (Co-Developer); optical trackball + fire button confirmed. Its "1980" metadata field reflects the development-start year, not release. **[fetched]**
+- [Centipede (video game) — Wikipedia](https://en.wikipedia.org/wiki/Centipede_(video_game)) — August 1981 release; Bailey's own quote on choosing pastels ("I really wanted it to look different, to be visually arresting"); the Logg-design/Bailey-programming split. **[fetched]**
+- [Dona Bailey — Wikipedia](https://en.wikipedia.org/wiki/Dona_Bailey) — biographical corroboration of her role as one of the first female game designers at Atari. *(search result only, not fetched)*
+
+*Dating note: development began July 1980 (the source of arcade-museum.com's "1980" field); the arcade street release was August 1981 as stated above.*
+
 ---
 
 ### Frogger (1981)
 
 | Field | Details |
 |-------|---------|
-| **Developer** | Konami |
+| **Developer** | Konami (published in North America by Sega/Gremlin — often miscredited to Sega alone) |
 | **Year** | August 1981 (Japan), September 1981 (North America) |
 | **Era** | Early golden age |
 | **Screen Orientation** | Vertical (portrait) — top-down perspective |
@@ -203,6 +234,11 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Iconic Elements** | "The arcade game with the most ways to die" — vehicles, drowning, alligator mouths, snakes, diving turtles, running out of time, jumping into occupied homes. The skull-and-crossbones death marker. Opening tune: Japanese children's song "Inu no Omawarisan." The American version plays "Yankee Doodle" upon successfully homing a frog. |
 | **Technical Characteristics** | Z80 processor architecture. Score maximum: 99,990 (rolls over). DIP-switch configurable starting lives (3, 5, or 7). 30-second timer per frog displayed as 60 ticks. Multiple independently-moving lane objects all scrolling at different speeds simultaneously. |
 
+**References**
+- [Frogger — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/frogger) — institutional record: developer "Konami (Japan)," released in the US by Sega/Gremlin; its trivia section explicitly notes "Although Frogger is credited to Sega it was originally developed by Konami." **[fetched]**
+- [Frogger — Wikipedia](https://en.wikipedia.org/wiki/Frogger) — August 1981 Japan / September 1981 North America; the "most ways to die" line (a real 1982 Softline magazine quote, not an uncited superlative); "Inu no Omawarisan" as the Japanese opening theme; "Yankee Doodle" on homing a frog in the US version. **[fetched]**
+- [Frogger — The Arcade Flyer Archive (flyers.arcade-museum.com)](https://flyers.arcade-museum.com/videogames/show/2559) — primary-source US arcade flyer under Sega/Gremlin branding, 1981. *(search result only, not fetched)*
+
 ---
 
 ### Defender (1981)
@@ -210,7 +246,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | Field | Details |
 |-------|---------|
 | **Developer** | Williams Electronics (designed by Eugene Jarvis) |
-| **Year** | February 1981 |
+| **Year** | February 1981 (Japan), March 1981 (North America) |
 | **Era** | Early golden age |
 | **Screen Orientation** | Horizontal (landscape) — wider than standard (320x256 vs. industry standard 256x256) |
 | **Visual Style** | Side-scrolling shooter with bright, detailed sprites against a dark star-filled background. Varied sprite colors for different enemy types. Particle-effect explosions (unique for the era). A landscape depicted as a thin pixel-wide line at the bottom. Minimap at screen top showing the full world. Flashing, intense, fast-moving. |
@@ -219,6 +255,13 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Input Method** | Two-way joystick (up/down only) plus five buttons (thrust, reverse, fire, smart bomb, hyperspace). Notoriously complex control scheme — left hand on joystick, right hand on buttons. |
 | **Iconic Elements** | The minimap (an innovation for arcade games). Unique particle-effect explosions generated algorithmically (never the same twice). Incredible difficulty. The reverse button (allowing instant direction change). Sound: amplified monaural audio with distinctive enemy and explosion effects. The panic of watching a Lander carry away a human. |
 | **Technical Characteristics** | Motorola 6809 CPU (gameplay/graphics) + Motorola 6800 (audio). Resolution: 320x256 pixels (wider than standard). 16-color display. Software-driven animation (not hardware sprites) — allowed more on-screen objects at lower cost. All programmed in assembly language. 3x AA battery backup for high scores. |
+
+**References**
+- [Defender — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/defender--williams) — Williams Electronics, 1981; dual-processor architecture (Motorola 6809 for gameplay/graphics, 6800 for sound). **[fetched]**
+- [Defender — The Strong National Museum of Play](https://www.museumofplay.org/games/defender/) — Eugene Jarvis-led design team (with Larry DeMar, Sam Dicker, Paul Dussault); the minimap innovation; particle-style explosion effects; two-way joystick + five-button controls. **[fetched]**
+- [Defender (1981 video game) — Wikipedia](https://en.wikipedia.org/wiki/Defender_(1981_video_game)) — February 1981 (Japan) / March 1981 (North America) timing, 320x256 resolution, 16-color display, Sam Dicker's algorithmically-generated particle explosions, and the 3x AA battery backup. **[fetched]**
+
+*Sourcing caveat: the 3x-AA-battery high-score-backup detail was found only in Wikipedia this pass — treat as single-sourced until corroborated.*
 
 ---
 
@@ -251,7 +294,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 | Field | Details |
 |-------|---------|
-| **Developer** | Namco (sprites by Hiroshi "Mr. Dotman" Ono) |
+| **Developer** | Namco (designed by Masahisa Ikegami, assisted by Galaga designer Shigeru Yokoyama; sprites by Hiroshi "Mr. Dotman" Ono) |
 | **Year** | February 1982 (Japan), April 1982 (North America) |
 | **Era** | Early golden age |
 | **Screen Orientation** | Vertical (portrait) |
@@ -260,7 +303,12 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Gameplay Objective** | Dig tunnels underground to reach enemies, then destroy them by either inflating them with an air pump until they burst, or by dislodging rocks to crush them. Clear all enemies to advance (255 stages before kill screen). |
 | **Input Method** | Four-way joystick plus one button (pump). Joystick digs in the direction pressed; button inflates enemies. |
 | **Iconic Elements** | Music only plays when the character moves (composer couldn't make realistic footstep sounds, so made a short melody instead). Enemies inflating and popping. Pookas and Fygars becoming recurring Namco mascots. The satisfying act of digging itself. The 8-bit integer overflow kill screen at round 256. |
-| **Technical Characteristics** | Namco Galaga arcade system board (same hardware as Galaga). Board designed by Shigeichi Ishimura. Tile-based graphics with multi-color sprites. Music composed by Yuriko Keino — the movement-triggered playback was a creative solution to hardware/design constraints. |
+| **Technical Characteristics** | Namco Galaga arcade system board (same hardware as Galaga); Shigeichi Ishimura was the board's credited hardware engineer. Tile-based graphics with multi-color sprites. Music composed by Yuriko Keino — the movement-triggered playback was a creative solution to hardware/design constraints. |
+
+**References**
+- [Dig Dug — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/dig-dug) — 1982 Namco release (licensed to Atari for North America), Namco Galaga board class, three Z80 CPUs + Namco 3-channel PSG sound. **[fetched]**
+- [Dig Dug — Wikipedia](https://en.wikipedia.org/wiki/Dig_Dug) — February 20, 1982 Japan / April 1982 North America; game design credit to Masahisa Ikegami (assisted by Galaga designer Shigeru Yokoyama); Hiroshi "Mr. Dotman" Ono sprite credit; Yuriko Keino composer credit and the footstep-sound-substitution story behind the movement-triggered music; the round-256 integer-overflow kill screen. **[fetched]**
+- [Shigeichi Ishimura — MobyGames](https://www.mobygames.com/person/224338/shigeichi-ishimura/) — corroborates Ishimura's hardware-engineer role across Namco titles (Pac-Man, Galaxian, Dig Dug). *(search result only, not fetched — MobyGames returned 403 on direct fetch)*
 
 ---
 
@@ -278,6 +326,11 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Input Method** | Rotary knob (spinner/dial) for movement along the rim + fire button + "Superzapper" button (destroys all on-screen enemies once per level). The spinner enabled intuitive clockwise/counterclockwise movement. |
 | **Iconic Elements** | The 16 unique geometric playfield shapes (including a flat line and the infinity symbol). The "warp" travel sequence down the tube between levels. The claw-shaped blaster. Enemies: Flippers (linked chevrons), Pulsars (electric lines), Fuseballs (sparking spheres), Spikers (spirals), Tankers (rhomboids). Abstract, non-representational gameplay — pure geometry and color. |
 | **Technical Characteristics** | Custom Atari board with Color-QuadraScan vector graphics system. Vector display (no pixel resolution — lines drawn geometrically). No sprite hardware — all objects are line segments rendered by the vector generator. One of the first color vector games. Early shipped ROMs had a bug enabling 40 free credits and 255 lives (later patched). |
+
+**References**
+- [Tempest — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/tempest) — Atari 1981, Dave Theurer as designer/programmer; corroborates the shipped-ROM free-credit bug and its origin (a last-minute logo tweak broke an anti-piracy check). **[fetched]**
+- [Tempest (video game) — Wikipedia](https://en.wikipedia.org/wiki/Tempest_(video_game)) — October 1981 release; "Color-QuadraScan" display naming; the 16 playfield shapes (including the flat line and the infinity symbol); the invisible level set 65–80; the 40-free-credits / 255-lives ROM bug specifics. **[fetched]**
+- [Quadrascan — Atari A to Z](https://atariatoz.wordpress.com/tag/quadrascan/) — corroborates "Quadrascan"/"Color-QuadraScan" as Atari's own branding for its color vector display technology, first used on Tempest. *(search result only, not fetched)*
 
 ---
 
@@ -366,7 +419,15 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Gameplay Objective** | Navigate maze-like dungeon levels, kill monsters, gather treasures, and find the exit. Health drains continuously — insert coins to add health. Cooperative survival with resource competition (shooting food destroys it). |
 | **Input Method** | 8-way joystick + two buttons (fire and magic) per player. Four-player simultaneous play on a wider-than-standard control panel. |
 | **Iconic Elements** | The speech synthesizer narration: "Warrior needs food, badly!" "Elf shot the food!" "Remember, don't shoot food." Four-player simultaneous co-op (unprecedented scale). The coin-eating health drain mechanic. TMS5220C speech synthesis chip voiced by Ernie Fosselius. "The most elaborate hardware design in Atari's history to date." |
-| **Technical Characteristics** | Atari Gauntlet arcade system board (most complex Atari hardware to date). TMS5220C speech synthesis chip. Wider-than-standard 4-player cabinet. 7,848 units produced. The tile-based dungeon generation allowed enormous level variety. Speech encoded by Earl Vickers (same person who programmed Tron's music). |
+| **Technical Characteristics** | Atari Gauntlet arcade system board (most complex Atari hardware to date). TMS5220C speech synthesis chip. Wider-than-standard 4-player cabinet. 7,848 units produced. The tile-based dungeon generation allowed enormous level variety. Speech encoded by Earl Vickers. |
+
+**References**
+- [Gauntlet (1985 video game) — Wikipedia](https://en.wikipedia.org/wiki/Gauntlet_(1985_video_game)) — October 1985 release; TMS5220C speech chip (Atari's first coin-op with a voice synthesizer); Ernie Fosselius as the narrator's voice; Earl Vickers as speech encoder; the "most elaborate hardware design in Atari's history to date" phrasing and the 7,848-unit production figure. **[fetched]**
+- [Ernie Fosselius — Wikipedia](https://en.wikipedia.org/wiki/Ernie_Fosselius) — establishes Fosselius as an outside filmmaker (*Hardware Wars*) contracted by Vickers for the voice work, not an Atari programmer. *(search result only, not fetched)*
+- [Gauntlet — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/gauntlet) — institutional corroboration of the 1985 Atari Games release. *(search result only, not fetched)*
+- [GAUNTLET (1985) — Polycade](https://polycade.com/blogs/history-fun-facts/gauntlet-1985-dungeon-party) — games-history corroboration of the speech-chip/narrator facts. *(search result only, not fetched)*
+
+*Sourcing caveats: the "most elaborate hardware" superlative and the 7,848-unit figure are Wikipedia-primary this pass (arcade-museum.com corroborates the release, not those numbers). A former parenthetical claiming Vickers is "the same person who programmed Tron's music" has been removed — both individual credits stand (Vickers → Gauntlet speech here; Vickers → Tron music in the Tron entry above), but no source found this pass links the two credits to one person, so the identity connection is unverified.*
 
 ---
 
@@ -374,7 +435,7 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 
 | Field | Details |
 |-------|---------|
-| **Developer** | Taito |
+| **Developer** | Taito (designed by Fukio "MTJ" Mitsuji) |
 | **Year** | June 1986 (Japan) |
 | **Era** | Mid-80s |
 | **Screen Orientation** | Horizontal (landscape) — single-screen platformer |
@@ -382,8 +443,16 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Color Palette** | Bright primaries and pastels on black — greens, blues, pinks, yellows, colorful food items |
 | **Gameplay Objective** | Trap enemies in bubbles blown from the dragons' mouths, then pop the bubbles to defeat them. Clear all enemies on each single-screen stage. 100 levels of increasing difficulty. Save girlfriends from the Cave of Monsters. |
 | **Input Method** | Joystick + two buttons (jump and bubble). Designed around two-player cooperative gameplay (second player joins by inserting a coin). |
-| **Iconic Elements** | The bubble-trapping mechanic (unique core gameplay). Two-player co-op as the intended experience. Bub and Bob's cute dragon designs becoming Taito mascots. The endlessly catchy main theme music. Food items appearing after popping multiple enemies. The "true ending" requiring two players — designed to encourage social play. |
+| **Iconic Elements** | The bubble-trapping mechanic (unique core gameplay). Two-player co-op as the intended experience. Bub and Bob's cute dragon designs becoming Taito mascots. The endlessly catchy main theme music. Food items appearing after popping multiple enemies. The "true ending" requiring two players (and, for the full best ending, a hidden second 100-level "Super" mode run) — designed to encourage social play. |
 | **Technical Characteristics** | Taito arcade hardware (1986 era). Sprite-based 2D graphics with multiple independent enemy AI patterns per level. 100 pre-designed levels with varied layouts. The game tracked whether one or two players were present to determine the ending — early narrative branching based on play mode. Later ported to over a dozen platforms. |
+
+**References**
+- [Fukio "MTJ" Mitsuji — 1988 Developer Interview — shmuplations.com](https://shmuplations.com/bubblebobble/) — primary first-person interview confirming Mitsuji as Bubble Bobble's designer and describing his design process. **[fetched]**
+- [Bubble Bobble — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/bubble-bobble) — Taito, 1986, 100 levels, two-player joint gameplay. **[fetched]**
+- [Bubble Bobble (video game) — Wikipedia](https://en.wikipedia.org/wiki/Bubble_Bobble_(video_game)) — June 16, 1986 Japan release; Mitsuji design credit; the two-player "happy end" vs. solo-ending distinction and the hidden "Super" mode layer of the true ending. **[fetched]**
+- [Bubble Bobble/Walkthrough — StrategyWiki](https://strategywiki.org/wiki/Bubble_Bobble/Walkthrough) — corroborates the layered true-ending requirement (two players and Super mode). *(search result only, not fetched)*
+
+*Note: "100 distinct level layouts" means 100 different hand-built levels — no source supports any randomization/procedural claim, and none is intended.*
 
 ---
 
@@ -426,6 +495,12 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Iconic Elements** | The Konami Code (up-up-down-down-left-right-left-right-B-A) granting 30 lives on NES. Two-player simultaneous run-and-gun action. The somersault jump animation. Pseudo-3D base stages breaking up the side-scrolling. Weapon power-up system (especially the Spread Gun). NES version became one of the most iconic 8-bit games. |
 | **Technical Characteristics** | Arcade: Nintendo VS. System board. NES: North American version used cheaper UNROM board (half the ROM of Japanese version). Japanese Famicom version used Konami VRC2 memory controller (allowing animated backgrounds). NES version showed explosion sprites at 30fps (vs. 60fps gameplay) to work around sprite limits. |
 
+**References**
+- [Contra — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/contra) — Konami (Japan), 1987 arcade release; 8-way joystick, two-button (fire/jump) controls. **[fetched]**
+- [Contra (video game) — Wikipedia](https://en.wikipedia.org/wiki/Contra_(video_game)) — February 20, 1987 Japan / March 1987 North America; the Konami Code's 30 lives (NES-specific); the somersault jump; the NES UNROM vs. Famicom VRC2 board split (Japan's cartridge rules let Konami use its own chip); the 30fps explosion sprites over 60fps gameplay. **[fetched]**
+- [Contra (Arcade) — The Cutting Room Floor](https://tcrf.net/Contra_(Arcade)) — regional release breakdown corroborating the JP/NA date split. *(search result only, not fetched)*
+- [Contra number of lives = 30? — NESdev forums](https://forums.nesdev.org/viewtopic.php?t=6473) — community-technical corroboration that the code yields exactly 30 lives. *(search result only, not fetched)*
+
 ---
 
 ### Double Dragon (1987)
@@ -440,8 +515,14 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Color Palette** | 384 simultaneous colors from 4,096 available — urban grays, browns, neon signs, detailed environments |
 | **Gameplay Objective** | Billy Lee (and his twin Jimmy in co-op) fight through four stages of gang-controlled territory to rescue Billy's kidnapped girlfriend, Marian. Beat up every enemy using punches, kicks, throws, and weapons. |
 | **Input Method** | Joystick + three buttons (punch, kick, jump). Combinations produce advanced moves: throws, elbow strikes, headbutts, hair grabs. Weapons can be knocked from enemies and picked up (bats, whips, knives, dynamite). |
-| **Iconic Elements** | Two-player co-op with a betrayal twist at the ending. The belt-scrolling beat 'em up genre essentially started here. Picking up weapons dropped by enemies. The varied martial arts moveset from simple button combinations. Mad Max / Fist of the North Star inspired post-apocalyptic aesthetic. Soundtrack by Kazunaka Yamane. |
-| **Technical Characteristics** | Multiple 8-bit Hitachi HD6309 processors running in parallel. Yamaha YM2151 FM synthesis sound chip (multiple processors dedicated to sound). Large character sprites with extensive martial arts animation frames. Arcade supported more on-screen enemies than ports — NES limited to 2 identical enemies at once. |
+| **Iconic Elements** | Two-player co-op with a betrayal twist at the ending (arcade version — the NES port cut co-op and made brother Jimmy an ordinary final boss). Double Dragon didn't invent belt-scrolling — Technos's own Nekketsu Kōha Kunio-kun / Renegade (1986) did, a year earlier — but it defined the two-player co-op belt-scroll formula that became the genre standard and launched the beat 'em up's golden age. Picking up weapons dropped by enemies. The varied martial arts moveset from simple button combinations. Mad Max / Fist of the North Star inspired post-apocalyptic aesthetic. Soundtrack by Kazunaka Yamane. |
+| **Technical Characteristics** | Three 8-bit processors running in parallel (two Motorola 6809s plus one Hitachi HD6309). Yamaha YM2151 FM synthesis sound chip. Large character sprites with extensive martial arts animation frames. Arcade supported more on-screen enemies than ports — NES limited to 2 identical enemies at once. |
+
+**References**
+- [Double Dragon — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/double-dragon) — Technos Japan developer (Taito licensed for US/EU distribution), 1987; the two-6809s-plus-one-6309 processor layout and Yamaha YM2151/3012 sound chipset. **[fetched]**
+- [Double Dragon (video game) — Wikipedia](https://en.wikipedia.org/wiki/Double_Dragon_(video_game)) — April 1987 release; 384 simultaneous colors from a 4,096-color (12-bit) palette; Kazunaka Yamane composer credit; the arcade's co-op betrayal ending; the NES port's two-identical-enemies limit. **[fetched]**
+- [Renegade (video game) — Wikipedia](https://en.wikipedia.org/wiki/Renegade_(video_game)) — establishes Technos's Nekketsu Kōha Kunio-kun / Renegade (1986) as the belt-scroll originator a year before Double Dragon — the basis for the genre-origin correction. *(search result only, not fetched)*
+- [Kazunaka Yamane — VGMPF (Video Game Music Preservation Foundation) Wiki](https://www.vgmpf.com/Wiki/index.php/Kazunaka_Yamane) — corroborates Yamane's composer credit for the 1987 arcade soundtrack. *(search result only, not fetched)*
 
 ---
 
@@ -513,6 +594,14 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Iconic Elements** | Fatalities (gruesome finishing moves — spine rip, decapitation, fire breath). "FINISH HIM!" announcer call. Digitized real actors giving photorealistic look. "Test Your Might" bone-breaking minigame. Palette-swap ninjas (Scorpion/Sub-Zero/Reptile). "Mortal Monday" marketing event. The game's violence sparking Congressional hearings leading to the ESRB rating system. Hidden character Reptile. |
 | **Technical Characteristics** | Midway Y Unit and T Unit arcade boards (~400x256 resolution). Digitized sprites from filmed actors (real people, not drawn). 64 colors per character, 300 frames of animation each. 8 MB graphics data. Stop-motion model for Goro (by Curt Chiarelli). 4-person development team, ~10 months, ~$1 million budget. Palette-swap technique maximized character roster from limited actor filming. |
 
+**References**
+- [Mortal Kombat (1992 video game) — Wikipedia](https://en.wikipedia.org/wiki/Mortal_Kombat_(1992_video_game)) — August 1992 arcade release (corroborated by a contemporaneous RePlay magazine chart placing MK as the #2 upright cabinet by September 1992); Hi-8 camcorder digitization; 64 colors / ~300 frames per character / 8 MB graphics data; Curt Chiarelli's Goro stop-motion model; the 4-person team, ~10-month, ~$1M development; "Mortal Monday" (the September 13, 1993 simultaneous home launch). **[fetched]**
+- [1993–1994 United States Senate hearings on video games — Wikipedia](https://en.wikipedia.org/wiki/1993%E2%80%931994_United_States_Senate_hearings_on_video_games) — hearing dates (December 9, 1993; March 4, 1994), Senators Lieberman/Kohl, Mortal Kombat among the games shown, and the resulting IDSA (April 1994) → ESRB (active September 1994) chain. **[fetched]**
+- [1993 congressional hearings on video games — Wikipedia](https://en.wikipedia.org/wiki/1993_congressional_hearings_on_video_games) — independent cross-check of the same hearing/ESRB chronology (same dates, senators, and named games). **[fetched]**
+- [Mortal Kombat — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/mortal-kombat) — institutional corroboration of Midway as developer, 1992 release, and the core roster/round structure. *(search result only, not fetched)*
+
+*Dating note: a few retrospectives give October 8, 1992 as the arcade debut; the stronger evidence (period trade-press chart data showing MK already the #2 upright in September 1992) supports August 1992 as stated. Precision on the ESRB chain: the hearings led first to the IDSA industry body (April 1994), which then created the ESRB — the entry's compressed "leading to the ESRB" phrasing is accurate but skips that intermediate step.*
+
 ---
 
 ### NBA Jam (1993)
@@ -527,8 +616,16 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Color Palette** | Realistic court colors (hardwood, painted lines) with exaggerated effects (fire, flash). Digitized player sprites in accurate team uniforms. |
 | **Gameplay Objective** | Two-on-two arcade basketball with NBA teams. No fouls, no free throws. Score more points in four quarters. Exaggerated physics allow superhuman dunks and dramatic blocks. Three consecutive baskets trigger "on fire" mode. |
 | **Input Method** | Joystick + buttons (shoot/block, pass/steal, turbo). Two-player positions per cabinet. Simple enough for immediate play, deep enough for advanced techniques. |
-| **Iconic Elements** | "He's heating up!" "He's on fire!" "Boomshakalaka!" — Tim Kitzrow's commentary became legendary. The ball catching fire and singing the net. Superhuman slam dunks (players flying 20 feet in the air). "Is it the shoes?" (Spike Lee/Nike reference). Hidden characters (Bill Clinton, the development team). Individual cabinets earning up to $2,400/week (all-time record). |
+| **Iconic Elements** | "He's heating up!" "He's on fire!" "Boomshakalaka!" — Tim Kitzrow's commentary became legendary. The ball catching fire and singing the net. Superhuman slam dunks (players flying 20 feet in the air). "Is it the shoes?" (Spike Lee/Nike reference). Hidden development-team characters (arcade original); Bill Clinton and Al Gore appeared as hidden characters only later, in NBA Jam Tournament Edition's home ports — not this 1993 coin-op. Individual cabinets earning up to $2,400/week (all-time record). |
 | **Technical Characteristics** | Midway T Unit arcade board. Written entirely in assembly language. Digitized video sprites. The game's commercial success (record per-unit arcade earnings in US history) demonstrated the viability of licensed sports games in arcades. NBA licensing deal was groundbreaking for the era. |
+
+**References**
+- [NBA Jam — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/nba-jam) — Midway developer, Mark Turmell as designer, 1993 release, 4-player cabinet with 8-way joystick + 3 buttons (steal/pass, jump/shoot, turbo). **[fetched]**
+- [NBA Jam (1993 video game) — Wikipedia](https://en.wikipedia.org/wiki/NBA_Jam_(1993_video_game)) — April 1993 release; Tim Kitzrow's commentary and catchphrases (scripted by Jon Hey, largely improvised per Kitzrow); the "Is it the shoes?" Spike Lee/Nike reference; the $2,400/week per-machine earnings figure (cited there to GamePro, March 1994); Bill Clinton as a hidden character in Tournament Edition home ports, not the arcade original. **[fetched]**
+- [Most revenue generated by a coin-operated arcade game — Guinness World Records](https://www.guinnessworldrecords.com/world-records/most-revenue-generated-by-a-coin-operated-arcade-game) — independently lists NBA Jam (Midway, 1993) as the arcade-revenue record holder. **[fetched]**
+- [BOOMSHAKALAKA! NBA JAM's 25th Anniversary — VGA Gallery](https://vgagallery.org/calendar/boomshakalaka-nba-jam-25th-anniversary) — cultural-impact corroboration of the Kitzrow commentary legacy. *(search result only, not fetched)*
+
+*Sourcing note: the "$2,400/week" figure traces to GamePro (March 1994) via Wikipedia; Guinness independently certifies the revenue record but the fetched GWR page did not state the weekly dollar figure. A stray "$2,468" figure circulating in search results could not be confirmed and was not used.*
 
 ---
 
@@ -541,11 +638,19 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Era** | Mid 90s |
 | **Screen Orientation** | Horizontal (landscape) — side-scrolling run-and-gun |
 | **Visual Style** | Extraordinarily detailed hand-drawn pixel art with a cartoonish, humorous style. Fluid, exaggerated character animation with slapstick comedy. Military hardware rendered in loving detail alongside absurd humor. Explosions, debris, shell casings everywhere. Detailed parallax-scrolling backgrounds (jungles, deserts, cities, alien installations). The art density and animation fluidity were unmatched in 2D arcade games. 320x224 resolution. |
-| **Color Palette** | Rich full-color (Neo Geo: 4,096 on-screen from 65,536). Military greens/browns for environments, bright colors for effects and characters. |
+| **Color Palette** | Rich full-color (Neo Geo: 3,840 on-screen from a 65,536-color palette). Military greens/browns for environments, bright colors for effects and characters. |
 | **Gameplay Objective** | Run-and-gun through military/alien stages. Rescue POWs for power-ups. Commandeer vehicles (the Metal Slug tank, aircraft, camels). Defeat rebel armies, aliens, zombies, mummies across varied stages. One-hit kills (in arcade). |
 | **Input Method** | Joystick + three buttons (shoot, jump, grenade). Simple input, complex output — melee knife on close contact, vehicle weapons when mounted, varied weapon pickups. |
 | **Iconic Elements** | The SV-001 "Metal Slug" tank itself — cartoonish, stubby, lovable. The extraordinarily fluid hand-drawn animation. Getting captured and becoming fat (then punching enemies with increased power). POW rescues. The humor amid the warfare. The sheer density of visual detail — arguably the finest pixel art ever in arcades. Music by Takushi Hiyamuta. |
 | **Technical Characteristics** | SNK Neo Geo MVS hardware: Motorola 68000 CPU @ 12 MHz + Z80 @ 4 MHz. 320x224 resolution. Up to 380 sprites on screen simultaneously, 96 per scanline. Maximum sprite size: 16x512 pixels. 65,536 color palette (3,840 on-screen). Yamaha YM2610 sound chip (4 FM + 3 SSG + 7 PCM channels). The Neo Geo's massive sprite capabilities enabled Metal Slug's legendary animation density. |
+
+**References**
+- [Metal Slug — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/metal-slug) — 1996 Neo Geo MVS release, SNK as publisher. **[fetched]**
+- [Metal Slug (1996 video game) — Wikipedia](https://en.wikipedia.org/wiki/Metal_Slug_(1996_video_game)) — developer Nazca Corporation, April 19, 1996 Japan MVS release, composer Takushi "Hiya!" Hiyamuta. **[fetched]**
+- [Neo Geo Architecture: A Practical Analysis — Copetti.org](https://www.copetti.org/writings/consoles/neogeo/) — hardware deep-dive: 68000 @ 12 MHz + Z80 @ 4 MHz, 65,536-color palette with a 3,840-color on-screen maximum (256 palettes x 15 colors), ~380 sprites per frame / 96 per scanline, 16x512 max sprite size, YM2610 sound chip breakdown. **[fetched]**
+- [Nazca Corporation — Wikipedia](https://en.wikipedia.org/wiki/Nazca_Corporation) — Nazca founded 1994 by ex-Irem staff, became an SNK subsidiary in 1996 (the year Metal Slug shipped). *(search result only, not fetched)*
+
+*Correction applied: the Color Palette row previously said "4,096 on-screen," contradicting the (correct) 3,840 figure in the Technical Characteristics row — fixed per Copetti's palette math (256 palettes x 15 colors). "Arguably the finest pixel art ever in arcades" in Iconic Elements is this doc's editorial judgment, not a sourced claim.*
 
 ---
 
@@ -557,12 +662,20 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | **Year** | December 1995 |
 | **Era** | Mid 90s |
 | **Screen Orientation** | Horizontal (landscape) — first-person 3D |
-| **Visual Style** | Full 3D polygon graphics — one of the first fully polygonal arcade light-gun games. Three-dimensional environments (castle interiors, courtyards, corridors) rendered in real-time. Hand-colored polygons simulating real-time lighting. Cinematic camera movements between segments. A step into true 3D rather than sprite-scaled pseudo-3D. |
+| **Visual Style** | Full 3D polygon graphics — arriving about a year after Sega's Virtua Cop (September 1994) established fully polygonal light-gun shooting; Time Crisis's genuine first was its cover mechanic, not its polygons. Three-dimensional environments (castle interiors, courtyards, corridors) rendered in real-time. Hand-colored polygons simulating real-time lighting. Cinematic camera movements between segments. A step into true 3D rather than sprite-scaled pseudo-3D. |
 | **Color Palette** | Full 3D-rendered color — realistic castle/military environments, rich textures for the era |
 | **Gameplay Objective** | On-rails light-gun shooter with a cover mechanic. Rescue a kidnapped woman from a villain's castle. Three stages of three areas each, plus boss battles. Defeat predetermined enemy groups to advance, all within strict time limits. |
 | **Input Method** | Light gun (with recoil/blowback feedback simulating real gun kick) + foot pedal (press to emerge from cover and shoot; release to duck behind cover and reload). The pedal mechanic was revolutionary — introduced the cover-shooter concept. |
 | **Iconic Elements** | The foot pedal cover system (unprecedented — changed light-gun game design forever). The blowback function in the arcade gun simulating recoil. Time pressure (clock adds tension to every encounter). The gun itself was introduced in Namco's Point Blank (1994). Three-stage structure with escalating difficulty. |
 | **Technical Characteristics** | Namco Super System 22 arcade board. Full 3D polygon rendering with real-time calculated lighting (polygons colored individually to simulate light). Custom light gun with memory chip synchronizing screen position. Significantly more powerful than home consoles of the era — PlayStation port required reduced polygons, halved frame rate, delayed enemy spawns, and eliminated off-screen rendering to compensate. |
+
+**References**
+- [Time Crisis — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/time-crisis) — Namco developer/publisher; optical gun + one pedal control scheme and the pedal's cover/reload function. **[fetched]**
+- [Time Crisis (video game) — Wikipedia](https://en.wikipedia.org/wiki/Time_Crisis_(video_game)) — December 1995 Japan arcade release; Namco Super System 22 board; the pedal/cover mechanic; the PlayStation port's documented compromises (halved frame rate, reduced polygons, delayed enemy spawns, no off-screen rendering); the Point Blank (1994) gun-hardware lineage. **[fetched]**
+- [Time Crisis 30th Anniversary Complete Series Retrospective — Light Gun Fanatics](https://www.lightgunfanatics.org/previewseditorials/complete-time-crisis-series-retrospective) — credits Sega's Virtua Cop (September 1994) as the first fully polygonal light-gun game and frames Time Crisis as Namco's answer, with the pedal adding "a tactical element not seen before in the genre." **[fetched]**
+- [Namco System 22 — Wikipedia](https://en.wikipedia.org/wiki/Namco_System_22) — Super System 22 variant (1995) with a higher polygon rate than the base board; its own (incomplete) game list does not name Time Crisis, so the board attribution rests on the main Time Crisis article plus hardware-database search results. **[fetched]**
+
+*Correction applied: "one of the first fully polygonal arcade light-gun games" reframed — Virtua Cop beat it by ~15 months; the pedal-driven cover mechanic is Time Crisis's genuine first.*
 
 ---
 
@@ -571,15 +684,23 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | Field | Details |
 |-------|---------|
 | **Developer** | Konami (Bemani division) |
-| **Year** | November 1998 (Japan) |
+| **Year** | September 26, 1998 (Japan); an "Internet Ranking Version" revision followed November 18, 1998; North America arcade March 1999 |
 | **Era** | Late 90s |
 | **Screen Orientation** | Vertical (portrait) on early CRT cabinets (4:3); later cabinets used widescreen LCD |
 | **Visual Style** | Scrolling arrows moving upward toward stationary "receptor" arrows at the top. Color-coded arrows: pink (up/down — vertical) and baby blue (left/right — horizontal) on black backgrounds with white borders. Background music videos/animations play behind the arrow field. Neon-lit cabinet with illuminated translucent dance panels. Groove Radar (star-plot graphic) displays song difficulty metrics. |
 | **Color Palette** | Neon on black — pinks, blues, greens, with colorful background animations per song |
 | **Gameplay Objective** | Step on directional arrow panels in time with scrolling on-screen cues synced to music. Judged on timing accuracy (Marvelous > Perfect > Great > Good > Miss). Achieve passing score to advance. Combines rhythm game precision with physical performance. |
 | **Input Method** | Dance platform: raised metal stage with four acrylic glass directional pads (left, up, down, right) per player, each with four pressure-activated switches. Metal safety bar behind each player for balance. Feet replace hands — full-body input. Two-player side-by-side. Selection buttons on cabinet for song/difficulty choice. |
-| **Iconic Elements** | The physical dance pad itself (gaming as exercise/performance). "Butterfly" by Smile.dk becoming the franchise anthem. The Dancemania eurobeat/eurodance soundtrack catalog. Competitive play and the rise of dance game culture. Neon-lit cabinets glowing in dark arcades. The social/spectacle aspect — crowds watching skilled players. Grades from AAA to E. |
+| **Iconic Elements** | The physical dance pad itself (gaming as exercise/performance). "Butterfly" by Smile.dk (added in 2ndMix, 1999) becoming the franchise anthem. The Dancemania eurobeat/eurodance soundtrack catalog. Competitive play and the rise of dance game culture. Neon-lit cabinets glowing in dark arcades. The social/spectacle aspect — crowds watching skilled players. Grades of S/A/B/C/D in the 1998 original (the familiar AAA-to-E scale came later; AAA debuted in 5thMix, 2001). |
 | **Technical Characteristics** | Bemani System 573 (PlayStation-based) for early versions. System 573 Analog (1st/2nd Mix), System 573 Digital (3rd Mix through Extreme). Later: Bemani Python (PS2-based) for SuperNova era. Modern: PC-based (Bemani PC Type 4) from DDR X onward. CRT cabinets: 240p/480i on 29" screens. Cabinet includes 5-6 speakers with subwoofers. Four pressure switches per arrow pad for reliable input detection. |
+
+**References**
+- [Dance Dance Revolution — The Strong National Museum of Play](https://www.museumofplay.org/games/dance-dance-revolution/) — institutional: Konami developer, September 1998 Japan arcade release, World Video Game Hall of Fame induction (2022). **[fetched]**
+- [Dance Dance Revolution (1998 video game) — Wikipedia](https://en.wikipedia.org/wiki/Dance_Dance_Revolution_(1998_video_game)) — September 26, 1998 Japan release; System 573 Analog hardware; the original S/A/B/C/D grading; the November 18, 1998 "Internet Ranking Version" revision (the source of the previously wrong "November 1998" release date). **[fetched]**
+- [Dance Dance Revolution — Wikipedia (series article)](https://en.wikipedia.org/wiki/Dance_Dance_Revolution) — Bemani division attribution; System 573 hardware lineage; the four-pressure-switches-per-arrow-panel detail. **[fetched]**
+- [Dance Dance Revolution — Museum of the Game (arcade-museum.com/KLOV)](https://www.arcade-museum.com/Videogame/dance-dance-revolution) — lists 1999, reflecting the North American arcade release (March 1999) rather than the Japan debut — corroborates that differing 1998/1999 dates across sources are regional, not contradictory. **[fetched]**
+
+*Corrections applied: release date fixed from "November 1998" (actually the Internet Ranking Version revision date) to September 26, 1998; "Butterfly" qualified as a 2ndMix (1999) addition, not a launch element (its famous UPSWING MIX arrangement debuted in 3rdMix); the grading scale scoped to the 1998 original's S/A/B/C/D — AAA arrived in 5thMix (2001).*
 
 ---
 
@@ -589,9 +710,9 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 |------|------|---------------------|
 | 1972 | Pong | Pure B&W geometry from hardware logic (no CPU) |
 | 1976 | Breakout | B&W with cellophane color overlays |
-| 1978 | Space Invaders | First bitmap framebuffer game with iconic sprite designs |
+| 1978 | Space Invaders | Bitmap framebuffer rendering with iconic sprite designs |
 | 1979 | Asteroids | Vector graphics — infinite-resolution glowing lines |
-| 1979 | Galaxian | First true RGB color sprites + tilemap hardware |
+| 1979 | Galaxian | First multi-colored sprites (per-pixel color within a sprite) + tilemap hardware |
 | 1980 | Pac-Man | Bright pastels, character-driven design, cultural icon |
 | 1981 | Donkey Kong | Narrative cutscenes, platformer perspective, 128 sprites |
 | 1981 | Tempest | Color vector graphics, pseudo-3D perspective |
@@ -613,6 +734,8 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | 1996 | Metal Slug | Peak hand-drawn pixel art, 380 sprites, 65K colors, Neo Geo |
 | 1998 | DDR | Physical input (dance pad), rhythm gaming, full-body play |
 
+*Note on sourcing: this table restates one-line milestones already sourced in this file's per-game References blocks above — every game in this table now has its own References section with 2–4 citations; see the matching entry for sourcing on any row. Superlative/comparative phrasing here ("proof that visuals aren't everything," "peak hand-drawn pixel art") is this document's own editorial judgment, not an independently sourced claim, and should be read as such. The Metal Slug row's "65K colors" means the total addressable palette; the practical on-screen maximum is 3,840 — see the Metal Slug References block.*
+
 ---
 
 ## Technical Eras At a Glance
@@ -625,6 +748,8 @@ Research compiled for Keystroke Kingdom level design reference. Covers iconic ar
 | Mid 80s | 320x224 standard | 384+ from 4096 | 100+ large sprites | YM2151 FM, multi-processor | Multiple parallel CPUs, Sega Super Scaler |
 | Early 90s | 384x224 (CPS-1) | Full color, 64/char (digitized) | Large animated (300 frames) | Sampled audio, voice | CPS-1, Midway T Unit, digitized video |
 | Mid-late 90s | 320x224 (2D) / Full 3D | 65,536 palette (Neo Geo) | 380 simultaneous (Neo Geo) | CD-quality PCM, 14 channels | Neo Geo MVS, Namco System 22, 3D polygon |
+
+*Note on sourcing: this table aggregates hardware-era facts sourced individually elsewhere. Chip-level and per-game specifics (SN76477, Intel 8080, MOS 6502, Z80, 6809, Namco Galaxian/Galaga boards, YM2151, CPS-1, Midway T Unit, Neo Geo MVS, Namco System 22) are sourced in this file's own per-game References blocks (see the Space Invaders, Asteroids, Galaxian, Pac-Man, Galaga, Defender, Double Dragon, Street Fighter II, Mortal Kombat, NBA Jam, Metal Slug, and Time Crisis entries). General era/palette claims spanning multiple games — the NES-class 25-simultaneous-color display math, Genesis/SNES 16-bit-era characteristics, and PS1/N64 3D constraints (z-buffering, dithering, texture wobble) — are independently sourced in [`research/video-game-history.md`](./video-game-history.md), "References — era/hardware claims" section (Act 2, Act 3, and Act 4 subsections respectively). One conflation risk: "65,536 palette (Neo Geo)" is the total addressable palette, not the on-screen count (3,840 max) — see the Metal Slug entry's correction.*
 
 ---
 
@@ -641,8 +766,36 @@ References block above; listed together here for a quick scan.
 6. **Space Invaders, Dragon's Lair, Out Run, Tron — no factual errors found**, but see each entry's References block for minor caveats (Space Invaders: two secondary sources didn't fully render on fetch, treat as corroborating not primary; Dragon's Lair: the 50-cent price is real but probably not literally "first"; Out Run: "Sega AM2" division label could not be independently confirmed; Tron: minor sub-game naming differences between sources).
 7. **New entries added:** Joust (Williams, 1982) and Dragon's Lair (Advanced Microcomputer Systems/Cinematronics, 1983) previously had no detail in this file despite being assigned cabinets in the level curriculum (`levels.md` Levels 5 and 7). Both now have full table entries with citations.
 
+### Second pass (2026-07-11) — completing citation coverage
+
+The 17 entries that previously had no References block (Pong, Asteroids, Galaxian, Centipede, Frogger, Defender, Dig Dug, Tempest, Gauntlet, Bubble Bobble, Contra, Double Dragon, Mortal Kombat, NBA Jam, Metal Slug, Time Crisis, Dance Dance Revolution) now each carry 3–4 live-verified sources, and both summary tables carry sourcing notes. Fact corrections made in this pass:
+
+8. **Galaxian — "first true RGB color" superlative corrected.** Specialist arcade-history analysis (All In Color For A Quarter) shows earlier color games existed (Atari's Color Gotcha 1973, Indy 800 1975); Galaxian's genuine, defensible first is **multi-colored sprites** (per-pixel color within one sprite). Entry and summary-table row reworded. Also disclosed: sources disagree on the Japan release date (Wikipedia/court records: September 15, 1979; arcade-history.com: October 31, 1979).
+9. **Dance Dance Revolution — release date was wrong.** "November 1998 (Japan)" corrected to **September 26, 1998**; November 18, 1998 is the date of the later "Internet Ranking Version" revision — a real date attached to the wrong event. Also: "Butterfly" by Smile.dk qualified as a 2ndMix (1999) addition, not an original-1998 element; and the grading scale corrected — the 1998 original used S/A/B/C/D (AAA didn't exist until 5thMix, 2001), so "Grades from AAA to E" was anachronistic for this entry.
+10. **NBA Jam — Bill Clinton Easter egg misattributed.** Clinton (with Gore) was a hidden character in **NBA Jam Tournament Edition's home ports**, not the original 1993 coin-op; the development-team hidden characters ARE an arcade-original feature. Entry now separates the two claims.
+11. **Double Dragon — belt-scroll genre-origin overclaim.** "The belt-scrolling beat 'em up genre essentially started here" corrected: Technos's own Nekketsu Kōha Kunio-kun / Renegade (1986) introduced the belt-scroll format a year earlier; Double Dragon's real claim is defining the two-player co-op formula that became the genre standard. Also: processor description tightened from "multiple HD6309s" to the sourced two-6809s-plus-one-6309 layout, and the betrayal ending scoped to the arcade version (the NES port cut co-op).
+12. **Time Crisis — polygon-first framing corrected.** "One of the first fully polygonal arcade light-gun games" reframed: Sega's Virtua Cop (September 1994) established that ~15 months earlier; Time Crisis's genuine first is the pedal-driven cover mechanic.
+13. **Metal Slug — internal color-count contradiction fixed.** The Color Palette row said "4,096 on-screen" while Technical Characteristics said 3,840; **3,840 is correct** (256 palettes x 15 colors, per Copetti's Neo Geo hardware analysis).
+14. **Dig Dug — design credit corrected.** "Board designed by Shigeichi Ishimura" overstated his role: Ishimura was the board's hardware engineer; the *game* was designed by Masahisa Ikegami (assisted by Galaga designer Shigeru Yokoyama), previously uncredited in this file. Developer field updated.
+15. **Gauntlet — unverified identity link removed.** The parenthetical claiming speech encoder Earl Vickers is "the same person who programmed Tron's music" could not be confirmed by any source linking the two credits; both individual credits stand, but the connection is removed as unverified.
+16. **Defender — release date region split added.** "February 1981" was Japan; North America followed March 1981.
+17. **Bubble Bobble — designer credit added.** Fukio "MTJ" Mitsuji (confirmed by his own 1988 developer interview) added to the Developer field; the "true ending requires two players" claim expanded to note the hidden Super-mode layer of the full best ending.
+18. **Frogger — publisher nuance made explicit.** Developer field now notes the North American Sega/Gremlin publishing arrangement (arcade-museum.com's own trivia flags the common "credited to Sega" misattribution).
+19. **Summary table — "First bitmap framebuffer game" (Space Invaders row) softened.** An unsourced superlative the per-game entry itself never claimed; now reads "bitmap framebuffer rendering."
+20. **No factual errors found** in Pong, Asteroids, Centipede, Frogger (beyond #18), Tempest, Contra, and Mortal Kombat — every checked claim verified, including several suspicious-looking specifics that turned out to be real (Asteroids' 13 hand-wired sound effects and 26-asteroid cap; Tempest's invisible levels 65–80 and 40-free-credit ROM bug; Contra's 30-lives code and 30fps explosion sprites; Mortal Kombat's Hi-8 digitization and hearing/ESRB chain). Minor precision notes live in each entry's References block.
+
+### Unsourceable / weakly-sourced items (2026-07-11 pass — disclosed, not faked)
+
+- **Gauntlet:** the "most elaborate hardware design in Atari's history" superlative and the 7,848-unit production figure are Wikipedia-primary; no independent corroboration found this pass. The Vickers/Tron identity link is unverified (removed from the entry, see #15).
+- **Defender:** the 3x-AA-battery high-score backup detail is single-sourced (Wikipedia only).
+- **Time Crisis:** the Super System 22 (vs. base System 22) board attribution rests on the main Wikipedia article plus hardware-database search snippets; the System 22 article's own game list doesn't name it.
+- **Pong:** "no ROM, no RAM" is an inference from the well-sourced no-microprocessor/no-software fact, not a literal quotation from any source found.
+- **Galaxian:** Japan release date genuinely disputed across sources (Sept 15 vs. Oct 31, 1979); the stronger-sourced September date is used. The "First Namco game composed with a synthesizer" claim in Iconic Elements was not specifically verified this pass.
+- **NBA Jam:** an alternate "$2,468" earnings figure circulating in search results could not be confirmed and was not used; the cited $2,400/week traces to GamePro (March 1994).
+- **URLs dropped as unverifiable this pass:** arcade-history.com's Galaxian and Dig Dug pages (HTTP 403 on fetch), MobyGames' Dig Dug game page (403 — the Ishimura person page is cited as search-result-only instead). No URL in this file was written from memory; all appeared in live search results or fetches.
+
 ### Flagged for the doc owner (not edited in this pass, per task instructions)
 
 - **`.claude/rules/levels.md` (Level 8) and `CLAUDE.md`'s level table** both credit Tetris as "Pajitnov / Nintendo, 1984" or similar shorthand. This conflates two unrelated facts: Alexey Pajitnov created Tetris in 1984 in the USSR with zero Nintendo involvement; Nintendo's first and only Tetris release in this era was the Game Boy version in 1989, five years later, via a separate license with Bullet-Proof Software. Recommend splitting into two dated facts (e.g., "Pajitnov, 1984 (original) · Nintendo Game Boy, 1989") rather than one merged credit line.
 
-*Research compiled May 2026 for Keystroke Kingdom arcade cabinet reference; citations and corrections added July 2026.*
+*Research compiled May 2026 for Keystroke Kingdom arcade cabinet reference; citations and corrections added July 2026; citation coverage completed (all entries + summary tables) 2026-07-11.*
