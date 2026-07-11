@@ -39,7 +39,28 @@ A retro arcade-themed typing game for young children who are simultaneously lear
 - Words are chosen to match early reading vocabulary — short, phonetic, recognizable
 - Typing a real word they can read is a **double win** — never interrupted by the game
 
-### 5. Stats Are Present But Never Looming
+### 5. Graphic Quality Grows With the Player
+
+The game's visual fidelity increases with every act, mirroring what was actually happening in the real world of gaming at that time.
+
+When a child is learning their first two keys, the game looks like 1976 — one color, blocky rectangles, no sprites. By the time they're forming full sentences, the world surrounding those words is stunning. The more they know, the more beautiful everything becomes.
+
+This is not just an aesthetic choice. It's a narrative one: typing unlocks the world.
+
+| Act | Era | Graphic Quality |
+|---|---|---|
+| 1 — The Arcade | 1976–1982 | 1–8 color pixel art, rectangular sprites, no anti-aliasing |
+| 2 — The Computer Wing | 1981–1986 | 16-color NES palette, scrolling backgrounds, character animation |
+| 3 — The Basement | 1991–1996 | 16-bit SNES/Genesis, parallax, pre-rendered sprites |
+| 4 — The Command Center | 1997–2000 | Early 3D, PS1/N64-era polygon rendering |
+| 5 — Full Circle | Present | Modern shaders, particle systems, full resolution |
+
+Within the typing UI itself, quality scales in parallel:
+- Letter animations grow from a simple flash → colored glow → particle burst → 3D effect
+- Background environments grow from a plain screen → a scene → a world
+- Word completion effects grow from a line clear → a flourish → a cinematic beat
+
+### 6. Stats Are Present But Never Looming
 - Small retro scoreboard-style display tucked in the corner
 - Tracks: accuracy, streak, keys learned — in pixel font, dimly styled
 - No lives counter. No countdown timer.
