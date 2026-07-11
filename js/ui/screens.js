@@ -36,7 +36,13 @@ export function renderReadyScreen(state, level) {
   const intro = $('level-intro');
 
   const newKeysHtml = level.newKeys.map(k => {
-    const label = k === ';' ? 'THE EIGHTH KEY' : k.toUpperCase();
+    let label;
+    if (k === ';') label = 'THE EIGHTH KEY';
+    else if (k === 'Shift') label = 'SHIFT';
+    else if (k === ' ') label = 'SPACE';
+    else if (k === 'Backspace') label = 'BACKSPACE';
+    else if (/^[A-Z]$/.test(k)) label = k;
+    else label = k.toUpperCase();
     return `<span class="new-keys">${label}</span>`;
   }).join(' AND ');
   const allKeysHtml = level.keys.map(k => {

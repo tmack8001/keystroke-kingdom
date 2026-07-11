@@ -124,3 +124,696 @@ body.level-4 .key-box.mystery {
   0%, 100% { box-shadow: 0 0 12px rgba(96, 0, 255, 0.4), inset 0 0 8px rgba(96, 0, 255, 0.2); }
   50% { box-shadow: 0 0 20px rgba(96, 0, 255, 0.6), inset 0 0 12px rgba(96, 0, 255, 0.3); }
 }
+
+/* Level 5 — Reach Keys G & H / Arcade 1982 (Orange-Gold) */
+body.level-5 {
+  --level-accent: #ff8c00;
+  --level-accent-dim: #7a4000;
+  --bg: #0a0800;
+  background: var(--bg);
+}
+
+body.level-5 .star {
+  background: #332;
+}
+
+body.level-5 .star.bright {
+  background: #554;
+  animation: twinkle5 2.5s ease-in-out infinite;
+}
+
+@keyframes twinkle5 {
+  0%, 100% { opacity: 0.2; background: #554; }
+  50% { opacity: 1; background: #ff8c00; }
+}
+
+/* Scanline sweep effect */
+body.level-5::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 140, 0, 0.015) 2px,
+    rgba(255, 140, 0, 0.015) 4px
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ═══ ACT 2 — THE COMPUTER WING ════════════════════════════════════════════ */
+
+/* Level 6 — Donkey Kong / Nintendo 1981 (Nintendo Red) */
+body.level-6 {
+  --level-accent: #e82020;
+  --level-accent-dim: #6a0000;
+  --bg: #0c0808;
+  background: var(--bg);
+}
+
+body.level-6 .star { background: #2a1010; }
+body.level-6 .star.bright {
+  background: #5a2010;
+  animation: twinkle6 2s ease-in-out infinite;
+}
+
+@keyframes twinkle6 {
+  0%, 100% { opacity: 0.3; background: #5a2010; }
+  50% { opacity: 1; background: #e82020; }
+}
+
+body.level-6::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(232, 32, 32, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 100, 0, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 7 — Dragon's Lair / Cinematronics 1983 (Purple-Gold) */
+body.level-7 {
+  --level-accent: #cc66ff;
+  --level-accent-dim: #550088;
+  --bg: #060008;
+  background: var(--bg);
+}
+
+body.level-7 .star { background: #1a0a2a; }
+body.level-7 .star.bright {
+  background: #4a1a6a;
+  animation: twinkle7 1.8s ease-in-out infinite;
+}
+
+@keyframes twinkle7 {
+  0%, 100% { opacity: 0.2; background: #4a1a6a; }
+  33% { opacity: 1; background: #cc66ff; }
+  66% { opacity: 0.6; background: #ffcc44; }
+}
+
+body.level-7::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 15% 50%, rgba(100, 0, 180, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 50%, rgba(180, 100, 0, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+  animation: torchGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes torchGlow {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+/* Level 8 — Tetris / Pajitnov 1984 (Cyan-Blue) */
+body.level-8 {
+  --level-accent: #00ffff;
+  --level-accent-dim: #006655;
+  --bg: #000818;
+  background: var(--bg);
+}
+
+body.level-8 .star { background: #0a1a2a; }
+body.level-8 .star.bright {
+  background: #0a4a6a;
+  animation: twinkle8 2.2s ease-in-out infinite;
+}
+
+@keyframes twinkle8 {
+  0%, 100% { opacity: 0.3; background: #0a4a6a; }
+  50% { opacity: 1; background: #00ffff; }
+}
+
+body.level-8::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(0, 200, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: -1;
+  animation: gridScroll8 12s linear infinite;
+}
+
+@keyframes gridScroll8 {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+
+/* Level 9 — Super Mario Bros / Nintendo 1985 (NES Blue) */
+body.level-9 {
+  --level-accent: #5c94fc;
+  --level-accent-dim: #1a3060;
+  --bg: #000010;
+  background: var(--bg);
+}
+
+body.level-9 .star { background: #0a1030; }
+body.level-9 .star.bright {
+  background: #2a4080;
+  animation: twinkle9 2.8s ease-in-out infinite;
+}
+
+@keyframes twinkle9 {
+  0%, 100% { opacity: 0.3; background: #2a4080; }
+  50% { opacity: 1; background: #5c94fc; }
+}
+
+body.level-9::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(92, 148, 252, 0.04) 0%,
+    transparent 40%,
+    rgba(0, 60, 10, 0.06) 100%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 10 — Legend of Zelda / Nintendo 1986 (Gold-Green) */
+body.level-10 {
+  --level-accent: #e8d040;
+  --level-accent-dim: #886020;
+  --bg: #020804;
+  background: var(--bg);
+}
+
+body.level-10 .star { background: #0a1a08; }
+body.level-10 .star.bright {
+  background: #2a4a10;
+  animation: twinkle10 3s ease-in-out infinite;
+}
+
+@keyframes twinkle10 {
+  0%, 100% { opacity: 0.2; background: #2a4a10; }
+  50% { opacity: 1; background: #e8d040; }
+}
+
+body.level-10::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(232, 208, 64, 0.04) 0%, transparent 60%),
+    linear-gradient(rgba(60, 40, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(60, 40, 0, 0.04) 1px, transparent 1px);
+  background-size: 100% 100%, 20px 20px, 20px 20px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ═══ ACT 3 — THE BASEMENT ════════════════════════════════════════════════ */
+
+/* Level 11 — Sonic / Sega Genesis 1991 (Genesis Green + Cobalt) */
+body.level-11 {
+  --level-accent: #23d353;
+  --level-accent-dim: #0a5a20;
+  --bg: #010a08;
+  background: var(--bg);
+}
+
+body.level-11 .star { background: #0a2010; }
+body.level-11 .star.bright {
+  background: #0a4020;
+  animation: twinkle11 1.4s ease-in-out infinite;
+}
+
+@keyframes twinkle11 {
+  0%, 100% { opacity: 0.2; background: #0a4020; }
+  50% { opacity: 1; background: #23d353; }
+}
+
+body.level-11::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(30, 120, 255, 0.06) 0%,
+    transparent 45%,
+    rgba(35, 211, 83, 0.04) 100%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 12 — Street Fighter II / Arcade 1991 (Vivid Red-Orange) */
+body.level-12 {
+  --level-accent: #ff4400;
+  --level-accent-dim: #7a1800;
+  --bg: #0c0000;
+  background: var(--bg);
+}
+
+body.level-12 .star { background: #2a0800; }
+body.level-12 .star.bright {
+  background: #6a1800;
+  animation: twinkle12 1.2s ease-in-out infinite;
+}
+
+@keyframes twinkle12 {
+  0%, 100% { opacity: 0.3; background: #6a1800; }
+  50%       { opacity: 1;   background: #ff4400; }
+}
+
+body.level-12::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(255, 68, 0, 0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 80%, rgba(255, 200, 0, 0.04) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: -1;
+  animation: fightGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes fightGlow {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+/* Level 13 — Myst / Cyan 1993 (Slate Blue-Grey) */
+body.level-13 {
+  --level-accent: #80a0b8;
+  --level-accent-dim: #2a3848;
+  --bg: #04080c;
+  background: var(--bg);
+}
+
+body.level-13 .star { background: #0a1420; }
+body.level-13 .star.bright {
+  background: #1a3040;
+  animation: twinkle13 3.5s ease-in-out infinite;
+}
+
+@keyframes twinkle13 {
+  0%, 100% { opacity: 0.15; background: #1a3040; }
+  50%       { opacity: 0.6;  background: #80a0b8; }
+}
+
+body.level-13::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 80%, rgba(100, 140, 180, 0.04) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+  animation: mistDrift 12s ease-in-out infinite alternate;
+}
+
+@keyframes mistDrift {
+  from { opacity: 0.5; transform: translateY(0); }
+  to   { opacity: 1;   transform: translateY(-6px); }
+}
+
+/* Level 14 — Donkey Kong Country / Rare 1994 (Jungle Green + Amber) */
+body.level-14 {
+  --level-accent: #44cc44;
+  --level-accent-dim: #1a5a1a;
+  --bg: #020a00;
+  background: var(--bg);
+}
+
+body.level-14 .star { background: #0a1a08; }
+body.level-14 .star.bright {
+  background: #1a4a10;
+  animation: twinkle14 2.6s ease-in-out infinite;
+}
+
+@keyframes twinkle14 {
+  0%, 100% { opacity: 0.2; background: #1a4a10; }
+  33%       { opacity: 1;   background: #44cc44; }
+  66%       { opacity: 0.5; background: #ddaa00; }
+}
+
+body.level-14::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(20, 60, 20, 0.08) 0%,
+      transparent 30%,
+      rgba(80, 60, 0, 0.06) 100%
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 15 — Pokémon Red/Blue / Game Boy 1996 (Warm Yellow-Red) */
+body.level-15 {
+  --level-accent: #ffcc00;
+  --level-accent-dim: #886600;
+  --bg: #060400;
+  background: var(--bg);
+}
+
+body.level-15 .star { background: #1a1200; }
+body.level-15 .star.bright {
+  background: #4a3400;
+  animation: twinkle15 2s ease-in-out infinite;
+}
+
+@keyframes twinkle15 {
+  0%, 100% { opacity: 0.2; background: #4a3400; }
+  33%       { opacity: 1;   background: #ffcc00; }
+  66%       { opacity: 0.7; background: #ff4400; }
+}
+
+body.level-15::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 60%, rgba(255, 200, 0, 0.04) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ═══ ACT 4 — THE COMMAND CENTER ════════════════════════════════════════════ */
+
+/* Level 16 — SimCity 2000 / Maxis 1993 (Urban Steel Blue) */
+body.level-16 {
+  --level-accent: #4488cc;
+  --level-accent-dim: #1a3a5a;
+  --bg: #030810;
+  background: var(--bg);
+}
+
+body.level-16 .star { background: #0a1428; }
+body.level-16 .star.bright {
+  background: #1a3060;
+  animation: twinkle16 2.2s ease-in-out infinite;
+}
+
+@keyframes twinkle16 {
+  0%, 100% { opacity: 0.2; background: #1a3060; }
+  50%       { opacity: 1;   background: #4488cc; }
+}
+
+body.level-16::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(68, 136, 204, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(68, 136, 204, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 17 — GoldenEye 007 / Rare 1997 (Cold Dark Gunmetal) */
+body.level-17 {
+  --level-accent: #c8a840;
+  --level-accent-dim: #5a4a10;
+  --bg: #060606;
+  background: var(--bg);
+}
+
+body.level-17 .star { background: #181410; }
+body.level-17 .star.bright {
+  background: #3a3010;
+  animation: twinkle17 1.8s ease-in-out infinite;
+}
+
+@keyframes twinkle17 {
+  0%, 100% { opacity: 0.2; background: #3a3010; }
+  50%       { opacity: 1;   background: #c8a840; }
+}
+
+body.level-17::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(200, 168, 64, 0.03) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 18 — Age of Empires / Ensemble 1997 (Parchment Earth Tones) */
+body.level-18 {
+  --level-accent: #c8840a;
+  --level-accent-dim: #5a3800;
+  --bg: #080402;
+  background: var(--bg);
+}
+
+body.level-18 .star { background: #201408; }
+body.level-18 .star.bright {
+  background: #503010;
+  animation: twinkle18 2.4s ease-in-out infinite;
+}
+
+@keyframes twinkle18 {
+  0%, 100% { opacity: 0.2; background: #503010; }
+  50%       { opacity: 1;   background: #c8840a; }
+}
+
+body.level-18::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(200, 130, 10, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 19 — Final Fantasy VII / Square 1997 (Mako Green-Blue) */
+body.level-19 {
+  --level-accent: #00e8a8;
+  --level-accent-dim: #004a38;
+  --bg: #00080a;
+  background: var(--bg);
+}
+
+body.level-19 .star { background: #001818; }
+body.level-19 .star.bright {
+  background: #004040;
+  animation: twinkle19 2.6s ease-in-out infinite;
+}
+
+@keyframes twinkle19 {
+  0%, 100% { opacity: 0.2; background: #004040; }
+  33%       { opacity: 1;   background: #00e8a8; }
+  66%       { opacity: 0.6; background: #0088ff; }
+}
+
+body.level-19::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 60%, rgba(0, 232, 168, 0.04) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(0, 136, 255, 0.03) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: -1;
+  animation: makoGlow 5s ease-in-out infinite alternate;
+}
+
+@keyframes makoGlow {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+/* Level 20 — Terminal / 1960s–∞ (Classic CRT Green) */
+body.level-20 {
+  --level-accent: #39ff14;
+  --level-accent-dim: #1a7a0a;
+  --bg: #000400;
+  background: var(--bg);
+}
+
+body.level-20 .star { background: #0a1a08; }
+body.level-20 .star.bright {
+  background: #1a4a10;
+  animation: twinkle20 1.2s ease-in-out infinite;
+}
+
+@keyframes twinkle20 {
+  0%, 100% { opacity: 0.3; background: #1a4a10; }
+  50%       { opacity: 1;   background: #39ff14; }
+}
+
+body.level-20::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(57, 255, 20, 0.015) 2px,
+    rgba(57, 255, 20, 0.015) 4px
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ═══ ACT 5 — FULL CIRCLE ═════════════════════════════════════════════════ */
+
+/* Level 21 — Out Run / Sega 1986 (Sunset Pink-Orange) */
+body.level-21 {
+  --level-accent: #ff5aa0;
+  --level-accent-dim: #7a1a48;
+  --bg: #1a0a20;
+  background: var(--bg);
+}
+
+body.level-21 .star { background: #3a1a30; }
+body.level-21 .star.bright {
+  background: #7a2a50;
+  animation: twinkle21 2s ease-in-out infinite;
+}
+
+@keyframes twinkle21 {
+  0%, 100% { opacity: 0.3; background: #7a2a50; }
+  50%       { opacity: 1;   background: #ff5aa0; }
+}
+
+body.level-21::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 90, 160, 0.06) 0%,
+      transparent 40%,
+      rgba(255, 176, 64, 0.04) 100%
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 22 — Q*bert / Gottlieb 1982 (Violet + Orange) */
+body.level-22 {
+  --level-accent: #ff8c1a;
+  --level-accent-dim: #7a4000;
+  --bg: #180830;
+  background: var(--bg);
+}
+
+body.level-22 .star { background: #2a1040; }
+body.level-22 .star.bright {
+  background: #4a1a70;
+  animation: twinkle22 1.6s ease-in-out infinite;
+}
+
+@keyframes twinkle22 {
+  0%, 100% { opacity: 0.25; background: #4a1a70; }
+  50%       { opacity: 1;   background: #ff8c1a; }
+}
+
+body.level-22::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(58, 208, 224, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 70%, rgba(255, 140, 26, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 23 — Missile Command / Atari 1980 (Red trails on Black) */
+body.level-23 {
+  --level-accent: #ff2222;
+  --level-accent-dim: #7a0a0a;
+  --bg: #040404;
+  background: var(--bg);
+}
+
+body.level-23 .star { background: #1a0a0a; }
+body.level-23 .star.bright {
+  background: #3a1010;
+  animation: twinkle23 1.3s ease-in-out infinite;
+}
+
+@keyframes twinkle23 {
+  0%, 100% { opacity: 0.25; background: #3a1010; }
+  50%       { opacity: 1;   background: #ff2222; }
+}
+
+body.level-23::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    transparent 70%,
+    rgba(10, 74, 16, 0.08) 100%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 24 — High Score Entry / Present (Warm Gold) */
+body.level-24 {
+  --level-accent: #ffd700;
+  --level-accent-dim: #7a5a00;
+  --bg: #0a0600;
+  background: var(--bg);
+}
+
+body.level-24 .star { background: #241a04; }
+body.level-24 .star.bright {
+  background: #4a3a10;
+  animation: twinkle24 1.8s ease-in-out infinite;
+}
+
+@keyframes twinkle24 {
+  0%, 100% { opacity: 0.2; background: #4a3a10; }
+  50%       { opacity: 1;   background: #ffd700; }
+}
+
+body.level-24::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255, 215, 0, 0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Level 25 — Word Processor / Present (Paper White + Ink Blue) */
+body.level-25 {
+  --level-accent: #8fd0ff;
+  --level-accent-dim: #2a4a5a;
+  --bg: #12151b;
+  background: var(--bg);
+}
+
+body.level-25 .star { background: #202832; }
+body.level-25 .star.bright {
+  background: #34455a;
+  animation: twinkle25 2.4s ease-in-out infinite;
+}
+
+@keyframes twinkle25 {
+  0%, 100% { opacity: 0.2; background: #34455a; }
+  50%       { opacity: 1;   background: #8fd0ff; }
+}
+
+body.level-25::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(247, 245, 238, 0.04) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: -1;
+}

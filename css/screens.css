@@ -48,7 +48,7 @@
   left: 50%;
   transform: translateX(-50%);
   font-size: 6px;
-  color: #444;
+  color: #777;
   letter-spacing: 2px;
   transition: color 0.3s;
 }
@@ -124,7 +124,7 @@
 
 .ready-player {
   font-size: 12px;
-  color: var(--crt-amber-dim);
+  color: #b8860b; /* readable muted amber; --crt-amber-dim failed at 2.5:1 */
   letter-spacing: 4px;
   margin-bottom: 20px;
 }
@@ -187,21 +187,26 @@
   right: 24px;
   text-align: right;
   z-index: 10;
-  opacity: 0.5;
+  opacity: 0.9;
   transition: opacity 0.3s;
+  /* Scrim so the stats stay readable over bright theme art (a11y) —
+     still "dim, never looming" via muted text colors, not transparency */
+  background: rgba(0, 0, 0, 0.70);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 14px;
 }
 
-.hud:hover { opacity: 0.8; }
+.hud:hover { opacity: 1; }
 
 .hud-line {
   font-size: 8px;
-  color: var(--atari-dim);
+  color: #9a9a9a;
   line-height: 2.2;
   letter-spacing: 1px;
 }
 
 .hud-value {
-  color: var(--level-accent-dim);
+  color: var(--level-accent); /* dim variant failed contrast even on the scrim */
   text-shadow: 0 0 4px color-mix(in srgb, var(--level-accent) 20%, transparent);
 }
 
@@ -210,12 +215,15 @@
   top: 20px;
   left: 24px;
   z-index: 10;
-  opacity: 0.5;
+  opacity: 0.9;
+  background: rgba(0, 0, 0, 0.70);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 14px;
 }
 
 .level-badge-text {
   font-size: 8px;
-  color: var(--atari-dim);
+  color: #9a9a9a;
   letter-spacing: 2px;
 }
 
@@ -230,11 +238,16 @@
 
 .prompt-area {
   text-align: center;
+  /* Scrim panel: the letter prompt must be readable over every theme's
+     canvas art, including bright ones (Mario sky, Pokémon cream) — a11y */
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24px 48px 16px;
 }
 
 .prompt-label {
   font-size: 8px;
-  color: var(--atari-dim);
+  color: #999;
   letter-spacing: 2px;
   margin-bottom: 24px;
 }
@@ -249,7 +262,7 @@
 
 .prompt-letter {
   font-size: 36px;
-  color: var(--atari-dim);
+  color: #8a8a8a;
   transition: all 0.15s;
   width: 50px;
   text-align: center;
@@ -284,6 +297,10 @@
   animation: pop 0.25s ease-out;
 }
 
+.prompt-letter.glyph {
+  font-size: 30px;
+}
+
 @keyframes pop {
   0% { transform: scale(1.15); }
   50% { transform: scale(1.4); }
@@ -298,34 +315,65 @@
 .finger-hint-text {
   font-size: 8px;
   color: var(--nudge-red);
-  opacity: 0.6;
+  opacity: 0.95;
   text-shadow: 0 0 4px rgba(255, 68, 68, 0.3);
   animation: fadeIn 0.3s ease-out;
 }
 
 .keyboard-guide {
+  /* Physical keyboard rows (hud.js renders .key-row children) on a scrim
+     panel so keys stay readable over any theme background — a11y */
   display: flex;
-  gap: 6px;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--key-gap, 6px);
   margin-top: 10px;
+  width: auto;
+  max-width: calc(100vw - 48px);
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 18px;
+}
+
+.key-row {
+  display: flex;
+  gap: var(--key-gap, 6px);
+  justify-content: center;
 }
 
 .key-box {
-  width: 48px;
-  height: 48px;
+  flex: 0 0 auto;              /* width set inline per key (unit multiples) */
+  height: var(--key-size, 44px);
+  min-width: 0;
   border: 2px solid #333;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: clamp(9px, calc(var(--key-size, 44px) * 0.30), 14px);
   color: #444;
   text-transform: uppercase;
   transition: all 0.15s;
+  overflow: hidden;
+}
+
+.key-box.fog {
+  /* Unlearned key: shape only, no label — same fog-of-war language as the
+     keyboard-preview screen. Completes the real-keyboard silhouette. */
+  border-color: #242424;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.key-spacer {
+  flex: 0 0 auto;
+  height: var(--key-size, 44px);
 }
 
 .key-box.highlight {
   border-color: var(--level-accent-dim);
-  color: var(--level-accent-dim);
+  /* Label uses the bright accent (not the dim variant) — the dim accents
+     fall below readable contrast even on the scrim panel. The active key
+     still stands out via scale, glow, and box-shadow. */
+  color: var(--level-accent);
 }
 
 .key-box.active-key {
@@ -343,20 +391,14 @@
   animation: nudge 0.3s ease-out;
 }
 
-.progress-bar {
-  width: 300px;
-  height: 4px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  margin-top: 10px;
+.key-box-glyph {
+  font-size: clamp(8px, calc(var(--key-size, 44px) * 0.24), 12px);
 }
 
-.progress-fill {
-  height: 100%;
-  background: var(--level-accent-dim);
-  transition: width 0.3s ease-out;
-  box-shadow: 0 0 4px color-mix(in srgb, var(--level-accent) 30%, transparent);
+.key-box.active-key.key-box-glyph {
+  font-size: 13px;
 }
+
 
 /* ===== LEVEL COMPLETE ===== */
 
@@ -376,7 +418,7 @@
   padding: 48px 64px;
   border: 2px solid var(--level-accent, var(--crt-amber));
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.92); /* 0.85 let bright theme art bleed through under stat text */
   box-shadow:
     0 0 30px rgba(0, 0, 0, 0.8),
     inset 0 0 20px rgba(0, 0, 0, 0.5),
@@ -486,13 +528,38 @@
   margin-bottom: 40px;
 }
 
+.select-act-prev,
+.select-act-next {
+  font-size: 6px;
+  letter-spacing: 2px;
+  min-height: 16px;
+  color: #555;
+  transition: color 0.2s;
+}
+
+.select-act-prev:not(:empty),
+.select-act-next:not(:empty) {
+  color: #6a6a6a;
+}
+
+.select-act-prev { margin-bottom: 10px; }
+
+.select-act-label {
+  font-size: 8px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 12px var(--crt-amber);
+  letter-spacing: 3px;
+  margin-bottom: 28px;
+}
+
 .select-cabinets {
   display: flex;
   gap: 24px;
   justify-content: center;
   align-items: flex-end;
-  margin-bottom: 40px;
 }
+
+.select-act-next { margin-top: 16px; margin-bottom: 24px; }
 
 .select-cabinet {
   display: flex;
@@ -539,7 +606,7 @@
 
 .select-keys {
   font-size: 6px;
-  color: #444;
+  color: #777;
   letter-spacing: 1px;
   margin-top: 2px;
 }
@@ -556,4 +623,64 @@
   color: var(--atari-dim);
   margin-top: 16px;
   letter-spacing: 1px;
+}
+
+/* ===== KEYBOARD PREVIEW SCREEN ===== */
+
+#keyboard-preview-screen {
+  text-align: center;
+  animation: fadeIn 0.4s ease-out;
+  pointer-events: none;
+  justify-content: flex-start;
+  padding-top: 6vh;
+}
+
+.kbp-header {
+  margin-bottom: 8px;
+}
+
+.kbp-title {
+  font-size: 10px;
+  color: var(--crt-amber); /* was --crt-amber-dim: failed contrast on all 25 levels (audit) */
+  letter-spacing: 4px;
+  margin-bottom: 8px;
+}
+
+.kbp-subtitle {
+  font-size: 14px;
+  color: var(--level-accent);
+  text-shadow: 0 0 16px var(--level-accent), 0 0 40px color-mix(in srgb, var(--level-accent) 30%, transparent);
+  letter-spacing: 5px;
+  animation: readyPulse 0.9s ease-in-out infinite alternate;
+}
+
+.kbp-legend {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 12px;
+  font-size: 6px;
+  letter-spacing: 1px;
+}
+
+.kbp-legend-new {
+  color: var(--level-accent);
+  text-shadow: 0 0 6px var(--level-accent);
+}
+
+.kbp-legend-known {
+  color: var(--level-accent-dim);
+}
+
+.kbp-legend-fog {
+  color: #777; /* label must be readable; the fog *swatch look* lives on the canvas keys themselves */
+}
+
+.kbp-spacer {
+  flex: 1;
+}
+
+.kbp-start-prompt {
+  display: none;
 }
