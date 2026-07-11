@@ -13,6 +13,8 @@ let jumpFlash = 0;
 let marioJump = 0;      // jump height above ground (px, decays)
 let marioJumpVy = 0;    // jump vertical velocity
 let clouds = [];
+let coinSparkles = [];  // keystroke coin-spin particles
+let blockBump = 0;      // "?" block bump animation timer
 let W = 0, H = 0;
 let GROUND_Y = 0;
 
@@ -84,7 +86,11 @@ function drawSky() {
 }
 
 function drawClouds() {
-  clouds.forEach(cl => {
+  // Slowest parallax layer — clouds drift far less than the scrolling world
+  const t = progress / STEPS_TO_WIN;
+  const scrollX = -t * W * 0.15;
+  clouds.forEach(cl0 => {
+    const cl = { x: cl0.x + scrollX, y: cl0.y, w: cl0.w, h: cl0.h };
     // Simple NES-style cloud (white blocky shape)
     ctx.fillStyle = '#fff';
     ctx.fillRect(cl.x, cl.y + cl.h * 0.4, cl.w, cl.h * 0.6);
@@ -94,10 +100,40 @@ function drawClouds() {
   });
 }
 
-function drawHills() {
-  // Green hill silhouettes — repeat as world scrolls
+const GOOMBA_A = [
+  [0,1,1,1,0],
+  [1,1,1,1,1],
+  [1,0,1,0,1],
+  [1,1,1,1,1],
+  [0,1,0,1,0],
+];
+const GOOMBA_B = [
+  [0,1,1,1,0],
+  [1,1,1,1,1],
+  [1,0,1,0,1],
+  [1,1,1,1,1],
+  [1,0,0,0,1],
+];
+
+function drawGoomba() {
   const t = progress / STEPS_TO_WIN;
   const scrollX = -t * W * 0.6;
+  const gx = W * 0.42 + scrollX;
+  if (gx < -20 || gx > W + 20) return;
+  const walkFrame = Math.floor(frame / 10) % 2;
+  const sprite = walkFrame === 0 ? GOOMBA_A : GOOMBA_B;
+  const size = 3;
+  ctx.fillStyle = '#a0522d';
+  sprite.forEach((row, r) => row.forEach((c, cc) => {
+    if (c) ctx.fillRect(gx + cc * size, GROUND_Y - 15 + r * size, size, size);
+  }));
+}
+
+function drawHills() {
+  // Green hill silhouettes — mid-speed parallax layer, slower than the
+  // foreground pipes/blocks/ground so distant hills feel farther away.
+  const t = progress / STEPS_TO_WIN;
+  const scrollX = -t * W * 0.35;
 
   ctx.fillStyle = '#00a800';
   // Hill 1
@@ -172,18 +208,40 @@ function drawBlocks() {
     { x: W * 0.54, y: GROUND_Y - 80 },
   ];
 
-  blockPositions.forEach(b => {
+  blockPositions.forEach((b, i) => {
     const bx = b.x + scrollX;
     if (bx < -40 || bx > W + 40) return;
+    // First block bumps briefly on each keystroke — a small "?" block hit
+    const bump = (i === 0 && blockBump > 0) ? -Math.sin((blockBump / 10) * Math.PI) * 6 : 0;
+    const by = b.y + bump;
     ctx.fillStyle = '#c8a020';
-    ctx.fillRect(bx - 14, b.y - 14, 28, 28);
+    ctx.fillRect(bx - 14, by - 14, 28, 28);
     ctx.fillStyle = '#a88018';
-    ctx.fillRect(bx - 14, b.y - 14, 28, 4);
-    ctx.fillRect(bx - 14, b.y - 14, 4, 28);
+    ctx.fillRect(bx - 14, by - 14, 28, 4);
+    ctx.fillRect(bx - 14, by - 14, 4, 28);
     ctx.fillStyle = '#ffcc40';
-    ctx.fillRect(bx - 12, b.y - 12, 4, 4);
-    ctx.fillText('?', bx - 6, b.y + 4);
+    ctx.fillRect(bx - 12, by - 12, 4, 4);
+    ctx.font = '10px "Press Start 2P", monospace';
+    ctx.fillText('?', bx - 6, by + 4);
   });
+}
+
+function drawCoinSparkles() {
+  coinSparkles = coinSparkles.filter(s => s.life > 0);
+  coinSparkles.forEach(s => {
+    s.y += s.vy;
+    s.vy -= 0.15;
+    s.life--;
+    s.spin += 0.5;
+    ctx.globalAlpha = Math.max(s.life / 20, 0);
+    // Coin spin: alternate a wide oval and a thin sliver to fake rotation
+    const wide = Math.abs(Math.sin(s.spin)) * 6 + 1;
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(s.x - wide / 2, s.y - 8, wide, 16);
+    ctx.fillStyle = '#a88018';
+    ctx.fillRect(s.x - wide / 2, s.y - 8, wide, 2);
+  });
+  ctx.globalAlpha = 1;
 }
 
 function drawFlagpole() {
@@ -277,11 +335,13 @@ function render() {
   drawSky();
   drawClouds();
   drawHills();
+  drawGoomba();
   drawBlocks();
   drawPipes();
   drawGround();
   drawFlagpole();
   drawMario();
+  drawCoinSparkles();
   drawScore();
 
   // Mario jump physics
@@ -292,6 +352,7 @@ function render() {
   }
 
   if (jumpFlash > 0) jumpFlash--;
+  if (blockBump > 0) blockBump--;
   animId = requestAnimationFrame(render);
 }
 
@@ -303,6 +364,7 @@ export function start() {
   canvas.height = window.innerHeight;
   active = true; victoryMode = false; frame = 0;
   progress = 0; score = 0; jumpFlash = 0; marioJump = 0; marioJumpVy = 0;
+  coinSparkles = []; blockBump = 0;
   buildLayout();
   render();
 }
@@ -311,6 +373,7 @@ export function stop() {
   active = false;
   if (animId) cancelAnimationFrame(animId);
   if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  coinSparkles = [];
 }
 
 export function keystroke() {
@@ -323,6 +386,9 @@ export function keystroke() {
     marioJump = Math.max(marioJump, 1);
   }
   jumpFlash = 8;
+  blockBump = 10;
+  const mx = Math.floor(W * 0.28);
+  coinSparkles.push({ x: mx, y: GROUND_Y - 60, vy: -3, life: 20, spin: 0 });
 }
 
 export function miss() {}

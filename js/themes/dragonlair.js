@@ -12,6 +12,8 @@ const ROOMS_TO_CLEAR = 4;
 let torches = [];
 let score = 0;
 let stepFlash = 0;
+let swordSwing = 0;   // frames remaining in the sword-swing arc
+let motes = [];        // ambient dust particles drifting in torchlight
 let W = 0, H = 0;
 
 function getCanvas() {
@@ -26,6 +28,21 @@ function buildTorches() {
     { x: Math.floor(W * 0.82), y: Math.floor(H * 0.42), phase: 0.6 },
     { x: Math.floor(W * 0.82), y: Math.floor(H * 0.62), phase: 1.8 },
   ];
+}
+
+// Ambient dust motes drifting through the torchlight — a cheap parallax/depth
+// cue that sells the room as a lit volume rather than a flat backdrop.
+function buildMotes() {
+  motes = [];
+  for (let i = 0; i < 22; i++) {
+    motes.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vy: -0.15 - Math.random() * 0.25,
+      drift: Math.random() * Math.PI * 2,
+      size: Math.random() < 0.5 ? 1 : 2,
+    });
+  }
 }
 
 // ─── Draw ─────────────────────────────────────────────────────────────────────
@@ -78,9 +95,19 @@ function drawDungeonRoom() {
   // Back doorway (where player came from)
   drawArch(wallL - archW, archTop, archW, archH, '#0a0005', '#cc66ff', 0.4);
 
-  // Forward doorway (where player is going)
+  // Forward doorway (where player is going) — a glimpse of the next chamber's
+  // torchlight glows deeper inside as progress builds (parallax depth cue).
   const nextRoomAlpha = t;
   drawArch(wallR, archTop, archW, archH, '#0a0005', '#cc66ff', nextRoomAlpha);
+  if (nextRoomAlpha > 0.15) {
+    const glowX = wallR + archW * 0.6;
+    const glowY = archTop + archH * 0.5;
+    const pulse = Math.sin(frame * 0.06) * 0.15 + 0.55;
+    ctx.fillStyle = `rgba(255,150,40,${nextRoomAlpha * pulse * 0.5})`;
+    ctx.beginPath();
+    ctx.arc(glowX, glowY, 10 + nextRoomAlpha * 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // Room number / depth indicator
   const roomNum = Math.min(Math.floor(t * ROOMS_TO_CLEAR) + 1, ROOMS_TO_CLEAR);
@@ -180,12 +207,27 @@ function drawDirk() {
   ctx.fillStyle = '#888';
   ctx.fillRect(dx - 5, dy - 44, 10, 5); // helmet
 
-  // Sword
+  // Sword — swings through an arc on keystroke, otherwise rests at idle bob
   const swordLen = 18;
-  ctx.fillStyle = '#ccc';
-  ctx.fillRect(dx + 6, dy - 28 + (walkFrame % 2 === 0 ? 0 : 1), 3, swordLen);
-  ctx.fillStyle = '#aa8800';
-  ctx.fillRect(dx + 4, dy - 28, 7, 3); // guard
+  if (swordSwing > 0) {
+    const swingT = 1 - swordSwing / 10; // 0..1 across the swing
+    const ang = -0.9 + swingT * 1.8;    // sweeps from raised to forward
+    ctx.save();
+    ctx.translate(dx + 6, dy - 26);
+    ctx.rotate(ang);
+    ctx.fillStyle = '#eee';
+    ctx.shadowColor = '#cc66ff'; ctx.shadowBlur = 10;
+    ctx.fillRect(0, -1, swordLen, 3);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#aa8800';
+    ctx.fillRect(-3, -2, 5, 5);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#ccc';
+    ctx.fillRect(dx + 6, dy - 28 + (walkFrame % 2 === 0 ? 0 : 1), 3, swordLen);
+    ctx.fillStyle = '#aa8800';
+    ctx.fillRect(dx + 4, dy - 28, 7, 3); // guard
+  }
 
   // Legs
   ctx.fillStyle = '#885500';
@@ -207,6 +249,18 @@ function drawScore() {
   ctx.fillText(String(score).padStart(6, '0'), 12, 22);
 }
 
+function drawMotes() {
+  ctx.fillStyle = 'rgba(255, 200, 140, 0.35)';
+  motes.forEach(m => {
+    m.y += m.vy;
+    m.drift += 0.02;
+    const dx = Math.sin(m.drift) * 0.3;
+    m.x += dx;
+    if (m.y < 0) { m.y = H; m.x = Math.random() * W; }
+    ctx.fillRect(m.x, m.y, m.size, m.size);
+  });
+}
+
 function render() {
   if (!active) return;
   frame++;
@@ -214,11 +268,13 @@ function render() {
 
   drawBackground();
   drawDungeonRoom();
+  drawMotes();
   drawTorches();
   drawDirk();
   drawScore();
 
   if (stepFlash > 0) stepFlash--;
+  if (swordSwing > 0) swordSwing--;
   animId = requestAnimationFrame(render);
 }
 
@@ -230,7 +286,9 @@ export function start() {
   canvas.height = window.innerHeight;
   W = canvas.width; H = canvas.height;
   active = true; victoryMode = false; frame = 0; progress = 0; score = 0;
+  swordSwing = 0;
   buildTorches();
+  buildMotes();
   render();
 }
 
@@ -245,6 +303,7 @@ export function keystroke() {
   progress++;
   score += 75;
   stepFlash = 6;
+  swordSwing = 10;
 }
 
 export function miss() {}
@@ -263,5 +322,6 @@ window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
     W = canvas.width; H = canvas.height;
     buildTorches();
+    buildMotes();
   }
 });

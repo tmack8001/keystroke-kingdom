@@ -17,6 +17,8 @@ let clearFlash = [];  // rows currently flashing for clear animation
 let clearTimer = 0;
 let dropFlash = 0;
 let score = 0;
+let bits = [];         // small square debris particles from line clears
+let bgBlocks = [];     // precomputed dim background skyline blocks (dithered, no blur)
 let W = 0, H = 0;
 let CELL = 0, GRID_X = 0, GRID_Y = 0;
 
@@ -43,6 +45,20 @@ function computeLayout() {
   CELL = Math.max(CELL, 18);
   GRID_X = Math.floor((W - COLS * CELL) / 2);
   GRID_Y = Math.floor((H - ROWS * CELL) / 2);
+  buildSkyline();
+}
+
+// A faint dithered skyline silhouette in the margins — deliberately minimal
+// (this level is the "palette cleanser"), built once, never per-frame.
+function buildSkyline() {
+  bgBlocks = [];
+  let x = 0;
+  while (x < W) {
+    const w = 20 + Math.floor(Math.random() * 30);
+    const h = 20 + Math.floor(Math.random() * 90);
+    bgBlocks.push({ x, w, h });
+    x += w + 4;
+  }
 }
 
 function initGrid() {
@@ -114,6 +130,17 @@ function clearLines(rows) {
 function drawBackground() {
   ctx.fillStyle = '#000818';
   ctx.fillRect(0, 0, W, H);
+
+  // Dithered skyline — a checkerboard stipple stands in for a gradient
+  // (NES-era rule: banding/dithering, never a smooth canvas gradient).
+  ctx.fillStyle = '#001028';
+  bgBlocks.forEach(b => {
+    for (let by = H - b.h; by < H; by += 2) {
+      for (let bx = b.x; bx < b.x + b.w; bx += 2) {
+        if (((bx + by) / 2) % 2 === 0) ctx.fillRect(bx, by, 2, 2);
+      }
+    }
+  });
 }
 
 function drawGrid() {
@@ -162,6 +189,26 @@ function drawCell(x, y, size, col) {
   ctx.fillRect(x + 2, y + size - 3, size - 3, 2);
 }
 
+// Ghost piece: a dim outline showing where the current piece will land,
+// helping a young reader anticipate the drop without adding any pressure.
+function ghostDropRow(p) {
+  let gy = p.y;
+  while (fits(p.shape, p.x, gy + 1)) gy++;
+  return gy;
+}
+
+function drawGhost(p, offsetX, offsetY) {
+  if (!p) return;
+  const gy = ghostDropRow(p);
+  if (gy === p.y) return; // already resting, no need to show a duplicate
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 2;
+  for (let r = 0; r < p.shape.length; r++)
+    for (let c = 0; c < p.shape[r].length; c++)
+      if (p.shape[r][c] && gy + r >= 0)
+        ctx.strokeRect(offsetX + (p.x + c) * CELL + 2, offsetY + (gy + r) * CELL + 2, CELL - 4, CELL - 4);
+}
+
 function drawPiece(p, offsetX, offsetY) {
   if (!p) return;
   const col = COLORS[p.colorIdx];
@@ -208,8 +255,10 @@ function render() {
 
   drawBackground();
   drawGrid();
+  drawGhost(piece, GRID_X, GRID_Y);
   drawPiece(piece, GRID_X, GRID_Y);
   drawNextPiece();
+  drawBits();
   drawHUD();
 
   if (dropFlash > 0) dropFlash--;
@@ -217,6 +266,7 @@ function render() {
   if (clearTimer > 0) {
     clearTimer--;
     if (clearTimer === 0) {
+      spawnClearBits(clearFlash);
       clearLines(clearFlash);
       clearFlash = [];
       piece = nextPiece || randomPiece();
@@ -224,7 +274,47 @@ function render() {
     }
   }
 
+  updateBits();
   animId = requestAnimationFrame(render);
+}
+
+// Small square debris that bursts outward from cleared rows — the
+// "flourish" the spec calls for beyond a flat line-clear flash. Capped low.
+function spawnClearBits(rows) {
+  rows.forEach(r => {
+    for (let c = 0; c < COLS; c++) {
+      if (!grid[r][c]) continue;
+      bits.push({
+        x: GRID_X + c * CELL + CELL / 2,
+        y: GRID_Y + r * CELL + CELL / 2,
+        vx: (Math.random() - 0.5) * 4,
+        vy: -Math.random() * 3 - 1,
+        col: grid[r][c],
+        life: 24,
+      });
+    }
+  });
+  // Hard cap to respect the particle budget even on a full-width clear
+  if (bits.length > 120) bits = bits.slice(bits.length - 120);
+}
+
+function updateBits() {
+  bits = bits.filter(b => b.life > 0);
+  bits.forEach(b => {
+    b.vy += 0.2;
+    b.x += b.vx;
+    b.y += b.vy;
+    b.life--;
+  });
+}
+
+function drawBits() {
+  bits.forEach(b => {
+    ctx.globalAlpha = Math.max(b.life / 24, 0);
+    ctx.fillStyle = b.col;
+    ctx.fillRect(b.x - 3, b.y - 3, 6, 6);
+  });
+  ctx.globalAlpha = 1;
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -234,7 +324,7 @@ export function start() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   active = true; victoryMode = false; frame = 0;
-  linesCleared = 0; score = 0; clearFlash = []; clearTimer = 0; dropFlash = 0;
+  linesCleared = 0; score = 0; clearFlash = []; clearTimer = 0; dropFlash = 0; bits = [];
   computeLayout();
   initGrid();
   piece = randomPiece();
@@ -246,6 +336,7 @@ export function stop() {
   active = false;
   if (animId) cancelAnimationFrame(animId);
   if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  bits = [];
 }
 
 export function keystroke() {

@@ -12,42 +12,63 @@ let stars = [];
 
 const BARRELS_TO_WIN = 22;
 
-// DK sprite — 8x7 pixel grid at PX scale
-const PX = 5;
-const DK_W = 8 * PX, DK_H = 7 * PX;
+// DK sprite — 13x12 pixel grid at PX scale — large, with highlight/shadow indices
+// to fake the pre-rendered-3D look DKC pioneered (values: 1=base fur, 2=shadow fur,
+// 3=highlight fur, 4=tan face/chest, 5=dark shadow on face, 6=white eye, 7=pupil)
+const PX = 8;
+const DK_W = 13 * PX, DK_H = 12 * PX;
 
 // Frame 0: left arm forward  |  Frame 1: right arm forward
 const DK_RUN = [
   [
-    [0,1,1,1,1,1,1,0],
-    [0,1,0,1,1,0,1,0],
-    [0,1,1,1,1,1,1,0],
-    [1,0,1,1,1,1,0,1],
-    [0,0,1,1,1,1,0,0],
-    [0,1,0,0,0,0,1,0],
-    [1,0,0,0,0,0,0,1],
+    [0,0,3,1,1,1,1,1,1,1,2,0,0],
+    [0,3,1,4,4,4,4,4,4,4,1,2,0],
+    [0,1,4,6,6,4,4,6,6,4,1,2,0],
+    [0,1,4,6,7,4,4,6,7,4,1,2,0],
+    [0,1,4,4,4,4,4,4,4,4,1,2,0],
+    [0,0,1,5,4,4,4,4,5,1,0,0,0],
+    [2,1,1,1,1,1,1,1,1,1,1,3,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,0],
+    [0,1,1,3,1,1,1,1,3,1,1,0,0],
+    [0,0,4,4,0,0,0,0,4,4,0,0,0],
+    [0,4,4,4,0,0,0,0,4,4,4,0,0],
+    [4,4,4,0,0,0,0,0,0,4,4,4,0],
   ],
   [
-    [0,1,1,1,1,1,1,0],
-    [0,1,0,1,1,0,1,0],
-    [0,1,1,1,1,1,1,0],
-    [0,1,0,1,1,0,1,0],
-    [0,0,1,1,1,1,0,0],
-    [0,0,1,0,0,1,0,0],
-    [0,1,0,0,0,0,1,0],
+    [0,0,3,1,1,1,1,1,1,1,2,0,0],
+    [0,3,1,4,4,4,4,4,4,4,1,2,0],
+    [0,1,4,6,6,4,4,6,6,4,1,2,0],
+    [0,1,4,6,7,4,4,6,7,4,1,2,0],
+    [0,1,4,4,4,4,4,4,4,4,1,2,0],
+    [0,0,1,5,4,4,4,4,5,1,0,0,0],
+    [0,1,1,1,1,1,1,1,1,1,1,2,3],
+    [0,1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,0,1,1,3,1,1,1,1,3,1,1,0],
+    [0,0,0,4,4,0,0,0,0,4,4,0,0],
+    [0,0,4,4,4,0,0,0,0,4,4,4,0],
+    [0,4,4,4,0,0,0,0,0,0,4,4,4],
   ],
 ];
 
 // Victory: arms-up pose
 const DK_ARMS_UP = [
-  [1,0,1,1,1,1,0,1],
-  [0,1,1,1,1,1,1,0],
-  [0,0,1,1,1,1,0,0],
-  [0,0,1,1,1,1,0,0],
-  [0,0,1,1,1,1,0,0],
-  [0,1,0,0,0,0,1,0],
-  [1,0,0,0,0,0,0,1],
+  [4,4,0,3,1,1,1,1,1,2,0,4,4],
+  [0,4,4,1,4,4,4,4,4,1,4,4,0],
+  [0,0,1,4,6,6,6,6,4,1,0,0,0],
+  [0,0,1,4,6,7,7,6,4,1,0,0,0],
+  [0,0,1,4,4,4,4,4,4,1,0,0,0],
+  [0,0,0,1,5,4,4,5,1,0,0,0,0],
+  [0,0,1,1,1,1,1,1,1,1,0,0,0],
+  [0,1,1,1,1,1,1,1,1,1,1,0,0],
+  [0,1,1,3,1,1,1,1,3,1,1,0,0],
+  [0,0,4,4,0,0,0,0,4,4,0,0,0],
+  [0,4,4,4,0,0,0,0,4,4,4,0,0],
+  [4,4,4,0,0,0,0,0,0,4,4,4,0],
 ];
+const DK_COLS = {
+  1: '#6b3a10', 2: '#4a2608', 3: '#8f5420',
+  4: '#d9a462', 5: '#a8763c', 6: '#fff8e8', 7: '#1a0e04',
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -71,10 +92,12 @@ function resize() {
 
 // ─── Draw helpers ──────────────────────────────────────────────────────────────
 
-function drawPx(shape, x, y, size, col) {
-  ctx.fillStyle = col;
+function drawPx(shape, x, y, size, colOrMap) {
+  const isMap = typeof colOrMap === 'object';
   shape.forEach((row, r) => row.forEach((c, cc) => {
-    if (c) ctx.fillRect(x + cc * size, y + r * size, size, size);
+    if (!c) return;
+    ctx.fillStyle = isMap ? (colOrMap[c] || '#000') : colOrMap;
+    ctx.fillRect(x + cc * size, y + r * size, size, size);
   }));
 }
 
@@ -83,32 +106,58 @@ function drawPx(shape, x, y, size, col) {
 function drawBackground() {
   const W = canvas.width, H = canvas.height;
 
-  // Sky gradient — dark blue-purple
+  // Sky gradient — deep golden sunset melting into dusk purple, richer multi-stop
   const sky = ctx.createLinearGradient(0, 0, 0, H * 0.55);
-  sky.addColorStop(0, '#0d0828');
-  sky.addColorStop(0.6, '#1a1245');
-  sky.addColorStop(1, '#2a1f5a');
+  sky.addColorStop(0, '#150c38');
+  sky.addColorStop(0.35, '#3a1f5e');
+  sky.addColorStop(0.65, '#a84e3a');
+  sky.addColorStop(0.85, '#e8923a');
+  sky.addColorStop(1, '#ffce6a');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H * 0.55);
 
-  // Stars (layer 1 — essentially static)
-  ctx.fillStyle = '#e8e0ff';
+  // Stars in the upper dusk sky (layer 1 — essentially static, fade near horizon)
   stars.forEach(s => {
     const twinkle = 0.5 + 0.5 * Math.sin(frame * 0.04 + s.x);
-    ctx.globalAlpha = twinkle * 0.8;
+    const fadeOut = Math.max(0, 1 - s.y / (H * 0.22));
+    ctx.globalAlpha = twinkle * 0.8 * fadeOut;
+    ctx.fillStyle = '#e8e0ff';
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     ctx.fill();
   });
   ctx.globalAlpha = 1;
 
-  // Moon — upper right area
-  const moonX = W * 0.82, moonY = H * 0.08;
-  ctx.fillStyle = '#e8dfa0';
-  ctx.beginPath(); ctx.arc(moonX, moonY, 20, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#ccc080';
-  ctx.beginPath(); ctx.arc(moonX - 4, moonY - 3, 6, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(moonX + 8, moonY + 5, 3, 0, Math.PI * 2); ctx.fill();
+  // Sun — low on the horizon, glowing disc with soft halo (the source of the god-rays)
+  const sunX = W * 0.5, sunY = H * 0.40;
+  const sunGlow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, H * 0.35);
+  sunGlow.addColorStop(0, 'rgba(255,220,140,0.55)');
+  sunGlow.addColorStop(0.4, 'rgba(255,180,90,0.22)');
+  sunGlow.addColorStop(1, 'rgba(255,180,90,0)');
+  ctx.fillStyle = sunGlow;
+  ctx.fillRect(sunX - H * 0.35, sunY - H * 0.35, H * 0.7, H * 0.7);
+  ctx.fillStyle = '#fff2c8';
+  ctx.beginPath(); ctx.arc(sunX, sunY, 30, 0, Math.PI * 2); ctx.fill();
+
+  // God-rays streaming down from the sun through the haze — fixed angles, animated brightness
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 7; i++) {
+    const ang = -Math.PI / 2 + (i - 3) * 0.22;
+    const shimmer = 0.10 + 0.06 * Math.sin(frame * 0.02 + i * 1.3);
+    ctx.strokeStyle = `rgba(255,220,150,${shimmer})`;
+    ctx.lineWidth = 26 - Math.abs(i - 3) * 2;
+    ctx.beginPath();
+    ctx.moveTo(sunX, sunY);
+    ctx.lineTo(sunX + Math.cos(ang) * H * 0.9, sunY + Math.sin(ang) * H * 0.9);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Distant moon rising opposite the sun — faint, upper right
+  const moonX = W * 0.86, moonY = H * 0.07;
+  ctx.fillStyle = 'rgba(232,223,160,0.7)';
+  ctx.beginPath(); ctx.arc(moonX, moonY, 15, 0, Math.PI * 2); ctx.fill();
 
   // Layer 1 (far): distant mountain silhouettes — 5% scroll
   const mx = (scrollX * 0.05) % W;
@@ -136,9 +185,9 @@ function drawBackground() {
     });
   }
 
-  // Layer 2 (mid): jungle canopy — 15% scroll, dark green rounded tree tops
+  // Layer 2 (mid): jungle canopy — 15% scroll, dark silhouette against the sunset
   const cx = (scrollX * 0.15) % W;
-  ctx.fillStyle = '#0f3d1a';
+  ctx.fillStyle = '#12280f';
   for (let rep = -1; rep <= 1; rep++) {
     const ox = rep * W - cx;
     const trees = [
@@ -172,10 +221,12 @@ function drawBackground() {
     ctx.fillRect(ox, canopyY, W, H - canopyY);
   }
 
-  // Mid canopy highlight strip
-  ctx.fillStyle = '#14521f';
+  // Mid canopy highlight strip — sunset rim light along the treeline
+  ctx.fillStyle = 'rgba(255,190,90,0.4)';
   const canopyY2 = H * 0.52;
-  ctx.fillRect(0, canopyY2 - 4, W, 8);
+  ctx.fillRect(0, canopyY2 - 4, W, 6);
+  ctx.fillStyle = '#1a3312';
+  ctx.fillRect(0, canopyY2 + 2, W, 4);
 
   // Ground — rich jungle earth with golden strip at very bottom
   const groundY = H * 0.85;
@@ -256,21 +307,17 @@ function drawDK() {
 
   const sprite = victoryMode ? DK_ARMS_UP : DK_RUN[dkFrame];
 
+  // Ground contact shadow — soft, gives the sprite weight (part of the "rendered 3D" illusion)
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(dkX + DK_W / 2, groundY + 2, DK_W * 0.42, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
   // Barrel-roll flash on recent keystroke
   ctx.shadowColor = '#ff8c00';
-  ctx.shadowBlur = 8;
-  drawPx(sprite, dkX, dkY, PX, '#7b3d00');   // dark brown body
-  // Face / tan highlight
+  ctx.shadowBlur = cannonWobble > 0 ? 4 : 10;
+  drawPx(sprite, dkX, dkY, PX, DK_COLS);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#c0803a';
-  ctx.fillRect(dkX + 2 * PX, dkY + PX, 4 * PX, 2 * PX);
-  // Eyes
-  ctx.fillStyle = '#fff8dc';
-  ctx.fillRect(dkX + 2 * PX, dkY + PX, PX, PX);
-  ctx.fillRect(dkX + 5 * PX, dkY + PX, PX, PX);
-  ctx.fillStyle = '#1a0800';
-  ctx.fillRect(dkX + 2 * PX + 1, dkY + PX + 1, PX - 2, PX - 2);
-  ctx.fillRect(dkX + 5 * PX + 1, dkY + PX + 1, PX - 2, PX - 2);
 }
 
 // ─── Barrel cannon ────────────────────────────────────────────────────────────

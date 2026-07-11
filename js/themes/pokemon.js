@@ -9,6 +9,10 @@ let textLines = [];
 let textTimer = 0;
 let messageQueue = [];
 let currentMsg = '';
+let displayedHpPct = 1;   // animated/interpolated HP fraction, chases the real value
+let screenFlash = 0;      // frames of dramatic white battle-flash on hit
+let shakeTimer = 0;       // frames of camera shake on hit
+let impactStars = [];     // small burst of impact stars at contact point on hit
 
 const HITS_TO_WIN = 25;
 
@@ -161,18 +165,62 @@ function drawEnemyHPBar() {
   ctx.fillStyle = COL_TEXT;
   ctx.fillText('HP', boxX + 8, boxY + 34);
 
-  // HP bar
+  // HP bar — displayedHpPct animates/drains smoothly toward the real value for drama
   const barX = boxX + 28, barY = boxY + 26, barW = boxW - 40, barH = 7;
-  const pct = Math.max(0, 1 - hitsDealt / HITS_TO_WIN);
+  const targetPct = Math.max(0, 1 - hitsDealt / HITS_TO_WIN);
+  if (displayedHpPct > targetPct) {
+    displayedHpPct = Math.max(targetPct, displayedHpPct - 0.02);
+  }
   ctx.fillStyle = COL_BORDER;
   ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
   ctx.fillStyle = '#383818';
   ctx.fillRect(barX, barY, barW, barH);
-  if (pct > 0) {
-    const barCol = pct > 0.5 ? COL_HP_GREEN : pct > 0.25 ? COL_HP_YEL : COL_HP_RED;
+  if (displayedHpPct > 0) {
+    const barCol = displayedHpPct > 0.5 ? COL_HP_GREEN : displayedHpPct > 0.25 ? COL_HP_YEL : COL_HP_RED;
     ctx.fillStyle = barCol;
-    ctx.fillRect(barX, barY, Math.ceil(barW * pct), barH);
+    ctx.fillRect(barX, barY, Math.ceil(barW * displayedHpPct), barH);
+    // Bright top-edge highlight on the fill — the one flourish the GB screen didn't have room for
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(barX, barY, Math.ceil(barW * displayedHpPct), 2);
   }
+  // Draining segment flashes white briefly right at the edge of the drop
+  if (displayedHpPct > targetPct + 0.001) {
+    ctx.fillStyle = frame % 6 < 3 ? '#ffffff' : '#000000';
+    ctx.fillRect(barX + Math.ceil(barW * targetPct), barY, Math.max(1, Math.ceil(barW * (displayedHpPct - targetPct))), barH);
+  }
+}
+
+function drawImpactStars() {
+  impactStars = impactStars.filter(s => s.age < s.life);
+  impactStars.forEach(s => {
+    s.age++;
+    const t = s.age / s.life;
+    ctx.globalAlpha = 1 - t;
+    ctx.fillStyle = s.col;
+    const d = 3 + t * 10;
+    ctx.fillRect(s.x + s.vx * s.age - d / 2, s.y + s.vy * s.age - d / 2, d, d);
+  });
+  ctx.globalAlpha = 1;
+}
+
+function spawnImpactStars(x, y) {
+  const cols = [COL_TEXT, '#f8d020', COL_BG_LIGHT];
+  for (let i = 0; i < 10; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 1.5 + Math.random() * 3;
+    impactStars.push({
+      x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+      col: cols[i % cols.length], age: 0, life: 14 + Math.random() * 8 | 0,
+    });
+  }
+}
+
+// Dramatic battle-flash — the "spike" moment levels.md calls for against the humble overworld tone
+function drawScreenFlash() {
+  if (screenFlash <= 0) return;
+  const t = screenFlash / 8;
+  ctx.fillStyle = `rgba(255,255,255,${t * 0.55})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawEnemyPokemon() {
@@ -245,11 +293,25 @@ function flushNextMessage() {
 function render() {
   if (!active) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Camera shake — brief, punchy, on hit only (the dramatic spike)
+  ctx.save();
+  if (shakeTimer > 0) {
+    const mag = shakeTimer > 4 ? 5 : 2;
+    ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
+    shakeTimer--;
+  }
+
   drawBackground();
   drawEnemyHPBar();
   drawEnemyPokemon();
   drawPlayerPokemon();
+  drawImpactStars();
   drawTextBox();
+  ctx.restore();
+
+  drawScreenFlash();
+  if (screenFlash > 0) screenFlash--;
 
   // Auto-advance message queue every ~80 frames
   if (textTimer > 0) {
@@ -273,6 +335,7 @@ export function start() {
   enemyFlyOffX = 0; enemyFlyOffY = 0;
   hitMsgIdx = 0;
   messageQueue = [];
+  displayedHpPct = 1; screenFlash = 0; shakeTimer = 0; impactStars = [];
   setTextLines(['Wild PIKACHU appeared!']);
   textTimer = 80;
   render();
@@ -282,13 +345,17 @@ export function stop() {
   active = false;
   if (animId) cancelAnimationFrame(animId);
   if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-  messageQueue = [];
+  messageQueue = []; impactStars = [];
 }
 
 export function keystroke() {
   if (!active || victoryMode) return;
   hitsDealt++;
   enemyFlashTimer = 12;
+  screenFlash = 8;
+  shakeTimer = 8;
+  const W = canvas.width, H = canvas.height;
+  spawnImpactStars(W * 0.62, H * 0.22);
   const msgs = HIT_MESSAGES[hitMsgIdx % HIT_MESSAGES.length];
   hitMsgIdx++;
   queueMessage([msgs[0]]);

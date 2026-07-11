@@ -144,9 +144,14 @@ function drawFighter(f, facing) {
     ctx.fillRect(x - 15, y + 2, 30, 5);
   } else if (f.action === 'special' && f.frame > 0) {
     ctx.fillStyle = '#f0f';
-    ctx.globalAlpha = f.frame / 25;
+    // The victory pose holds f.frame at a very large value (see victory()),
+    // so clamp the animation frame into its intended 0–25 range before it
+    // drives alpha/radius — otherwise the aura radius goes negative and the
+    // canvas throws IndexSizeError on arc().
+    const auraFrame = Math.max(0, Math.min(25, f.frame));
+    ctx.globalAlpha = auraFrame / 25;
     ctx.beginPath();
-    ctx.arc(x + facing * 30, y - 30, 15 + (25 - f.frame), 0, Math.PI * 2);
+    ctx.arc(x + facing * 30, y - 30, 15 + (25 - auraFrame), 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
   } else if (f.action === 'hit' && f.frame > 0) {

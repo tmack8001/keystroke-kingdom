@@ -17,6 +17,8 @@ let W = 0, H = 0;
 // Enemies that wander each room
 let enemies = [];
 let sparkles = [];   // small flash when keystroke fires
+let torches = [];    // wall-mounted torches with light-pool flicker
+let doorOpenAnim = 0; // frames remaining in the door-opening animation
 
 function getCanvas() {
   if (!canvas) { canvas = document.getElementById('invaders-canvas'); ctx = canvas.getContext('2d'); }
@@ -102,13 +104,45 @@ function drawDungeon() {
   const roomY = Math.floor((H - roomH) / 2);
   const tileSize = Math.floor(Math.min(roomW / 12, roomH / 10));
 
-  // Draw floor tiles
+  // Draw floor tiles — occasional cracked-stone variant tile for texture
   for (let tr = 0; tr < Math.floor(roomH / tileSize); tr++) {
     for (let tc = 0; tc < Math.floor(roomW / tileSize); tc++) {
-      const shade = (tr + tc) % 2 === 0 ? '#0e1e0a' : '#0a1806';
+      const variant = (tr * 7 + tc * 13) % 11 === 0;
+      const shade = variant ? '#122408' : ((tr + tc) % 2 === 0 ? '#0e1e0a' : '#0a1806');
       ctx.fillStyle = shade;
       ctx.fillRect(roomX + tc * tileSize, roomY + tr * tileSize, tileSize - 1, tileSize - 1);
+      if (variant) {
+        ctx.strokeStyle = '#081404';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(roomX + tc * tileSize + 2, roomY + tr * tileSize + 2);
+        ctx.lineTo(roomX + tc * tileSize + tileSize - 4, roomY + tr * tileSize + tileSize - 4);
+        ctx.stroke();
+      }
     }
+  }
+
+  // Torch light pools on the floor — flickering radial glow. Positions are
+  // derived from room geometry (which only changes on resize) and cached.
+  if (!torches.length || torches._roomW !== roomW) {
+    torches = [
+      { x: roomX + tileSize * 1.2, y: roomY + tileSize * 1.2, phase: 0 },
+      { x: roomX + roomW - tileSize * 1.2, y: roomY + tileSize * 1.2, phase: 1.4 },
+      { x: roomX + tileSize * 1.2, y: roomY + roomH - tileSize * 1.2, phase: 2.6 },
+      { x: roomX + roomW - tileSize * 1.2, y: roomY + roomH - tileSize * 1.2, phase: 3.8 },
+    ];
+    torches._roomW = roomW;
+  }
+  if (torches.length) {
+    torches.forEach(t => {
+      const flicker = Math.sin(frame * 0.15 + t.phase) * 0.12 + Math.sin(frame * 0.37 + t.phase) * 0.06;
+      const r = tileSize * 1.8 + flicker * 6;
+      const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, r);
+      grad.addColorStop(0, `rgba(255,150,40,${0.22 + flicker})`);
+      grad.addColorStop(1, 'rgba(255,100,20,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(t.x - r, t.y - r, r * 2, r * 2);
+    });
   }
 
   // Walls
@@ -157,7 +191,16 @@ function drawDungeon() {
       ctx.beginPath();
       ctx.arc(doorX + doorW / 2, roomY + roomH + 4, 4, Math.PI, 0);
       ctx.stroke();
+    } else {
+      // Trigger a brief gold pulse the first frame this door reads as open
+      if (!drawDungeon._wasOpen) { doorOpenAnim = 20; }
     }
+  }
+  drawDungeon._wasOpen = doorOpen;
+
+  if (doorOpenAnim > 0) {
+    ctx.fillStyle = `rgba(232,208,64,${(doorOpenAnim / 20) * 0.45})`;
+    ctx.fillRect(doorX - 6, roomY + roomH - 4, doorW + 12, 24);
   }
 
   // Door behind (north) — always open after first room
@@ -171,6 +214,21 @@ function drawDungeon() {
   ctx.textAlign = 'center';
   ctx.fillText(`ROOM ${roomIdx + 1} / ${ROOMS_TO_CLEAR}`, W / 2, roomY - 24);
   ctx.textAlign = 'left';
+
+  drawTorchSconces();
+}
+
+function drawTorchSconces() {
+  torches.forEach(t => {
+    const flicker = Math.sin(frame * 0.15 + t.phase) * 0.3 + Math.sin(frame * 0.37 + t.phase) * 0.15;
+    const flameH = 10 + flicker * 4;
+    ctx.fillStyle = '#3a2408';
+    ctx.fillRect(t.x - 3, t.y - 4, 6, 6);
+    ctx.fillStyle = `rgba(255,140,0,0.9)`;
+    ctx.fillRect(t.x - 3, t.y - 4 - flameH, 6, flameH);
+    ctx.fillStyle = `rgba(255,220,60,0.85)`;
+    ctx.fillRect(t.x - 1.5, t.y - 4 - flameH * 0.6, 3, flameH * 0.6);
+  });
 }
 
 function drawTriforceSymbol(cx, cy, size) {
@@ -292,6 +350,7 @@ function render() {
   drawScore();
 
   if (stepFlash > 0) stepFlash--;
+  if (doorOpenAnim > 0) doorOpenAnim--;
   animId = requestAnimationFrame(render);
 }
 
@@ -304,7 +363,7 @@ export function start() {
   W = canvas.width; H = canvas.height;
   active = true; victoryMode = false; frame = 0;
   progress = 0; score = 0; stepFlash = 0; triforceGlow = 0;
-  sparkles = [];
+  sparkles = []; torches = []; doorOpenAnim = 0;
   spawnEnemies(0);
   render();
 }
@@ -313,7 +372,7 @@ export function stop() {
   active = false;
   if (animId) cancelAnimationFrame(animId);
   if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-  enemies = []; sparkles = [];
+  enemies = []; sparkles = []; torches = [];
 }
 
 export function keystroke() {
