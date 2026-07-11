@@ -29,24 +29,30 @@ Build fast, stay scrappy, learn what we like. Let AI agents do the heavy lifting
 ## Architecture Overview (Prototype)
 
 ```
-/game
-  /levels         # One file per level, defines keys, words, music, visuals
-  /assets
-    /music        # Lyria-generated audio files per level
-    /sprites      # Pixel art characters, cabinets, arcade world
-    /fonts        # Retro pixel fonts
-  /engine
-    input.js      # Keypress capture and validation
-    feedback.js   # Sound + visual feedback logic
-    stats.js      # Accuracy, streak, mistake tracking
-    flow.js       # Game state, level progression
-    words.js      # Word bank by level/key unlock stage
-  /ui
-    hud.js        # Small corner stats display
-    arcade.js     # World navigation (walking between cabinets)
-    settings.js   # Toggle management
-  index.html      # Entry point — "Ready Player One" screen
+/  (repo root — served + embedded by main.go)
+  index.html            # All screens' markup
+  main.go               # Dev server: embeds index.html, css/, js/ at BUILD time
+  js/
+    main.js             # Engine: state machine, input contract, survival wrapper
+    levels.js           # Curriculum data: FINGER_MAP, KEY_REACH, LEVELS 1-25
+    freeplay.js         # Free Play sentences + full-keyboard session builder
+    history-cards.js    # 17 computing-history moments + collection persistence
+    settings.js         # Settings model (localStorage kk-settings) + rows
+    audio.js            # WebAudio procedural sounds (+ global enable toggle)
+    mystery.js basement.js commandcenter.js fullcircle.js   # Act cinematics
+    themes/             # One era-faithful canvas scene per level (+ index.js registry)
+    ui/
+      hud.js            # HUD, WPM, ANSI keyboard guide (KEY_LAYOUT), prompt render
+      keyboard-preview.js  # "KNOW YOUR KEYS" canvas screen
+      cabinet-art.js    # Select screen: ACTS + pixel cabinet art
+      screens.js        # Screen switching, level theming, ready screen
+  css/                  # base / screens / levels (per-level palettes)
+  docs/                 # ROADMAP.md, screenshots/ (+capture-all.js), a11y/ (+audit.js)
+  research/             # Background research documents
 ```
+
+**Build gotcha:** the Go binary embeds assets at compile time — after ANY js/css change,
+`go build -o keystroke-kingdom .` and restart, or the server serves stale code.
 
 ---
 
@@ -240,29 +246,26 @@ defaultSettings = {
 
 ## Roadmap
 
-### Phase 1 — Prototype (Now)
-- [ ] Basic keypress input engine
-- [ ] Level 1 (J & F) fully playable
-- [ ] Gentle feedback system (no punishment)
-- [ ] Basic HUD
-- [ ] "Ready Player One" opening screen
+### Phase 1 — Prototype ✅ (complete)
+- [x] Keypress input engine · Level 1 playable · gentle feedback · HUD · opening screen
 
-### Phase 2 — Core Game
-- [ ] All 4 home row levels
-- [ ] Word bank system
-- [ ] Music integration
-- [ ] Settings toggles
-- [ ] Stats cabinet
+### Phase 2 — Core Game ✅ (complete except music)
+- [x] All home row levels — and in fact ALL 25 levels + 4 act cinematics
+- [x] Word bank system (per-level pools + Free Play sentences)
+- [ ] Music integration (Lyria) — see docs/ROADMAP.md §1.4
+- [x] Settings toggles (Tab; ADVENTURE/SURVIVAL, difficulty tiers, hints, sound, CRT, stats)
+- [ ] Stats cabinet — see docs/ROADMAP.md §1.3 (history-card album + cinematic replays live here)
 
-### Phase 3 — Mystery Cabinet
-- [ ] Mystery reveal sequence
-- [ ] Reaching keys (beyond home row)
-- [ ] Expanded word bank with vowels
+### Phase 3 — Mystery Cabinet ✅ (complete)
+- [x] Mystery reveal · reaching keys · expanded word banks · plus Basement/CommandCenter/FullCircle
 
-### Phase 4 — Ship Consideration
-- [ ] Evaluate Godot port if shipping for real
-- [ ] Accessibility review
-- [ ] Additional visual themes (Oona's ideas!)
+### Phase 4 — Current focus
+- [ ] Returning-player persistence (docs/ROADMAP.md §1.2 — biggest gap)
+- [ ] Lyria music · Stats Cabinet · Level 25 free-type finale
+- [ ] Accessibility: maintained via docs/a11y/audit.js (scrim-panel system in place)
+- [ ] Additional visual themes (Oona's ideas!) · Godot evaluation
+
+**The living backlog is `docs/ROADMAP.md` — keep it current every session.**
 
 ---
 

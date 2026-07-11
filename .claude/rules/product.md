@@ -141,16 +141,23 @@ Words are chosen to be:
 
 ## Toggleable Settings
 
-| Setting | Default | Option |
+*Built 2026-07-11 — press **Tab** on the title screen or pause menu. Persisted in
+localStorage. The play-style naming: **ADVENTURE** ("no timers, no lives — just you and
+the keys", the default, always) vs **SURVIVAL** ("quarters on the line — 1979 rules").*
+
+| Setting | Default | Options |
 |---|---|---|
-| Survival Mode | OFF | Toggle ON |
-| Time Limits | OFF | Toggle ON |
-| Lives | OFF | Toggle ON |
-| Finger Tracking Strictness | ON (gentle) | Strict / Off |
-| Hint Aggressiveness | Moderate | Subtle / Obvious |
-| Mistake Visibility | Small on-screen | Hidden / Prominent |
-| Player Name | Player One | Customizable |
-| Visual Theme | 1979 Arcade | Expandable (Oona's future ideas!) |
+| Play Style | ADVENTURE | SURVIVAL (opt-in; time pressure only — wrong keys NEVER cost anything) |
+| Lives (quarters) | 3 | 1–5 (Survival only) |
+| Difficulty | NOVICE | ARCADE / EXPERT — classic tiers, tuned "challenging, never cruel"; 15-streak earns a quarter back; game over is warm |
+| Hints | Moderate | Subtle / Obvious |
+| Mistakes Shown | Small | Hidden / Prominent |
+| Sound | ON | OFF |
+| CRT Effect | ON | OFF (accessibility) |
+| Stats Display | ON | OFF |
+| Player Name | Player One | Customizable (title screen; persisted) |
+| Erase All Progress | — | Y/N confirm required |
+| Visual Theme | 1979 Arcade | Future: expandable (Oona's ideas!) — see docs/ROADMAP.md |
 
 ---
 
@@ -164,6 +171,25 @@ A dedicated arcade cabinet in the world the player can walk up to any time. Disp
 Styled as a retro arcade high score board. Makes data exploration feel like part of the game, not homework. A quiet STEM moment built into the world.
 
 ---
+
+## Free Play *(built 2026-07-11)*
+Press **F** on the level-select screen: play ANY cabinet with the full keyboard, typing
+real sentences (cabinet-flavored + shared early-reader pools), with live WPM shown.
+Speed is displayed, never enforced. Completion returns to the arcade for cabinet-hopping.
+
+## History Cards *(built 2026-07-11)*
+Seventeen computing-history moments hidden in the curriculum — each level's "moment word"
+is typeable with exactly that level's keys (`ada` the moment home row completes; ARPANET's
+crashed "LO" login on the 1/0 level; `Eniac` in capitals; `hello world` at the end).
+Typing it mid-play earns only a gold glint (flow is never interrupted); at level complete,
+a little business card is "picked up off the arcade floor" with the story. Cards are
+guaranteed — a level won't end until its moment word has appeared. Collection persists;
+the album UI belongs to the Stats Cabinet. Research: `research/computing-history-moments.md`.
+
+## The Hidden Layer *(built 2026-07-10)*
+A hacker-culture easter-egg layer: the title screen listens for old magic words, the
+browser console greets the curious, and the Level 20 terminal whispers history.
+Catalog + design rules: `.claude/rules/easter-eggs.md`. Research: `research/hacker-culture.md`.
 
 ## Music
 Original songs generated via Google Lyria, one per level. Each matches the era and emotional arc of its level. See separate music prompt documents for Lyria generation details.
