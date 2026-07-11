@@ -6,6 +6,7 @@ A retro 1979 arcade typing game for kids learning to read and type together. Bui
 
 @.claude/rules/product.md
 @.claude/rules/tech.md
+@.claude/rules/visual-validation.md
 
 ## Quick Reference
 
@@ -32,21 +33,56 @@ This is intentional pedagogical design based on watching Oona learn. Do not "fix
 - Godot if/when we decide to ship for real
 
 ### Levels
-| Level | Keys | Era |
-|---|---|---|
-| 1 | J, F | Atari 1977 |
-| 2 | D, K | Arcade 1980 |
-| 3 | S, L | NES 1985 |
-| 4 | A, ※ | SNES 1991 |
-| Mystery | Full home row | The future |
+| Level | Keys | Game | Era |
+|---|---|---|---|
+| 1 | J, F | Breakout | Atari 1976 |
+| 2 | D, K | Space Invaders | Arcade 1978 |
+| 3 | S, L | Pac-Man | Arcade 1980 |
+| 4 | A, ※ | Galaga | Arcade 1981 |
+| 5 | G, H | Joust | Arcade 1982 |
+| — | *Mystery beat* | *The computer is revealed* | — |
+| 6 | E, I | Donkey Kong | Arcade 1981 |
+| 7 | R, U | Dragon's Lair | Arcade 1983 |
+| 8 | T, Y | Tetris | Home computer 1984 |
+| 9 | W, O | Super Mario Bros | NES 1985 |
+| 10 | Q, P | The Legend of Zelda | NES 1986 |
+| 11 | V, M | Sonic the Hedgehog | Genesis 1991 |
+| 12 | B, N | Street Fighter II | Arcade/SNES 1991 |
+| 13 | C, , | Myst | CD-ROM 1993 |
+| 14 | X, . | Donkey Kong Country | SNES 1994 |
+| 15 | Z, / | Pokémon Red/Blue | Game Boy 1996 |
+| 16 | 5, 6 | SimCity 2000 | PC 1993 |
+| 17 | 4, 7 | GoldenEye 007 | N64 1997 |
+| 18 | 3, 8 | Age of Empires | PC 1997 |
+| 19 | 2, 9 | Final Fantasy VII | PS1 1997 |
+| 20 | 1, 0 | *Terminal / binary reveal* | 1960s–∞ |
+| 21 | -, = | Out Run | Arcade 1986 |
+| 22 | [, ], \ | Q*bert | Arcade 1982 |
+| 23 | `, ' | Missile Command | Arcade 1980 |
+| 24 | Shift | *Player types their own name* | Present |
+| 25 | Space, Backspace | *First paragraph* | Present |
 
 ※ The eighth key (right of L, right pinky) is never called "semicolon" in-game — it's "the mystery key," "the final key," or "the eighth key." Lyria cannot pronounce it.
+
+### Arcade Cabinet Rule (one game per level, no reuse)
+Each arcade cabinet gets **exactly one** game. A specific game or franchise cannot be assigned to more than one level. Clearly distinct games in the same franchise count as different cabinets (Pac-Man vs Ms. Pac-Man). Same title or near-identical reskins do not — they're the same cabinet.
+
+Full assignment table (all 25 levels): see `.claude/rules/levels.md`
 
 ### Word Bank Principle
 No real words until Level 3. From Level 3 onward, words are chosen to match early reader vocabulary — short, phonetic, recognizable. Typing a real word they can read is a double win. Never interrupt that moment.
 
 ### Player Name
 Default: **Player One**. Customizable. Opening screen reads "READY [NAME]!" — a nod to both real 1979 arcade culture and the Spielberg film.
+
+### Platform Key Label (Return vs Enter)
+Mac keyboards say **Return**; Windows/Linux say **Enter**. Oona was confused when the UI said "ENTER" and her keyboard said "RETURN."
+
+Rules:
+- Never hard-code the word "ENTER" as a key-press instruction in any display string
+- Always wrap it in `<span data-enter-key>ENTER</span>` (or `<kbd data-enter-key>`) so `main.js` can swap it at load time
+- `navigator.platform` detection in `main.js` replaces all `[data-enter-key]` elements with "RETURN" on Mac, "ENTER" elsewhere
+- The event handler stays `e.key === 'Enter'` on all platforms — only the display label changes
 
 ## Working With This Codebase
 

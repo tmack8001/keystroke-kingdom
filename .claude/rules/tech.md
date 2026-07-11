@@ -52,6 +52,12 @@ Build fast, stay scrappy, learn what we like. Let AI agents do the heavy lifting
 
 ## Core Engine Principles
 
+### Platform Key Label Detection
+- Mac keyboards label the confirmation key **Return**; Windows/Linux keyboards label it **Enter**
+- The browser fires `e.key === 'Enter'` on both — event handling is platform-agnostic
+- All UI text that displays the key name uses `[data-enter-key]` span elements that are updated at page load via `navigator.platform`
+- Never hard-code the word "ENTER" in display strings — always use `[data-enter-key]` elements
+
 ### Input Handling
 - Capture keypress events
 - Validate against **expected key** for current prompt
@@ -200,6 +206,17 @@ defaultSettings = {
 - CRT glow effect via CSS box-shadow/filter
 - Retro pixel fonts via Google Fonts (Press Start 2P or similar)
 
+### Arcade Cabinet Game Assignments
+**One game per cabinet. Never reuse a title across levels.** Clearly distinct games in the same franchise (Pac-Man vs Ms. Pac-Man) are allowed; near-identical reskins are not.
+
+| Level | Game | Developer | Year | Theme file |
+|---|---|---|---|---|
+| 1 | Breakout | Atari | 1976 | `themes/breakout.js` |
+| 2 | Space Invaders | Taito | 1978 | `themes/invaders.js` |
+| 3 | Pac-Man | Namco | 1980 | `themes/pacman.js` |
+| 4 | Galaga | Namco | 1981 | `themes/galaga.js` |
+| 5 | Joust | Williams | 1982 | `themes/joust.js` |
+
 ### Era Progression
 | Level | Era | Color Palette | Effect |
 |---|---|---|---|
@@ -207,6 +224,7 @@ defaultSettings = {
 | 2 | Arcade 1980 | Black + 4 colors | Simple sprites |
 | 3 | NES 1985 | 8-bit full palette | Scrolling backgrounds |
 | 4 | SNES 1991 | Rich 16-bit palette | Parallax, animation |
+| 5 | Arcade 1982 | Orange/black | Lava + flapping knights |
 | Mystery | Future | Glowing, futuristic | Full reveal sequence |
 
 ---
