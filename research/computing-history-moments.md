@@ -291,6 +291,9 @@ Card claim: *"The first program every coder writes makes the computer say hello.
   weaker than the museum-first standard used elsewhere in this document.
 
 ## Mechanics decisions (why they're this way)
+
+*Internal design decisions — grounded in this project's own design bible (CLAUDE.md,
+.claude/rules/product.md), not external history; no external citations applicable.*
 - **Card at level-complete, not mid-play** — product.md's law: celebrations at natural
   pause points; mid-flow feedback stays ambient (the gold glint).
 - **Guaranteed, not lucky** — QA found the original injection (70% into the pattern list)

@@ -168,12 +168,16 @@ See Corrections below — the file's "K&R, 1978" line has been annotated to note
 2. [The History of ASCII 1963 — ascii-code.com](https://www.ascii-code.com/articles/ASCII-1963) — corroborates the 1963 ANSI/ASA designation X3.4-1963. **[fetched]**
 
 ## Rejected categories (and why)
+
+*Internal design judgment — no external citations applicable.*
 - Anything requiring URLs/logins/networks — kids retype what they see
 - "Haunted game" creepypasta tropes — wrong emotional register for this game
 - References younger than the act they'd inhabit — breaks the era-authenticity rule
 - Leetspeak identity jokes — dated in the wrong way, no history lesson inside
 
 ## Design rules distilled (enforced in easter-eggs.md)
+
+*Internal design rules — the project's own law (CLAUDE.md), not external claims.*
 1. Summoned by name only — never interrupts play
 2. Kid-safe on discovery, parent-delightful on recognition
 3. Era-authentic, ideally act-matched

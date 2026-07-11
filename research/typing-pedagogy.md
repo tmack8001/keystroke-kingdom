@@ -101,6 +101,10 @@ McGurrin should be cited as popularizer, not settled inventor.
 
 ## Decisions locked during Act 5 planning (with reasoning)
 
+*These are internal design decisions. Where a decision leans on an external factual
+claim (letter frequency, decodable-word research, error-feedback research), the
+reference blocks below each cluster carry the sources; the rest is project judgment.*
+
 1. **Symbols before Shift.** `` ` - = [ ] \ ' `` are unshifted base keys; learn the
    location first, then Shift becomes the payoff that unlocks everything printed on the
    keys' upper halves. (Canon tutors under-teach this; we made it three levels.)
