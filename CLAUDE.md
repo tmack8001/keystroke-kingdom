@@ -8,6 +8,11 @@ A retro 1979 arcade typing game for kids learning to read and type together. Bui
 @.claude/rules/tech.md
 @.claude/rules/visual-validation.md
 
+Also load when relevant (not auto-included): `.claude/rules/levels.md` (full curriculum),
+`.claude/rules/transitions.md` (cinematics), `.claude/rules/easter-eggs.md` (hidden layer),
+`docs/ROADMAP.md` (living backlog — **check this at session start**), `research/*.md`
+(pedagogy, hacker culture, game history background).
+
 ## Quick Reference
 
 ### What This Is
@@ -16,7 +21,7 @@ A browser-based typing game where a child walks through a 1979 arcade, dropping 
 ### The One Rule That Overrides Everything
 > "The game should only ever stop a player's flow with joy, never with punishment."
 
-No timers running out. No lives lost. No skipping ahead after a wrong keypress. Survival mode is opt-in only, never the default.
+No timers running out. No lives lost. No skipping ahead after a wrong keypress. Survival mode is opt-in only (Settings → PLAY STYLE), never the default — and even in Survival, wrong keys cost nothing (time pressure only).
 
 ### Wrong Keypress Behavior (critical, never change without discussion)
 1. Wrong key pressed → gentle nudge sound
@@ -84,9 +89,24 @@ Rules:
 - `navigator.platform` detection in `main.js` replaces all `[data-enter-key]` elements with "RETURN" on Mac, "ENTER" elsewhere
 - The event handler stays `e.key === 'Enter'` on all platforms — only the display label changes
 
+### Built Features Quick Map (as of 2026-07-11, branch act5-full-circle)
+- **All 25 levels** playable + 4 act cinematics (`js/mystery.js`, `basement.js`, `commandcenter.js`, `fullcircle.js`)
+- **Free Play** — `F` on the select screen; full keyboard + sentences + WPM (`js/freeplay.js`)
+- **History cards** — 17 typeable computing-history moments, revealed at level complete, never missable (`js/history-cards.js`; research/computing-history-moments.md)
+- **Settings** — `Tab` from title/pause; ADVENTURE (default) vs SURVIVAL with NOVICE/ARCADE/EXPERT + mercy quarters (`js/settings.js`)
+- **Easter eggs** — title-screen magic words, Konami, console banner (`.claude/rules/easter-eggs.md`)
+- **Era-progressive graphics** — Acts 2–4 + finale upgraded; Acts 1 & 21–23 deliberately primitive
+- **In-game keyboard guide** — true ANSI silhouette with fog-of-war (`KEY_LAYOUT` in `js/ui/hud.js`)
+- **Tooling** — screenshots: `node docs/screenshots/capture-all.js`; contrast audit: `node docs/a11y/audit.js`
+
+### Engine input contract (do not break)
+Pattern tokens: lowercase chars/digits/symbols, uppercase A–Z (= Shift+letter, exact-case matched), `' '`, `'Backspace'`. Pure modifier keydowns are ignored entirely — never a mistake. Case-sensitivity applies ONLY when the expected token is uppercase.
+
 ## Working With This Codebase
 
 - Ask before changing any feedback/input behavior — it's grounded in specific observations of a real child learning
 - Settings are toggles, not defaults — never make survival mechanics the default experience
 - When in doubt, refer to the emotional design bible in product.md
 - Oona may add new visual themes later — keep theming modular and extensible
+- The Go binary embeds js/css at compile time — `go build -o keystroke-kingdom .` and restart after ANY asset change, or the server serves stale code
+- **Start of session:** skim `docs/ROADMAP.md` for outstanding work. **End of session:** update `docs/ROADMAP.md` (and any touched design docs) to reflect what changed — a hook will remind you
