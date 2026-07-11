@@ -20,7 +20,7 @@
   <div class="title-marquee">
     <h1>KEYSTROKE<span class="kingdom">KINGDOM</span></h1>
   </div>
-  <div class="insert-coin" id="insert-coin">INSERT COIN<br><span class="coin-hint">PRESS SPACE OR ENTER</span></div>
+  <div class="insert-coin" id="insert-coin">INSERT COIN<br><span class="coin-hint">PRESS SPACE OR <span data-enter-key>ENTER</span></span></div>
   <div class="reboot-hint" id="reboot-hint">PRESS R TO REBOOT CABINET</div>
   <div class="wopr-text" id="wopr-text"></div>
   <div class="name-setup hidden" id="name-setup">
@@ -38,7 +38,7 @@
       spellcheck="false"
       aria-label="player nickname"
     >
-    <div class="ready-text">PRESS <kbd>ENTER</kbd> TO START</div>
+    <div class="ready-text">PRESS <kbd data-enter-key>ENTER</kbd> TO START</div>
   </div>
 </div>
 
@@ -48,6 +48,21 @@
   <div class="ready-name" id="ready-name">PLAYER ONE</div>
   <div class="level-intro" id="level-intro"></div>
   <div class="start-prompt">PRESS SPACE TO BEGIN</div>
+</div>
+
+<!-- KEYBOARD PREVIEW SCREEN -->
+<div class="screen hidden" id="keyboard-preview-screen">
+  <div class="kbp-header">
+    <div class="kbp-title" id="kbp-title">LEVEL 1</div>
+    <div class="kbp-subtitle" id="kbp-subtitle">KNOW YOUR KEYS</div>
+  </div>
+  <div class="kbp-legend">
+    <span class="kbp-legend-new">■ NEW THIS LEVEL</span>
+    <span class="kbp-legend-known">■ ALREADY KNOW</span>
+    <span class="kbp-legend-fog">■ FOG OF WAR</span>
+  </div>
+  <div class="kbp-spacer"></div>
+  <div class="kbp-start-prompt">PRESS SPACE TO CONTINUE</div>
 </div>
 
 <!-- GAME SCREEN -->
@@ -66,12 +81,7 @@
       <div class="prompt-sequence" id="prompt-sequence"></div>
       <div class="finger-hint" id="finger-hint"></div>
     </div>
-    <div>
-      <div class="keyboard-guide" id="keyboard-guide"></div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-      </div>
-    </div>
+    <div class="keyboard-guide" id="keyboard-guide"></div>
   </div>
 </div>
 
@@ -88,9 +98,12 @@
 <div class="screen hidden" id="select-screen">
   <div class="select-title">GREETINGS PROFESSOR FALKEN</div>
   <div class="select-subtitle">SHALL WE PLAY A GAME?</div>
+  <div class="select-act-prev" id="select-act-prev"></div>
+  <div class="select-act-label" id="select-act-label"></div>
   <div class="select-cabinets" id="select-cabinets"></div>
-  <div class="select-prompt">PRESS 1-4 OR USE ARROWS</div>
-  <div class="select-hint">ENTER TO START / ESC TO CANCEL</div>
+  <div class="select-act-next" id="select-act-next"></div>
+  <div class="select-prompt">1-5 OR &lt; &gt; TO SELECT  ·  ↑ ↓ TO CHANGE ACT</div>
+  <div class="select-hint"><span data-enter-key>ENTER</span> TO START / ESC TO CANCEL</div>
 </div>
 
 <!-- LEVEL COMPLETE OVERLAY -->

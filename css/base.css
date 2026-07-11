@@ -10,7 +10,7 @@
   --crt-amber: #ffb000;
   --crt-amber-dim: #7a5500;
   --atari-white: #e0e0e0;
-  --atari-dim: #555;
+  --atari-dim: #8a8a8a; /* was #555 — failed WCAG (~2.3:1 on black) across a dozen text classes */
   --nudge-red: #ff4444;
   --bg: #0a0a0a;
   --level-accent: #39ff14;
@@ -64,6 +64,7 @@ body {
 
 .screen {
   position: relative;
+  z-index: 2; /* above canvas (z-index: 1); transparent bg lets canvas show through */
   width: 100%;
   height: 100%;
   display: flex;
