@@ -197,7 +197,7 @@ Original songs generated via Google Lyria, one per level. Each matches the era a
 ---
 
 ## Inspirations
-- Mario Teaches Typing (1991)
+- Mario Teaches Typing (1992)
 - Mavis Beacon Teaches Typing
 - Ready Player One (Spielberg, 2018)
 - The actual 1979 arcade experience

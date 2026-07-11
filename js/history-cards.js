@@ -58,7 +58,7 @@ export const HISTORY_CARDS = {
     word: 'grace',
     title: 'GRACE HOPPER',
     year: '1947',
-    fact: 'Grace Hopper\'s team found a real moth stuck inside their computer — the first computer "bug." She taped it into the logbook.',
+    fact: 'A real moth got stuck inside Grace Hopper\'s team\'s computer — the first "bug" taped into a logbook. She told the story so well, it became hers.',
   },
   14: {
     word: 'pixel',

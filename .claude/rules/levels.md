@@ -12,7 +12,7 @@ Every major typing program (Mario Teaches Typing, Mavis Beacon, Dance Mat Typing
 3. **R and U** — index fingers reach up and in. Common letters; opens "her," "sir," "fur," "rule."
 4. **T and Y** — the deepest index finger reaches. T is the #2 most common letter. Y finally means real sentences are possible.
 5. **W and O** — ring fingers up. O unlocks "word," "world," "flow," "know."
-6. **Q and P** — pinky fingers up. Q is the rarest; P completes the top row. Milestone: full top row done.
+6. **Q and P** — pinky fingers up. Q is among the rarest letters (only Z is rarer); P completes the top row. Milestone: full top row done.
 7. **Bottom row in finger pairs** — V/M (index), B/N (index center), C/comma (middle), X/period (ring), Z/slash (pinky).
 8. **Numbers** — different conceptual layer. Index fingers inward from 5/6 outward.
 9. **Shift** — two-hand coordination. The last new mechanical concept.
@@ -257,7 +257,7 @@ At Level 1, only one cabinet is lit. The rest are dark silhouettes — no labels
 *"Pinky fingers reach up — top row complete"*
 
 - **New keys:** Q (left pinky, up from A), P (right pinky, up from the eighth key)
-- **Why last in top row:** Q is the rarest letter in English. P completes common words but requires context. Both need the weakest finger to reach to the most distant top-row keys. Saved for last deliberately.
+- **Why last in top row:** Q is one of the two rarest letters in English (only Z is rarer — Norvig's corpus analysis puts Z at 0.09%, Q at 0.12%). P completes common words but requires context. Both need the weakest finger to reach to the most distant top-row keys. Saved for last deliberately.
 - **Celebration:** "TOP ROW UNLOCKED" — second major milestone. The top bar of the on-screen keyboard lights up completely for the first time.
 - **Game:** The Legend of Zelda — Nintendo, 1986. A gold-cartridge NES beside a wooden TV. Top-down dungeon exploration, keys unlocking locked doors, a map that fills in as you discover — it's the player's own journey made literal. You've been unlocking keys the whole time.
 - **Era:** NES 1986
@@ -325,7 +325,7 @@ At Level 1, only one cabinet is lit. The rest are dark silhouettes — no labels
 - **The comma:** First punctuation key in the game. The pause key. *"A comma is a breath. Every good sentence has them."* Introduce it gently — it doesn't make a sound on its own, but language collapses without it.
 - **Game:** Myst — Cyan, 1993. A computer running the first great CD-ROM game. Slow, atmospheric, puzzle-focused — a complete tonal shift after Street Fighter II. This level is about reading. Pausing. Thinking before you press. The comma made visual.
 - **Era:** CD-ROM 1993
-- **Graphic quality:** The first pre-rendered photographic textures. Myst's environments were rendered on Silicon Graphics workstations and look genuinely photographic — a quality leap that shocked everyone in 1993. The contrast with anything prior in this game is intentional and dramatic.
+- **Graphic quality:** The first pre-rendered photographic textures. Myst's environments were modeled and rendered on Apple Macintosh Quadras in StrataVision 3D and look genuinely photographic — a quality leap that shocked everyone in 1993. (The SGI-workstation pipeline belongs to its sequel Riven, 1997 — and to DKC at Level 14.) The contrast with anything prior in this game is intentional and dramatic.
 - **Palette:** Misty island grays, slate blues, aged copper, leather book textures — the most realistic visuals in the game so far
 - **Music:** Lyria prompt: *"sparse ambient mystery — solo piano over island wind, slow mechanical tones, long silences that feel intentional. The sound of a puzzle thinking."*
 - **Words unlocked:** cool, curl, cord, core, care, dare, race, face, lace, pace, mice, dice, rice, nice, slice, twice, crisp, crack, clock, click, stuck, thick, trick, track, cream, dream
@@ -484,7 +484,7 @@ The whole game has been building here. Letters are numbers. Numbers are electric
 | 5 | The Arcade | G, H | Joust | Williams | 1982 |
 | 6 | Computer Wing | E, I | Donkey Kong | Nintendo | 1981 |
 | 7 | Computer Wing | R, U | Dragon's Lair | Cinematronics | 1983 |
-| 8 | Computer Wing | T, Y | Tetris | Pajitnov / Nintendo | 1984 |
+| 8 | Computer Wing | T, Y | Tetris | Alexey Pajitnov (Nintendo Game Boy version, 1989) | 1984 |
 | 9 | Computer Wing | W, O | Super Mario Bros | Nintendo | 1985 |
 | 10 | Computer Wing | Q, P | The Legend of Zelda | Nintendo | 1986 |
 | 11 | The Basement | V, M | Sonic the Hedgehog | Sega | 1991 |
