@@ -85,3 +85,11 @@ not shame; the only bad failure is an unrecorded one.*
 - **F21 — levels.md regrew past the 40k budget that motivated its own split** (currently
   40,970 bytes; split at 2026-06-25 specifically to get under 40k). No enforcement
   exists; added to docs/ROADMAP.md tech debt. Budgets without checks silently regress.
+
+## 2026-07-11 — vault/hooks/journal build (session close)
+
+- **F22 — Second wikilink-parser blind spot in one day.** After the escaped-pipe fix
+  (F14), the linter false-flagged `[[page]]` examples written inside backtick code spans
+  in the journal headers themselves. Same lesson class, second instance: Obsidian link
+  syntax has a long tail (tables, code spans, aliases, headings) — parse against real
+  documents, not imagined ones. Fixed by stripping code spans before link extraction.

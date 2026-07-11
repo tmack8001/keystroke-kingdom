@@ -58,3 +58,9 @@ collaboration. IDs are monotonic (O1, O2, …); cross-reference as `L#`/`O#`/`F#
 - **O15 — Proactive self-audit against design rules happened before being asked** — the
   lava troll was flagged as punishing when proposed, not after shipping. The design bible
   works best as a filter at proposal time. (→ L19)
+
+## 2026-07-11 — vault/hooks/journal build (session close)
+
+- **O16 — Enforcement hooks dogfood instantly and impartially.** The journal hook's first
+  firing was against the session that wrote it — and this very entry is its demanded
+  output. Automation that binds its author is automation you can trust. (→ O8, L26)
