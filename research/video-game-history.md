@@ -55,8 +55,8 @@ for Act 5 in this cycle.)
 
 | Lvl | Game | Why it earned the cabinet |
 |---|---|---|
-| 21 | **Out Run** (Sega / Yu Suzuki, 1986) | The definitive super-scaler road racer — sprite-scaling pseudo-3D, radio-station soundtrack choice, arcade-luxury fantasy. Faithful pixel art: sunset gradient, palms, red convertible |
-| 22 | **Q\*bert** (Gottlieb, 1982; programmed/designed by Warren Davis from an original character concept by artist Jeff Lee) | Isometric cube pyramid — one of the most visually distinct cabinets ever; instantly readable to a child |
+| 21 | **[[out-run\|Out Run]]** (Sega / Yu Suzuki, 1986) | The definitive [[super-scaler]] road racer — sprite-scaling pseudo-3D, radio-station soundtrack choice, arcade-luxury fantasy. Faithful pixel art: sunset gradient, palms, red convertible |
+| 22 | **[[q-bert\|Q\*bert]]** (Gottlieb, 1982; programmed/designed by Warren Davis from an original character concept by artist Jeff Lee) | Isometric cube pyramid — one of the most visually distinct cabinets ever; instantly readable to a child |
 | 23 | **Missile Command** (Atari, 1980; Dave Theurer) | Trackball defense classic. IMPORTANT adaptation: in our version cities architecturally cannot be destroyed (no-punishment rule) — keystrokes only intercept; fireworks, not war |
 | 24 | High-score entry screen (the AAA initials ritual) | Not a licensed game — the shared cultural memory of typing three initials; here the player types their whole name via Shift |
 | 25 | Word processor | The keyboard's destination: writing. Modern, calm, paper-white |
@@ -102,12 +102,12 @@ historical-ordering rules deliberately loosened. See docs/ROADMAP.md §2.
 
 ### References — Act 6 parked mentions
 
-**Mario Kart** (likely candidate: the original *Super Mario Kart*, Nintendo, SNES, 1992):
+**[[mario-kart|Mario Kart]]** (likely candidate: the original *Super Mario Kart*, Nintendo, SNES, 1992):
 - [Super Mario Kart — Wikipedia](https://en.wikipedia.org/wiki/Super_Mario_Kart) — developed by Nintendo EAD (Shigeru Miyamoto as EAD general manager overseeing development), released in Japan August 27, 1992, for SNES; "credited with inventing the 'kart racing' subgenre of video games."
 - [Best Mario Kart Games Of All Time — Nintendo Life](https://www.nintendolife.com/guides/best-mario-kart-games-of-all-time) — "the game that birthed an entire genre."
 - [Super Mario Kart — Super Mario Wiki (mariowiki.com)](https://www.mariowiki.com/Super_Mario_Kart) — corroborating production credits (Miyamoto producer; Tadashi Sugiyama/Hideki Konno directors). Fan-maintained; used only as a corroborating third source, not standalone.
 
-**Tron** (Bally Midway, 1982) — already has a full entry in `arcade-cabinets-by-era.md`; citations there apply. Summary: developer Bally Midway, released August 1982, licensed from the 1982 Disney film, four sub-games (naming varies slightly by source — "I/O Tower" per Wikipedia vs. "Grid Bugs" per arcade-museum.com for one segment), blacklight-lit glowing cabinet, ~10,000 units sold.
+**[[tron|Tron]]** (Bally Midway, 1982) — already has a full entry in `arcade-cabinets-by-era.md`; citations there apply. Summary: developer Bally Midway, released August 1982, licensed from the 1982 Disney film, four sub-games (naming varies slightly by source — "I/O Tower" per Wikipedia vs. "Grid Bugs" per arcade-museum.com for one segment), blacklight-lit glowing cabinet, ~10,000 units sold.
 - [Tron — Museum of the Game (arcade-museum.com)](https://www.arcade-museum.com/Videogame/tron)
 - [Tron (video game) — Wikipedia](https://en.wikipedia.org/wiki/Tron_(video_game))
 
@@ -121,7 +121,7 @@ research file — `arcade-cabinets-by-era.md` is a general arcade-cabinet survey
 1:1 match the curriculum, and several of these are console/CD-ROM titles outside its scope.
 Recorded here per level for completeness.
 
-### Level 5 — Joust (Williams Electronics, 1982)
+### Level 5 — [[joust|Joust]] (Williams Electronics, 1982)
 
 - Developer/publisher: Williams Electronics, Inc., released 1982. Lead designer: **John Newcomer** (his first game at Williams); full credited team: programmer Bill Pfutzenreuter, artist Janice "Jan" Woldenberg-Miller, cabinet art by Python Anghelo, audio by Tim Murphy and John Kotlarik.
 - Controls: one "Flap" button + 2-way joystick (left/right only, no up/down) — repeated flapping makes the mount ascend/hover/descend.
@@ -137,7 +137,7 @@ Recorded here per level for completeness.
 
 *Note: this is a new entry — Joust previously had no detail in `arcade-cabinets-by-era.md` despite being Level 5's cabinet. Recommend adding a full table entry there matching the file's existing per-game format; the facts above are ready to drop in.*
 
-### Level 7 — Dragon's Lair (Cinematronics / Advanced Microcomputer Systems, 1983)
+### Level 7 — [[dragons-lair|Dragon's Lair]] (Cinematronics / Advanced Microcomputer Systems, 1983)
 
 - Developed by Advanced Microcomputer Systems, published by Cinematronics, released June 1983.
 - Conceived by **Rick Dyer**, who brought in **Don Bluth's** animation studio (ex-Disney) — ~22 minutes of animation, ~50,000 drawings, ~$1.3M of the ~$3M total budget.
@@ -149,7 +149,7 @@ Recorded here per level for completeness.
 - [Dragon's Lair (1983 video game) — Wikipedia](https://en.wikipedia.org/wiki/Dragon's_Lair_(1983_video_game)) — confirms the 50-cent price point and earnings figures ($32M, ~$103M inflation-adjusted). Used alongside a second source, not alone.
 - [40 years later, I finally beat the arcade game that financially destroyed me as a child — PC Gamer](https://www.pcgamer.com/games/action/40-years-later-i-finally-beat-the-arcade-game-that-financially-destroyed-me-as-a-child/) — games-journalism corroboration of the 50-cent pricing and player experience.
 
-### Level 9 — Super Mario Bros (Nintendo, 1985)
+### Level 9 — [[super-mario-bros|Super Mario Bros]] (Nintendo, 1985)
 
 - Directed/designed by **Shigeru Miyamoto**, co-designed with **Takashi Tezuka**, programmed by Toshihiko Nakago. Released in Japan September 13, 1985, for the Famicom/NES.
 - The "saved the industry" framing is the accepted historical narrative and specifically refers to the North American video game crash of 1983 — Super Mario Bros. and the NES are widely credited with reviving the market.
@@ -159,7 +159,7 @@ Recorded here per level for completeness.
 - [Computer History Museum — "Nintendo Ups the Ante"](https://www.computerhistory.org/revolution/computer-games/16/194) — independently corroborates the 1983 market collapse and Nintendo's NES/Super Mario Bros.-led revival.
 - [Nintendo Life — "Mario History: Super Mario Bros. – 1985"](https://www.nintendolife.com/news/2015/08/mario_history_super_mario_bros_-_1985) — development history, Miyamoto/Tezuka roles.
 
-### Level 10 — The Legend of Zelda (Nintendo, 1986)
+### Level 10 — [[legend-of-zelda|The Legend of Zelda]] (Nintendo, 1986)
 
 - Designed and directed by **Shigeru Miyamoto** and **Takashi Tezuka** (Miyamoto produced; Tezuka wrote story/script). Released in Japan February 1986 as a Family Computer Disk System launch title; the North American NES cartridge release followed more than a year later (1987).
 - The gold-colored cartridge and cutaway box design were specific to the North American NES cartridge release, not the original 1986 Japanese Famicom Disk System version.
@@ -171,7 +171,7 @@ Recorded here per level for completeness.
 
 *Note: if `levels.md`'s Level 10 entry implies the gold cartridge was part of the original 1986 release, that's an NA-specific detail from the later cartridge version, not the original Japanese Disk System launch — flagged for awareness, not edited here.*
 
-### Level 11 — Sonic the Hedgehog (Sega, 1991)
+### Level 11 — [[sonic-the-hedgehog|Sonic the Hedgehog]] (Sega, 1991)
 
 - Lead programmer **Yuji Naka**, character designer **Naoto Ohshima**, level/lead designer **Hirokazu Yasuhara** — collectively "Sonic Team." Released June 23, 1991, on Sega Genesis. Developed under the internal codename "Defeat Mario."
 - Speed was the explicit core design pillar — Naka built a curved-movement algorithm specifically to let Sonic move faster than Super Mario Bros. while staying readable.
@@ -181,7 +181,7 @@ Recorded here per level for completeness.
 - [Sonic the Hedgehog (1991 video game) — Wikipedia](https://en.wikipedia.org/wiki/Sonic_the_Hedgehog_(1991_video_game)) — designer credits, June 23, 1991 release, Genesis platform, "Defeat Mario" codename, speed-as-design-pillar quotes.
 - [Sonic the Hedgehog — The Strong National Museum of Play](https://www.museumofplay.org/games/sonic-the-hedgehog/) — institutional museum-induction source (2016) confirming 1991 release, the internal "Mr. Needlemouse" design contest, and Sonic's role in the Sega/Nintendo console wars. Does not name Naka/Ohshima individually — pair with the Wikipedia source for designer credits.
 
-### Level 13 — Myst (Cyan, Inc., 1993)
+### Level 13 — [[myst|Myst]] (Cyan, Inc., 1993)
 
 - Created by brothers **Rand and Robyn Miller** at Cyan, Inc. (Spokane, WA), published by Brøderbund, released September 24, 1993, for CD-ROM.
 - **Rendered on Apple Macintosh Quadra computers using StrataVision 3D** (by Strata, Inc.), with additional modeling in Macromedia MacroModel, image editing in Photoshop, video work in Adobe Premiere — roughly 2,500 rendered images and ~40-66 minutes of QuickTime animation. **Not Silicon Graphics** (see Act 3 correction above — SGI was used for the 1997 sequel Riven, not the original Myst).
@@ -191,7 +191,7 @@ Recorded here per level for completeness.
 - [Myst Behind the Scenes — Myst Journey](https://mystjourney.com/myst/making-of/) — corroborates the six-Macintosh-Quadra/StrataVision 3D pipeline and production stats.
 - [StrataVision 3D — Wikipedia](https://en.wikipedia.org/wiki/StrataVision_3D) — background on the rendering software itself.
 
-### Level 14 — Donkey Kong Country (Rare, SNES, 1994)
+### Level 14 — [[donkey-kong-country|Donkey Kong Country]] (Rare, SNES, 1994)
 
 - Developed by Rare, published by Nintendo, released November 1994. Rare invested NES-era profits (~1992) in Silicon Graphics (SGI) Challenge workstations running Alias PowerAnimator, building 3D NURBS character models that were textured, animated, rendered frame-by-frame, and compressed down to 2D sprites for the SNES via Rare's proprietary "ACM" (Advanced Computer Modelling) technique. **This SGI claim is accurate and well-documented** — unlike the frequently-confused Myst claim above.
 
@@ -199,7 +199,7 @@ Recorded here per level for completeness.
 - [Donkey Kong Country — Wikipedia](https://en.wikipedia.org/wiki/Donkey_Kong_Country) — Rare/Nintendo, 1994, SGI Challenge workstations + Alias PowerAnimator + NURBS modeling + ACM compression technique.
 - [Why Donkey Kong Country was a Technical Marvel — GameGrin](https://www.gamegrin.com/articles/why-donkey-kong-country-was-a-technical-marvel/) — games-journalism corroboration.
 
-### Level 15 — Pokémon Red/Green and Red/Blue (Game Freak, 1996 Japan / 1998 US)
+### Level 15 — [[pokemon-red-blue|Pokémon Red/Green and Red/Blue]] (Game Freak, 1996 Japan / 1998 US)
 
 - Developed by Game Freak, published by Nintendo, designed/created by **Satoshi Tajiri** with character/art direction by **Ken Sugimori**. Development took roughly six years and nearly bankrupted Game Freak.
 - **Pokémon Red and Green** released in Japan February 27, 1996; recombined and localized as **Pokémon Red and Blue** for North America in 1998.
@@ -211,7 +211,7 @@ Recorded here per level for completeness.
 
 *Gap flagged: no Smithsonian/Strong Museum of Play source was located specifically for Pokémon Red/Blue's release history in this pass — worth a follow-up search if an institutional citation is required for this entry specifically.*
 
-### Level 16 — SimCity 2000 (Maxis, 1993)
+### Level 16 — [[simcity-2000|SimCity 2000]] (Maxis, 1993)
 
 - Designed by **Will Wright**, co-developed with **Fred Haslam** at Maxis. Macintosh version released December 1993; MS-DOS version February 1994. Maxis both developed and published (distinct from the original 1989 SimCity, which Brøderbund distributed).
 - Introduced isometric view (replacing the original's top-down perspective), underground infrastructure layers, and an expanded on-screen color palette.
@@ -221,7 +221,7 @@ Recorded here per level for completeness.
 - ["SimCity" — The Strong National Museum of Play](https://www.museumofplay.org/games/simcity/) — Wright/Maxis, Brøderbund's role on the original SimCity, World Video Game Hall of Fame induction, historical significance.
 - ["Will Wright. SimCity 2000. 1993" — MoMA Collection](https://www.moma.org/collection/works/152406) — MoMA's permanent collection entry crediting Will Wright, 1993 date. Found via search, not independently fetched — use as a supplementary third source.
 
-### Level 17 — GoldenEye 007 (Rare, Nintendo 64, 1997)
+### Level 17 — [[goldeneye-007|GoldenEye 007]] (Rare, Nintendo 64, 1997)
 
 - Developed by Rare, published by Nintendo, released 1997 for N64. Lead designer **Martin Hollis**; development began January 1995 (~2.5 years).
 - **Correction:** four-player split-screen multiplayer was **not part of the original plan** — it was added late in development (starting ~March/April 1997), primarily implemented by programmer Steve Ellis, and was nearly cut for time. It is nonetheless genuinely credited as pioneering/notable for console FPS: Edge magazine (via Wikipedia) says it "set the standard for multiplayer console combat" until Halo (2001) surpassed it, and The Strong Museum calls it "still considered one of the best multiplayer experiences ever produced on a Nintendo system."
@@ -232,7 +232,7 @@ Recorded here per level for completeness.
 
 *Correction applied: any doc language implying split-screen was planned from the start should read instead that it was a late, near-cut addition — flagged here for accuracy.*
 
-### Level 18 — Age of Empires (Ensemble Studios, 1997)
+### Level 18 — [[age-of-empires|Age of Empires]] (Ensemble Studios, 1997)
 
 - Developed by Ensemble Studios, published by Microsoft, released October 15, 1997 — first major Ensemble release, built on their in-house "Genie" engine (programmer Matt Pritchard). Design credits: Bruce Shelley, Rick Goodman, Tony Goodman (art), Dave Pottinger (AI). Real-time strategy genre, notable as one of the first history-themed (rather than sci-fi/fantasy) RTS games. Named 1998 "Computer Strategy Game of the Year" by the Academy of Interactive Arts & Sciences.
 
@@ -243,7 +243,7 @@ Recorded here per level for completeness.
 
 *Gap flagged: the exact October 15, 1997 date and Microsoft-as-publisher were sourced via Wikipedia only in this pass (not independently corroborated by a second primary source) — recommend a follow-up confirmation if precision on the exact date matters.*
 
-### Level 19 — Final Fantasy VII (Square, 1997)
+### Level 19 — [[final-fantasy-vii|Final Fantasy VII]] (Square, 1997)
 
 - Developed and published by **Square** (now Square Enix), released January 1997 in Japan for PlayStation. Director **Yoshinori Kitase**; producer Hironobu Sakaguchi; composer Nobuo Uematsu; character design Tetsuya Nomura.
 - First mainline Final Fantasy with 3D character models over pre-rendered 2D backgrounds and full-motion video. Development began in 1994, originally targeting Super Famicom/Nintendo 64 before moving to PlayStation for CD-ROM capacity.

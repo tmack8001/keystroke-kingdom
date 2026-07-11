@@ -11,21 +11,21 @@ sourced are flagged inline. See "Corrections from citation pass" at the end.*
 
 ## The canon comparison (Trevor's childhood typing games)
 
-**Mario Teaches Typing (Interplay, 1992)** — the only true comparable. Uses the same
+**[[mario-teaches-typing|Mario Teaches Typing]] (Interplay, 1992)** — the only true comparable. Uses the same
 proven progression we do: home row first, then reaches outward in finger-pairs (E/I → R/U
-→ T/Y → W/O → Q/P, then bottom row). Same lineage as Mavis Beacon, Dance Mat Typing,
-TypingClub — the ordering is physiological, not stylistic. **Where we differ:** MTT wears
+→ T/Y → W/O → Q/P, then bottom row). Same lineage as [[mavis-beacon|Mavis Beacon]], [[dance-mat-typing|Dance Mat Typing]],
+[[typingclub|TypingClub]] — the ordering is physiological, not stylistic (see [[touch-typing-pedagogy]]). **Where we differ:** MTT wears
 one skin the whole way; our one-distinct-cabinet-per-level + era-progressive graphics is
 the upgrade. And MTT (like nearly every tutor) lumps `` ` - = [ ] ' \ `` into a single
 "symbols" lesson or skips them; our dedicated Corner Cabinet levels (21-23) are MORE
 thorough on the outer keys than the canon.
 
-**Bookworm (PopCap, 2003)** — not a typing tutor: word-BUILDING from letter tiles
+**[[bookworm-game|Bookworm]] (PopCap, 2003)** — not a typing tutor: word-BUILDING from letter tiles
 (vocabulary/spelling), assumes you already type. We share its soul in one place — "typing
 a real word you can read is a double win" — but nothing structural.
 
 **Sports/drill typing games (the basketball one, late-90s edu-CD era)** — the citation
-pass found the actual game: **Slam Dunk Typing (Creative Wonders, 1997)**, reissued as
+pass found the actual game: **[[slam-dunk-typing|Slam Dunk Typing]] (Creative Wonders, 1997)**, reissued as
 **All-Star Typing: Basketball Edition (The Learning Company, 1999)**. Word-drill reskins:
 type the word, sink the shot; miss and you brick it. No key-introduction sequence at all.
 The instructive contrast: our One Rule means a wrong key never bricks the shot — the
@@ -74,7 +74,7 @@ punishes wrong keys — time pressure only.)
 ### References — the shared key-progression pedagogy
 
 The home-row-first, finger-pair-outward ordering that MTT, Mavis Beacon, Dance Mat, and
-TypingClub all share is the standard touch-typing curriculum, documented in commercial
+TypingClub all share is the standard [[touch-typing-pedagogy|touch-typing curriculum]], documented in commercial
 keyboarding textbooks and modern curricula alike (note: it's treated as uncontroversial
 baseline practice in the literature — curricula document it; academic papers rarely argue
 for it):
@@ -105,7 +105,7 @@ McGurrin should be cited as popularizer, not settled inventor.
 claim (letter frequency, decodable-word research, error-feedback research), the
 reference blocks below each cluster carry the sources; the rest is project judgment.*
 
-1. **Symbols before Shift.** `` ` - = [ ] \ ' `` are unshifted base keys; learn the
+1. **Symbols before Shift.** (See [[touch-typing-pedagogy]] for how this and the next decision extend the canon.) `` ` - = [ ] \ ' `` are unshifted base keys; learn the
    location first, then Shift becomes the payoff that unlocks everything printed on the
    keys' upper halves. (Canon tutors under-teach this; we made it three levels.)
 2. **The left/right pairing rhythm breaks at 21-23, on purpose.** Every letter level pairs
@@ -127,7 +127,7 @@ reference blocks below each cluster carry the sources; the rest is project judgm
    Bank Principle; equations on number levels (`2-1=1`) extend "typing is computation."
    Open question in docs/ROADMAP.md §5: educator review of the word banks.
 
-### References — letter frequency (supports the key ordering in levels.md "Why This Order")
+### References — [[letter-frequency]] (supports the key ordering in levels.md "Why This Order")
 
 Verified figures from Norvig's Google Books Ngrams analysis (743.8 billion letter
 mentions): **E is most common at 12.49%; T is #2 at 9.28%.** One correction: **Z is the
@@ -141,7 +141,7 @@ letter" line should read "among the rarest" or cite Q as rarest-but-one.
 - [Data Mining: New Research From Google's Peter Norvig… — Library Journal infoDOCKET](https://www.infodocket.com/2013/01/09/data-mining-google-researcher-finds-most-used-english-words-letters/) —
   independent journalistic summary corroborating the findings.
 
-### References — early-reader decodable words (decision 7)
+### References — [[decodable-word-lists|early-reader decodable words]] (decision 7)
 
 - [The Whats, Hows, and Whys of Teaching Sight Vocabulary — Reading Rockets (Timothy Shanahan)](https://www.readingrockets.org/blogs/shanahan-on-literacy/whats-hows-and-whys-teaching-sight-vocabulary-0) —
   Dolch list published 1936 (function words); recommends Fry's more contemporary list;
@@ -153,7 +153,7 @@ letter" line should read "among the rarest" or cite Q as rarest-but-one.
 - [Fry Sight Words List — sightwords.com](https://sightwords.com/sight-words/fry/) —
   methodology (5-million-word corpus of 1960s-70s textbooks); supporting source only.
 
-### References — error treatment / feedback (supports decisions 3-5 and the One Rule)
+### References — [[error-feedback-pedagogy|error treatment / feedback]] (supports decisions 3-5 and the One Rule)
 
 The design stance — immediate, informational, non-punitive correction; the letter waits —
 is consistent with motor-learning research on feedback (Knowledge of Results / Knowledge
@@ -190,7 +190,7 @@ NOVICE/ARCADE/EXPERT names stay (they're good names), but the pinball-history
 justification is **anecdotal — no strong source found**, and the tiers are better
 described as "in the spirit of" operator-adjustable arcade difficulty settings.
 
-### References — pinball difficulty settings (what the record actually shows)
+### References — [[pinball-difficulty-settings]] (what the record actually shows)
 
 - [How to adjust or tweak your pinball machine — flippers.be](https://www.flippers.be/basics/101_adjust_pinball.html) —
   EM machines had pre-drilled post holes for "liberal, normal and difficult" settings;
