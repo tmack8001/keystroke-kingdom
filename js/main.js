@@ -15,6 +15,47 @@ const $ = (id) => document.getElementById(id);
 const SECRET_PHRASES = ['shallweplayagame', 'wopr', 'wargames'];
 let secretBuffer = '';
 
+// ─── Hidden hacker-culture responses (title screen) ─────────────────────────
+// See .claude/rules/easter-eggs.md for the full catalog and design rules.
+// These never interrupt play — they only answer when summoned by name.
+const EGGS = {
+  'xyzzy':     'NOTHING HAPPENS.',                                // Colossal Cave Adventure, 1976
+  'iddqd':     'GOD MODE DENIED. THIS GAME NEVER TAKES LIVES.',   // Doom, 1993 — and our one rule
+  'adventure': 'WARREN ROBINETT WAS HERE. 1979.',                 // the first video game easter egg
+  'eliza':     'HOW DOES TYPING MAKE YOU FEEL?',                  // ELIZA, 1966
+  'hello':     'HELLO. YOU FOUND ME. COME IN.',                   // what the Mystery Cabinet says
+};
+const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+let konamiIdx = 0;
+let eggTimer = null;
+
+function showEggResponse(text) {
+  secretBuffer = '';
+  const el = $('wopr-text');
+  el.textContent = text;
+  Audio.coin();
+  clearTimeout(eggTimer);
+  eggTimer = setTimeout(() => { if (el.textContent === text) el.textContent = ''; }, 5000);
+}
+
+function trackKonami(key) {
+  konamiIdx = key === KONAMI[konamiIdx] ? konamiIdx + 1 : (key === KONAMI[0] ? 1 : 0);
+  if (konamiIdx < KONAMI.length) return false;
+  konamiIdx = 0;
+  // The classic grants 30 lives; we never take lives away,
+  // so the sky gets brighter instead.
+  for (let i = 0; i < 30; i++) {
+    const star = document.createElement('div');
+    star.className = 'star bright';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.animationDelay = Math.random() * 3 + 's';
+    document.body.appendChild(star);
+  }
+  showEggResponse('30 STARS. NO EXTRA LIVES NEEDED — YOU NEVER LOSE ANY.');
+  return true;
+}
+
 const state = {
   screen: 'title',
   playerName: 'PLAYER ONE',
@@ -306,6 +347,10 @@ document.addEventListener('keydown', (e) => {
   switch (state.screen) {
     case 'title':
       if (!state.coinInserted) {
+        if (trackKonami(e.key)) {
+          e.preventDefault();
+          break;
+        }
         if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault();
           state.coinInserted = true;
@@ -333,6 +378,9 @@ document.addEventListener('keydown', (e) => {
             state.selectedLevel = 1;
             renderSelectScreen(state);
             showScreen('select', state);
+          } else if (EGGS[secretBuffer]) {
+            e.preventDefault();
+            showEggResponse(EGGS[secretBuffer]);
           }
         }
       } else {
@@ -554,3 +602,17 @@ const enterLabel = /Mac/.test(navigator.platform || navigator.userAgent) ? 'RETU
 document.querySelectorAll('[data-enter-key]').forEach(el => { el.textContent = enterLabel; });
 
 createStars();
+
+// For the curious human who just opened the console:
+// that instinct — looking under the hood — is the whole point of this game.
+console.log(
+  '%cGREETINGS PROFESSOR FALKEN.\n\n' +
+  'SHALL WE PLAY A GAME?\n\n' +
+  '> THE TITLE SCREEN LISTENS FOR OLD MAGIC:\n' +
+  '>   A CAVE WORD FROM 1976.\n' +
+  '>   A DOOM CHEAT THAT WON\'T WORK (WE DON\'T DO LIVES).\n' +
+  '>   THE 1979 GAME THAT HID THE FIRST EASTER EGG.\n' +
+  '>   THE FIRST CHATBOT, BY NAME.\n' +
+  '>   AND: UP UP DOWN DOWN LEFT RIGHT LEFT RIGHT B A\n',
+  'color:#39ff14;background:#000;font-family:monospace;font-size:12px;line-height:1.7;padding:12px;'
+);
