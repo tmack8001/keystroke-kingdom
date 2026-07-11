@@ -88,3 +88,10 @@ IDs are monotonic (L1, L2, …); cross-reference entries as `L#`/`O#`/`F#` (see
 - **L25 — Build tooling for scale when the scaling question is asked.** Trevor asked
   point-blank whether capture-all.js would scale; the ACTS_CONFIG single-source refactor
   meant Act 5 later cost exactly one array edit. (→ O9)
+
+## 2026-07-11 — vault/hooks/journal build (session close)
+
+- **L26 — settings.json hook edits take effect immediately when the settings watcher is
+  already active** (a settings file existed at session start), refining L10: the
+  next-session rule holds for agent definitions and MCP servers, but hooks added
+  mid-session fired live — including on their own author, this same session.
