@@ -16,14 +16,33 @@ bookkeeping, humans do the curating.*
    + `index.md` + `log.md`.
 3. **The schema (this file):** structure, conventions, and the three workflows below.
 
-## Page types
+## Organization — folders are the human taxonomy, types are the semantic kind
 
-| Type | Lives in | What it is |
+| Folder | What lives there | Examples |
 |---|---|---|
-| `entity` | `wiki/` | One page per person, game, machine, or artifact (e.g. `ada-lovelace`, `q-bert`, `commodore-64`) |
-| `concept` | `wiki/` | Cross-cutting synthesis (e.g. `easter-egg-culture`, `nes-hardware`, `touch-typing-pedagogy`) |
-| `moment` | `wiki/` | A dated event (e.g. `arpanet-first-message-1969`, `mark-ii-moth-1947`) |
-| `hub` | `research/` root | The five narrative Maps of Content (video-game-history, computing-history-moments, hacker-culture, typing-pedagogy, arcade-cabinets-by-era) — they tell the story and link into the atomic pages |
+| `wiki/people/` | The humans behind the machines | `ada-lovelace`, `warren-robinett`, `hedy-lamarr` |
+| `wiki/games/` | Video games — arcade cabinets, consoles, text adventures | `q-bert`, `tetris`, `colossal-cave-adventure` |
+| `wiki/tech/` | Machines, formats, and era-hardware concepts | `eniac`, `ascii`, `nes-hardware`, `pre-rendered-3d` |
+| `wiki/culture/` | Hacker and gaming folklore | `konami-code`, `xyzzy`, `wopr-wargames`, `the-eighth-key` |
+| `wiki/moments/` | Dated events | `arpanet-first-message-1969`, `mark-ii-moth-1947` |
+| `wiki/pedagogy/` | Typing tutors and teaching concepts | `mario-teaches-typing`, `letter-frequency` |
+| `research/` root | The five narrative hub docs (Maps of Content) — they tell the story and link into the atomic pages | `video-game-history`, `hacker-culture` |
+
+Placement rules: a page goes in exactly one folder — pick by what the page is *about*
+(HAL 9000 is folklore → `culture/`, not `tech/`; ELIZA is a real program → `tech/`).
+Fictional things and references → `culture/`. When a topic could split (person + their
+event, like Grace Hopper + the moth), make two cross-linked pages in their own folders.
+New folders are allowed when a genuine new domain appears (e.g. `music/` for the Lyria
+work) — add the folder to `FOLDER_ORDER`/`FOLDER_BLURB` in `scripts/wiki-search.mjs` and
+document it here.
+
+**Linking is folder-independent:** Obsidian resolves `[[name]]` by shortest path, and the
+search/lint tooling matches basenames — so wikilinks never include folder prefixes and
+moving a page between folders breaks nothing.
+
+Each page still declares its semantic kind in frontmatter:
+`type: entity` (a person/game/machine/artifact) | `concept` (cross-cutting synthesis) |
+`moment` (a dated event).
 
 ## Page format (every `wiki/` page)
 
