@@ -104,8 +104,24 @@ Smart Connections plugin provide the semantic layer visually.
 
 ## Obsidian setup (human side)
 
-Open `research/` as a vault. Recommended community plugins: **Smart Connections**
-(semantic related-notes), **Dataview** (query the frontmatter — e.g. all pages where
-`type = moment` sorted by `verified`), **Templater or Smart Templates** (new-page template
-mirroring the format above). The `.obsidian/` folder is gitignored — plugin choices are
-personal; this schema is the contract.
+**Open the repo root as the vault** — one graph spans the research wiki, the shared-learning
+journal (`docs/journal/`), the ROADMAP, and the design bible (`.claude/rules/`). Code and
+asset directories are excluded from indexing via `.obsidian/app.json`.
+
+A baseline plugin set SHIPS WITH THE REPO in `.obsidian/plugins/` (Obsidian will ask you to
+trust and enable community plugins on first open — say yes):
+- **Dataview** — query frontmatter (e.g. `type = moment` sorted by `verified`)
+- **Templater** — `templates/wiki-page.md` scaffolds a schema-correct page
+- **Smart Connections** — semantic related-notes (its local embeddings cache `.smart-env/`
+  and its `data.json` settings are gitignored; personal)
+
+Volatile state (`workspace.json`) stays personal via .gitignore; the shared baseline
+(plugin code, community-plugins.json, app.json excludes) is the committed team setup.
+
+## The journal is part of the graph
+
+`docs/journal/{learnings,observations,failures}.md` are append-only project memory —
+cross-referenced by `L#`/`O#`/`F#` IDs and `[[wikilinks]]` into the wiki. They're indexed
+by the search CLI and listed in `index.md` ("Journal & planning"), but the full page schema
+(frontmatter/References) is enforced only on `wiki/` pages. A Stop hook
+(`scripts/journal-hook.sh`) enforces a session entry whenever meaningful work happened.

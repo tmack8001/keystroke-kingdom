@@ -26,6 +26,10 @@ vendor/
 *.swp
 *.swo
 
-# Obsidian workspace (personal plugin/layout choices)
-.obsidian/
+# Obsidian: baseline vault config + plugins ARE committed (shared team setup).
+# Personal/volatile state stays out:
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/plugins/smart-connections/data.json
+.smart-env/
 research/.smart-env/

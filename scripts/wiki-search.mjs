@@ -8,19 +8,31 @@ import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'research');
+const PROJ = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = join(PROJ, 'research');
 const SKIP = new Set(['index.md', 'log.md', 'WIKI.md']);
 
 // ── Corpus loading ───────────────────────────────────────────────────────────
 function mdFiles(dir) {
   const out = [];
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
+  let entries;
+  try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return out; }
+  for (const e of entries) {
     if (e.name.startsWith('.')) continue;
     const p = join(dir, e.name);
     if (e.isDirectory()) out.push(...mdFiles(p));
     else if (e.name.endsWith('.md') && !SKIP.has(e.name)) out.push(p);
   }
   return out;
+}
+
+// Kind: wiki (atomic graph pages, full schema enforced) | hub (research/ root
+// narratives) | journal (docs/journal append-only logs) | doc (planning docs).
+function kindOf(path) {
+  if (path.includes(join('research', 'wiki'))) return 'wiki';
+  if (dirname(path) === ROOT) return 'hub';
+  if (path.includes(join('docs', 'journal'))) return 'journal';
+  return 'doc';
 }
 
 function parseFrontmatter(src) {
@@ -41,18 +53,27 @@ function parseFrontmatter(src) {
 }
 
 function loadCorpus() {
-  return mdFiles(ROOT).map(path => {
+  const paths = [
+    ...mdFiles(ROOT),
+    ...mdFiles(join(PROJ, 'docs', 'journal')),
+    join(PROJ, 'docs', 'ROADMAP.md'),
+  ].filter(p => { try { return statSync(p).isFile(); } catch { return false; } });
+  return paths.map(path => {
     const src = readFileSync(path, 'utf8');
     const { fm, body } = parseFrontmatter(src);
     const name = basename(path, '.md');
     // Handles [[page]], [[page|label]], [[page#sec]], and the escaped-pipe
     // form [[page\|label]] required inside markdown tables (valid Obsidian).
-    const links = [...body.matchAll(/\[\[([^\]|#]+?)(?:\\?[|#][^\]]*)?\]\]/g)]
+    // Inline code spans and fenced blocks are stripped first — `[[page]]`
+    // inside backticks is documentation about links, not a link.
+    const linkable = body.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`\n]*`/g, ' ');
+    const links = [...linkable.matchAll(/\[\[([^\]|#]+?)(?:\\?[|#][^\]]*)?\]\]/g)]
       .map(x => x[1].replace(/\\$/, '').trim());
     // First non-heading paragraph = the trusted summary
     const para = body.split(/\n\s*\n/).map(s => s.trim())
       .find(s => s && !s.startsWith('#') && !s.startsWith('|') && !s.startsWith('*Compiled') && !s.startsWith('---'));
-    return { path, name, fm, body, links, summary: (para || '').replace(/\s+/g, ' ').slice(0, 220) };
+    return { path, name, fm, body, links, kind: kindOf(path),
+      summary: (para || '').replace(/\s+/g, ' ').slice(0, 220) };
   });
 }
 
@@ -118,8 +139,9 @@ const FOLDER_BLURB = {
 };
 
 function generateIndex(corpus) {
-  const hubs = corpus.filter(d => dirname(d.path) === ROOT);
-  const wiki = corpus.filter(d => dirname(d.path) !== ROOT)
+  const hubs = corpus.filter(d => d.kind === 'hub');
+  const journal = corpus.filter(d => d.kind === 'journal' || d.kind === 'doc');
+  const wiki = corpus.filter(d => d.kind === 'wiki')
     .sort((a, b2) => a.name.localeCompare(b2.name));
   const byFolder = {};
   for (const d of wiki) (byFolder[basename(dirname(d.path))] ??= []).push(d);
@@ -137,8 +159,10 @@ function generateIndex(corpus) {
       out += `- [[${d.name}]]${meta ? ` *(${meta})*` : ''} — ${d.summary}\n`;
     }
   }
+  out += `\n## Journal & planning (project memory — append-only)\n\n`;
+  for (const d of journal) out += `- [[${d.name}]] — ${d.summary}\n`;
   writeFileSync(join(ROOT, 'index.md'), out);
-  console.log(`index.md regenerated: ${hubs.length} hubs, ${wiki.length} wiki pages across ${folders.length} folders.`);
+  console.log(`index.md regenerated: ${hubs.length} hubs, ${wiki.length} wiki pages across ${folders.length} folders, ${journal.length} journal/planning docs.`);
 }
 
 // ── lint ─────────────────────────────────────────────────────────────────────
@@ -151,8 +175,7 @@ function lint(corpus) {
     if (!names.has(l)) problems.push(`BROKEN LINK  ${d.name} → [[${l}]]`);
   }
   for (const d of corpus) {
-    const isWiki = dirname(d.path) !== ROOT;
-    if (!isWiki) continue;
+    if (d.kind !== 'wiki') continue; // full schema enforced only on graph pages
     if (!incoming.get(d.name) && !d.links.length) problems.push(`ORPHAN       ${d.name} (no links in or out)`);
     if (!d.fm.type) problems.push(`NO TYPE      ${d.name} (frontmatter missing 'type')`);
     if (!/## References/i.test(d.body)) problems.push(`UNCITED      ${d.name} (no References section)`);

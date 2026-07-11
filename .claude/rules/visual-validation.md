@@ -12,7 +12,7 @@ After adding any new level, theme file, or UI change that affects the game scree
 3. **The theme background is showing** — canvas background renders behind the UI (not on top of it)
 4. **No JS console errors** — no red errors or uncaught exceptions
 
-This check exists because the canvas z-index bug (discovered June 2025) silently broke levels 6–15. The letter prompt and keyboard guide were completely hidden behind the canvas background for all of Act 2 and Act 3. The bug was live for an entire build session before it was caught.
+This check exists because the canvas z-index bug (discovered June 2026) silently broke levels 6–15. The letter prompt and keyboard guide were completely hidden behind the canvas background for all of Act 2 and Act 3. The bug was live for an entire build session before it was caught.
 
 ---
 
