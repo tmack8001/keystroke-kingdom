@@ -1,0 +1,55 @@
+# Keystroke Kingdom — compose profiles
+#
+#   docker compose --profile game up            # just the game (static word pools)
+#   docker compose --profile game-ollama up     # game + local Ollama word generation
+#
+# First run with the game-ollama profile, pull the model once (the volume keeps it):
+#   docker compose --profile game-ollama exec ollama ollama pull llama3.2
+#
+# Either way the game is at http://localhost:8080 — with no (or an empty) Ollama
+# the server simply reports {available:false} and the game silently plays its
+# static pools. Zero behavior change; that's the design.
+
+services:
+  # Profile "game": the server alone. No Ollama configured → static-fallback
+  # mode. (To point this profile at Ollama running on the HOST instead, set
+  # OLLAMA_HOST=host.docker.internal:11434 in the environment below.)
+  game:
+    build: .
+    ports:
+      # Loopback-only by default — the /api/* endpoints proxy to a local Ollama
+      # and are unauthenticated, so they must NOT be exposed to the LAN. To share
+      # on a trusted network, deliberately change this to "8080:8080" (security
+      # review 2026-07-17).
+      - "127.0.0.1:8080:8080"
+    environment:
+      PORT: "8080"
+    profiles: ["game"]
+
+  # Profile "game-ollama": the server wired to a sibling Ollama service.
+  game-llm:
+    build: .
+    ports:
+      # Loopback-only by default — the /api/* endpoints proxy to a local Ollama
+      # and are unauthenticated, so they must NOT be exposed to the LAN. To share
+      # on a trusted network, deliberately change this to "8080:8080" (security
+      # review 2026-07-17).
+      - "127.0.0.1:8080:8080"
+    environment:
+      PORT: "8080"
+      # Service-to-service: compose DNS resolves "ollama" to the service below.
+      # This value is operator config, never request-derived (security.md).
+      OLLAMA_HOST: "ollama:11434"
+    depends_on:
+      - ollama
+    profiles: ["game-ollama"]
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      # Persist pulled models across restarts (the one-time manual pull above).
+      - ollama-models:/root/.ollama
+    profiles: ["game-ollama"]
+
+volumes:
+  ollama-models:

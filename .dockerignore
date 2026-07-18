@@ -1,0 +1,14 @@
+# Allowlist form: exclude everything, then re-include exactly what the Docker
+# build needs — go.mod + main.go + the go:embed asset dirs (index.html, css/,
+# js/). Everything else (docs, research, .git, node tooling, scratch artifacts,
+# the 9MB prebuilt binary, screenshots, the Obsidian vault) stays out of the
+# build context, keeping it tiny and cache-friendly.
+*
+!go.mod
+!main.go
+!index.html
+!favicon.ico
+!favicon.svg
+!apple-touch-icon.png
+!css
+!js
