@@ -114,3 +114,9 @@ text-adventure wing — see downstream flags below before any theme is built.
 4. [DikuMUD — Wikipedia](https://en.wikipedia.org/wiki/DikuMUD) — March 1990 Usenet announcement, February 3 1991 public opening, hack-and-slash D&D-style design intent, EverQuest lineage dispute and March 2000 denial. **[fetched]**
 5. [History of MUD Games — Iron Realms Entertainment](https://www.ironrealms.com/mud-games/the-history-of-muds/) — commercial MUD timeline (GemStone III on AOL Sept. 1995, Federation II/AOL, Achaea Sept. 9 1997 vs. Ultima Online). *(search result only, not fetched)*
 6. GemStone IV / Federation II — Wikipedia and Muds Wiki search-result summaries confirming GemStone III's September 1995 AOL debut, its telnet-after-authentication interface, and Federation II's "Adult Space Fantasy" AOL branding. *(search result only, not fetched)*
+
+## See also
+
+[[ascii-overhead-world-conventions]] — cross-family movement/scale/NPC-riddle
+comparison (2026-07-17) that contrasts this page's typed-compass-command movement
+against roguelike real-time `hjkl` and MegaZeux/ZZT real-time arrow keys.

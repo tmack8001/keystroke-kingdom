@@ -2,8 +2,8 @@
 title: Roguelike
 type: concept
 tags: [computing-history, game-genre, ascii, terminal]
-sources: 4
-verified: 2026-07-13
+sources: 8
+verified: 2026-07-17
 ---
 
 Roguelike is the genre named for Rogue (1980) — ASCII-rendered, turn-based,
@@ -65,9 +65,34 @@ pages a theme would actually draw from.
   IS genuinely multiplayer (any number of players on public servers) — see the
   cabinet-art rule against conflating "influenced by" with "looks like."
 
+## Movement conventions (added 2026-07-17)
+
+Roguelike movement is `hjkl` (vi-keys) plus `yubn` diagonals, or a numeric-keypad
+equivalent — and the reason is terminal hardware, not aesthetics. `vi` (Bill Joy,
+1976) put cursor movement on `h j k l` because his Lear Siegler ADM-3A terminal had
+those four letters physically inscribed with arrows and **no dedicated arrow keys at
+all**. Rogue inherited vi's own screen-handling code along with its `hjkl`
+convention, then added `y`/`u`/`b`/`n` for the four diagonals for the same reason —
+1980-era terminals commonly lacked arrow/diagonal keys. NetHack's official Guidebook
+documents the resulting `[yuhjklbn]` eight-direction scheme plus a numpad equivalent
+(`number_pad` option: 7-8-9/4-.-6/1-2-3). Angband's own manual offers the identical
+choice — default numpad keyset, alternative "roguelike" `yuhjklbn` keyset, arrow keys
+valid in either — and ADOM (Thomas Biskup, 1994/1996) leans numpad-centric enough
+that a missing numpad is called out as a real usability issue. **The throughline: every
+one of these schemes exists because a specific historical keyboard lacked arrow
+keys — once terminals commonly had them, every family added arrows as an option
+rather than replacing its letter scheme.** Full comparison against MUD/MegaZeux/BBS-
+door movement conventions, plus scale and NPC-riddle research for a possible
+Keystroke Kingdom Act 6 redesign: [[ascii-overhead-world-conventions]].
+
+**References:** [Vi (text editor) — Wikipedia](https://en.wikipedia.org/wiki/Vi_(text_editor)) — ADM-3A hjkl origin. **[fetched]** · [NetHack 3.6.6 Guidebook](https://www.nethack.org/v366/Guidebook.html) — `[yuhjklbn]`/numpad direction table. **[fetched]** · [Angband Manual — Command Descriptions](https://angband.readthedocs.io/en/latest/command.html) — numpad + roguelike keyset + arrow-key duality. **[fetched]** · [Ancient Domains of Mystery — Wikipedia](https://en.wikipedia.org/wiki/Ancient_Domains_of_Mystery) — numpad-centric controls. **[fetched]**
+
 ## See also
 
-[[early-graphical-mmorpgs-1990s]] — a separate research thread for a different
+[[ascii-overhead-world-conventions]] — movement-scheme comparison across roguelikes,
+MUDs, MegaZeux/ZZT, and BBS door games, plus world-scale and NPC-riddle research for
+a possible Act 6 tile-world redesign. [[early-graphical-mmorpgs-1990s]] — a separate
+research thread for a different
 childhood memory (ASCII/graphical overhead world with named clans/factions you
 JOINED, early-EverQuest feel), which the single-player roguelike lineage and its
 MAngband/NetHack multiplayer derivatives do not satisfy as well as the commercial

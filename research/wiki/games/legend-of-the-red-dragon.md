@@ -125,6 +125,9 @@ Missile Command reframe:
 [[early-graphical-mmorpgs-1990s]] — the "similar to LORD but bigger" comparison
 thread researched for a related childhood memory (named clans/factions, early-
 EverQuest feel), ranking commercial dial-up MMORPG ancestors against this game.
+[[ascii-overhead-world-conventions]] — cross-family movement comparison (2026-07-17)
+contrasting this page's lettered-menu interface against roguelike/MUD/MegaZeux
+movement schemes.
 
 ## Unsourceable / weakly-sourced items
 

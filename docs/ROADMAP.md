@@ -304,13 +304,21 @@ already exist inline in `.claude/rules/levels.md` (each level's "Music:" line).
   integration tests (test-engineer, in flight); a `docs/features/` page + `goToTextWorld`
   capture helper; ~~the hybrid "hints fade" mechanic~~ **DONE 2026-07-13** (mastery-driven
   full→dim→hidden, always restored on a nudge/new-room/idle — One-Rule safety);
-  ~~the ASCII/MegaZeux world~~ **DONE — now TWO tile worlds, 2026-07-14**: a data-driven
-  ASCII overhead engine `js/textworld/tileworld.js` + `tile-worlds.js`, feeding **THE GLIMMER
-  DEEP** (a cave → a night-sky cavern of twinkling crystals) and **THE WHISPERWOOD** (an old
-  forest → a moonlit glade of drifting fireflies). Kid-relatable overhead `@`-maze: single-key
-  n/s/e/w movement, walls nudge, a friendly companion, a surprisingly-amazing reveal per world
-  (distinct crystal vs firefly renderers). The door **hub chooser** `js/textworld/hub.js` now
-  lists them. **Act 6 = 5 worlds; ALL 5 BUILT (2026-07-14) — Act 6 is COMPLETE:** Green Dragon
+  ~~the ASCII/MegaZeux world~~ **DONE — now TWO tile worlds, 2026-07-14; REDESIGNED MUCH
+  BIGGER + grounded, 2026-07-17**: a data-driven ASCII overhead engine `js/textworld/tileworld.js`
+  + `tile-worlds.js`, feeding **THE GLIMMER DEEP** (a cave → a night-sky cavern of twinkling
+  crystals) and **THE WHISPERWOOD** (an old forest → a moonlit glade of drifting fireflies).
+  **Redesign (2026-07-17, arcade-historian-grounded — `research/wiki/tech/ascii-overhead-world-conventions.md`):**
+  the old 15×9 single-key `n/s/e/w` maze became a proper explorable world — **~46×16 × 3 chained
+  screens** (MegaZeux edge-exits), a **10-glyph** themed vocabulary, roguelike **lit/dark
+  fog-of-war** (line-of-sight torch, remembered dim tiles), and **TYPED movement** (`up`/`down`/
+  `left`/`right` via the guided prefix-matcher, `n/s/e/w`+compass-word aliases — movement is now
+  spelling practice; single-key n/s/e/w was flagged historically inauthentic, WASD is anachronistic
+  — see the research). **Authored riddle creatures** (no LLM): step adjacent → read an early-reader
+  riddle → TYPE the answer (forgiving, case-insensitive; wrong = gentle nudge, hint after 2 tries,
+  answer after 3; Space steps back). **One-Rule floor proven by BFS:** the goal is always reachable
+  without solving any riddle or opening any gate — riddles/gates are pure bonus. The door **hub
+  chooser** `js/textworld/hub.js` lists them (unchanged ids/titles). **Act 6 = 5 worlds; ALL 5 BUILT (2026-07-14) — Act 6 is COMPLETE:** Green Dragon
   (prose) + Glimmer Deep + Whisperwood (tile) + **YOUR OWN WORLD** (`js/textworld/maker.js` — the
   keystone: type words at a prompt bar → things appear in the scene above → type `wake` and the
   world comes ALIVE (birds/clouds drift, stars twinkle, chimney smoke, flowers sway, lit windows).

@@ -24,6 +24,7 @@ shots — was retired for exactly this reason; see below.)
 | `easter-eggs/` | The hidden hacker-culture layer: title-screen magic words, Konami stars, WOPR select | `node docs/screenshots/capture-eggs.js` |
 | `freeplay/` | Free Play HUD (sentence + WPM), and Free Play layered under Survival | `node docs/screenshots/capture-freeplay.js` |
 | `screens/` | Game chrome: title, name entry, READY reveal, keyboard-preview, continue/erase-confirm, settings (default + Survival), level-complete, survival game-over | `node docs/screenshots/capture-screens.js` |
+| `textworlds/` | The Act 6 "Text Worlds" bonus wing (behind the select-screen door): the door, the hub chooser, and each of the 5 worlds — Green Dragon (prose), Glimmer Deep + Whisperwood (ASCII tile), Your Own World (the maker), and the IM-friend (local-LLM chat) — with reveal/standalone variants. Act 6 is its own surface here, NOT in `levels/`/`acts/` (which are the 25 curriculum levels + 5 curriculum act pages) | `node docs/screenshots/capture-textworlds.js` |
 
 Regenerate everything:
 ```bash
@@ -35,6 +36,7 @@ node docs/screenshots/capture-cinematics.js # cinematics/{mystery,basement,comma
 node docs/screenshots/capture-eggs.js       # easter-eggs/
 node docs/screenshots/capture-freeplay.js   # freeplay/
 node docs/screenshots/capture-screens.js    # screens/
+node docs/screenshots/capture-textworlds.js # textworlds/ (Act 6 wing)
 ```
 
 Every script:

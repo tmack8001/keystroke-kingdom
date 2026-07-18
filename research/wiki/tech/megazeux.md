@@ -2,8 +2,8 @@
 title: MegaZeux
 type: entity
 tags: [computing-history, game-creation-system, ascii, ansi, dos, single-player, community]
-sources: 10
-verified: 2026-07-13
+sources: 12
+verified: 2026-07-17
 ---
 
 MegaZeux is a DOS game-creation system built by **Alexis Janson**, first uploaded to
@@ -108,6 +108,34 @@ see "The multiplayer verdict" below.
   community. See [[early-graphical-mmorpgs-1990s]] for why this rules MegaZeux out
   as the direct source of a "joined a clan and adventured together" memory.
 
+## Scale and movement (added 2026-07-17)
+
+Researched directly for a possible Keystroke Kingdom Act 6 tile-world redesign (see
+[[ascii-overhead-world-conventions]] for the full cross-family comparison). A
+MegaZeux **board** defaults to the full 80-column × 25-row DOS text screen but can be
+resized anywhere from 1×1 up to a genuinely enormous **32767×32767 tiles**, with a
+scrolling **Viewport** that tracks the player and can be resized/repositioned
+independently of the board itself. A **world caps at 250 boards**, connected via an
+explicit "Board Exits" dialog (the `X` key in the editor) that links each of a
+board's four screen edges to another board — walking off an edge deposits the
+player at the matching edge of the linked board — plus in-world transport objects
+(stairs, caves, whirlpools) and a scripted `teleport player <board> X Y` call for
+non-edge transitions. The element vocabulary is large: the current help file
+documents roughly **40-50 distinct terrain/item/creature/puzzle-piece categories**
+(terrain like Space/Solid/Tree/Fake/Carpet/Floor/Web/Forest; items like Gem/Health/
+Key/Lock/Coin/Chest/Potion/Ring; creatures like Snake/Ghost/Dragon/Spider/Goblin/
+Bear; puzzle mechanics like Boulder/Crate/Pusher/Slider; transport like Stairs/Cave/
+Whirlpool/Rotators). **No fog-of-war, torch, or line-of-sight mechanic is documented
+anywhere in the help file** — every tile on a board is always fully visible; a
+MegaZeux world's sense of discovery comes entirely from board SIZE and multi-board
+connection, never hidden/revealed vision. **Movement itself is real-time arrow keys**
+(the same keys used to move the editor cursor) — the Robotic scripting language
+separately lets an author command an NPC "robot" to `GO north`/`GO south`/`GO n`/
+`GO up` etc., so MegaZeux's own DSL treats compass *words* as a scripting
+convenience even while the *player's* input stays arrow-key and real-time.
+
+**References:** [MegaZeux 2.93d Help File](https://www.digitalmzx.com/mzx_help.html) — board size range, 250-boards-per-world cap, element categories, board-exits/viewport mechanics, no fog-of-war documented. **[fetched]** · [Board — MZXWiki](https://www.digitalmzx.com/wiki/Board) — 1×1 to 32767×32767 board range, per-board object caps. **[fetched]**
+
 ## Downstream design flags — One Rule and kid-safety
 
 MegaZeux community RPGs (per the sourced *MZX Adventure RPG* example) center on
@@ -169,6 +197,8 @@ project with its own independent verification trail.
 8. [MegaZeux: Game creation system released in 1994 and still being developed today — Hacker News discussion](https://news.ycombinator.com/item?id=21858188) — community corroboration of the 1994 release date and ongoing active development. *(search result only, not fetched)*
 9. [Home — DigitalMZX](https://www.digitalmzx.com/) — "the largest available archive of MegaZeux games and the only known active MegaZeux message board." **[fetched]**
 10. [The Great And Legendary As-of-Yet-Untitled ASCII RPG Project — ummagummagames.wordpress.com](https://ummagummagames.wordpress.com/2011/09/01/ascii-rpg-project/) — Sept 1 2011 hobbyist blog post, QB64 platform, single-player turn-based ASCII RPG, the third reference Trevor supplied for "the wider hobbyist realm." **[fetched]**
+11. [Board — MZXWiki](https://www.digitalmzx.com/wiki/Board) — board dimension range (1×1 to 32767×32767), per-board object caps (255 sensors/robots, 255 signs+scrolls). **[fetched]** (2026-07-17 addition)
+12. [MegaZeux 2.93d Help File](https://www.digitalmzx.com/mzx_help.html) — refetched 2026-07-17 for board-scale/element-vocabulary detail: default 80×25 board, 250-board world cap, ~40-50 element categories, board-exits (`X`) and viewport (`Alt+P`) mechanics, no fog-of-war/torch/line-of-sight documented. **[fetched]**
 
 ## See also
 
@@ -182,3 +212,6 @@ previously-researched comparison for "single-player game, communal culture"
 reconciliation language. [[mud]] — the genuinely multiplayer, prose-only sibling
 archetype MegaZeux is NOT. [[early-graphical-mmorpgs-1990s]] — the active research
 thread this page reports back to on the clans/EverQuest memory.
+[[ascii-overhead-world-conventions]] — cross-family movement/scale/NPC-riddle
+comparison researched 2026-07-17 for a possible Act 6 tile-world redesign; this
+page's "Scale and movement" section is one of its inputs.

@@ -2,8 +2,8 @@
 title: NetHack
 type: entity
 tags: [computing-history, game-genre, ascii, terminal, telnet, multiplayer-adjacent]
-sources: 7
-verified: 2026-07-13
+sources: 10
+verified: 2026-07-17
 ---
 
 NetHack (first released July 28, 1987, by the newly formed NetHack DevTeam led by
@@ -129,6 +129,36 @@ the same texture as reaching a [[mud|MUD]] and is tied to the same
 [[dialup-modem|dial-up access era]] for a kid who reached it over a home phone line
 in the 1990s.
 
+## Movement, map scale, and the Oracle (added 2026-07-17)
+
+Researched directly for a possible Keystroke Kingdom Act 6 tile-world redesign — see
+[[ascii-overhead-world-conventions]] for the full cross-family comparison. NetHack's
+official Guidebook documents movement as the `[yuhjklbn]` vi-key scheme (eight
+directions: `h`/`j`/`k`/`l` cardinal, `y`/`u`/`b`/`n` diagonal) inherited from Rogue
+and, ultimately, from the `vi` text editor's ADM-3A-terminal origin (see
+[[roguelike]]'s own "Movement conventions" section) — plus a numeric-keypad
+equivalent (`number_pad` option) and capital-letter variants for continuous
+run-until-obstacle movement. A NetHack level's **maximum size is 79×21 characters**,
+the displayed map area is 80×21, and most actually-generated levels run closer to
+77×19 once border rows are excluded — roughly one full terminal screen, not a
+larger scrolling world. Discovery works through **lit/dark line-of-sight**: a lit
+room and anything in the player's sight line renders fully, dark tiles render only
+within one space of the player (extendable with a light source), walls/corridors
+stay drawn once seen, but unlit floor tiles fade from view once both dark and out of
+sight range. The glyph vocabulary filling that one screen is large: `.` floor, `|`/
+`-` walls, `+` doors/spellbooks, `#` corridors/sinks/drawbridges, `<`/`>` stairs,
+`{` fountains, `_` altars/chains, `\` thrones, `}` pools/moats/lava, `^` discovered
+traps, `)`/`[`/`$` weapons/armor/gold, and letters for every monster. **The Oracle**
+is a standing NPC the player reaches via the `#chat` command (while carrying gold)
+for "minor" (a true rumor) or "major" (an extended, riddle-flavored description)
+consultations paid in zorkmids — explicitly modeled on the Pythia of the historical
+Oracle of Delphi (the game greets the player with "Delphi" on her level); NetHack's
+own homepage independently describes her domain as where "the Oracle speaks with
+utmost clarity" — primary confirmation that a riddle/consultation-speaking NPC is
+core, documented content in this genre.
+
+**References:** [NetHack 3.6.6 Guidebook](https://www.nethack.org/v366/Guidebook.html) — `[yuhjklbn]` direction table, numpad equivalents. **[fetched]** · [Doctor Kildeer's Guide to NetHack — Map Features](https://www.alt.org/nethack/mirror/www.geocities.com/TimesSquare/Portal/2416/map.html) — glyph vocabulary, lit/dark line-of-sight, floor-memory-fade mechanic. **[fetched]** · [NetHack Home Page](https://www.nethack.org/) — "the Oracle speaks with utmost clarity" tagline. **[fetched]** · NetHack Wiki pages ("Oracle (monster)," "Chat," "Zorkmid") — `#chat`/zorkmids/Pythia-Delphi mechanics, corroborated via WebSearch synthesis. *(search result only — nethackwiki.com returned 403/402 to direct fetch)* · NetHack maximum/typical level dimensions (79×21/80×21/77×19), corroborated across multiple official Guidebook version mirrors via WebSearch synthesis. *(search result only, not independently re-fetched this session)*
+
 ## Downstream design flags — One Rule conflict (highest priority)
 
 **NetHack's core loop is built on exactly the two mechanics Keystroke Kingdom's One
@@ -187,15 +217,29 @@ and [[mangband]]'s flags:
 6. [NetHack Bones Files Spoiler — steelypips.org](https://www.steelypips.org/nethack/341/bone-341.html) and [Bones — NetHack Wiki](https://nethackwiki.com/wiki/Bones) — mechanics of bones files: a dead character's level and ghost being saved and reloaded into a different player's later game. *(search result only, not fetched)*
 7. [Nethack.alt.org — Wikihack/Fandom](https://nethack.fandom.com/wiki/Nethack.alt.org) and search-summarized corroboration — "the longest running nethack public server in the world," dgamelaunch software originally written by M. Drew Streib, Pasi Kallinen's long-running administration. *(search result only, not fetched — returned HTTP 402 to direct fetch this session)*
 8. [Multi-user dungeon comparison — Wikipedia](https://en.wikipedia.org/wiki/Multi-user_dungeon) — background corroboration distinguishing telnet-reachable prose MUDs (inherently multiplayer) from NetHack's single-player-but-communal-server model; see [[mud]] for the full citation. **[fetched]** *(already verified on [[mud]])*
+9. [alt.org mirror — Doctor Kildeer's Guide to NetHack, Map Features](https://www.alt.org/nethack/mirror/www.geocities.com/TimesSquare/Portal/2416/map.html) — glyph vocabulary, lit/dark line-of-sight, floor-memory-fade mechanic (2026-07-17 addition). **[fetched]**
+10. [NetHack Home Page](https://www.nethack.org/) — "the Oracle speaks with utmost clarity" tagline (2026-07-17 addition). **[fetched]**
+
+## Downstream design flags — Oracle/riddle reframe (added 2026-07-17)
+
+If a future Act 6 world draws on the Oracle as an NPC precedent (see
+[[ascii-overhead-world-conventions]] Q5), keep only the warm shape: a friendly
+creature that poses a gentle, always-solvable riddle answered by typing a word — no
+gold cost, no wrong-answer penalty, no loss state. NetHack's actual Oracle charges
+real in-game currency and her "major consultation" pool includes high-level game
+lore not researched or reproduced here; none of that belongs in a kid-facing cabinet.
 
 ## See also
 
 [[roguelike]] — the genre NetHack belongs to and its single-player-by-design
-lineage. [[mangband]] — the genuinely multiplayer Angband fork, the alternative
-candidate this page supersedes as the stronger match. [[mud]] — the prose-only,
-inherently-multiplayer sibling archetype. [[ascii]] — the display technology.
-[[ansi-escape-codes]] — optional terminal color. [[dialup-modem]] — the access
-ritual for a home telnet session in the 1990s. [[early-graphical-mmorpgs-1990s]] —
-a *different*, later research thread (clans/factions you joined, early-EverQuest
-feel) that this page's raw-telnet/spectated-not-joined memory does NOT match — see
-that page for the reconciliation between the two childhood memories.
+lineage, including the shared `hjkl`/`yubn` movement scheme. [[mangband]] — the
+genuinely multiplayer Angband fork, the alternative candidate this page supersedes
+as the stronger match. [[mud]] — the prose-only, inherently-multiplayer sibling
+archetype. [[ascii]] — the display technology. [[ansi-escape-codes]] — optional
+terminal color. [[dialup-modem]] — the access ritual for a home telnet session in
+the 1990s. [[early-graphical-mmorpgs-1990s]] — a *different*, later research thread
+(clans/factions you joined, early-EverQuest feel) that this page's raw-telnet/
+spectated-not-joined memory does NOT match — see that page for the reconciliation
+between the two childhood memories. [[ascii-overhead-world-conventions]] —
+cross-family movement/scale/NPC-riddle comparison researched 2026-07-17 for a
+possible Act 6 tile-world redesign.

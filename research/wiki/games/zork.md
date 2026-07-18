@@ -3,7 +3,7 @@ title: Zork
 type: entity
 tags: [computing-history, game, interactive-fiction, terminal]
 sources: 3
-verified: 2026-07-13
+verified: 2026-07-17
 ---
 
 Zork, developed 1977–1979 at MIT by Tim Anderson, Marc Blank, Bruce Daniels, and Dave
@@ -40,9 +40,21 @@ egg).
   platform.
 - Single-player throughout; no networked or multiplayer version was part of the
   original commercial line.
+- **The Loud Room, a "type the one right word" puzzle** *(confirmed 2026-07-17)*:
+  one room can only be solved by typing the single word `echo` — real, documented
+  precedent for a puzzle where the correct answer IS a specific typed word, cited
+  as grounding for a possible Act 6 riddle/NPC mechanic — see
+  [[ascii-overhead-world-conventions]] Q5. [Zork — Wikipedia]. **[fetched]**
 
 ## References
 
 1. [Zork — Wikipedia](https://en.wikipedia.org/wiki/Zork) — 1977 MIT origin, developer names, PDP-10 platform, Colossal Cave Adventure influence, Infocom founding, Z-machine/ZIL porting strategy. **[fetched]**
 2. [Infocom — Wikipedia](https://en.wikipedia.org/wiki/Infocom) — corroborates the 1979 Infocom founding and the Zork I/II/III commercial split. *(search result only, not fetched)*
 3. [The Rise and Fall of Infocom: How Zork Changed Gaming Forever — TinyComputers.io](https://tinycomputers.io/posts/infocom-zork-history.html) — independent retrospective corroborating the parser-innovation framing and MIT origin. *(search result only, not fetched)*
+
+## See also
+
+[[ascii-overhead-world-conventions]] — typed-command movement and NPC-riddle
+precedent research (2026-07-17) that cites this page's Loud Room puzzle.
+[[colossal-cave-adventure]] — the direct ancestor. [[mud]] — the sibling,
+inherently-multiplayer typed-compass-command archetype.

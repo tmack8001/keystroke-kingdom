@@ -72,6 +72,7 @@ grounding for any door-game-styled scene (ANSI color text, the connect ritual).
 commercial dial-up MMORPG (Kesmai/Neverwinter Nights/Meridian 59 lineage) rather than
 a BBS door game or MUD; that page's "Timing relative to LORD" confirm-cue is grounded
 in this page's BBS-to-telnet transition note.
+[[ascii-overhead-world-conventions]] — cross-family movement comparison (2026-07-17).
 
 ## Downstream design flags — kid-safety and the One Rule
 

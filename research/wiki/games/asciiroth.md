@@ -115,3 +115,5 @@ documented single-player ASCII game-creation ecosystem in the same aesthetic rea
 grammar from, even where individual titles (like this one) aren't strict roguelikes.
 [[early-graphical-mmorpgs-1990s]] — the separate, still-open research thread for the
 clans/EverQuest social-layer half of Trevor's memory.
+[[ascii-overhead-world-conventions]] — cross-family movement/scale/NPC-riddle
+comparison (2026-07-17) for a possible Act 6 tile-world redesign.
