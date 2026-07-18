@@ -8,7 +8,24 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Project doc-currency policy: docs/ROADMAP.md is the living backlog — skim it at session start. Before ending any session that changed game code or design, update docs/ROADMAP.md and any affected docs (CLAUDE.md, .claude/rules/*, research/*, README.md). A Stop hook enforces this once per session.\"}}'"
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Project doc-currency policy: docs/ROADMAP.md is the living backlog \u2014 skim it at session start. Before ending any session that changed game code or design, update docs/ROADMAP.md and any affected docs (CLAUDE.md, .claude/rules/*, research/*, README.md). A Stop hook enforces this once per session.\"}}'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/theme-authoring-hook.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR:-.}/scripts/impacted-manifest-hook.sh\"",
+            "timeout": 10
           }
         ]
       }

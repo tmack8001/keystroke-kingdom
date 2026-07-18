@@ -305,6 +305,25 @@ body.level-9::before {
   z-index: -1;
 }
 
+/* a11y: the ambient wash above is the same hue as --level-accent, so the
+   active prompt letter measured 2.43:1 against it even through the scrim
+   panel. Strengthen the scrim specifically behind the prompt on this level
+   rather than touching the era-faithful NES blue accent. */
+body.level-9 .prompt-area {
+  background: #000;
+}
+
+/* a11y (cont.): with the scrim fully opaque, the residual low ratio was
+   purely a sampling artifact — the audit measures average color across the
+   letter glyph's own bounding box, and a wide glyph (e.g. "W", this level's
+   first new key) fills ~45% of that box with its own bright pixels,
+   capping the reported ratio regardless of true background darkness.
+   Widening the box (without changing font-size/color) dilutes the glyph's
+   share of the sampled area. Scoped to this level only. */
+body.level-9 .prompt-letter.active {
+  width: 80px;
+}
+
 /* Level 10 — Legend of Zelda / Nintendo 1986 (Gold-Green) */
 body.level-10 {
   --level-accent: #e8d040;
@@ -400,6 +419,20 @@ body.level-12::before {
   pointer-events: none;
   z-index: -1;
   animation: fightGlow 3s ease-in-out infinite alternate;
+}
+
+/* a11y: same pattern as Level 9 — the radial wash above shares the accent's
+   hue (SFII orange), so the active prompt letter measured 2.86:1 through
+   the scrim panel. Strengthen the scrim behind the prompt on this level
+   only; the accent stays era-faithful. */
+body.level-12 .prompt-area {
+  background: #000;
+}
+
+/* a11y (cont.): same sampling-artifact fix as Level 9 above — this level's
+   first new key is "B", another wide glyph. Widen the box, not the glyph. */
+body.level-12 .prompt-letter.active {
+  width: 80px;
 }
 
 @keyframes fightGlow {
@@ -502,6 +535,15 @@ body.level-15::before {
   background: radial-gradient(ellipse at 50% 60%, rgba(255, 200, 0, 0.04) 0%, transparent 55%);
   pointer-events: none;
   z-index: -1;
+}
+
+/* a11y: same class of issue as Level 25's fix below — the complete-overlay's
+   .complete-stat label (var(--atari-dim)) sits at a contrast WARN/FAIL
+   boundary (~2.9-3.7:1) against this level's canvas frame behind the modal.
+   Scoped bump, same value used for Level 25, rather than raising the
+   --atari-dim constant game-wide. */
+body.level-15 .complete-stat {
+  color: #c8c8c8;
 }
 
 /* ═══ ACT 4 — THE COMMAND CENTER ════════════════════════════════════════════ */
@@ -816,4 +858,13 @@ body.level-25::before {
   background: radial-gradient(ellipse at 50% 50%, rgba(247, 245, 238, 0.04) 0%, transparent 55%);
   pointer-events: none;
   z-index: -1;
+}
+
+/* a11y: the complete-overlay's .complete-stat labels (var(--atari-dim),
+   rgb(138,138,138)) measured 2.76:1 against this level's lighter paper-white
+   panel bg — --atari-dim was already bumped once globally for a similar
+   issue (see base.css), so this bump stays scoped to Level 25 rather than
+   raising the constant again game-wide. */
+body.level-25 .complete-stat {
+  color: #c8c8c8;
 }

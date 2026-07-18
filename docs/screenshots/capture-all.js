@@ -1,17 +1,37 @@
-// Regenerates all docs/screenshots/ — one select screen per act + one gameplay
-// screen per level.  To add new acts or levels, edit ACTS_CONFIG only.
+// Regenerates all docs/screenshots/ — one act page (select screen, one
+// screenshot per act) + one gameplay screen per level. To add new acts or
+// levels, edit ACTS_CONFIG only.
 //
-// Usage: node docs/screenshots/capture-all.js
-//   Server must already be running (./keystroke-kingdom &).
-//   Reads server URL from .dev-url at the repo root.
+// Usage: node docs/screenshots/capture-all.js [filter]
+//   Server must already be running.
+//   BASE_URL resolution: DEV_URL env var > .dev-url at the repo root.
+//   (e.g. DEV_URL=http://127.0.0.1:8105 node docs/screenshots/capture-all.js)
+//
+//   Optional CLI filter for minimal-blast-radius reruns (content-librarian
+//   rule: regenerate only what changed). Comma-separated list of global level
+//   numbers (1-25) and/or act slugs, e.g.:
+//     node docs/screenshots/capture-all.js 8            # levels/act2-computer-wing/08-tetris.png only
+//     node docs/screenshots/capture-all.js 8,10         # two level shots, no act pages
+//     node docs/screenshots/capture-all.js act1-arcade   # that act's page + its 5 level shots
+//   No filter = full regeneration (30 screenshots), same as before this flag existed.
+//
+// Navigation boilerplate lives in scripts/kk-playwright.js — shared with
+// docs/a11y/audit.js and .claude/rules/visual-validation.md.
 
-const { chromium } = require('/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright');
 const fs   = require('fs');
 const path = require('path');
+const {
+  launchPage,
+  resolveBaseUrl,
+  goToSelect,
+  goFromSelectIntoGame,
+} = require('../../scripts/kk-playwright');
 
 // ── Source of truth ────────────────────────────────────────────────────────────
-// Each act lists its levels in play order.  Adding Act 5 = one new entry here.
+// Each act lists its levels in play order.  Adding Act 6 = one new entry here.
 // 'slug' becomes the directory / filename fragment; keep it lowercase-hyphenated.
+// (Kept local to this file, rather than scripts/kk-playwright.js's flat-string
+// ACTS_CONFIG, because screenshot filenames need the {slug} object shape.)
 
 const ACTS_CONFIG = [
   {
@@ -66,7 +86,7 @@ const ACTS_CONFIG = [
   },
 ];
 
-// ── Derive flat level list (act index, position, global level number) ──────────
+// ── Derive flat level list (act index, position, global level number) ──────
 
 let globalLevelNum = 0;
 const ALL_LEVELS = [];
@@ -89,31 +109,15 @@ ACTS_CONFIG.forEach((act, actIdx) => {
 
 const SHOTS = __dirname;
 
-fs.mkdirSync(path.join(SHOTS, 'select'), { recursive: true });
+fs.mkdirSync(path.join(SHOTS, 'acts'), { recursive: true });
 ACTS_CONFIG.forEach(act => {
   fs.mkdirSync(path.join(SHOTS, 'levels', act.slug), { recursive: true });
 });
 
-// ── Navigation helpers ─────────────────────────────────────────────────────────
+// ── Navigation helper (local wrapper around the shared act/position walk) ──
 
-const devUrl = fs.readFileSync(path.join(__dirname, '../../.dev-url'), 'utf8').trim();
-
-async function goToSelect(page) {
-  await page.goto(devUrl);
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
-  await page.waitForTimeout(600);
-  await page.click('body');
-  await page.keyboard.press('Enter');   // reveal name entry
-  await page.waitForTimeout(350);
-  await page.keyboard.press('Enter');   // confirm → ready-screen
-  await page.waitForTimeout(450);
-  await page.keyboard.type('wopr');     // → select-screen
-  await page.waitForTimeout(500);
-}
-
-async function navigateToLevel(page, lvl) {
-  await goToSelect(page);
+async function navigateToLevel(page, baseUrl, lvl) {
+  await goToSelect(page, baseUrl);
 
   for (let i = 0; i < lvl.actIdx; i++) {
     await page.keyboard.press('ArrowDown');
@@ -124,49 +128,68 @@ async function navigateToLevel(page, lvl) {
     await page.waitForTimeout(130);
   }
 
-  await page.keyboard.press('Enter');   // select level → title/name
-  await page.waitForTimeout(350);
-  await page.keyboard.press('Enter');   // confirm name → ready-screen
-  await page.waitForTimeout(350);
-  await page.keyboard.press('Space');   // ready → keyboard-preview
-  await page.waitForTimeout(350);
-  await page.keyboard.press('Space');   // keyboard-preview → game
-  await page.waitForTimeout(500);
+  await goFromSelectIntoGame(page);
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.setViewportSize({ width: 1280, height: 800 });
+  // Filter: comma-separated level numbers and/or act slugs. Empty = everything.
+  const filterArg = process.argv[2];
+  const filterTokens = filterArg ? filterArg.split(',').map(s => s.trim()).filter(Boolean) : null;
+  const filterLevelNums = filterTokens ? new Set(filterTokens.filter(t => /^\d+$/.test(t)).map(Number)) : null;
+  const filterActSlugs = filterTokens ? new Set(filterTokens.filter(t => !/^\d+$/.test(t))) : null;
+  if (filterTokens) {
+    const validLevels = new Set(ALL_LEVELS.map(l => l.levelNum));
+    const validActs = new Set(ACTS_CONFIG.map(a => a.slug));
+    const bad = filterTokens.filter(t => /^\d+$/.test(t) ? !validLevels.has(Number(t)) : !validActs.has(t));
+    if (bad.length) {
+      console.error(`FATAL: unknown filter token(s): ${bad.join(', ')} (valid levels: 1-25, valid acts: ${[...validActs].join(', ')})`);
+      process.exit(1);
+    }
+  }
+  const actsToRun = filterTokens
+    ? ACTS_CONFIG.filter(a => filterActSlugs.has(a.slug))
+    : ACTS_CONFIG;
+  const levelsToRun = filterTokens
+    ? ALL_LEVELS.filter(l => filterLevelNums.has(l.levelNum) || filterActSlugs.has(l.actSlug))
+    : ALL_LEVELS;
 
-  const errors = [];
-  page.on('pageerror', e => errors.push(e.message));
+  const BASE_URL = resolveBaseUrl();
+  const { browser, page, consoleErrors: errors } = await launchPage();
 
-  // Select screens: navigate between acts within a single session
-  console.log('Select screens (' + ACTS_CONFIG.length + ' acts):');
-  await goToSelect(page);
-  for (let i = 0; i < ACTS_CONFIG.length; i++) {
-    const out = path.join(SHOTS, 'select', ACTS_CONFIG[i].slug + '.png');
-    await page.screenshot({ path: out });
-    console.log('  select/' + ACTS_CONFIG[i].slug + '.png');
-    if (i < ACTS_CONFIG.length - 1) {
-      await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(300);
+  // Act pages: navigate between acts within a single session (the select
+  // screen shows one act's cabinets at a time — one screenshot per act).
+  if (actsToRun.length) {
+    console.log('Act pages (' + actsToRun.length + (filterTokens ? ' of ' + ACTS_CONFIG.length : '') + ' acts):');
+    await goToSelect(page, BASE_URL);
+    let actIdx = 0;
+    for (const act of ACTS_CONFIG) {
+      if (actsToRun.includes(act)) {
+        const out = path.join(SHOTS, 'acts', act.slug + '.png');
+        await page.screenshot({ path: out });
+        console.log('  acts/' + act.slug + '.png');
+      }
+      if (actIdx < ACTS_CONFIG.length - 1) {
+        await page.keyboard.press('ArrowDown');
+        await page.waitForTimeout(300);
+      }
+      actIdx++;
     }
   }
 
   // Gameplay screens: one per level
-  console.log('\nGameplay (' + ALL_LEVELS.length + ' levels):');
-  for (const lvl of ALL_LEVELS) {
-    await navigateToLevel(page, lvl);
-    const out = path.join(SHOTS, 'levels', lvl.actSlug, lvl.filename + '.png');
-    await page.screenshot({ path: out });
-    console.log('  levels/' + lvl.actSlug + '/' + lvl.filename + '.png');
+  if (levelsToRun.length) {
+    console.log('\nGameplay (' + levelsToRun.length + (filterTokens ? ' of ' + ALL_LEVELS.length : '') + ' levels):');
+    for (const lvl of levelsToRun) {
+      await navigateToLevel(page, BASE_URL, lvl);
+      const out = path.join(SHOTS, 'levels', lvl.actSlug, lvl.filename + '.png');
+      await page.screenshot({ path: out });
+      console.log('  levels/' + lvl.actSlug + '/' + lvl.filename + '.png');
+    }
   }
 
-  const total = ACTS_CONFIG.length + ALL_LEVELS.length;
+  const total = actsToRun.length + levelsToRun.length;
   if (errors.length) {
     console.error('\nJS ERRORS:');
     errors.forEach(e => console.error(' ', e));

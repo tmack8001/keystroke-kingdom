@@ -1,8 +1,8 @@
 import * as Audio from './audio.js';
 import { LEVELS, FINGER_MAP } from './levels.js';
 import { updateHUD, showFingerHint, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter } from './ui/hud.js';
-import { showScreen, applyLevelTheme, renderReadyScreen, createStars } from './ui/screens.js';
-import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition } from './ui/cabinet-art.js';
+import { showScreen, applyLevelTheme, renderReadyScreen, renderContinueScreen, showContinueEraseConfirm, createStars } from './ui/screens.js';
+import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked } from './ui/cabinet-art.js';
 import { Themes, activeTheme, stopAll } from './themes/index.js';
 import * as KeyboardPreview from './ui/keyboard-preview.js';
 import * as Mystery from './mystery.js';
@@ -11,7 +11,9 @@ import * as CommandCenter from './commandcenter.js';
 import * as FullCircle from './fullcircle.js';
 import { FREEPLAY_KEYS, buildFreePlayPatterns } from './freeplay.js';
 import { HISTORY_CARDS, TOTAL_CARDS, wordToTokens, patternMatchesCard, collectCard, collectedCount } from './history-cards.js';
-import { getSettings, saveSettings, getRows, applyRowChange, DIFFICULTY_MULTIPLIER } from './settings.js';
+import { getSettings, saveSettings, getRows, applyRowChange, DIFFICULTY_MULTIPLIER, getWinRatio, getWordLengthRange } from './settings.js';
+import { initWordgen, prefetch as wordgenPrefetch, takeWords as wordgenTakeWords } from './wordgen.js';
+import * as TextWorldHub from './textworld/hub.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -59,6 +61,110 @@ function trackKonami(key) {
   return true;
 }
 
+// ─── Returning-player persistence ────────────────────────────────────────
+// Progress lives in its own localStorage key (kk-progress), separate from
+// kk-settings, so erasing progress and changing settings stay independent.
+// Shape: { furthestLevel: n, completed: { "3": true, ... } }.
+// furthestLevel = the highest level the player has UNLOCKED (reached). A level
+// becomes unlocked the moment the previous one is completed; completing level n
+// unlocks n+1. A fresh player has no key at all (getProgress returns level 1,
+// no completions) so the very first session behaves exactly as before.
+const PROGRESS_KEY = 'kk-progress';
+
+function getProgress() {
+  let raw = null;
+  try {
+    raw = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+  } catch (e) {
+    raw = null;
+  }
+  const furthest = raw && Number.isFinite(raw.furthestLevel)
+    ? Math.max(1, Math.min(25, Math.round(raw.furthestLevel)))
+    : 1;
+  const completed = (raw && raw.completed && typeof raw.completed === 'object') ? raw.completed : {};
+  // nameMoment: { name: "<sanitized words>" } — the once-ever golden name
+  // flourish record. Tolerate garbage: only accept the exact expected shape.
+  const nameMoment = (raw && raw.nameMoment && typeof raw.nameMoment === 'object'
+    && typeof raw.nameMoment.name === 'string')
+    ? { name: raw.nameMoment.name }
+    : null;
+  // Act 6 text worlds persist in their OWN namespace, separate from the 25-level
+  // curriculum's furthestLevel. Tolerate garbage: only accept an object.
+  const textWorlds = (raw && raw.textWorlds && typeof raw.textWorlds === 'object')
+    ? raw.textWorlds
+    : {};
+  return { furthestLevel: furthest, completed, nameMoment, textWorlds };
+}
+
+// True only when the player has actually made progress worth resuming — i.e.
+// completed at least one level (furthestLevel has advanced past 1). A player
+// who opened the game once and quit at level 1 still sees the fresh cold open.
+function hasProgress() {
+  const p = getProgress();
+  return p.furthestLevel > 1 || Object.keys(p.completed).length > 0;
+}
+
+function saveProgress(p) {
+  try {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+  } catch (e) {
+    // localStorage unavailable — progress stays in-memory for the session.
+    // Never throw; never block play.
+  }
+}
+
+// Called at the level-complete moment: mark this level done and unlock the
+// next. Never regresses furthestLevel (replaying an early level can't lock
+// later ones). Free play never records progress — it's cabinet-hopping.
+function recordLevelComplete(levelNum) {
+  const p = getProgress();
+  p.completed[String(levelNum)] = true;
+  const nextUnlocked = Math.min(25, levelNum + 1);
+  if (nextUnlocked > p.furthestLevel) p.furthestLevel = nextUnlocked;
+  saveProgress(p);
+}
+
+// Act 6: mark a text world (e.g. 'greendragon') as visited/completed in its own
+// namespace. Never throws, never blocks play (same posture as recordLevelComplete).
+function recordTextWorldComplete(id) {
+  const p = getProgress();
+  if (!p.textWorlds || typeof p.textWorlds !== 'object') p.textWorlds = {};
+  p.textWorlds[String(id)] = { completed: true };
+  saveProgress(p);
+}
+
+// The single shared "erase all progress" helper. BOTH erase paths — the
+// continue screen's R→Y and the Settings screen's ERASE ALL PROGRESS row —
+// call this, so their semantics can never drift apart again.
+//
+// "Erase all progress" means progress, NOT identity: a child starting over
+// keeps her name and her CRT/sound preferences. So this clears the gameplay
+// keys only —
+//   kk-progress  (this file: furthest level + completions)
+//   kk-cards     (history-cards.js: collected history-card levels)
+// — and deliberately KEEPS kk-settings (player name + all preferences).
+//
+// Per-letter mistakes/stats live only in state.mistakes (in-memory, never
+// persisted), so a fresh startGame() already resets them — nothing to clear.
+//
+// kk-cards is owned by history-cards.js (read-only here); it exposes no erase
+// export, so we remove its key by name. Keep this string in sync with
+// history-cards.js's STORAGE_KEY if that ever changes.
+const CARDS_KEY = 'kk-cards';
+
+export function eraseProgress() {
+  try {
+    localStorage.removeItem(PROGRESS_KEY);
+  } catch (e) {
+    // ignore — never throw, never block
+  }
+  try {
+    localStorage.removeItem(CARDS_KEY);
+  } catch (e) {
+    // ignore
+  }
+}
+
 const settings = getSettings();
 Audio.setEnabled(settings.sound);
 document.documentElement.classList.toggle('no-crt', !settings.crtEffects);
@@ -83,6 +189,25 @@ const state = {
   startTime: null,
   patterns: [],
   cardWordTyped: false,
+
+  // Name Moment (see nameWordForLevel etc.): the lowercase name-word that
+  // earns this level's guaranteed golden injection, or null. nameMomentDone
+  // guards the once-per-game flourish so replaying the same run can't re-fire
+  // it mid-session; nameMomentFired() (persisted) guards it across sessions.
+  nameMomentWord: null,
+  nameMomentDone: false,
+
+  // Continue (returning-player) screen state
+  continueEraseConfirm: false,
+
+  // Select-screen gating: the highest level the player may enter. Cabinets
+  // beyond this render dark/locked and can't be selected — EXCEPT the WOPR
+  // bypass sets selectBypass=true, unlocking every cabinet for dev/parents.
+  maxUnlockedLevel: 1,
+  selectBypass: false,
+  // Sub-state of the 'select' screen: the back-wall door to Act 6 (Text Worlds)
+  // is focused. Only ever true while on the select screen; any Escape clears it.
+  doorFocused: false,
 
   // Settings screen navigation
   settingsReturn: 'title',   // 'title' | 'pause'
@@ -140,22 +265,118 @@ function renderReadyScreenWithSurvivalTag() {
   if (tag) tag.classList.toggle('hidden', settings.playStyle !== 'survival');
 }
 
+// The DRAWABLE real-word pool for a level, after the player-set WORD-LENGTH
+// DIFFICULTY lever (settings.js getWordLengthRange) is applied — best-effort,
+// with a HARD winnability floor. Word length = token count (patterns are arrays
+// of single-char tokens). This filter is the word-content sibling of EXPERIENCE:
+// it lets the game AGE WITH THE PLAYER (shorter=younger/easier, longer=older/
+// harder) WITHOUT ever trading away the One Rule floor — a range that would
+// empty a level's pool silently falls back to that level's UNFILTERED pool, so
+// no (min,max) the settings UI allows can hang a level. Resolved per call so a
+// mid-session settings change takes effect on the next level build / next draw
+// (mirrors how getWinRatio is consumed — never cached at module load).
+//
+// EXEMPT content (intro drills, history-card word, name-moment word, the L24
+// player-name pattern) is added elsewhere (level.intro here, splices in
+// startGame) and is deliberately NOT routed through this function — filtering it
+// would break the win-gate or the pedagogy.
+function drawablePool(level) {
+  const pool = level.pool;
+  if (!pool || pool.length === 0) return pool || [];
+  const { min, max } = getWordLengthRange();
+  // No-op fast path (default ANY/ANY → min:1,max:Infinity): return the pool
+  // unchanged so behavior is byte-identical when the setting is untouched.
+  if (min <= 1 && max === Infinity) return pool;
+  const filtered = pool.filter(p => p.length >= min && p.length <= max);
+  // WINNABILITY FALLBACK (the One Rule floor): an emptied pool would make the
+  // level unwinnable — fall back to the full unfiltered pool for this level.
+  // A non-empty filtered pool is safe even if tiny: the engine refills its
+  // pattern list by redrawing from this same (non-empty) set infinitely.
+  return filtered.length ? filtered : pool;
+}
+
 function buildPatterns(level) {
   if (state.freePlay) {
     // Already shuffled (themed first, then shared) by buildFreePlayPatterns.
+    // Free Play is the unconstrained sandbox — the word-length lever is EXEMPT.
     return [...level.pool];
   }
-  const shuffled = [...level.pool].sort(() => Math.random() - 0.5);
-  return [...level.intro, ...shuffled];
+  // Locally-generated words (wordgen.js: same-origin Ollama, security.md rules
+  // 6-7) AUGMENT the static pool — never replace it. takeWords returns [] when
+  // wordgen is inactive or no validated batch is ready, so the static-fallback
+  // path is byte-identical. Generated words join the shuffle only; intro
+  // drills, card-word and name-moment injections below are untouched.
+  // The player-set WORD-LENGTH difficulty lever applies to the drawable
+  // real-word POOL only (drawablePool: filtered, with unfiltered fallback so a
+  // range can never empty it). generated words are already length-bounded
+  // server-side, so they join the shuffle as-is. wrapSample is sampled from the
+  // full pool (a structural sample for wordgen, not player-facing content).
+  const pool = drawablePool(level);
+  const generated = wordgenTakeWords(state.level, {
+    keys: level.keys,
+    wrapSample: level.pool.find(p => p.some(t => t.length === 1 && !/[a-z0-9]/i.test(t))),
+  });
+  const shuffled = [...pool, ...generated].sort(() => Math.random() - 0.5);
+  const patterns = [...level.intro, ...shuffled];
+
+  // "Familiar visitor": from a name-word's first spellable level ONWARD (but
+  // NOT on the guaranteed-moment level itself — nameMomentWord is set there and
+  // the name is already injected up front), the name may drop in once per run
+  // as an occasional low-frequency pattern (~35% of runs). It's spliced a few
+  // slots into the intro-drill zone — always reached before the win-gate can
+  // fire, but not at the very front, so it reads as an occasional familiar
+  // face, not a drill. Completing it gets the normal word celebration — never
+  // the golden first-time flourish (that only fires when nameMomentWord is
+  // set, which it isn't here). At most one appearance per run.
+  if (!state.nameMomentWord) {
+    const words = spellableNameWords(state.playerName, state.level);
+    if (words.length && Math.random() < 0.35) {
+      const word = words[Math.floor(Math.random() * words.length)];
+      // Land it in the early guaranteed-reached zone (a few slots into the
+      // intro drills), so a fast player still meets the familiar face before
+      // the win-gate can fire — but not at the very front, so it reads as an
+      // occasional visitor, not a drill. Never at the moment-level (guarded
+      // above by nameMomentWord).
+      const at = Math.min(patterns.length, Math.floor(level.intro.length * 0.5) + 1);
+      patterns.splice(at, 0, word.split(''));
+    }
+  }
+  return patterns;
+}
+
+// A single fresh random draw from the current level's pool. Used both when
+// the initial pattern list is exhausted (getNextPattern below) and when a
+// survival timeout needs to replace the current prompt.
+function drawRandomPattern() {
+  const level = getLevelData();
+  // Draw from the SAME filtered-or-fallback set buildPatterns uses, so redraws
+  // past the initial pattern list keep honoring the word-length lever (and the
+  // fallback keeps them winnable). Free Play is the exempt sandbox — draw from
+  // its own unfiltered pool. Guard the empty case: an empty set here would yield
+  // `undefined` and hang/crash the engine downstream (this guard is the fix for
+  // the pre-existing unguarded empty-pool draw, now reachable via filtering —
+  // though drawablePool's fallback already keeps any level's set non-empty).
+  const pool = state.freePlay ? level.pool : drawablePool(level);
+  if (!pool || pool.length === 0) return level.intro[level.intro.length - 1] || [];
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function getNextPattern() {
-  const level = getLevelData();
   if (state.currentPattern < state.patterns.length) {
     return state.patterns[state.currentPattern];
   }
-  // Past the initial sequence — keep drawing randomly from pool
-  return level.pool[Math.floor(Math.random() * level.pool.length)];
+  // Past the initial sequence — draw randomly from the pool, but PERSIST the
+  // draw at its index so every later read of this same position agrees. The
+  // engine calls getNextPattern() more than once per position (once to render
+  // the prompt, again on each keystroke to validate) — without persistence a
+  // fresh random draw each call would make the displayed word and the expected
+  // word diverge, and the level would become impossible to advance reliably.
+  // This surfaced on Level 8, whose Tetris win-gate can outlast the initial
+  // list, but it applies to any level that runs past its pattern list.
+  while (state.patterns.length <= state.currentPattern) {
+    state.patterns.push(drawRandomPattern());
+  }
+  return state.patterns[state.currentPattern];
 }
 
 function formatTime(ms) {
@@ -267,9 +488,19 @@ function handleSurvivalTimeout() {
   // otherwise untouched.
   const level = getLevelData();
   state.currentIndex = 0;
-  state.patterns[state.currentPattern] = level.pool[Math.floor(Math.random() * level.pool.length)];
-  renderPrompt(state, level, getNextPattern());
-  startSurvivalPatternTimer(getNextPattern());
+  const fresh = drawRandomPattern();
+  // Only write back into the live pattern list when currentPattern actually
+  // indexes into it. In Free Play (and any run) the initial list can be
+  // exhausted, at which point currentPattern has advanced PAST patterns.length
+  // and getNextPattern() draws randomly instead of reading the array. Writing
+  // to patterns[currentPattern] there would create a sparse out-of-bounds
+  // slot — the QA-found bug. When we're past the list we just render `fresh`
+  // directly and leave the array untouched.
+  if (state.currentPattern < state.patterns.length) {
+    state.patterns[state.currentPattern] = fresh;
+  }
+  renderPrompt(state, level, fresh);
+  startSurvivalPatternTimer(fresh);
 }
 
 function showGameOver() {
@@ -363,6 +594,19 @@ function handleGameKey(e) {
         }
       }
 
+      // The Name Moment flourish — the once-ever warm golden celebration the
+      // first time the player completes their own name. Fires only on the
+      // guaranteed-injection level, only once per run (nameMomentDone), and
+      // is persisted (markNameMomentFired) so replays and later sessions never
+      // re-fire it. Just a richer completion effect — no pause, no modal, no
+      // gate (One Rule). Later completions get the normal word celebration.
+      if (!state.freePlay && !state.nameMomentDone && state.nameMomentWord
+          && patternMatchesName(pattern, state.nameMomentWord)) {
+        state.nameMomentDone = true;
+        markNameMomentFired(state.playerName);
+        fireNameFlourish();
+      }
+
       state.currentPattern++;
       state.patternsCompleted++;
       state.currentIndex = 0;
@@ -381,14 +625,28 @@ function handleGameKey(e) {
 
       // Level ends when theme game is won AND enough patterns completed —
       // free play requires at least 5 sentences; curriculum levels require
-      // their intro drills.
-      const minPatterns = state.freePlay ? 5 : level.intro.length;
+      // their intro drills, scaled by the EXPERIENCE win-ratio (1x = current
+      // behavior). The ratio only ever RAISES the minimum — more play, never a
+      // penalty. Free Play keeps its own fixed minimum (its own confidence gate).
+      // The card guarantee (cardPending below) is unaffected — the card is still
+      // guaranteed before any win, at every ratio. getNextPattern() refills the
+      // pool infinitely, so a higher minimum is always structurally reachable.
+      const minPatterns = state.freePlay
+        ? 5
+        : Math.ceil(level.intro.length * getWinRatio());
       // If this level hides a history card, the level can't end until its
       // moment word has been typed — the card is earned, never missable.
       const cardPending = !state.freePlay
         && HISTORY_CARDS[state.level]
         && !state.cardWordTyped;
-      if (themeComplete && state.patternsCompleted >= minPatterns && !cardPending) {
+      // Likewise, if this is the level where the player's name first becomes
+      // spellable, the level can't end until they've completed their name —
+      // the golden Name Moment is guaranteed, never missable (same guarantee
+      // shape as the card, but a fully independent gate).
+      const namePending = !state.freePlay
+        && state.nameMomentWord
+        && !state.nameMomentDone;
+      if (themeComplete && state.patternsCompleted >= minPatterns && !cardPending && !namePending) {
         setTimeout(showLevelComplete, 400);
         return;
       }
@@ -524,8 +782,29 @@ function showLevelComplete() {
     $('complete-prompt').textContent = 'PRESS SPACE FOR NEXT LEVEL';
   }
 
+  // Record returning-player progress at the true level-complete moment.
+  // Free play never advances the curriculum, so it never records. This runs
+  // AFTER the history-card gate in handleGameKey (which is what decides the
+  // level is complete at all) — the card logic itself is untouched.
+  if (!state.freePlay) {
+    recordLevelComplete(state.level);
+    if (state.level + 1 > state.maxUnlockedLevel) {
+      state.maxUnlockedLevel = Math.min(25, state.level + 1);
+    }
+  }
+
   const theme = activeTheme(state.level);
-  if (theme && theme.victory) theme.victory();
+  // A theme's victory() may return its celebration duration in ms — the card
+  // appears right as the animation lands instead of after a fixed dead-air
+  // hold (Trevor's playtest report, 2026-07-12). No/invalid return keeps the
+  // historical 4s window; clamped so a bad value can't stall or clip the beat.
+  let victoryMs = 4000;
+  if (theme && theme.victory) {
+    const declared = theme.victory();
+    if (Number.isFinite(declared)) {
+      victoryMs = Math.min(6000, Math.max(1200, declared));
+    }
+  }
 
   $('game-screen').querySelector('.game-area').classList.add('hidden');
   $('game-screen').querySelector('.hud').classList.add('hidden');
@@ -538,7 +817,7 @@ function showLevelComplete() {
       state.screen = 'complete';
       $('complete-overlay').classList.remove('hidden');
     }
-  }, 4000);
+  }, victoryMs);
 }
 
 // Level 24: build the player's own name as a shift-typed pattern —
@@ -556,6 +835,176 @@ function buildPlayerNamePattern(playerName) {
     }
   });
   return chars;
+}
+
+// ─── The Name Moment (pre-Shift personalization) ─────────────────────────
+// The player's own name becomes typeable content the instant the unlocked
+// key set can spell it — which for many names lands long before Level 24's
+// capitalized ceremony (e.g. "oona" is spellable at Level 12). This is a
+// warm personal beat, not a mechanic: lowercase only (capitals need Shift,
+// taught at 24), never for the untouched default "PLAYER ONE", never
+// coupled to the history-card gate. See .claude/rules/product.md.
+//
+// Sanitization mirrors buildPlayerNamePattern (security.md rule 3): strip to
+// [a-zA-Z], lowercase, split multi-word names into independent words. Each
+// word qualifies on its own — a "Mary Jane" spells "mary" and "jane" at
+// whatever levels their letters unlock.
+
+const DEFAULT_PLAYER_NAME = 'PLAYER ONE';
+
+// The lowercase, letters-only words of a player-entered name. Returns [] for
+// the untouched default and for names with no letters — both cases mean "no
+// name moment" downstream. The default check is on the raw display name so a
+// deliberate "player one" a child actually typed is treated the same as the
+// reserved default (it's indistinguishable and safest to skip).
+function nameWordsFor(playerName) {
+  if (!playerName || playerName.trim().toUpperCase() === DEFAULT_PLAYER_NAME) return [];
+  return playerName
+    .split(' ')
+    .map(w => w.replace(/[^a-zA-Z]/g, '').toLowerCase())
+    .filter(Boolean);
+}
+
+// A lowercase word is spellable at a level when every one of its letters is
+// in that level's cumulative unlocked key set (LEVELS[n].keys). Uppercase
+// keys ('Shift') and non-letters in .keys are irrelevant here — we only ask
+// about the letters the word needs.
+function wordSpellableAtLevel(word, levelNum) {
+  const level = LEVELS[levelNum];
+  if (!level) return false;
+  const keySet = new Set(level.keys);
+  for (const ch of word) {
+    if (!keySet.has(ch)) return false;
+  }
+  return true;
+}
+
+// The FIRST curriculum level (1..25) at which `word` becomes spellable, or
+// null if it never does. Levels 24/25 are excluded as "the moment" target —
+// 24 is the capitalized name ceremony and owns the name there; the pre-Shift
+// personalization only means anything before it. (A word that first becomes
+// spellable only at 24+ simply gets no early moment.)
+function firstSpellableLevel(word) {
+  for (let n = 1; n <= 23; n++) {
+    if (wordSpellableAtLevel(word, n)) return n;
+  }
+  return null;
+}
+
+// For the current player + level: the name-word (if any) whose first
+// spellable level IS this level. That's the word that earns the guaranteed
+// injection + golden flourish here. If several words share a first level, the
+// first-listed one wins (one moment per level is plenty). Returns null when
+// none qualifies at this level.
+function nameWordForLevel(playerName, levelNum) {
+  for (const word of nameWordsFor(playerName)) {
+    if (firstSpellableLevel(word) === levelNum) return word;
+  }
+  return null;
+}
+
+// Every name-word already spellable at this level (first-spellable <= level).
+// These are the words eligible to appear as low-frequency "familiar visitors"
+// from their first level onward.
+function spellableNameWords(playerName, levelNum) {
+  return nameWordsFor(playerName).filter(word => {
+    const first = firstSpellableLevel(word);
+    return first != null && first <= levelNum;
+  });
+}
+
+// ── Name-moment persistence (once-ever golden flourish) ──
+// Stored inside kk-progress alongside furthestLevel/completed, following the
+// same try/catch, tolerate-garbage pattern. Shape:
+//   nameMoment: { name: "oona" }   // the sanitized name the flourish fired for
+// A rename earns a fresh moment: the flourish re-fires only when the current
+// name doesn't match the stored one.
+function nameMomentFired(playerName) {
+  const p = getProgress();
+  const nm = p.nameMoment;
+  if (!nm || typeof nm.name !== 'string') return false;
+  // "Fired" means fired for THIS exact set of sanitized words. Compare the
+  // joined lowercase word list so re-ordering/whitespace can't matter.
+  return nm.name === nameWordsFor(playerName).join(' ');
+}
+
+function markNameMomentFired(playerName) {
+  const p = getProgress();
+  p.nameMoment = { name: nameWordsFor(playerName).join(' ') };
+  saveProgress(p);
+}
+
+// A just-completed pattern IS the name-moment word when its tokens spell the
+// lowercase word exactly (one letter per token). Mirrors patternMatchesCard.
+function patternMatchesName(pattern, word) {
+  if (!word || pattern.length !== word.length) return false;
+  for (let i = 0; i < word.length; i++) {
+    if (pattern[i] !== word[i]) return false;
+  }
+  return true;
+}
+
+// The golden flourish: a warm, personal celebration clearly richer than a
+// normal word completion — the whole prompt panel blooms gold and each
+// letter of the name glows/sparkles. Pure CSS classes on existing DOM +
+// canvas-free particle sparkles positioned over the prompt letters. NEVER a
+// modal, never a pause. Security: the name reaches the DOM only as the
+// prompt letters the engine already rendered (via textContent-equivalent
+// pattern rendering) — this only adds CSS classes and decorative spark divs
+// with no name text, so no new name-bearing DOM sink is created.
+let nameFlourishTimer = null;
+function fireNameFlourish() {
+  Audio.coin();
+  const promptArea = document.querySelector('.prompt-area');
+  if (promptArea) {
+    promptArea.classList.remove('name-flourish');
+    void promptArea.offsetWidth;
+    promptArea.classList.add('name-flourish');
+  }
+  // Gild each completed name letter.
+  const letters = document.querySelectorAll('.prompt-letter');
+  letters.forEach((el, i) => {
+    el.classList.remove('name-gold');
+    void el.offsetWidth;
+    // Stagger so the name lights up left-to-right like a marquee.
+    el.style.setProperty('--name-gold-delay', (i * 70) + 'ms');
+    el.classList.add('name-gold');
+    spawnSparkles(el);
+  });
+  clearTimeout(nameFlourishTimer);
+  nameFlourishTimer = setTimeout(() => {
+    if (promptArea) promptArea.classList.remove('name-flourish');
+    document.querySelectorAll('.prompt-letter.name-gold').forEach(el => {
+      el.classList.remove('name-gold');
+      el.style.removeProperty('--name-gold-delay');
+    });
+  }, 1600);
+}
+
+// A small bounded burst of decorative gold sparkles over one letter. Fixed
+// cap, self-removing, no name text — purely ornamental divs.
+function spawnSparkles(anchorEl) {
+  const seq = document.getElementById('prompt-sequence');
+  if (!seq) return;
+  const host = seq.parentElement || seq; // .prompt-area, positioned
+  const rect = anchorEl.getBoundingClientRect();
+  const hostRect = host.getBoundingClientRect();
+  const cx = rect.left - hostRect.left + rect.width / 2;
+  const cy = rect.top - hostRect.top + rect.height / 2;
+  const COUNT = 6;
+  for (let i = 0; i < COUNT; i++) {
+    const s = document.createElement('div');
+    s.className = 'name-spark';
+    const ang = (Math.PI * 2 * i) / COUNT + Math.random() * 0.5;
+    const dist = 26 + Math.random() * 26;
+    s.style.left = cx + 'px';
+    s.style.top = cy + 'px';
+    s.style.setProperty('--sx', Math.cos(ang) * dist + 'px');
+    s.style.setProperty('--sy', Math.sin(ang) * dist + 'px');
+    s.style.animationDelay = (Math.random() * 120) + 'ms';
+    host.appendChild(s);
+    setTimeout(() => s.remove(), 1200);
+  }
 }
 
 function showKeyboardPreview() {
@@ -576,6 +1025,24 @@ function startGame() {
   state.currentPattern = 0;
   state.currentIndex = 0;
   state.patternsCompleted = 0;
+
+  // Decide the Name Moment BEFORE building patterns, so buildPatterns knows
+  // whether this is the guaranteed-moment level (nameMomentWord set → it does
+  // NOT also add a low-frequency visitor) or a later level (nameMomentWord
+  // null → it may add one). The guaranteed word is spliced in below, after
+  // the card, so both are reachable.
+  state.nameMomentWord = null;
+  state.nameMomentDone = false;
+  if (!state.freePlay) {
+    const momentWord = nameWordForLevel(state.playerName, state.level);
+    // Only the once-ever golden moment guarantees an injection. If it already
+    // fired (this or a past session), this level's word is treated like any
+    // other already-spellable name-word: low-frequency, not guaranteed.
+    if (momentWord && !nameMomentFired(state.playerName)) {
+      state.nameMomentWord = momentWord;
+    }
+  }
+
   state.patterns = buildPatterns(level);
 
   if (state.level === 24 && !state.freePlay) {
@@ -604,6 +1071,20 @@ function startGame() {
     state.patterns.splice(level.intro.length, 0, cardTokens);
   }
 
+  // ── Name Moment guaranteed injection ──
+  // Independent of the card gate above (decided earlier as state.nameMomentWord).
+  // On the FIRST level where a name-word becomes spellable, splice that word
+  // (lowercase, one token per letter) as a GUARANTEED pattern right after the
+  // intro drills — AND after the card word (if any), so neither displaces the
+  // other and both are always reached before the win-gate. The win-gate also
+  // waits on it (namePending in handleGameKey) — the moment is earned, never
+  // missable, exactly like a card. Later levels don't inject here; the name
+  // instead joins the pool at low frequency inside buildPatterns above.
+  if (state.nameMomentWord) {
+    const insertAt = level.intro.length + (card ? 1 : 0);
+    state.patterns.splice(insertAt, 0, state.nameMomentWord.split(''));
+  }
+
   state.totalCorrect = 0;
   state.totalAttempts = 0;
   state.streak = 0;
@@ -612,6 +1093,17 @@ function startGame() {
   level.keys.forEach(k => state.mistakes[k] = 0);
   state.wrongOnCurrent = false;
   state.startTime = Date.now();
+
+  // Wordgen: warm the NEXT level's generated batch while this one plays —
+  // fire-and-forget; gameplay never waits on generation (no-op when inactive).
+  // The request declares the next level's key set (act/level/characters);
+  // level 25 has no next, so the prefetch is skipped silently.
+  if (!state.freePlay) {
+    const nextLevel = LEVELS[state.level + 1];
+    if (nextLevel && Array.isArray(nextLevel.keys)) {
+      wordgenPrefetch(state.level + 1, nextLevel.keys);
+    }
+  }
 
   // SURVIVAL: reset the wrapper state fresh for every game start (including
   // "TRY AGAIN" from the Game Over overlay). Free play + survival coexist —
@@ -645,6 +1137,31 @@ function startGame() {
   stopAll();
   const theme = activeTheme(state.level);
   if (theme) theme.start();
+}
+
+// ─── Continue screen (returning player) ──────────────────────────────────
+
+// The cumulative set of keys the player has already mastered, in a stable
+// order, for the level they're about to resume. It's every key the resume
+// level knows about minus the ones that level itself is about to teach.
+function learnedKeysForLevel(resumeLevel) {
+  const level = LEVELS[resumeLevel];
+  if (!level) return [];
+  const newSet = new Set(level.newKeys);
+  return level.keys.filter(k => !newSet.has(k));
+}
+
+function showContinueScreen() {
+  const p = getProgress();
+  state.maxUnlockedLevel = p.furthestLevel;
+  state.selectBypass = false;
+  state.level = p.furthestLevel;
+  state.freePlay = false;
+  state.continueEraseConfirm = false;
+  const level = LEVELS[state.level] || LEVELS[1];
+  renderContinueScreen(state, level, learnedKeysForLevel(state.level));
+  applyLevelTheme(1); // continue screen is arcade-era chrome, like the title
+  showScreen('continue', state);
 }
 
 // ─── Settings screen ────────────────────────────────────────────────────
@@ -694,9 +1211,15 @@ function handleSettingsKey(e) {
 
   if (state.settingsEraseConfirm) {
     if (e.key === 'y' || e.key === 'Y') {
-      try { localStorage.clear(); } catch (err) { /* ignore */ }
+      // Unified with the continue screen's R→Y path: erase gameplay progress
+      // (kk-progress + kk-cards) but KEEP the player's name and preferences
+      // (kk-settings). Reloading re-boots into the fresh title/name flow —
+      // and because kk-settings survives, the name is still there.
+      eraseProgress();
       location.reload();
     } else {
+      // N or ANY other key is a safe no-op — never trap the player in the
+      // confirmation.
       state.settingsEraseConfirm = false;
       $('settings-erase-confirm').classList.add('hidden');
     }
@@ -729,8 +1252,72 @@ function handleSettingsKey(e) {
   }
 }
 
+// ─── Act 6 — Text Worlds: the back-wall door entry/exit ─────────────────────
+// Entered from the select screen's door sub-state (state.doorFocused). Runs as a
+// parallel screen ('textworld') on the shared canvas, like the act cinematics —
+// the pattern engine (handleGameKey) is never involved. No survival timer is ever
+// started here, so the wing inherits zero time pressure (One Rule).
+function enterTextWorld() {
+  stopAll();
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  state.screen = 'textworld';
+  TextWorldHub.start({
+    onExit: returnToArcadeFromTextWorld,           // ESC from the chooser → arcade door
+    onComplete: (id) => recordTextWorldComplete(id), // a world finished → persist it
+  });
+}
+
+function returnToArcadeFromTextWorld() {
+  TextWorldHub.stop();
+  state.doorFocused = true;   // land back on the door we came through
+  showScreen('select', state);
+  renderSelectScreen(state);
+}
+
 document.addEventListener('keydown', (e) => {
   switch (state.screen) {
+    case 'continue':
+      // Returning-player continue screen. Its ONLY bindings are Space (resume),
+      // R (restart→confirm), and inside confirm Y/N. No secret-phrase or Konami
+      // listener lives here — those stay on the title/ready screens (see EGGS).
+      e.preventDefault();
+      if (state.continueEraseConfirm) {
+        // Only Y erases. N or ANY other key returns to the continue screen —
+        // never trap the kid in the confirmation.
+        if (e.key === 'y' || e.key === 'Y') {
+          eraseProgress();
+          state.continueEraseConfirm = false;
+          state.maxUnlockedLevel = 1;
+          state.selectBypass = false;
+          state.level = 1;
+          state.coinInserted = false;
+          // Fresh start: go to the normal title/name flow, exactly as a
+          // first-time player would see it (minus the one-time cold open).
+          applyLevelTheme(1);
+          showScreen('title', state);
+          $('insert-coin').classList.remove('hidden');
+          $('reboot-hint').classList.remove('hidden');
+          $('settings-hint').classList.remove('hidden');
+          $('name-setup').classList.add('hidden');
+          $('wopr-text').textContent = '';
+          Audio.start();
+        } else {
+          state.continueEraseConfirm = false;
+          showContinueEraseConfirm(false);
+        }
+      } else if (e.key === ' ') {
+        Audio.start();
+        state.level = state.maxUnlockedLevel;
+        $('ready-name').textContent = state.playerName;
+        renderReadyScreenWithSurvivalTag();
+        applyLevelTheme(state.level);
+        showScreen('ready', state);
+      } else if (e.key === 'r' || e.key === 'R') {
+        state.continueEraseConfirm = true;
+        showContinueEraseConfirm(true);
+      }
+      break;
+
     case 'title':
       if (e.key === 'Tab') {
         // Tab is unused elsewhere on the title screen and — unlike 's' —
@@ -755,10 +1342,13 @@ document.addEventListener('keydown', (e) => {
           $('reboot-hint').classList.add('hidden');
           $('settings-hint').classList.add('hidden');
           $('name-setup').classList.remove('hidden');
-          // Prefill from settings.playerName (dimmed placeholder behavior
-          // preserved: any keypress clears it and starts typing fresh).
+          // Prefill from settings.playerName, then select it so the first
+          // typed character natively overwrites the whole default (dimmed
+          // "ready to be overwritten" behavior — onboarding.md §Name Entry).
+          // Backspace clears the selection normally; an empty confirm keeps it.
           $('player-name-input').value = settings.playerName || '';
           $('player-name-input').focus();
+          $('player-name-input').select();
         } else if (e.key === 'r' && secretBuffer === '') {
           e.preventDefault();
           location.reload();
@@ -773,6 +1363,9 @@ document.addEventListener('keydown', (e) => {
             secretBuffer = '';
             $('wopr-text').textContent = '';
             Audio.start();
+            // WOPR is the dev/parent bypass: every cabinet is selectable,
+            // regardless of saved progress.
+            state.selectBypass = true;
             state.selectedLevel = 1;
             renderSelectScreen(state);
             showScreen('select', state);
@@ -821,12 +1414,14 @@ document.addEventListener('keydown', (e) => {
         $('insert-coin').classList.add('hidden');
         $('name-setup').classList.remove('hidden');
         $('player-name-input').focus();
+        $('player-name-input').select(); // ready to be overwritten (see title-branch)
       } else if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
         secretBuffer += e.key.toLowerCase();
         if (SECRET_PHRASES.includes(secretBuffer)) {
           e.preventDefault();
           secretBuffer = '';
           Audio.start();
+          state.selectBypass = true; // WOPR dev/parent bypass — unlock all cabinets
           state.selectedLevel = 1;
           renderSelectScreen(state);
           showScreen('select', state);
@@ -909,6 +1504,21 @@ document.addEventListener('keydown', (e) => {
       break;
 
     case 'complete':
+      if (e.key === 'r' || e.key === 'R') {
+        // REPLAY: restart THIS level fresh — same flow as entering it from the
+        // select screen. Offered only here, at the natural pause point (after
+        // the history card has been presented), never interrupting flow.
+        // startGame() rebuilds patterns, resets the HUD/survival state, resets
+        // the card gate AND re-injects the level's moment word, so a replayed
+        // level whose card was already collected is still completable (the card
+        // just isn't re-awarded — collectCard is collect-once). kk-progress is
+        // untouched, so replaying never regresses furthestLevel.
+        e.preventDefault();
+        $('complete-overlay').classList.add('hidden');
+        stopAll();
+        startGame();
+        break;
+      }
       if (e.key === ' ') {
         e.preventDefault();
         $('complete-overlay').classList.add('hidden');
@@ -1007,9 +1617,17 @@ document.addEventListener('keydown', (e) => {
       FullCircle.confirm();
       break;
 
+    case 'textworld':
+      // Act 6 Text Worlds. The hub owns Escape internally (world → chooser →
+      // arcade); every other key is world input.
+      e.preventDefault();
+      TextWorldHub.handleKey(e);
+      break;
+
     case 'select':
       e.preventDefault();
       if (e.key === 'f' || e.key === 'F') {
+        if (state.doorFocused) break; // free play doesn't apply at the door
         state.freePlay = !state.freePlay;
         renderSelectScreen(state);
       } else if (e.key >= '1' && e.key <= '5') {
@@ -1023,14 +1641,24 @@ document.addEventListener('keydown', (e) => {
       } else if (e.key === 'ArrowDown') {
         navigateAct(state, 1);
       } else if (e.key === 'Enter' || e.key === ' ') {
+        if (state.doorFocused) { enterTextWorld(); break; }
+        // Guard: never enter a locked cabinet (belt-and-suspenders — the
+        // cursor can't normally land on one, but the WOPR bypass or a stale
+        // selection shouldn't slip a locked level through).
+        if (isLevelLocked(state, state.selectedLevel)) break;
         state.level = state.selectedLevel;
         state.coinInserted = true;
         showScreen('title', state);
         $('insert-coin').classList.add('hidden');
         $('name-setup').classList.remove('hidden');
-        setTimeout(() => $('player-name-input').focus(), 0);
+        $('player-name-input').value = settings.playerName || '';
+        setTimeout(() => {
+          $('player-name-input').focus();
+          $('player-name-input').select(); // ready to be overwritten (see title-branch)
+        }, 0);
       } else if (e.key === 'Escape') {
         state.freePlay = false;
+        state.doorFocused = false;   // leaving the select screen clears the door sub-state
         showScreen('title', state);
       }
       break;
@@ -1042,6 +1670,22 @@ const enterLabel = /Mac/.test(navigator.platform || navigator.userAgent) ? 'RETU
 document.querySelectorAll('[data-enter-key]').forEach(el => { el.textContent = enterLabel; });
 
 createStars();
+
+// ─── Boot: returning player vs first-time player ─────────────────────────
+// Seed the select-screen gate from saved progress so lit-vs-dark cabinets are
+// correct regardless of entry path. Then, if the player has real progress,
+// skip the cold open and show the continue screen. A brand-new player (no
+// kk-progress) falls through to the untouched title/name flow.
+(function boot() {
+  const p = getProgress();
+  state.maxUnlockedLevel = p.furthestLevel;
+  // One-time wordgen health probe — fire-and-forget, never awaited; on static
+  // hosting this fails fast once and wordgen stays silently dormant.
+  initWordgen();
+  if (hasProgress()) {
+    showContinueScreen();
+  }
+})();
 
 // For the curious human who just opened the console:
 // that instinct — looking under the hood — is the whole point of this game.

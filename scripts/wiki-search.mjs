@@ -11,10 +11,11 @@ import { fileURLToPath } from 'node:url';
 const PROJ = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ROOT = join(PROJ, 'research');
 const JDIR = join(PROJ, 'docs', 'journal');
+const FDIR = join(PROJ, 'docs', 'features');
 // Skipped: generated views (learnings/observations/failures are rebuilt by --index),
 // schema docs, the dashboard (Dataview source), and the wiki's own index/log.
 const SKIP = new Set(['index.md', 'log.md', 'WIKI.md', 'JOURNAL.md', 'dashboard.md',
-  'learnings.md', 'observations.md', 'failures.md']);
+  'learnings.md', 'observations.md', 'failures.md', 'README.md']);
 const IMPORTANCE_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 // ── Corpus loading ───────────────────────────────────────────────────────────
@@ -32,12 +33,14 @@ function mdFiles(dir) {
 }
 
 // Kind: wiki (atomic graph pages, full schema enforced) | hub (research/ root
-// narratives) | journal (docs/journal append-only logs) | doc (planning docs).
+// narratives) | journal (docs/journal append-only logs) | feature (docs/features/
+// code-llmwiki pages, owned by the content-librarian) | doc (planning docs).
 function kindOf(path) {
   if (path.includes(join('research', 'wiki'))) return 'wiki';
   if (dirname(path) === ROOT) return 'hub';
   if (path.includes(join('journal', 'entries'))) return 'journal-entry';
   if (path.includes(join('docs', 'journal'))) return 'journal';
+  if (path.includes(join('docs', 'features'))) return 'feature';
   return 'doc';
 }
 
@@ -62,6 +65,7 @@ function loadCorpus() {
   const paths = [
     ...mdFiles(ROOT),
     ...mdFiles(join(PROJ, 'docs', 'journal')),
+    ...mdFiles(FDIR),
     join(PROJ, 'docs', 'ROADMAP.md'),
   ].filter(p => { try { return statSync(p).isFile(); } catch { return false; } });
   return paths.map(path => {
@@ -165,6 +169,14 @@ function generateIndex(corpus) {
       out += `- [[${d.name}]]${meta ? ` *(${meta})*` : ''} — ${d.summary}\n`;
     }
   }
+  const features = corpus.filter(d => d.kind === 'feature').sort((a, b2) => a.name.localeCompare(b2.name));
+  if (features.length) {
+    out += `\n## docs/features/ — the source graph (code-llmwiki, maintained by the content-librarian agent) (${features.length})\n\n`;
+    for (const d of features) {
+      const codeFiles = Array.isArray(d.fm.code) ? d.fm.code.join(', ') : (d.fm.code || '');
+      out += `- [[${d.name}]]${codeFiles ? ` *(${codeFiles})*` : ''} — ${d.summary}\n`;
+    }
+  }
   const entries = corpus.filter(d => d.kind === 'journal-entry');
   out += `\n## Journal & planning (project memory)\n\n`;
   out += `- [[JOURNAL]] — journal schema · [[dashboard]] — live Dataview status board\n`;
@@ -177,7 +189,7 @@ function generateIndex(corpus) {
   for (const d of journal) out += `- [[${d.name}]] — ${d.summary}\n`;
   writeFileSync(join(ROOT, 'index.md'), out);
   if (entries.length) writeJournalViews(entries);
-  console.log(`index.md regenerated: ${hubs.length} hubs, ${wiki.length} wiki pages across ${folders.length} folders, ${entries.length} journal entries.`);
+  console.log(`index.md regenerated: ${hubs.length} hubs, ${wiki.length} wiki pages across ${folders.length} folders, ${features.length} feature pages, ${entries.length} journal entries.`);
 }
 
 // ── Generated per-kind journal views ─────────────────────────────────────────
@@ -249,6 +261,15 @@ function lint(corpus) {
       }
       if (d.fm.status && !STATUSES.has(d.fm.status)) problems.push(`JOURNAL META ${d.name} (bad status '${d.fm.status}')`);
       if (d.fm.status === 'addressed' && !d.fm['addressed-by']) problems.push(`JOURNAL META ${d.name} (addressed but no 'addressed-by')`);
+      continue;
+    }
+    if (d.kind === 'feature') {
+      // Schema per .claude/agents/content-librarian.md — distinct from the wiki
+      // schema below (no 'type', no References section expected here).
+      for (const req of ['feature', 'code', 'verified']) {
+        if (!d.fm[req]) problems.push(`FEATURE META ${d.name} (missing '${req}')`);
+      }
+      if (d.fm.feature && d.fm.feature !== d.name) problems.push(`FEATURE META ${d.name} (frontmatter 'feature: ${d.fm.feature}' does not match filename)`);
       continue;
     }
     if (d.kind !== 'wiki') continue; // full schema enforced only on graph pages

@@ -16,6 +16,16 @@ let sparkles = [];
 const WIN_RESOURCES = 25;
 const RESOURCE_TYPES = ['wood', 'gold', 'food', 'stone'];
 const RESOURCE_COLORS = { wood: '#8b5e2a', gold: '#c8a840', food: '#44aa44', stone: '#888888' };
+// Additive-friendly RGB triples (L35: dark iso scene swallows alpha washes, so
+// celebration layers composite with 'lighter' and use saturated per-channel colors).
+const RESOURCE_RGB = { wood: '210,150,70', gold: '255,215,90', food: '110,230,110', stone: '210,210,220' };
+
+// ─── Victory (wonder-built / age-advance celebration) ─────────────────────────
+const VICTORY_MS = 3500;
+let victoryMode = false;
+let victoryFrame = 0;   // frames elapsed since victory() fired (clamped in draw math)
+let vFountains = [];    // resource-colored jets erupting UP from the town center
+let vShimmer = [];      // gilded ring sprites sweeping outward over buildings
 
 const GRID_W = 15;
 const GRID_H = 10;
@@ -129,11 +139,16 @@ function drawSkyBackdrop(W, H) {
   ctx.fillRect(0, H * 0.3, W, H * 0.72);
 }
 
+// Screen position of the town center (the castle) — the origin of the wonder bloom.
+function townCenter(W, H) {
+  const gx = GRID_W - 2.6, gy = 1.2;
+  return isoProject(gx, gy, tileElevAt(gx, gy), W, H);
+}
+
 function drawCastle(W, H) {
   // Castle positioned on the far grid corner, built from the same iso face
   // grammar as the terrain tiles/simcity buildings — top/left/right flat polys.
-  const gx = GRID_W - 2.6, gy = 1.2;
-  const p = isoProject(gx, gy, tileElevAt(gx, gy), W, H);
+  const p = townCenter(W, H);
 
   const wallH = 70, towerH = 110, hw = 34, hh = 17;
 
@@ -303,6 +318,145 @@ function updateSparkles() {
   }
 }
 
+// ─── Victory celebration ──────────────────────────────────────────────────────
+// The wonder is complete / the empire advances an age: a golden radiance blooms
+// from the town center OVER the visible map (additive per L35 — the wash visibly
+// brightens the tiles and buildings), a gilded shimmer ring sweeps outward, and
+// resource-colored fountains erupt UPWARD from the map's buildings — never into
+// the void below. An era-authentic "WONDER COMPLETE" banner + horn flourish sits
+// in the top band.
+
+function spawnFountain(W, H) {
+  if (vFountains.length >= 100) return;
+  const type = RESOURCE_TYPES[Math.floor(Math.random() * RESOURCE_TYPES.length)];
+  const c = townCenter(W, H);
+  // Origin spread across the visible map: from the town center out to the map's
+  // middle, so fountains erupt from buildings/terrain across the map rather than
+  // clustering at the far corner (and never into the void below).
+  const ox = c.x * 0.45 + W * 0.42 * 0.55;
+  const oy = (c.y + H * 0.30) * 0.5;
+  vFountains.push({
+    x: ox + (Math.random() - 0.5) * W * 0.40,
+    y: oy + (Math.random() - 0.5) * H * 0.14,  // on the map surface
+    vx: (Math.random() - 0.5) * 3.2,
+    vy: -5.5 - Math.random() * 4.5,            // strong UP impulse
+    life: 1,
+    rgb: RESOURCE_RGB[type],
+  });
+}
+
+function spawnShimmer(W, H) {
+  const c = townCenter(W, H);
+  vShimmer.push({ x: c.x, y: c.y - 20, r: 6, life: 1 });
+}
+
+function drawVictory(W, H) {
+  // Frame-driven, but clamp so no sentinel value reaches geometry (F1).
+  const vf = Math.min(victoryFrame, 100000);
+  const secs = vf / 60;
+
+  const c = townCenter(W, H);
+  // Bloom center: pulled toward the visible map's middle so the wash lands on the
+  // terrain/buildings the player is looking at, not just the far corner.
+  const bx = (c.x + W * 0.5) * 0.5;
+  const by = (c.y + H * 0.30) * 0.5;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  // 1) Golden radiance — a big additive disc that visibly brightens the map.
+  const grow = Math.min(1, secs / 0.6);
+  const radius = Math.max(1, W * (0.20 + 0.35 * grow));  // clamp >0 (F1)
+  const pulse = 0.72 + Math.sin(vf * 0.10) * 0.14;
+  const rg = ctx.createRadialGradient(bx, by, 0, bx, by, radius);
+  rg.addColorStop(0, `rgba(255,240,180,${0.55 * pulse})`);
+  rg.addColorStop(0.35, `rgba(255,210,110,${0.34 * pulse})`);
+  rg.addColorStop(0.7, `rgba(220,160,60,${0.16 * pulse})`);
+  rg.addColorStop(1, 'rgba(200,140,50,0)');
+  ctx.fillStyle = rg;
+  ctx.beginPath();
+  ctx.arc(bx, by, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 2) Gilded shimmer rings sweeping outward from the town center over the buildings.
+  vShimmer.forEach(s => {
+    const a = Math.max(0, s.life);
+    ctx.strokeStyle = `rgba(255,230,140,${a * 0.8})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(s.x, s.y, Math.max(1, s.r), Math.max(1, s.r * 0.5), 0, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+
+  // 3) Resource-colored fountains — colored halo with a white-hot core.
+  vFountains.forEach(f => {
+    const a = Math.max(0, f.life);
+    ctx.fillStyle = `rgba(${f.rgb},${a * 0.9})`;
+    ctx.fillRect(Math.round(f.x - 2), Math.round(f.y - 2), 5, 5);
+    ctx.fillStyle = `rgba(255,255,240,${a * 0.9})`;
+    ctx.fillRect(Math.round(f.x - 1), Math.round(f.y - 1), 2, 2);
+  });
+
+  ctx.restore();
+
+  // 4) "WONDER COMPLETE" banner + horn-blast flourish in the top band.
+  const bannerA = Math.min(1, secs / 0.4);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const bannerY = H * 0.10;
+  // Horn-blast rays behind the text.
+  ctx.globalCompositeOperation = 'lighter';
+  const rays = 12;
+  const rayLen = W * 0.16 * (0.6 + 0.4 * Math.min(1, secs / 0.5));
+  for (let i = 0; i < rays; i++) {
+    const ang = (i / rays) * Math.PI * 2 + vf * 0.02;
+    ctx.strokeStyle = `rgba(255,215,110,${bannerA * (0.10 + 0.06 * (0.5 + 0.5 * Math.sin(vf * 0.15 + i)))})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.5, bannerY);
+    ctx.lineTo(W * 0.5 + Math.cos(ang) * rayLen, bannerY + Math.sin(ang) * rayLen * 0.45);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '14px "Press Start 2P", monospace';
+  ctx.fillStyle = `rgba(255,236,170,${bannerA})`;
+  ctx.shadowColor = 'rgba(255,180,70,0.95)';
+  ctx.shadowBlur = 14;
+  ctx.fillText('WONDER COMPLETE', W * 0.5, bannerY);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function updateVictory(W, H) {
+  victoryFrame++;
+  // Emit fountains steadily through the window so the map never goes quiet.
+  const secs = victoryFrame / 60;
+  if (secs < 3.0) {
+    for (let i = 0; i < 3; i++) spawnFountain(W, H);
+  }
+  if (victoryFrame % 10 === 0 && secs < 2.6) spawnShimmer(W, H);
+
+  for (let i = vFountains.length - 1; i >= 0; i--) {
+    const f = vFountains[i];
+    f.x += f.vx;
+    f.y += f.vy;
+    f.vy += 0.16;          // gravity — jets rise then arc back over the map
+    f.life -= 0.018;
+    if (f.life <= 0) vFountains.splice(i, 1);
+  }
+  for (let i = vShimmer.length - 1; i >= 0; i--) {
+    const s = vShimmer[i];
+    s.r += 5;
+    s.life -= 0.03;
+    if (s.life <= 0) vShimmer.splice(i, 1);
+  }
+}
+
 function render() {
   if (!active) return;
   const W = canvas.width;
@@ -319,17 +473,24 @@ function render() {
   drawCastle(W, H);
 
   troops.forEach(t => {
-    t.gx += t.speed * t.dir;
-    t.bob += 0.06;
-    t.frameTimer += 1;
-    if (t.frameTimer > 12) { t.frameTimer = 0; t.frame = (t.frame + 1) % TROOP_FRAMES.length; }
-    if (t.gx < 1 || t.gx > GRID_W - 2) t.dir *= -1;
+    if (!victoryMode) {
+      t.gx += t.speed * t.dir;
+      t.bob += 0.06;
+      t.frameTimer += 1;
+      if (t.frameTimer > 12) { t.frameTimer = 0; t.frame = (t.frame + 1) % TROOP_FRAMES.length; }
+      if (t.gx < 1 || t.gx > GRID_W - 2) t.dir *= -1;
+    }
     drawTroop(t, W, H);
   });
 
-  updateParticles();
-  updateSparkles();
-  drawResources(W, H);
+  if (victoryMode) {
+    updateVictory(W, H);
+    drawVictory(W, H);
+  } else {
+    updateParticles();
+    updateSparkles();
+    drawResources(W, H);
+  }
 
   animId = requestAnimationFrame(render);
 }
@@ -339,11 +500,18 @@ function render() {
 export function start() {
   init();
   active = true;
+  victoryMode = false;
+  victoryFrame = 0;
+  vFountains = [];
+  vShimmer = [];
   animId = requestAnimationFrame(render);
 }
 
 export function stop() {
   active = false;
+  victoryMode = false;
+  vFountains = [];
+  vShimmer = [];
   if (animId) { cancelAnimationFrame(animId); animId = null; }
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
@@ -380,21 +548,20 @@ export function patternComplete() {
 }
 
 export function victory() {
-  if (!active) return;
+  if (!active) return VICTORY_MS;
   const W = canvas.width, H = canvas.height;
-  RESOURCE_TYPES.forEach(type => {
-    const col = RESOURCE_COLORS[type];
-    for (let i = 0; i < 10; i++) {
-      particles.push({
-        x: W * (0.1 + Math.random() * 0.6),
-        y: H * 0.55,
-        vx: (Math.random() - 0.5) * 4,
-        vy: -2 - Math.random() * 4,
-        life: 1,
-        col,
-      });
-    }
-  });
+  // Enter the wonder-built celebration: golden radiance over the map, gilded
+  // shimmer sweep, resource fountains erupting up from the buildings, and the
+  // "WONDER COMPLETE" banner. Returns its duration; the engine lands the LEVEL
+  // COMPLETE card as the celebration plays out.
+  victoryMode = true;
+  victoryFrame = 0;
+  vFountains = [];
+  vShimmer = [];
+  // Seed an immediate first burst so the map lights on frame one.
+  for (let i = 0; i < 24; i++) spawnFountain(W, H);
+  spawnShimmer(W, H);
+  return VICTORY_MS;
 }
 
 window.addEventListener('resize', () => {

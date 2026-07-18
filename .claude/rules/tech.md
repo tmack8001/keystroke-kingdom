@@ -6,27 +6,32 @@
 
 ## Philosophy
 
-Build fast, stay scrappy, learn what we like. Let AI agents do the heavy lifting on first passes. Once we know what we're shipping, move to a real platform. Browser-first for now — zero install friction, shareable instantly, Oona can just open a tab and play.
+Build fast, stay scrappy, learn what we like. Let AI agents do the heavy lifting on first passes. Browser-first — zero install friction, shareable instantly, Oona can just open a tab and play.
 
 > *"Get hands dirty. Let the agents build bespoke code, tailor it low-friction to your vision, learn what you like. If you land on something worth shipping for real, then take the learnings and spec it on a real platform."*
 > — LinkedIn advice, May 2026
 
+*That advice launched this as a prototype. It has since graduated (declared by Trevor,
+2026-07-12): all 25 levels playable end-to-end with cinematics, persistence, QA
+tooling, and a verified research layer. This IS the game — the browser build is the
+platform until a deliberate decision says otherwise (see Future Considerations).*
+
 ---
 
-## Current Stack (Prototype Phase)
+## Current Stack
 
 | Layer | Choice | Reason |
 |---|---|---|
-| Platform | Browser (HTML/CSS/JS or React) | Zero friction, instantly shareable |
-| Game Engine | Bespoke (no engine yet) | Low-level control, agent-friendly |
+| Platform | Browser (HTML/CSS/JS, bespoke) | Zero friction, instantly shareable |
+| Game Engine | Bespoke (deliberate — no framework) | Low-level control, agent-friendly |
 | AI Assistance | Claude (Anthropic) | Architecture, code, design decisions |
 | Music Generation | Google Lyria | Original per-level chiptune songs |
 | Visual Style | Pixel / retro arcade CSS/Canvas | Era-authentic, lightweight |
-| Future Engine | Godot (if we ship for real) | OSS, scriptable, beginner-friendly |
+| Future Engine | Godot (if we ship beyond the browser) | OSS, scriptable, beginner-friendly |
 
 ---
 
-## Architecture Overview (Prototype)
+## Architecture Overview
 
 ```
 /  (repo root — served + embedded by main.go)
@@ -47,12 +52,24 @@ Build fast, stay scrappy, learn what we like. Let AI agents do the heavy lifting
       cabinet-art.js    # Select screen: ACTS + pixel cabinet art
       screens.js        # Screen switching, level theming, ready screen
   css/                  # base / screens / levels (per-level palettes)
-  docs/                 # ROADMAP.md, screenshots/ (+capture-all.js), a11y/ (+audit.js)
+  scripts/              # kk-playwright.js (shared nav helper), record-playthrough.js,
+                         # dev.sh, *-hook.sh (docs-currency/journal/wiki-context/wiki-freshness/theme-authoring)
+  docs/                 # ROADMAP.md, screenshots/ (+capture-all.js), a11y/ (+audit.js),
+                         # testing/ (STRATEGY.md doctrine + INV catalog, FINDINGS.md ledger)
+  tests/                # behavior-first suite: static/ unit/ integration/ helpers/
+                         # (node --test, zero deps; make test-fast / make test)
   research/             # Background research documents
 ```
 
 **Build gotcha:** the Go binary embeds assets at compile time — after ANY js/css change,
 `go build -o keystroke-kingdom .` and restart, or the server serves stale code.
+
+**Browser auto-open is TTY-gated** (Trevor, 2026-07-14): a dev run (`PORT` unset) opens a
+browser tab ONLY when stdout is a real terminal — so a human running `./keystroke-kingdom` or
+`scripts/dev.sh` from their shell still gets a tab, but an agent/CI running the binary through a
+captured pipe does NOT (no more 5+ tabs spawning during agent build/restart cycles). `main.go`
+`stdoutIsTerminal()` decides; `PORT=<n>` (container mode) and `KK_NO_OPEN=1` also suppress. The
+`.dev-url` file is still written in dev mode regardless.
 
 ---
 
@@ -114,11 +131,9 @@ Words unlocked progressively as keys are learned. Word selection criteria:
 wordBank = {
   keys_jf: [],           // No words — patterns only
   keys_jfdk: [],         // No words — patterns only  
-  keys_jfdksl: [         // First real words
-    'ads', 'lads', 'falls', 'flask', 'lass'
-  ],
-  keys_all_homerow: [    // Full home row
-    'dad', 'sad', 'fad', 'lad', 'skull', 'falls', 'flask'
+  keys_jfdksl: [],       // Still no words — no vowel in this key set, nothing spellable
+  keys_all_homerow: [    // Full home row (A unlocks) — first real words appear here
+    'dad', 'sad', 'fad', 'lad', 'ads', 'lads', 'lass', 'flask', 'falls'
   ],
   keys_reaching: [       // As vowels unlock
     'lake', 'safe', 'jade', 'dusk', 'file'
@@ -260,7 +275,9 @@ defaultSettings = {
 - [x] Mystery reveal · reaching keys · expanded word banks · plus Basement/CommandCenter/FullCircle
 
 ### Phase 4 — Current focus
-- [ ] Returning-player persistence (docs/ROADMAP.md §1.2 — biggest gap)
+- [x] Returning-player persistence (docs/ROADMAP.md §1.2 — built 2026-07-11)
+- [x] Behavior-first test suite — 323 test cases over documented intent (2026-07-12/13; docs/testing/STRATEGY.md; all 6 inaugural TF findings resolved — FINDINGS.md)
+- [x] Word-length difficulty lever (2026-07-13) — MIN/MAX WORD LENGTH settings (getWordLengthRange), engine pool filter with a winnability fallback, wordgen [2,12] window, full-spectrum word-bank expansion. The game ages with the player (product.md §Word Length; INV-38..41)
 - [ ] Lyria music · Stats Cabinet · Level 25 free-type finale
 - [ ] Accessibility: maintained via docs/a11y/audit.js (scrim-panel system in place)
 - [ ] Additional visual themes (Oona's ideas!) · Godot evaluation

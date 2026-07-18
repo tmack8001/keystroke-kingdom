@@ -8,6 +8,15 @@
 | [[L3-onscreen-keyboards-must-mirror-physical-geometry\|L3]] | On-screen keyboards must mirror physical geometry | adopted | high | pedagogy | 2026-07-11 |  |
 | [[L4-guaranteed-beats-probabilistic-for-must-see-content\|L4]] | Guaranteed beats probabilistic for must-see content | adopted | high | game-design | 2026-07-11 |  |
 | [[L5-citation-passes-are-error-detection-not-decoration\|L5]] | Citation passes are error-detection, not decoration | adopted | high | research-integrity | 2026-07-11 |  |
+| [[L29-the-ui-owns-the-center-the-theme-owns-the-frame\|L29]] | Theme layout contract: the UI owns the center; the theme owns the frame | adopted | high | game-design | 2026-07-11 |  |
+| [[L30-per-level-win-qa-is-a-completeness-primitive\|L30]] | Per-level win QA is a completeness primitive; scope the player agent explicitly | adopted | high | agent-process | 2026-07-12 |  |
+| [[L31-reference-sets-must-assert-held-states\|L31]] | Reference sets must assert held states — and animations need GIF siblings | adopted | high | graphics | 2026-07-12 |  |
+| [[L32-transcripts-make-winability-provable\|L32]] | Transcripts make winability provable; cap same-host browser swarms at ~5 | adopted | high | agent-process | 2026-07-12 |  |
+| [[L33-local-llm-content-needs-a-constraint-chain-not-trust\|L33]] | Local-LLM content for a child needs a constraint chain, not trust | adopted | high | engine | 2026-07-12 |  |
+| [[L35-test-the-promise-not-the-code-shape\|L35]] | Test the promise, not the code shape — behavior-first suite with a findings ledger | adopted | high | engine | 2026-07-12 |  |
+| [[L36-narrow-animation-windows-die-under-raf-throttling\|L36]] | Narrow animation windows die under rAF throttling | adopted | high | graphics | 2026-07-13 |  |
+| [[L38-difficulty-levers-let-the-game-age-past-its-curriculum\|L38]] | Difficulty levers let the game age past the end of its curriculum | adopted | high | game-design | 2026-07-13 |  |
+| [[L40-parallel-screen-not-engine-extension-for-a-different-input-model\|L40]] | A different input model wants a parallel screen, not an engine extension | adopted | high | engine | 2026-07-13 |  |
 | [[L1-go-binary-embeds-assets-at-compile-time\|L1]] | The Go binary embeds assets at compile time | adopted | medium | engine | 2026-07-11 |  |
 | [[L6-karpathy-llm-wiki-scales-down-gracefully\|L6]] | Karpathy's llm-wiki scales down gracefully | adopted | medium | tooling | 2026-07-11 |  |
 | [[L7-obsidian-table-links-need-escaped-pipes\|L7]] | Obsidian table links need escaped pipes | adopted | medium | tooling | 2026-07-11 |  |
@@ -30,3 +39,10 @@
 | [[L24-iteratively-rewritten-theme-files-accumulate-dead-code\|L24]] | Iteratively-rewritten theme files accumulate dead code | adopted | medium | tooling | 2026-06-25 |  |
 | [[L25-build-tooling-for-scale-when-the-scaling-question-is-asked\|L25]] | Build tooling for scale when the scaling question is asked | adopted | medium | tooling | 2026-06-25 |  |
 | [[L26-hooks-fire-immediately\|L26]] | settings.json hook edits take effect immediately when the watcher is already active | adopted | medium | tooling | 2026-07-11 |  |
+| [[L27-status-tracked-journal-is-a-swarm-ready-backlog\|L27]] | A status-tracked journal is a swarm-ready backlog | adopted | medium | agent-process | 2026-07-11 |  |
+| [[L28-shared-canvas-2d-state-leaks-between-screens\|L28]] | Shared-canvas 2D state leaks between screens — set text state explicitly | adopted | medium | graphics | 2026-07-11 |  |
+| [[L34-clearance-to-a-text-centerline-is-not-clearance\|L34]] | Clearance to a text centerline is not clearance | adopted | medium | graphics | 2026-07-12 |  |
+| [[L35-dark-scenes-swallow-alpha-washes-composite-additively\|L35]] | Dark scenes swallow alpha washes — composite celebrations additively | adopted | medium | graphics | 2026-07-13 |  |
+| [[L37-optimize-the-builder-base-the-runtime-was-already-minimal\|L37]] | In a multi-stage build, the heavy download is the builder — not the runtime | adopted | medium | tooling | 2026-07-13 |  |
+| [[L39-generation-buffer-vs-fallback-cache-are-opposite-structures\|L39]] | A generation buffer and a fallback cache are opposite structures — don't conflate them | adopted | medium | engine | 2026-07-13 |  |
+| [[L41-one-contract-two-implementations-test-that-they-agree\|L41]] | One validation contract implemented twice — test that the two copies agree | adopted | medium | engine | 2026-07-14 |  |

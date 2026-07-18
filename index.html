@@ -9,6 +9,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Keystroke Kingdom</title>
+<!-- Favicon: crowned arcade keycap (favicon.svg crisp; favicon.ico for the bare
+     /favicon.ico probe & legacy; apple-touch-icon for iOS home-screen/bookmarks). -->
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e1a">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/levels.css">
@@ -45,6 +51,21 @@
       aria-label="player nickname"
     >
     <div class="ready-text">PRESS <kbd data-enter-key>ENTER</kbd> TO START</div>
+  </div>
+</div>
+
+<!-- CONTINUE SCREEN (returning player) -->
+<div class="screen hidden" id="continue-screen">
+  <div class="continue-ready">READY</div>
+  <div class="continue-name" id="continue-name">PLAYER ONE</div>
+  <div class="continue-level" id="continue-level"></div>
+  <div class="continue-learned" id="continue-learned"></div>
+  <div class="continue-prompt" id="continue-prompt">PRESS SPACE TO CONTINUE</div>
+  <div class="continue-restart" id="continue-restart">PRESS R TO RESTART</div>
+  <div class="continue-erase hidden" id="continue-erase">
+    <div class="continue-erase-title">ERASE ALL PROGRESS?</div>
+    <div class="continue-erase-opt">Y — YES, START OVER</div>
+    <div class="continue-erase-opt">N — NO, KEEP GOING</div>
   </div>
 </div>
 
@@ -106,7 +127,8 @@
     <div class="gameover-line">YOU TYPED <span class="val" id="gameover-count">0</span> LETTERS.</div>
     <div class="gameover-line gameover-warm">THE ARCADE REMEMBERS.</div>
     <div class="gameover-insert">INSERT COIN</div>
-    <div class="gameover-prompt">SPACE: TRY AGAIN &nbsp;&middot;&nbsp; ESC: THE ARCADE</div>
+    <div class="gameover-prompt">PRESS SPACE TO REPLAY</div>
+    <div class="gameover-replay">PRESS ESC FOR THE ARCADE</div>
   </div>
 </div>
 
@@ -162,6 +184,7 @@
       <div class="history-card-count" id="history-card-count">CARD 1 OF 17</div>
     </div>
     <div class="complete-prompt" id="complete-prompt">PRESS SPACE TO CONTINUE</div>
+    <div class="complete-replay" id="complete-replay">PRESS R TO REPLAY</div>
   </div>
 </div>
 

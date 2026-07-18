@@ -8,41 +8,34 @@
 //   node docs/a11y/audit.js
 //
 // Requires the dev server already running; URL is read from .dev-url at
-// the repo root. Playwright module path is hard-coded per project convention
-// (see .claude/rules/visual-validation.md).
+// the repo root, or from the DEV_URL env var if set (useful when the shared
+// .dev-url points at a stale embedded build and you're serving the repo
+// statically on your own port instead). Playwright module path is
+// hard-coded per project convention (see .claude/rules/visual-validation.md).
+//
+// Navigation boilerplate (browser launch, title -> select -> level flow,
+// ACTS_CONFIG/ALL_LEVELS) lives in scripts/kk-playwright.js — shared with
+// docs/screenshots/capture-all.js.
 //
 // Output: docs/a11y/audit-before.json (or --out=<path>.json to override)
 
-const { chromium } = require('/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright');
 const fs   = require('fs');
 const path = require('path');
+const {
+  launchPage,
+  resolveBaseUrl,
+  ACTS_CONFIG,
+  ALL_LEVELS,
+  goFromSelectIntoGame,
+} = require('../../scripts/kk-playwright');
 
-const REPO_ROOT = path.join(__dirname, '..', '..');
-const DEV_URL = fs.readFileSync(path.join(REPO_ROOT, '.dev-url'), 'utf8').trim();
+const DEV_URL = resolveBaseUrl();
 
 const OUT_JSON = process.argv.find(a => a.startsWith('--out='))
   ? process.argv.find(a => a.startsWith('--out=')).slice('--out='.length)
   : path.join(__dirname, 'audit-before.json');
 
 const VIEWPORT = { width: 1280, height: 800 };
-
-// ── Level / act config (mirrors docs/screenshots/capture-all.js) ───────────
-const ACTS_CONFIG = [
-  { slug: 'act1-arcade',          levels: ['breakout', 'space-invaders', 'pac-man', 'galaga', 'joust'] },
-  { slug: 'act2-computer-wing',   levels: ['donkey-kong', 'dragons-lair', 'tetris', 'super-mario-bros', 'legend-of-zelda'] },
-  { slug: 'act3-basement',        levels: ['sonic', 'street-fighter-ii', 'myst', 'donkey-kong-country', 'pokemon'] },
-  { slug: 'act4-command-center',  levels: ['simcity-2000', 'goldeneye-007', 'age-of-empires', 'final-fantasy-vii', 'terminal'] },
-  { slug: 'act5-full-circle',     levels: ['out-run', 'qbert', 'missile-command', 'high-score-entry', 'word-processor'] },
-];
-
-let n = 0;
-const ALL_LEVELS = [];
-ACTS_CONFIG.forEach((act, actIdx) => {
-  act.levels.forEach((slug, posIdx) => {
-    n++;
-    ALL_LEVELS.push({ levelNum: n, actIdx, posIdx, actSlug: act.slug, levelSlug: slug });
-  });
-});
 
 // ── WCAG contrast math ──────────────────────────────────────────────────────
 function srgbToLin(c) {
@@ -156,10 +149,23 @@ async function getElementRect(page, selector) {
   }, selector);
 }
 
+// Artifact class #2 (label-less boxes): elements with no visible text content
+// (e.g. empty fog-of-war key boxes not yet unlocked) have nothing for a
+// player to actually read — measuring their box color vs background is pure
+// noise, not a real contrast finding. Skip them before sampling.
+async function getElementText(page, selector) {
+  return page.evaluate((sel) => {
+    const el = document.querySelector(sel);
+    return el ? el.textContent.trim() : '';
+  }, selector);
+}
+
 // Measure one element: computed text color vs sampled background average.
 async function measureElement(page, label, selector) {
   const rect = await getElementRect(page, selector);
   if (!rect) return { label, selector, present: false };
+  const text = await getElementText(page, selector);
+  if (!text) return { label, selector, present: true, skipped: 'no visible text content (label-less box)' };
   const colorStr = await getElementColor(page, selector);
   const color = parseCssColor(colorStr);
   const bg = await sampleRectAvg(page, rect, 10);
@@ -217,6 +223,10 @@ async function measureElementsAll(page, labelPrefix, selector, maxCount = 5) {
       const el = document.querySelectorAll(sel)[i];
       return el ? el.textContent.trim() : '';
     }, { sel: selector, i: idx });
+    // Artifact class #2: label-less boxes (e.g. fog-of-war key boxes with no
+    // key glyph shown yet) have no text for a player to read — skip them
+    // rather than report noise from an empty box's color vs its background.
+    if (!keyText) continue;
     const color = parseCssColor(colorStr);
     const bg = await sampleRectAvg(page, rect, 8);
     if (!color || !bg) continue;
@@ -249,15 +259,31 @@ async function refreshScreenshotBuffer(page) {
   await loadScreenshotIntoPageCanvas(page, buf);
 }
 
+// Artifact class #1 (glow halos): several level themes render text with a
+// large same-hue text-shadow (letter glow) around it. Sampling a box around
+// that text picks up the halo itself as "background", producing a text-vs-
+// its-own-glow contrast reading instead of text-vs-actual-background. Strip
+// all text-shadow before every screenshot sample so the grid only sees the
+// real rendered background. Must be re-applied after every page.goto/reload
+// (navigation wipes injected <style> tags); safe to call repeatedly within
+// the same document since it's idempotent (last style tag wins, same rule).
+async function disableTextShadows(page) {
+  await page.addStyleTag({ content: '* { text-shadow: none !important; }' });
+}
+
 async function getCssVar(page, varName) {
   return page.evaluate((v) => getComputedStyle(document.body).getPropertyValue(v).trim(), varName);
 }
 
-// ── Navigation (mirrors docs/screenshots/capture-all.js, the documented flow) ──
+// ── Navigation (thin wrapper over scripts/kk-playwright.js's shared flow) ──
+// disableTextShadows must run right after every goto/reload (navigation
+// wipes injected <style> tags) — kept local to this file since it's an
+// audit-only concern, not shared with capture-all.js.
 async function goToSelect(page) {
   await page.goto(DEV_URL);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  await disableTextShadows(page);
   await page.waitForTimeout(600);
   await page.click('body');
   await page.keyboard.press('Enter');   // reveal name entry
@@ -278,25 +304,12 @@ async function navigateToLevelGameScreen(page, lvl) {
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(130);
   }
-  await page.keyboard.press('Enter');   // select level -> title/name
-  await page.waitForTimeout(350);
-  await page.keyboard.press('Enter');   // confirm name -> ready-screen
-  await page.waitForTimeout(350);
-  await page.keyboard.press('Space');   // ready -> keyboard-preview
-  await page.waitForTimeout(350);
-  await page.keyboard.press('Space');   // keyboard-preview -> game
-  await page.waitForTimeout(600);
+  await goFromSelectIntoGame(page);
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────
 (async () => {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.setViewportSize(VIEWPORT);
-
-  const consoleErrors = [];
-  page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
-  page.on('pageerror', e => consoleErrors.push('pageerror: ' + e.message));
+  const { browser, page, consoleErrors } = await launchPage(VIEWPORT);
 
   const results = {
     generatedAt: new Date().toISOString(),
@@ -308,7 +321,11 @@ async function navigateToLevelGameScreen(page, lvl) {
       'the background BEHIND the text but is pulled slightly toward the glyph color ' +
       'itself (a conservative bias -- true bg-only contrast is usually >= reported here). ' +
       'bgLumSpread reports max-min luminance in the sampled grid: near 0 means a flat/' +
-      'uniform sampled region (little text detected in-box or a very flat background).',
+      'uniform sampled region (little text detected in-box or a very flat background). ' +
+      'All text-shadow is force-disabled (* { text-shadow: none !important }) before ' +
+      'every sample so glow halos are never measured as background. Elements with no ' +
+      'visible text content (empty label-less boxes, e.g. locked fog-of-war key boxes) ' +
+      'are skipped entirely rather than reported.',
     thresholds: { fail: '< 3.0', warn: '3.0 - 4.5', pass: '>= 4.5 (WCAG AA large-text min is 3:1; ' +
       'this project targets higher for a 5-year-old reader)' },
     consoleErrors: [],
@@ -320,6 +337,7 @@ async function navigateToLevelGameScreen(page, lvl) {
   await page.goto(DEV_URL);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  await disableTextShadows(page);
   await page.waitForTimeout(600);
   await refreshScreenshotBuffer(page);
   results.screens.title = {

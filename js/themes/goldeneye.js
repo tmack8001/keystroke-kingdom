@@ -1,269 +1,658 @@
-// GoldenEye 007 — Rare, 1997 — Level 17
-// First-person facility corridor built from true perspective-projected wall
-// polygons (flat-shaded panels converging to a vanishing point). Each keystroke
-// advances the camera one segment down the hall — simple N64-era 3D dolly motion.
+// GoldenEye 007 — Rare, N64, 1997 — Level 17
+// The living-room multiplayer that GoldenEye made famous: a 2x2 SPLIT-SCREEN.
+// Each quadrant is a LIVE mini mission-view — a small agent figure creeping
+// through its named level's corridor floor-plan (Facility / Archives / Surface /
+// Temple, each a distinct layout), collecting glowing GADGET pickups (watch,
+// keycard) and slipping past comically oblivious patrol guards whose flashlight
+// vision cones sweep the halls. When a cone nears, the agent freezes and sneaks.
+// Wholesome hide-and-seek — never combat, never a weapon drawn anywhere (per the
+// binding kid-safe abstraction in research/wiki/games/goldeneye-007.md).
+//
+// Typing drives P1's quadrant: each keystroke advances P1's agent along its path,
+// and completing a letter sequence secures a gadget + flashes P1's quadrant.
+// P2–P4 tick along ambiently as friendly competition (cosmetic attract motion,
+// L20-safe — their gadget count never gates the win, and is frozen when the tab
+// is unattended). Victory: a "MISSION COMPLETE" debrief stamp with a ticking
+// objective checklist and all four quadrants ping-flashing (~3500ms).
+//
+// N64-era look (act4.md): flat-shaded corridors in simple pinhole perspective,
+// chunky low-poly agent/guard blocks, dim so the letter prompt stays brightest.
+
+import { getWinRatio } from '../settings.js';
 
 let canvas, ctx, animId;
 let active = false;
-let shots = 0;
-let flashes = [];
-let crosshairX, crosshairY;
-let scanLineY = 0;
-let camZ = 0;       // camera depth position — advances with keystrokes
-let camBob = 0;
-let dollyKick = 0;  // brief forward-lurch animation on keystroke
-const WIN_SHOTS = 25;
-const SEGMENT_SPACING = 1; // one "room segment" per keystroke, purely visual
+let t = 0;                 // global time accumulator (seconds-ish)
+let lastKeyMs = 0;         // for the L20 engagement gate on ambient P2–P4 motion
+
+// Win gate: gadgets P1 must secure (one per completed letter sequence).
+const BASE_GADGETS = 5;
+let GADGETS_TO_WIN = BASE_GADGETS;
+let hasWon = false;
+
+// Victory
+let victoryMode = false;
+let victoryStartMs = 0;
+const VICTORY_MS = 3500;
+
+// ── Bounded FX pools ─────────────────────────────────────────────────────────
+let pings = [];            // gadget-secured / victory ring pings
+const MAX_PINGS = 40;
+
+// ── The four split-screen players / quadrants ────────────────────────────────
+// Each has a distinct level layout ('style') and its own path the agent walks.
+// gadgets: how many this player has secured (P1 keystroke-gated; P2-P4 ambient).
+const QUADRANTS = [
+  { id: 'P1', name: 'FACILITY', tint: '#3a4a3a', accent: '#9fd39f',
+    qx: 0, qy: 0, style: 'facility' },
+  { id: 'P2', name: 'ARCHIVES', tint: '#4a4230', accent: '#d8c888',
+    qx: 0.5, qy: 0, style: 'archives' },
+  { id: 'P3', name: 'SURFACE', tint: '#33414f', accent: '#b8d4e8',
+    qx: 0, qy: 0.5, style: 'surface' },
+  { id: 'P4', name: 'TEMPLE', tint: '#40384a', accent: '#c8aed8',
+    qx: 0.5, qy: 0.5, style: 'temple' },
+];
+
+// Per-quadrant live state, rebuilt in init(). Kept parallel to QUADRANTS by index.
+let players = [];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-
 function init() {
   canvas = document.getElementById('invaders-canvas');
   ctx    = canvas.getContext('2d');
-  shots = 0;
-  flashes = [];
-  crosshairX = canvas.width  * 0.5;
-  crosshairY = canvas.height * 0.48;
-  scanLineY  = 0;
-  camZ = 0;
-  camBob = 0;
-  dollyKick = 0;
+  t = 0;
+  hasWon = false;
+  victoryMode = false;
+  victoryStartMs = 0;
+  pings = [];
+  lastKeyMs = performance.now();
+
+  const ratio = getWinRatio();
+  GADGETS_TO_WIN = Math.max(1, Math.ceil(BASE_GADGETS * ratio));
+
+  players = QUADRANTS.map((q, i) => ({
+    // Path progress 0..1 around this quadrant's floor-plan loop.
+    prog: i * 0.13,
+    // P1's progress is advanced by keystrokes; P2-P4 drift on their own.
+    speed: i === 0 ? 0 : 0.055 + i * 0.012,
+    gadgets: 0,
+    // Sneaking state: when a guard cone is near, the agent freezes (crouch).
+    sneaking: false,
+    quadFlash: 0,           // 0..1 quadrant flash on gadget secured
+    // Which path node currently holds a collectable gadget (advances as taken).
+    gadgetNode: 1,
+    gadgetPulse: 0,
+  }));
 }
 
-// ─── Perspective projection helpers ────────────────────────────────────────
-// A point in "hall space" (lateral u in [-1,1], vertical v in [-1,1], depth d>0)
-// projects to screen space using a simple pinhole camera — the textbook
-// early-3D technique, distinct from Act 3's flat parallax layers.
-
-function project(u, v, d, W, H, vp) {
+// ─── Perspective projection (pinhole) — N64-era 3D look in canvas 2D ─────────
+function project(u, v, d, vp, halfW, halfH) {
   const scale = 1 / (d + 0.001);
-  return {
-    x: vp.x + u * W * 0.5 * scale,
-    y: vp.y + v * H * 0.5 * scale,
-    scale,
-  };
+  return { x: vp.x + u * halfW * scale, y: vp.y + v * halfH * scale, scale };
 }
 
-function drawCorridor(W, H) {
-  const vp = { x: W / 2, y: H * 0.42 + Math.sin(camBob) * 3 };
-
-  // Background wash
-  ctx.fillStyle = '#060605';
-  ctx.fillRect(0, 0, W, H);
-
-  // Distance fog toward vanishing point (early-3D titles faked depth cueing
-  // with a flat fog color rather than real atmospheric scattering)
-  const fog = ctx.createRadialGradient(vp.x, vp.y, 0, vp.x, vp.y, Math.max(W, H) * 0.5);
-  fog.addColorStop(0, 'rgba(60, 56, 40, 0.5)');
-  fog.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = fog;
-  ctx.fillRect(0, 0, W, H);
-
-  // Repeating wall segments receding into the distance — each is a flat-shaded
-  // trapezoid polygon (left wall, right wall, floor, ceiling), the panel look
-  // of an N64 corridor built from a handful of textured quads.
-  const segCount = 7;
-  const segDepthStep = 1;
-  const camOffset = camZ % segDepthStep;
-
-  for (let s = segCount; s >= 0; s--) {
-    const dNear = 0.35 + s * segDepthStep - camOffset;
-    const dFar  = dNear + segDepthStep;
-    if (dNear <= 0.05) continue;
-
-    drawSegment(W, H, vp, dNear, dFar, s);
-  }
-
-  // Ceiling light pools — radial glow at each segment plane
-  for (let s = 0; s <= segCount; s++) {
-    const d = 0.6 + s * segDepthStep - camOffset;
-    if (d <= 0.1) continue;
-    const top = project(0, -1, d, W, H, vp);
-    const r = Math.max(4, 60 * top.scale);
-    const grad = ctx.createRadialGradient(top.x, top.y + r * 0.4, 0, top.x, top.y + r * 0.4, r);
-    grad.addColorStop(0, `rgba(210, 190, 110, ${0.22 * Math.min(1, top.scale * 1.4)})`);
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(top.x - r, top.y - r * 0.2, r * 2, r * 1.4);
-
-    ctx.fillStyle = '#d8c070';
-    const lw = Math.max(1, 18 * top.scale);
-    ctx.fillRect(Math.round(top.x - lw / 2), Math.round(top.y - 1), Math.round(lw), 2);
-  }
-
-  // Enemy silhouette — positioned in true depth space, scales with perspective
-  if (shots < WIN_SHOTS) {
-    const enemyD = 1.6 - (shots / WIN_SHOTS) * 1.1;
-    if (enemyD > 0.15) {
-      const feet = project(0, 0.35, enemyD, W, H, vp);
-      const head = project(0, -0.15, enemyD, W, H, vp);
-      const bodyW = 34 * feet.scale;
-      const bodyH = feet.y - head.y;
-      const headR = bodyW * 0.42;
-
-      ctx.fillStyle = '#141410';
-      ctx.fillRect(Math.round(feet.x - bodyW / 2), Math.round(head.y), Math.round(bodyW), Math.round(bodyH));
-      ctx.beginPath();
-      ctx.arc(Math.round(feet.x), Math.round(head.y - headR * 0.6), Math.round(headR), 0, Math.PI * 2);
-      ctx.fillStyle = '#121210';
-      ctx.fill();
-    }
+// ─── A quadrant's top-down floor-plan path (loop of nodes in [-1,1] quad space),
+// distinct per named level. Agents walk these; guards patrol segments of them.
+function pathFor(style) {
+  switch (style) {
+    case 'facility':   // tight rectangular corridor loop (the dam interior)
+      return [ [-0.62, -0.55], [0.55, -0.55], [0.55, 0.5], [0.05, 0.5],
+               [0.05, -0.05], [-0.62, -0.05] ];
+    case 'archives':  // shelving-row zig-zag
+      return [ [-0.6, -0.5], [0.5, -0.5], [0.5, -0.1], [-0.5, -0.1],
+               [-0.5, 0.3], [0.55, 0.3], [0.55, 0.55], [-0.6, 0.55] ];
+    case 'surface':   // open snowfield diagonal sweep between crates
+      return [ [-0.65, 0.4], [-0.2, -0.2], [0.35, 0.35], [0.6, -0.4],
+               [0.1, -0.5], [-0.6, -0.2] ];
+    case 'temple':    // symmetric pillared hall figure-eight
+      return [ [-0.5, -0.45], [0.5, -0.45], [-0.5, 0.45], [0.5, 0.45],
+               [0.0, 0.0], [-0.5, -0.45] ];
+    default:
+      return [ [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5] ];
   }
 }
 
-function drawSegment(W, H, vp, dNear, dFar, index) {
-  const alpha = Math.min(1, 0.5 / dNear);
-  const shade = index % 2 === 0 ? 1 : 0.82; // alternating flat-shaded bands down the hall
+// Position (and heading) along a node loop at parameter prog in [0,1).
+function walkPath(path, prog) {
+  const n = path.length;
+  const f = ((prog % 1) + 1) % 1 * n;   // clamp into [0,n)
+  const i = Math.floor(f);
+  const frac = f - i;
+  const a = path[i];
+  const b = path[(i + 1) % n];
+  const x = a[0] + (b[0] - a[0]) * frac;
+  const y = a[1] + (b[1] - a[1]) * frac;
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  return { x, y, ang, node: i, frac };
+}
 
-  // Left wall quad (u: -1..-1, v: -1..1) at dNear -> dFar
-  const wallTint = `rgba(${Math.round(70 * shade)}, ${Math.round(66 * shade)}, ${Math.round(56 * shade)}, ${alpha})`;
-  drawQuad(W, H, vp,
-    [-1, -1, dNear], [-1, 1, dNear], [-1, 1, dFar], [-1, -1, dFar],
-    wallTint);
+// A guard's patrol position: walks a segment of the same path at its own phase,
+// offset from the player so they rarely coincide. Returns pos + facing angle
+// whose vision cone sweeps side-to-side.
+function guardOn(path, phase, style) {
+  const gp = walkPath(path, phase);
+  // Cone sweeps back and forth around the guard's travel heading.
+  const sweep = Math.sin(t * 1.3 + phase * 6.28) * 0.6;
+  return { x: gp.x, y: gp.y, facing: gp.ang + sweep };
+}
 
-  // Right wall
-  drawQuad(W, H, vp,
-    [1, -1, dNear], [1, 1, dNear], [1, 1, dFar], [1, -1, dFar],
-    wallTint);
+// ─── Draw one quadrant: environment frame + the live mission view ────────────
+function drawQuadrant(qi, W, H) {
+  const q = QUADRANTS[qi];
+  const p = players[qi];
+  const rx = q.qx * W, ry = q.qy * H, rw = 0.5 * W, rh = 0.5 * H;
 
-  // Floor
-  const floorTint = `rgba(${Math.round(30 * shade)}, ${Math.round(28 * shade)}, ${Math.round(24 * shade)}, ${alpha})`;
-  drawQuad(W, H, vp,
-    [-1, 1, dNear], [1, 1, dNear], [1, 1, dFar], [-1, 1, dFar],
-    floorTint);
-
-  // Ceiling
-  const ceilTint = `rgba(${Math.round(22 * shade)}, ${Math.round(20 * shade)}, ${Math.round(18 * shade)}, ${alpha})`;
-  drawQuad(W, H, vp,
-    [-1, -1, dNear], [1, -1, dNear], [1, -1, dFar], [-1, -1, dFar],
-    ceilTint);
-
-  // Panel seam line at the near edge — reinforces the "segmented corridor" read
-  const a = project(-1, -1, dNear, W, H, vp);
-  const b = project(-1, 1, dNear, W, H, vp);
-  const c = project(1, 1, dNear, W, H, vp);
-  const d = project(1, -1, dNear, W, H, vp);
-  ctx.strokeStyle = `rgba(90, 84, 60, ${alpha * 0.5})`;
-  ctx.lineWidth = 1;
+  ctx.save();
   ctx.beginPath();
-  ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y);
-  ctx.stroke();
+  ctx.rect(rx, ry, rw, rh);
+  ctx.clip();
+
+  // Base fill — dim, tinted per environment.
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = q.tint;
+  ctx.fillRect(rx, ry, rw, rh);
+  ctx.globalAlpha = 1;
+
+  // Vanishing point in this quadrant's OUTER region so receding geometry and the
+  // agent action sit in the visible stage corners, clear of the center DOM UI.
+  const outX = q.qx < 0.5 ? rx + rw * 0.34 : rx + rw * 0.66;
+  const outY = q.qy < 0.5 ? ry + rh * 0.36 : ry + rh * 0.64;
+  const drift = Math.sin(t * (0.22 + qi * 0.05) + qi) * rw * 0.03;
+  const vp = { x: outX + drift, y: outY };
+  const halfW = rw * 0.5, halfH = rh * 0.5;
+
+  // Distance fog toward the vanishing point (flat-color depth cue).
+  const fog = ctx.createRadialGradient(vp.x, vp.y, 0, vp.x, vp.y, Math.max(rw, rh) * 0.6);
+  fog.addColorStop(0, hexA(q.accent, 0.10));
+  fog.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = fog;
+  ctx.fillRect(rx, ry, rw, rh);
+
+  drawEnvironment(q, vp, halfW, halfH);
+
+  // ── The live mission view (top-down mini floor-plan overlaid on the corner) ─
+  drawMission(qi, rx, ry, rw, rh);
+
+  // Quadrant flash when a gadget is secured (bright wash that decays).
+  if (p.quadFlash > 0) {
+    ctx.globalAlpha = p.quadFlash * 0.4;
+    ctx.fillStyle = q.accent;
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.globalAlpha = 1;
+  }
+
+  // Subtle scanline banding — CRT living-room TV feel, dim.
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = '#000000';
+  for (let y = ry; y < ry + rh; y += 3) ctx.fillRect(rx, y, rw, 1);
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
 }
 
-function drawQuad(W, H, vp, p1, p2, p3, p4, fillStyle) {
-  const a = project(p1[0], p1[1], p1[2], W, H, vp);
-  const b = project(p2[0], p2[1], p2[2], W, H, vp);
-  const c = project(p3[0], p3[1], p3[2], W, H, vp);
-  const d = project(p4[0], p4[1], p4[2], W, H, vp);
-  ctx.fillStyle = fillStyle;
+// Flat-shaded receding environment geometry, distinct per level style.
+function drawEnvironment(q, vp, halfW, halfH) {
+  const segs = 5;
+  if (q.style === 'facility' || q.style === 'archives') {
+    for (let s = segs; s >= 1; s--) {
+      const dNear = 0.4 + s * 0.6;
+      const dFar = dNear + 0.6;
+      const a = Math.min(0.9, 0.6 / dNear);
+      const shade = s % 2 === 0 ? 1 : 0.78;
+      quad(project(-1, -1, dNear, vp, halfW, halfH), project(-1, 1, dNear, vp, halfW, halfH),
+           project(-1, 1, dFar, vp, halfW, halfH),  project(-1, -1, dFar, vp, halfW, halfH),
+           shadeCol(q.tint, shade, a));           // left wall
+      quad(project(1, -1, dNear, vp, halfW, halfH), project(1, 1, dNear, vp, halfW, halfH),
+           project(1, 1, dFar, vp, halfW, halfH),  project(1, -1, dFar, vp, halfW, halfH),
+           shadeCol(q.tint, shade, a));           // right wall
+      quad(project(-1, 1, dNear, vp, halfW, halfH), project(1, 1, dNear, vp, halfW, halfH),
+           project(1, 1, dFar, vp, halfW, halfH),  project(-1, 1, dFar, vp, halfW, halfH),
+           shadeCol(q.tint, shade * 0.6, a));      // floor
+      quad(project(-1, -1, dNear, vp, halfW, halfH), project(1, -1, dNear, vp, halfW, halfH),
+           project(1, -1, dFar, vp, halfW, halfH),  project(-1, -1, dFar, vp, halfW, halfH),
+           shadeCol(q.tint, shade * 0.5, a));      // ceiling
+    }
+    if (q.style === 'archives') {
+      for (let s = 1; s <= segs; s++) {
+        const d = 0.5 + s * 0.6;
+        const top = project(-0.7, -0.4, d, vp, halfW, halfH);
+        const bot = project(-0.7, 0.6, d, vp, halfW, halfH);
+        ctx.fillStyle = hexA(q.accent, 0.18 * Math.min(1, top.scale));
+        ctx.fillRect(top.x, top.y, Math.max(2, 10 * top.scale), bot.y - top.y);
+        const top2 = project(0.7, -0.4, d, vp, halfW, halfH);
+        ctx.fillRect(top2.x, top2.y, Math.max(2, 10 * top2.scale), bot.y - top2.y);
+      }
+    }
+  } else if (q.style === 'surface') {
+    const horizon = vp.y;
+    ctx.fillStyle = shadeCol(q.tint, 1.4, 0.5);
+    ctx.fillRect(vp.x - halfW * 2, horizon, halfW * 4, halfH * 2);            // snow
+    ctx.fillStyle = shadeCol(q.tint, 0.5, 0.5);
+    ctx.fillRect(vp.x - halfW * 2, horizon - halfH * 2, halfW * 4, halfH * 2); // sky
+    for (let i = 0; i < 3; i++) {
+      const d = 1.2 + i * 0.7;
+      const pr = project(-0.6 + i * 0.6, 0.5, d, vp, halfW, halfH);
+      const sz = 22 * pr.scale;
+      ctx.fillStyle = hexA(q.accent, 0.5);
+      ctx.fillRect(pr.x - sz / 2, pr.y - sz, sz, sz);
+      ctx.fillStyle = hexA(q.accent, 0.8);
+      ctx.fillRect(pr.x - sz / 2, pr.y - sz, sz, sz * 0.28);
+    }
+  } else if (q.style === 'temple') {
+    for (let s = segs; s >= 1; s--) {
+      const d = 0.5 + s * 0.6;
+      const a = Math.min(0.85, 0.6 / d);
+      [-0.7, 0.7].forEach(u => {
+        const top = project(u, -0.8, d, vp, halfW, halfH);
+        const bot = project(u, 0.8, d, vp, halfW, halfH);
+        const w = Math.max(3, 20 * top.scale);
+        ctx.fillStyle = shadeCol(q.tint, s % 2 === 0 ? 1.2 : 0.9, a);
+        ctx.fillRect(top.x - w / 2, top.y, w, bot.y - top.y);
+      });
+    }
+    quad(project(-1, 0.8, 0.5, vp, halfW, halfH), project(1, 0.8, 0.5, vp, halfW, halfH),
+         project(1, 0.8, 3, vp, halfW, halfH),   project(-1, 0.8, 3, vp, halfW, halfH),
+         shadeCol(q.tint, 0.6, 0.6));
+  }
+}
+
+// ── The live mission: floor-plan lines, gadget pickup, patrol guard + cone, and
+// the agent creeping the halls. Composed in the quadrant's OUTER (stage) corner.
+function drawMission(qi, rx, ry, rw, rh) {
+  const q = QUADRANTS[qi];
+  const p = players[qi];
+  const path = pathFor(q.style);
+
+  // Map quad-space [-1,1] to a compact plan box in the OUTER corner of the
+  // quadrant, so agents/guards live in the visible stage margin, never center.
+  const cx = q.qx < 0.5 ? rx + rw * 0.30 : rx + rw * 0.70;
+  const cy = q.qy < 0.5 ? ry + rh * 0.34 : ry + rh * 0.66;
+  const sx = rw * 0.24, sy = rh * 0.24;
+  const map = (u, v) => ({ x: cx + u * sx, y: cy + v * sy });
+
+  // Floor-plan corridor lines (the level's layout, faintly lit).
+  ctx.strokeStyle = hexA(q.accent, 0.5);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < path.length; i++) {
+    const a = map(path[i][0], path[i][1]);
+    if (i === 0) ctx.moveTo(a.x, a.y); else ctx.lineTo(a.x, a.y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+
+  // Corridor node markers (junctions).
+  ctx.fillStyle = hexA(q.accent, 0.35);
+  for (const nd of path) {
+    const m = map(nd[0], nd[1]);
+    ctx.fillRect(m.x - 1.5, m.y - 1.5, 3, 3);
+  }
+
+  // ── Gadget pickup: a glowing icon (watch / keycard) at the current node. ────
+  const gn = path[p.gadgetNode % path.length];
+  const gm = map(gn[0], gn[1]);
+  const pulse = 0.6 + 0.4 * Math.sin(t * 4 + qi);
+  const isWatch = (p.gadgets + qi) % 2 === 0;
+  drawGadget(gm.x, gm.y, isWatch, q.accent, pulse);
+
+  // ── Patrol guard + sweeping flashlight vision cone. ─────────────────────────
+  const g = guardOn(path, (p.prog + 0.45) % 1, q.style);
+  const gpos = map(g.x, g.y);
+  drawGuardCone(gpos.x, gpos.y, g.facing, sx, q.accent, p.sneaking);
+  drawGuard(gpos.x, gpos.y, q.accent);
+
+  // ── The agent (P1 = the player). Freezes/crouches when sneaking. ────────────
+  const ag = walkPath(path, p.prog);
+  const am = map(ag.x, ag.y);
+  drawAgent(am.x, am.y, ag.ang, qi === 0, p.sneaking, q.accent);
+}
+
+// A blocky low-poly agent: torso + head, a small "P1" tint for the player.
+function drawAgent(x, y, ang, isPlayer, sneaking, accent) {
+  const s = sneaking ? 5 : 7;                     // crouch = smaller
+  ctx.save();
+  ctx.translate(x, y);
+  // Body block
+  ctx.fillStyle = isPlayer ? '#e8f0e8' : hexA(accent, 0.9);
+  ctx.fillRect(-s / 2, -s / 2, s, s);
+  // Head dot
+  ctx.fillStyle = isPlayer ? '#ffffff' : accent;
+  ctx.fillRect(-2, -s / 2 - 3, 4, 3);
+  // Heading nub (facing direction) — a tiny step, never a weapon
+  ctx.fillStyle = isPlayer ? '#bfe8bf' : hexA(accent, 0.7);
+  ctx.fillRect(Math.cos(ang) * s * 0.7 - 1.5, Math.sin(ang) * s * 0.7 - 1.5, 3, 3);
+  if (isPlayer) {
+    ctx.strokeStyle = '#9fd39f';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-s / 2 - 1, -s / 2 - 1, s + 2, s + 2);
+  }
+  ctx.restore();
+}
+
+// A comically oblivious guard: a dim block, smaller and duller than the agent.
+function drawGuard(x, y, accent) {
+  ctx.fillStyle = hexA(accent, 0.55);
+  ctx.fillRect(x - 3, y - 3, 6, 6);
+  ctx.fillStyle = hexA(accent, 0.8);
+  ctx.fillRect(x - 1.5, y - 5, 3, 2);            // head
+}
+
+// The guard's flashlight vision cone: a translucent wedge that sweeps. When the
+// agent sneaks, it tints faintly amber (a "close call"), never red/alarm.
+function drawGuardCone(x, y, facing, reach, accent, near) {
+  const len = reach * 0.9;
+  const half = 0.32;                              // cone half-angle
+  ctx.save();
+  ctx.globalAlpha = near ? 0.22 : 0.13;
+  ctx.fillStyle = near ? '#e8d088' : accent;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + Math.cos(facing - half) * len, y + Math.sin(facing - half) * len);
+  ctx.lineTo(x + Math.cos(facing + half) * len, y + Math.sin(facing + half) * len);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// A gadget pickup icon: a wristwatch (circle + band) or a keycard (rect + stripe).
+function drawGadget(x, y, isWatch, accent, pulse) {
+  ctx.save();
+  ctx.globalAlpha = pulse;
+  if (isWatch) {
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();                              // watch band
+    ctx.moveTo(x, y - 3.2); ctx.lineTo(x, y - 5);
+    ctx.moveTo(x, y + 3.2); ctx.lineTo(x, y + 5);
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.fillRect(x - 0.5, y - 2.2, 1, 2.5);       // hand
+  } else {
+    ctx.fillStyle = hexA(accent, 0.85);
+    ctx.fillRect(x - 4, y - 2.6, 8, 5);           // keycard
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(x - 3, y - 1.4, 6, 1.4);         // magnetic stripe
+  }
+  // Glow halo
+  ctx.globalAlpha = pulse * 0.3;
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(x, y, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function quad(a, b, c, d, fill) {
+  ctx.fillStyle = fill;
   ctx.beginPath();
   ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y);
   ctx.closePath();
   ctx.fill();
 }
 
-function drawScanLine(W, H) {
-  scanLineY = (scanLineY + 1.5) % H;
-  const grad = ctx.createLinearGradient(0, scanLineY - 8, 0, scanLineY + 8);
-  grad.addColorStop(0, 'rgba(200, 168, 64, 0)');
-  grad.addColorStop(0.5, 'rgba(200, 168, 64, 0.08)');
-  grad.addColorStop(1, 'rgba(200, 168, 64, 0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, scanLineY - 8, W, 16);
+// ─── Color helpers ─────────────────────────────────────────────────────────
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+function shadeCol(hex, mul, a) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, Math.round(((n >> 16) & 255) * mul));
+  const g = Math.min(255, Math.round(((n >> 8) & 255) * mul));
+  const b = Math.min(255, Math.round((n & 255) * mul));
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
-function drawCrosshair(W, H) {
-  const t = performance.now() / 1000;
-  crosshairX = W * 0.5 + Math.sin(t * 0.7) * W * 0.05;
-  crosshairY = H * 0.48 + Math.cos(t * 0.5) * H * 0.04;
-
-  const r = Math.min(W, H) * 0.06;
-  const gap = r * 0.25;
-  const lineLen = r * 0.55;
-
-  ctx.strokeStyle = '#c8a840';
-  ctx.shadowColor = '#c8a840';
-  ctx.shadowBlur = 6;
-  ctx.lineWidth = 1.5;
-
+// ─── Split-screen divider lines (ambient — allowed behind the UI panels) ────
+function drawDividers(W, H) {
+  ctx.strokeStyle = 'rgba(210, 200, 150, 0.35)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(crosshairX, crosshairY, r, 0, Math.PI * 2);
+  ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H);
+  ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2);
   ctx.stroke();
-
-  const cx = crosshairX, cy = crosshairY;
+  ctx.strokeStyle = 'rgba(60, 55, 35, 0.6)';
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(cx - r - lineLen, cy); ctx.lineTo(cx - r - gap, cy);
-  ctx.moveTo(cx + r + gap, cy);     ctx.lineTo(cx + r + lineLen, cy);
-  ctx.moveTo(cx, cy - r - lineLen); ctx.lineTo(cx, cy - r - gap);
-  ctx.moveTo(cx, cy + r + gap);     ctx.lineTo(cx, cy + r + lineLen);
+  ctx.moveTo(W / 2 + 2, 0); ctx.lineTo(W / 2 + 2, H);
+  ctx.moveTo(0, H / 2 + 2); ctx.lineTo(W, H / 2 + 2);
   ctx.stroke();
-
-  ctx.shadowBlur = 0;
 }
 
-function drawFlashes() {
-  for (let i = flashes.length - 1; i >= 0; i--) {
-    const f = flashes[i];
-    f.life -= 0.08;
-    if (f.life <= 0) { flashes.splice(i, 1); continue; }
+// ─── Per-quadrant player tag + gadget tally, in the outer visible corner ────
+function drawQuadTag(qi, W, H) {
+  const q = QUADRANTS[qi];
+  const p = players[qi];
+  const tx = q.qx < 0.5 ? W * 0.055 : W * 0.945;
+  const ty = q.qy < 0.5 ? H * 0.145 : H * 0.855;
+  ctx.textAlign = q.qx < 0.5 ? 'left' : 'right';
+  ctx.textBaseline = 'alphabetic';
 
-    ctx.globalAlpha = f.life;
-    const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r * (2 - f.life));
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.2, '#ffffaa');
-    grad.addColorStop(1, 'rgba(200, 168, 64, 0)');
-    ctx.fillStyle = grad;
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = hexA(q.accent, 0.95);
+  ctx.fillText(q.id, tx, ty);
+  ctx.font = '5px "Press Start 2P", monospace';
+  ctx.fillStyle = hexA(q.accent, 0.6);
+  ctx.fillText(q.name, tx, ty + 9);
+  // Gadget tally dots
+  ctx.fillStyle = hexA(q.accent, 0.85);
+  const target = qi === 0 ? GADGETS_TO_WIN : 5;
+  const dir = q.qx < 0.5 ? 1 : -1;
+  for (let i = 0; i < target; i++) {
+    const dx = tx + dir * (i * 6) + (q.qx < 0.5 ? 0 : -target * 6 + 6);
+    ctx.globalAlpha = i < p.gadgets ? 0.95 : 0.25;
+    ctx.fillRect(dx, ty + 14, 4, 4);
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
+}
+
+// ─── Expanding ring pings (gadget-secured / victory) ─────────────────────────
+function drawPings() {
+  for (let i = pings.length - 1; i >= 0; i--) {
+    const s = pings[i];
+    s.life -= 0.05;
+    if (s.life <= 0) { pings.splice(i, 1); continue; }
+    const grow = 1 - s.life;
+    ctx.globalAlpha = s.life;
+    ctx.strokeStyle = s.col;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(f.x, f.y, f.r * (2 - f.life), 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(s.x, s.y, Math.max(0, s.r * (0.4 + grow * 1.4)), 0, Math.PI * 2);
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
 }
 
+function addPing(x, y, r, col) {
+  if (pings.length >= MAX_PINGS) pings.shift();
+  pings.push({ x, y, r, life: 1, col });
+}
+
+// The mission-progress bar for P1 (the player), centered on the divider cross,
+// clear of the DOM UI panels.
 function drawHUD(W, H) {
-  const pct = shots / WIN_SHOTS;
-  const barW = Math.round(W * 0.18);
-  const barH = 8;
-  const bx = Math.round(W * 0.02);
-  const by = 14;
-
+  const pct = players[0].gadgets / GADGETS_TO_WIN;
+  const barW = Math.round(W * 0.14), barH = 8;
+  const bx = Math.round(W * 0.04);
+  const by = Math.round(H * 0.5 - 20);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
   ctx.font = '7px "Press Start 2P", monospace';
-  ctx.fillStyle = '#c8a840';
-  ctx.shadowColor = '#c8a840';
+  ctx.fillStyle = '#d8c840';
+  ctx.shadowColor = '#d8c840';
   ctx.shadowBlur = 4;
-  ctx.fillText(`SHOTS ${shots}/${WIN_SHOTS}`, bx, by);
+  ctx.fillText(`GADGETS ${players[0].gadgets}/${GADGETS_TO_WIN}`, bx, by);
   ctx.shadowBlur = 0;
-
   ctx.fillStyle = '#181410';
   ctx.fillRect(bx, by + 5, barW, barH);
-  ctx.fillStyle = '#c8a840';
-  ctx.fillRect(bx, by + 5, Math.round(barW * pct), barH);
+  ctx.fillStyle = '#d8c840';
+  ctx.fillRect(bx, by + 5, Math.round(barW * Math.min(1, pct)), barH);
   ctx.strokeStyle = '#5a4a10';
   ctx.lineWidth = 1;
   ctx.strokeRect(bx + 0.5, by + 5.5, barW - 1, barH - 1);
 }
 
+// ── Ambient sim: advance P2–P4 agents; sweep guards; toggle sneaking; P1 idles
+//    between keystrokes (its progress advances only in keystroke()). Gated on
+//    recent keystrokes so an unattended tab never progresses the game (L20).
+function stepSim(dt) {
+  const engaged = (performance.now() - lastKeyMs) < 8000;
+  for (let i = 0; i < players.length; i++) {
+    const p = players[i];
+    const q = QUADRANTS[i];
+    const path = pathFor(q.style);
+
+    // P2-P4 walk continuously (attract motion) only while engaged; P1 idles.
+    if (i !== 0 && engaged) {
+      p.prog = (p.prog + p.speed * dt) % 1;
+      // Ambient gadget secures for the friendly-competition tally.
+      const near = distToNode(path, p.prog, p.gadgetNode);
+      if (near < 0.04 && p.gadgets < 5) {
+        p.gadgets++;
+        p.gadgetNode = (p.gadgetNode + 2) % path.length;
+      }
+    }
+
+    // Sneaking: freeze when the sweeping guard cone points near the agent.
+    const g = guardOn(path, (p.prog + 0.45) % 1, q.style);
+    const ag = walkPath(path, p.prog);
+    const toAgent = Math.atan2(ag.y - g.y, ag.x - g.x);
+    const dAng = Math.abs(angDiff(g.facing, toAgent));
+    const dDist = Math.hypot(ag.x - g.x, ag.y - g.y);
+    p.sneaking = dAng < 0.4 && dDist < 0.9;
+
+    if (p.quadFlash > 0) p.quadFlash = Math.max(0, p.quadFlash - dt * 1.6);
+  }
+}
+
+function distToNode(path, prog, nodeIdx) {
+  const a = walkPath(path, prog);
+  const nd = path[nodeIdx % path.length];
+  return Math.hypot(a.x - nd[0], a.y - nd[1]);
+}
+function angDiff(a, b) {
+  let d = a - b;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
+
+// ─── MISSION COMPLETE debrief (victory) ──────────────────────────────────────
+const OBJECTIVES = ['GADGETS SECURED', 'GUARDS EVADED', 'EXIT REACHED'];
+
+function drawVictory(W, H, nowMs) {
+  const elapsed = Math.max(0, nowMs - victoryStartMs);
+  const prog = Math.min(1, elapsed / VICTORY_MS);
+
+  // All four quadrants ping-flash in sequence throughout the debrief.
+  for (let i = 0; i < 4; i++) {
+    const q = QUADRANTS[i];
+    const phase = (prog * 4 + i * 0.25) % 1;
+    const a = Math.max(0, 0.35 * (1 - phase));
+    if (a > 0.01) {
+      ctx.globalAlpha = a;
+      ctx.fillStyle = q.accent;
+      ctx.fillRect(q.qx * W, q.qy * H, W * 0.5, H * 0.5);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // Debrief stamp panel across the top stage band (clear of center DOM UI).
+  const panelY = H * 0.055, panelH = H * 0.10;
+  ctx.fillStyle = 'rgba(8, 10, 8, 0.82)';
+  ctx.fillRect(W * 0.5 - W * 0.24, panelY, W * 0.48, panelH);
+  ctx.strokeStyle = '#d8c840';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(W * 0.5 - W * 0.24, panelY, W * 0.48, panelH);
+
+  // "MISSION COMPLETE" stamp — scales in with a slight overshoot, then holds.
+  const stampIn = Math.min(1, prog / 0.22);
+  const scale = 0.6 + 0.4 * easeOut(stampIn) + Math.sin(stampIn * Math.PI) * 0.06;
+  ctx.save();
+  ctx.translate(W * 0.5, panelY + panelH * 0.42);
+  ctx.scale(scale, scale);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '16px "Press Start 2P", monospace';
+  ctx.fillStyle = '#ffe870';
+  ctx.shadowColor = '#d8c840';
+  ctx.shadowBlur = 10;
+  ctx.fillText('MISSION COMPLETE', 0, 0);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Objective checklist ticking ✓ one at a time under the stamp.
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = '7px "Press Start 2P", monospace';
+  const listX = W * 0.5 - W * 0.20;
+  const listY = panelY + panelH * 0.78;
+  for (let i = 0; i < OBJECTIVES.length; i++) {
+    const checked = prog > 0.30 + i * 0.18;
+    ctx.fillStyle = checked ? '#9fe89f' : 'rgba(180,180,150,0.4)';
+    const box = listX + i * (W * 0.135);
+    ctx.strokeStyle = checked ? '#9fe89f' : 'rgba(180,180,150,0.4)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(box, listY - 5, 8, 8);
+    if (checked) {                       // draw a check mark
+      ctx.beginPath();
+      ctx.moveTo(box + 1.5, listY - 1);
+      ctx.lineTo(box + 3.5, listY + 2.5);
+      ctx.lineTo(box + 6.5, listY - 3.5);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.fillText(OBJECTIVES[i], box + 12, listY);
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+function easeOut(x) { return 1 - Math.pow(1 - x, 3); }
+
+// ─── Main render loop ────────────────────────────────────────────────────────
 function render() {
   if (!active) return;
-  const W = canvas.width;
-  const H = canvas.height;
-
-  camBob += 0.02;
-  if (dollyKick > 0) dollyKick -= 0.05;
-  camZ += 0.0015 + Math.max(0, dollyKick) * 0.03; // slow ambient drift + kick from keystrokes
+  const W = canvas.width, H = canvas.height;
+  const nowMs = performance.now();
+  t += 0.016;
 
   ctx.clearRect(0, 0, W, H);
-  drawCorridor(W, H);
-  drawScanLine(W, H);
-  drawFlashes();
-  drawCrosshair(W, H);
-  drawHUD(W, H);
+  ctx.fillStyle = '#050505';
+  ctx.fillRect(0, 0, W, H);
+
+  if (!victoryMode) stepSim(0.016);
+
+  for (let i = 0; i < QUADRANTS.length; i++) drawQuadrant(i, W, H);
+  drawDividers(W, H);
+  for (let i = 0; i < QUADRANTS.length; i++) drawQuadTag(i, W, H);
+  drawPings();
+
+  if (victoryMode) {
+    drawVictory(W, H, nowMs);
+  } else {
+    drawHUD(W, H);
+  }
 
   animId = requestAnimationFrame(render);
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+// Corner center (canvas px) for a quadrant's mission action — for pings.
+function quadActionCenter(qi) {
+  const W = canvas.width, H = canvas.height;
+  const q = QUADRANTS[qi];
+  const rx = q.qx * W, ry = q.qy * H, rw = 0.5 * W, rh = 0.5 * H;
+  return {
+    x: q.qx < 0.5 ? rx + rw * 0.30 : rx + rw * 0.70,
+    y: q.qy < 0.5 ? ry + rh * 0.34 : ry + rh * 0.66,
+  };
+}
 
+// ─── Public API ──────────────────────────────────────────────────────────────
 export function start() {
   init();
   active = true;
@@ -276,45 +665,53 @@ export function stop() {
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+// Each correct keystroke nudges P1's agent forward along the Facility floor-plan.
+// The agent creeps toward the next gadget node; sequence completion secures it.
 export function keystroke() {
-  if (!active) return;
-  shots++;
-  dollyKick = 1; // camera lurches forward down the corridor — 3D motion cue
-  flashes.push({
-    x: crosshairX + (Math.random() - 0.5) * 20,
-    y: crosshairY + (Math.random() - 0.5) * 20,
-    r: Math.min(canvas.width, canvas.height) * 0.04,
-    life: 1,
-  });
+  if (!active || victoryMode) return;
+  lastKeyMs = performance.now();
+  const p = players[0];
+  p.prog = (p.prog + 0.04) % 1;
 }
 
 export function miss() {
-  // Near-miss flash — off center, gentle, no penalty imagery
-  if (!active) return;
-  const W = canvas.width, H = canvas.height;
-  flashes.push({
-    x: W * 0.5 + (Math.random() - 0.5) * W * 0.2,
-    y: H * 0.6 + (Math.random() - 0.5) * H * 0.1,
-    r: Math.min(W, H) * 0.02,
-    life: 0.5,
-  });
+  // Gentle near-miss: the guard cone gets a soft amber "close call" pulse in P1's
+  // quadrant — no penalty, no alarm, nothing lost.
+  if (!active || victoryMode) return;
+  players[0].sneaking = true;
+  const c = quadActionCenter(0);
+  addPing(c.x, c.y, Math.min(canvas.width, canvas.height) * 0.012, 'rgba(232,208,136,0.9)');
 }
 
+// Called once per completed letter sequence — P1 secures a gadget. Win when P1
+// has secured GADGETS_TO_WIN. Won stays won on repeated calls (engine may re-ask).
 export function patternComplete() {
-  return shots >= WIN_SHOTS;
+  if (victoryMode || hasWon) return true;
+  const p = players[0];
+  lastKeyMs = performance.now();
+  p.gadgets++;
+  p.quadFlash = 1;
+  // Advance the gadget pickup to the next node along the plan.
+  const path = pathFor(QUADRANTS[0].style);
+  p.gadgetNode = (p.gadgetNode + 2) % path.length;
+  // Snap the agent to the secured node for a satisfying "picked it up" beat.
+  const c = quadActionCenter(0);
+  addPing(c.x, c.y, Math.min(canvas.width, canvas.height) * 0.03, QUADRANTS[0].accent);
+  if (p.gadgets >= GADGETS_TO_WIN) hasWon = true;
+  return hasWon;
 }
 
+// The MISSION COMPLETE debrief celebration. Returns its duration in ms.
 export function victory() {
-  if (!active) return;
-  const W = canvas.width, H = canvas.height;
-  for (let i = 0; i < 5; i++) {
-    flashes.push({
-      x: W * 0.5 + (Math.random() - 0.5) * W * 0.3,
-      y: H * 0.4 + (Math.random() - 0.5) * H * 0.2,
-      r: Math.min(W, H) * 0.08,
-      life: 1,
-    });
+  if (!active) return VICTORY_MS;
+  victoryMode = true;
+  victoryStartMs = performance.now();
+  // Fill every quadrant's tally and fire a ping in each corner.
+  for (let i = 0; i < players.length; i++) {
+    const c = quadActionCenter(i);
+    addPing(c.x, c.y, Math.min(canvas.width, canvas.height) * 0.05, QUADRANTS[i].accent);
   }
+  return VICTORY_MS;
 }
 
 window.addEventListener('resize', () => {

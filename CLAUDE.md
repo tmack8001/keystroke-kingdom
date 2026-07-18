@@ -8,7 +8,12 @@ A retro 1979 arcade typing game for kids learning to read and type together. Bui
 @.claude/rules/tech.md
 @.claude/rules/visual-validation.md
 
-Also load when relevant (not auto-included): `.claude/rules/levels.md` (full curriculum),
+Also load when relevant (not auto-included): `.claude/rules/levels.md` (summary tables + links),
+`.claude/rules/levels/act<N>.md` + `levels/onboarding.md` (per-act / entry-flow detail — load ONLY what you're working on),
+`.claude/rules/theme-authoring.md` (**required before writing/editing any js/themes/* file**),
+`.claude/rules/swarm-playbook.md` (**required before any multi-agent wave**),
+`.claude/rules/testing.md` (**required before writing tests or changing behavior a test covers** — doctrine: docs/testing/STRATEGY.md),
+`.claude/rules/security.md` (**required before adding DOM sinks, hooks, child processes, or free-text input**),
 `.claude/rules/transitions.md` (cinematics), `.claude/rules/easter-eggs.md` (hidden layer),
 `docs/ROADMAP.md` (living backlog — **check this at session start**), `research/*.md`
 (pedagogy, hacker culture, game history background).
@@ -31,11 +36,11 @@ No timers running out. No lives lost. No skipping ahead after a wrong keypress. 
 This is intentional pedagogical design based on watching Oona learn. Do not "fix" it.
 
 ### Stack
-- Browser-first (HTML/CSS/JS or React)
-- No game engine in prototype phase
+- Browser-first (HTML/CSS/JS) — **no longer a prototype**: this IS the game (declared 2026-07-12)
+- Bespoke engine, no framework — deliberate (low-level control, agent-friendly)
 - Pixel/retro arcade aesthetic — Press Start 2P font, CRT scanline effects
 - Google Lyria for music (one original track per level)
-- Godot if/when we decide to ship for real
+- Godot only if we ever ship beyond the browser
 
 ### Levels
 | Level | Keys | Game | Era |
@@ -75,7 +80,7 @@ Each arcade cabinet gets **exactly one** game. A specific game or franchise cann
 Full assignment table (all 25 levels): see `.claude/rules/levels.md`
 
 ### Word Bank Principle
-No real words until Level 3. From Level 3 onward, words are chosen to match early reader vocabulary — short, phonetic, recognizable. Typing a real word they can read is a double win. Never interrupt that moment.
+No real words until Level 4 — Level 3's key set (J F D K S L) has no vowel, so it's pattern drills only, same as Levels 1–2. From Level 4 onward (once A unlocks), words are chosen to match early reader vocabulary — short, phonetic, recognizable. Typing a real word they can read is a double win. Never interrupt that moment.
 
 ### Player Name
 Default: **Player One**. Customizable. Opening screen reads "READY [NAME]!" — a nod to both real 1979 arcade culture and the Spielberg film.
@@ -94,10 +99,14 @@ Rules:
 - **Free Play** — `F` on the select screen; full keyboard + sentences + WPM (`js/freeplay.js`)
 - **History cards** — 17 typeable computing-history moments, revealed at level complete, never missable (`js/history-cards.js`; research/computing-history-moments.md)
 - **Settings** — `Tab` from title/pause; ADVENTURE (default) vs SURVIVAL with NOVICE/ARCADE/EXPERT + mercy quarters (`js/settings.js`)
+- **Difficulty levers (the game ages with the player)** — EXPERIENCE (win-ratio) and MIN/MAX WORD LENGTH (both default ANY; shorter=easier, longer=harder; MIN climbs ANY→3…12, MAX single-steps to a WIZARD-equivalent 24; wordgen generation ceiling matches at 24 and its prompt is length-aware — a long-word request drops the early-reader framing (measured: the fixed early-reader prompt suppressed long words). Word-length is a best-effort suggestion — winnability is never traded for it (a level falls back to its own words; guaranteed content is never filtered). `getWordLengthRange()` in `js/settings.js` is the contract; the engine filters the drawable pool in `buildPatterns`/`drawRandomPattern` (`js/main.js`); wordgen carries the setting-derived `[2,24]` window. Design tenet: `.claude/rules/product.md` §Word Length
 - **Easter eggs** — title-screen magic words, Konami, console banner (`.claude/rules/easter-eggs.md`)
 - **Era-progressive graphics** — Acts 2–4 + finale upgraded; Acts 1 & 21–23 deliberately primitive
-- **In-game keyboard guide** — true ANSI silhouette with fog-of-war (`KEY_LAYOUT` in `js/ui/hud.js`)
-- **Tooling** — screenshots: `node docs/screenshots/capture-all.js`; contrast audit: `node docs/a11y/audit.js`
+- **Act 6 — Text Worlds** (hidden bonus wing behind the select-screen door; COMPLETE 2026-07-14) — a parallel screen/input path (never touches the 25-level pattern engine), coordinated by `js/textworld/hub.js`; 5 worlds sharing a `start/stop/handleKey/isActive/hasWon` shape: **Green Dragon** (prose typed-command, `engine.js`+`greendragon.js`), **Glimmer Deep** + **Whisperwood** (ASCII tile, `tileworld.js`+`tile-worlds.js`), **Your Own World** (the maker, `maker.js`), **A Friend to Talk To** (the IM-friend — local-Ollama chat via `imfriend.js`+`personas.js`+`js/chat.js`+`main.go` POST `/api/chat`: KK-aware teacher-companion personas, curated PIXEL/SPROUT + make-your-own, `kk-friends` transcript memory that resumes across launches, "forget" valve, graceful offline nap; server-composed unremovable safety prompt + allowlisted persona fields — security.md PII-floor exception). Progress in `kk-progress.textWorlds`. One Rule holds throughout (no timers/loss; Escape always → hub → arcade)
+- **In-game keyboard guide** — true ANSI silhouette with fog-of-war; keyboard geometry has ONE source of truth: `KEY_LAYOUT`/`getKeyGeometry()` in `js/ui/hud.js` (keyboard-preview.js derives from it — never redefine a layout)
+- **Returning-player persistence** — `kk-progress` localStorage; continue screen (Space resume / R restart with Y/N confirm), select screen lights only earned cabinets, WOPR bypasses (`js/main.js`, `js/ui/screens.js`, `js/ui/cabinet-art.js`)
+- **Tooling** — screenshots: `node docs/screenshots/capture-all.js`; contrast audit: `node docs/a11y/audit.js`; shared Playwright nav helper: `scripts/kk-playwright.js` (`DEV_URL` override supported); human-paced playthrough film: `node scripts/record-playthrough.js` → `docs/keystroke_kingdoms.mov` (see `.claude/agents/game-player.md`)
+- **Behavior-first test suite** (built 2026-07-12) — 323 test cases enforcing documented intent, never implementation: `make test-fast` (lint+static+unit+go, no browser) after any js/main.go change; `make test-integration` after engine/UI behavior changes; full `make test` before reporting work complete. Doctrine + INV catalog: `docs/testing/STRATEGY.md`; open game-vs-doc findings: `docs/testing/FINDINGS.md`; builder agent: `.claude/agents/test-engineer.md`. A failing test = a design conversation — never silently edit a test to make a change pass (`.claude/rules/testing.md`)
 
 ### Engine input contract (do not break)
 Pattern tokens: lowercase chars/digits/symbols, uppercase A–Z (= Shift+letter, exact-case matched), `' '`, `'Backspace'`. Pure modifier keydowns are ignored entirely — never a mistake. Case-sensitivity applies ONLY when the expected token is uppercase.

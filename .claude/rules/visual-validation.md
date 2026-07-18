@@ -16,6 +16,35 @@ This check exists because the canvas z-index bug (discovered June 2026) silently
 
 ---
 
+## The Theme Layout Contract — "the UI owns the center; the theme owns the frame"
+
+*Added 2026-07-11 after Trevor's screenshot review found ten themes composing their
+focal art at canvas center — where it sat buried behind the prompt panel and keyboard
+guide, leaving only empty margins visible.*
+
+The fixed DOM UI permanently reserves the center of the game screen. Measured at
+1280×800 (re-verify via `getBoundingClientRect` if the UI changes):
+
+- **RESERVED — never place focal art here:** prompt panel ~0.40–0.60W × 0.19–0.43H;
+  keyboard guide ~0.22–0.78W × 0.49–0.81H; HUD badge top-left ~0.02–0.11W × 0.02–0.07H;
+  HUD stats top-right ~0.86–0.99W × 0.02–0.12H.
+- **THE STAGE — compose the scene here:** left margin 0–0.22W (full height); right
+  margin 0.78–1.0W (full height); top band 0–0.19H between the HUD corners; the gap
+  band ~0.43–0.49H; bottom strip 0.81–1.0H (full width).
+
+Ambient fill (sky, walls, water, starfields) may continue behind the panels so the
+scene feels continuous — but nothing the player needs to SEE may live there. A theme's
+screenshot must read as a complete, alive picture **with the panels present**.
+
+Related hard-won rules: position in canvas space, never DOM space (journal L16); never
+put theme geometry at horizontal center (L17); set `ctx.textAlign`/`textBaseline`
+explicitly in every draw function — canvas state leaks between screens (L28).
+
+Add screenshot check **5. The theme's scene is composed in the stage regions** — focal
+elements visible around the UI, not peeking out from behind it.
+
+---
+
 ## How to Run It
 
 The Playwright module is installed at:
@@ -29,77 +58,60 @@ Chromium headless shell is at:
 
 The dev server URL is in `.dev-url` at the repo root.
 
+### Shared navigation helper
+
+All the browser-launch boilerplate and the title → name entry → ready →
+select-screen → level navigation flow lives in one place:
+**`scripts/kk-playwright.js`**. It's used by `docs/screenshots/capture-all.js`,
+`docs/a11y/audit.js`, and should be used by any new ad-hoc validation script
+too — don't re-copy the navigation steps inline again.
+
+It exports:
+- `launchPage(viewport?)` — headless Chromium + one page at 1280×800, with
+  console-error and page-error collection wired up (`consoleErrors` array)
+- `resolveBaseUrl(explicit?)` — BASE_URL resolution: explicit arg > `DEV_URL`
+  env var > `.dev-url` file at the repo root (lets you point at your own
+  static server without editing any script)
+- `goToSelect(page, baseUrl)` — fresh load → title → name entry → ready →
+  select-screen (via the `wopr` easter egg)
+- `goToLevel(page, baseUrl, targetLevel)` — fresh load all the way into a
+  level's game screen, `targetLevel` 1-indexed across all acts (1–25)
+- `goToLevelByPosition(page, baseUrl, actIdx, posIdx)` — same, keyed by
+  0-based act/position instead of a global level number
+- `ACTS_CONFIG`, `ALL_LEVELS` — the act/level slug table, flat-string form
+
 ### Standard screenshot script
 
 ```javascript
-const { chromium } = require('/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright');
+const { launchPage, resolveBaseUrl, goToLevel } = require('../../scripts/kk-playwright');
+// adjust the relative path to scripts/kk-playwright.js from wherever your script lives
+
 (async () => {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.setViewportSize({ width: 1280, height: 800 });
+  const BASE_URL = resolveBaseUrl(); // DEV_URL env var, else .dev-url
+  const { browser, page, consoleErrors } = await launchPage();
 
-  const errors = [];
-  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
-  page.on('pageerror', e => errors.push(e.message));
-
-  const BASE_URL = 'http://127.0.0.1:PORT'; // read from .dev-url
-
-  // Navigate to a specific level (1–20):
-  async function goToLevel(targetLevel) {
-    await page.goto(BASE_URL);
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
-    await page.waitForTimeout(600);
-    await page.click('body');                  // focus the page
-    await page.keyboard.press('Enter');        // reveal name entry (still title-screen)
-    await page.waitForTimeout(350);
-    await page.keyboard.press('Enter');        // confirm name → ready-screen
-    await page.waitForTimeout(450);
-    await page.keyboard.type('wopr');          // → select-screen
-    await page.waitForTimeout(500);
-
-    // Navigate acts: ArrowDown N-1 times (acts are 1-indexed)
-    const actNum = Math.ceil(targetLevel / 5);
-    for (let i = 1; i < actNum; i++) {
-      await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(200);
-    }
-    // Navigate position within act: ArrowRight N-1 times
-    const pos = ((targetLevel - 1) % 5) + 1;
-    for (let i = 1; i < pos; i++) {
-      await page.keyboard.press('ArrowRight');
-      await page.waitForTimeout(150);
-    }
-
-    await page.keyboard.press('Enter');        // select level → title/name entry
-    await page.waitForTimeout(350);
-    await page.keyboard.press('Enter');        // confirm name → ready-screen
-    await page.waitForTimeout(350);
-    await page.keyboard.press('Space');        // ready → keyboard-preview-screen
-    await page.waitForTimeout(350);
-    await page.keyboard.press('Space');        // keyboard-preview → game-screen
-    await page.waitForTimeout(600);
-  }
-
-  await goToLevel(7); // change to the level you want
+  await goToLevel(page, BASE_URL, 7); // change to the level you want
   await page.screenshot({ path: '/tmp/kk-level7.png' });
 
-  if (errors.length) console.log('ERRORS:', errors.join('\n'));
+  if (consoleErrors.length) console.log('ERRORS:', consoleErrors.join('\n'));
   await browser.close();
 })();
 ```
 
 Run it with:
 ```bash
-URL=$(cat .dev-url) node << 'SCRIPT'
-// ... paste script above, replacing PORT with actual value from .dev-url ...
-SCRIPT
+node your-script.js
+# or, to point at your own static server instead of the shared .dev-url:
+DEV_URL=http://127.0.0.1:PORT node your-script.js
 ```
 
 ### Bulk screenshot script
-To regenerate all `docs/screenshots/` (24 screenshots: 4 select + 20 gameplay):
+To regenerate the level + act-page sets (30 screenshots: 5 act pages + 25 gameplay;
+other feature sets have their own capture scripts — see `docs/screenshots/README.md`):
 ```bash
 node docs/screenshots/capture-all.js
+# or against your own server:
+DEV_URL=http://127.0.0.1:PORT node docs/screenshots/capture-all.js
 ```
 
 ---

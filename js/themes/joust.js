@@ -9,6 +9,14 @@ let wavesCleared = 0, respawnTimer = -1, score = 0;
 let homingTarget = null, homingFrames = 0;
 let playerAttackTimer = 0;  // collision only active after a keystroke
 
+// ─── Victory celebration ("the victory lap") ────────────────────────────────────
+const VICTORY_MS = 3500;
+let victoryStartMs = 0;
+let bursts = [];        // score-flourish egg-bursts ("+500")
+let sparks = [];        // additive spark particles (L35)
+let landPose = false;   // knight has landed proud
+let lastBurstAt = 0;
+
 // Pterodactyl
 const P_INACTIVE = 0, P_FLYING = 1, P_DYING = 2;
 let pteroState = P_INACTIVE, ptero = null, pteroCount = 0, pteroTimer = -1;
@@ -55,6 +63,16 @@ const PLAYER_WINGS_DOWN = [
   [0,0,0,1,0,0,0],
   [0,1,1,1,0,0,0],
   [0,1,0,1,0,0,0],
+];
+// Proud landed pose — ostrich rearing, wings thrown wide (victory)
+const PLAYER_WINGS_SPREAD = [
+  [1,0,0,1,0,0,1],
+  [0,1,1,1,1,1,0],
+  [1,1,1,1,1,1,1],
+  [0,0,1,1,1,0,0],
+  [0,0,0,1,0,0,0],
+  [0,1,1,1,0,0,0],
+  [0,1,0,1,1,0,0],
 ];
 const VULT_UP = [
   [0,1,0,1,0],[1,1,1,1,1],[0,1,1,1,0],[0,0,1,0,0],[0,1,0,1,0],
@@ -543,10 +561,155 @@ function drawHUD() {
   }
 }
 
+// ─── Victory celebration ────────────────────────────────────────────────────────
+
+// Spawn a burst of additive sparks + a floating "+500" score flourish at (x,y)
+function spawnBurst(x, y, label) {
+  const W = canvas.width || 1280, H = canvas.height || 800;
+  x = Math.max(20, Math.min(W - 20, x));
+  y = Math.max(20, Math.min(H - 20, y));
+  if (bursts.length < 12) bursts.push({ x, y, label, age: 0, life: 90 });
+  const n = 10;
+  for (let i = 0; i < n && sparks.length < 160; i++) {
+    const a = (i / n) * Math.PI * 2 + Math.random() * 0.5;
+    const spd = 1.6 + Math.random() * 2.6;
+    sparks.push({
+      x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd - 1.2,
+      age: 0, life: 34 + (Math.random() * 20 | 0),
+      col: ['#ffdd44', '#ffffff', '#ff8822', '#ffee99'][i % 4],
+    });
+  }
+  score += 500;
+}
+
+function updateVictory() {
+  const now = performance.now();
+  const t = Math.max(0, Math.min(1, (now - victoryStartMs) / VICTORY_MS)); // clamped 0..1 (F1)
+  const W = canvas.width || 1280, H = canvas.height || 800;
+
+  // Wing-flap cycle keeps flapping through the whole lap (vigorous)
+  if (--player.wingTimer <= 0) { player.wingFrame ^= 1; player.wingTimer = landPose ? 30 : 5; }
+
+  // Flames keep bubbling; lava surge is drawn additively in drawVictory.
+  flames.forEach(f => { f.phase += 0.06; });
+
+  // Two-pass victory lap: t in [0, 0.72] flies, then banks in and lands center-stage.
+  if (t < 0.72) {
+    landPose = false;
+    // Sine ease across the arena, sweeping left→right then right→left (2 passes).
+    const passT = t / 0.72;                 // 0..1 across the lap phase
+    const sweep = (1 - Math.cos(passT * Math.PI * 2)) / 2; // 0→1→0 (there and back)
+    const marginX = W * 0.14, spanX = W * 0.72;
+    player.x = marginX + sweep * spanX;
+    // Gentle bank up/down as it crosses, staying in the upper arena (above the UI center is fine — knight is focal)
+    const cruiseY = H * 0.20 + Math.sin(passT * Math.PI * 4) * (H * 0.10);
+    player.y = Math.max(H * 0.06, Math.min(LAVA_Y - PKH - 10, cruiseY));
+    // Face direction of travel (derivative of the sweep)
+    player.facingLeft = Math.sin(passT * Math.PI * 2) < 0;
+    // Bank turns at the edges throw off egg-bursts ("defeated rivals" pop into points)
+    if (now - lastBurstAt > 320) {
+      lastBurstAt = now;
+      spawnBurst(player.x + (player.facingLeft ? -30 : PKW + 30),
+                 player.y + PKH / 2 + (Math.random() - 0.5) * 40, '+500');
+    }
+  } else {
+    // Land center-stage on the wide bottom platform, proud wing-spread pose.
+    const landT = (t - 0.72) / 0.28;
+    const bp = platforms[1] || { x: W * 0.21, y: LAVA_Y - 28, w: W * 0.58 };
+    const targetX = bp.x + bp.w / 2 - PKW / 2;
+    const targetY = bp.y - PKH;
+    if (!landPose) {
+      // ease into landing position
+      player.x += (targetX - player.x) * Math.min(1, landT * 2.2);
+      player.y += (targetY - player.y) * Math.min(1, landT * 2.2);
+      player.facingLeft = false;
+      if (landT > 0.45) {
+        landPose = true;
+        // triumphant final flourish around the landed knight
+        spawnBurst(targetX + PKW / 2, targetY + PKH / 2, '+500');
+        spawnBurst(targetX - 20, targetY, '');
+        spawnBurst(targetX + PKW + 20, targetY, '');
+      }
+    } else {
+      player.x = targetX; player.y = targetY;
+    }
+  }
+
+  // Advance particles (bounded pools, clamped ages)
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx; s.y += s.vy; s.vy += 0.12; s.vx *= 0.97;
+    if (++s.age >= s.life) sparks.splice(i, 1);
+  }
+  for (let i = bursts.length - 1; i >= 0; i--) {
+    const b = bursts[i];
+    b.y -= 0.6;
+    if (++b.age >= b.life) bursts.splice(i, 1);
+  }
+  frame++;
+}
+
+function drawVictory() {
+  const now = performance.now();
+  const pulse = (Math.sin(now * 0.012) + 1) / 2;
+
+  // Warm celebratory lava surge — additive so it doesn't vanish into the dark scene (L35)
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createLinearGradient(0, LAVA_Y - 40, 0, canvas.height);
+  g.addColorStop(0, `rgba(255,120,0,${0.10 + pulse * 0.14})`);
+  g.addColorStop(0.5, `rgba(255,80,0,${0.22 + pulse * 0.18})`);
+  g.addColorStop(1, `rgba(255,180,40,${0.30 + pulse * 0.20})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, LAVA_Y - 40, canvas.width, canvas.height - LAVA_Y + 40);
+  ctx.restore();
+
+  // The knight on its ostrich — the star of the lap
+  drawLance();
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 18;
+  const wings = landPose ? PLAYER_WINGS_SPREAD
+    : (player.wingFrame === 0 ? PLAYER_WINGS_UP : PLAYER_WINGS_DOWN);
+  drawPx(wings, player.x, player.y, PKX, '#ffee66', player.facingLeft);
+  // second lighter pass for a white-hot core
+  ctx.shadowBlur = 0;
+  drawPx(wings, player.x, player.y, PKX, 'rgba(255,255,255,0.35)', player.facingLeft);
+  ctx.restore();
+
+  // Additive sparks
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  sparks.forEach(s => {
+    const life = Math.max(0, 1 - s.age / s.life);
+    const sz = 2 + life * 4;
+    ctx.fillStyle = s.col;
+    ctx.fillRect(s.x - sz / 2, s.y - sz / 2, sz, sz);
+  });
+  ctx.restore();
+
+  // "+500" score flourishes — plain text over the additive layer (legible)
+  ctx.font = '13px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  bursts.forEach(b => {
+    if (!b.label) return;
+    const life = Math.max(0, 1 - b.age / b.life);
+    ctx.globalAlpha = Math.min(1, life * 1.6);
+    ctx.fillStyle = '#ffee88';
+    ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 6;
+    ctx.fillText(b.label, b.x, b.y);
+  });
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
 // ─── Loop ─────────────────────────────────────────────────────────────────────
 
 function update() {
-  if (victoryMode) return;
+  if (victoryMode) { updateVictory(); return; }
   updatePlayer(); updateVultures(); updateEggs();
   updatePterodactyl(); updateLavaTroll();
 
@@ -572,11 +735,15 @@ function render() {
   drawLavaSurface();
   platforms.forEach(drawPlatform);
   drawHUD();
-  drawTargetIndicator();
-  drawVultures();
-  drawEggs();
-  drawPterodactyl();
-  drawPlayer();
+  if (victoryMode) {
+    drawVictory();
+  } else {
+    drawTargetIndicator();
+    drawVultures();
+    drawEggs();
+    drawPterodactyl();
+    drawPlayer();
+  }
   update();
   animId=requestAnimationFrame(render);
 }
@@ -586,6 +753,7 @@ function render() {
 export function start() {
   getCanvas(); resize();
   active=true; victoryMode=false;
+  bursts=[]; sparks=[]; landPose=false; lastBurstAt=0; victoryStartMs=0;
   wavesCleared=0; respawnTimer=-1; score=0; frame=0;
   pteroState=P_INACTIVE; ptero=null; pteroCount=0; pteroTimer=-1;
   trollState=T_HIDDEN; trollCount=0; trollTimer=-1; trollRise=0; trollY=LAVA_Y;
@@ -599,6 +767,7 @@ export function stop() {
   vultures=[]; eggs=[]; trail=[];
   homingTarget=null; homingFrames=0; respawnTimer=-1; playerAttackTimer=0;
   pteroState=P_INACTIVE; ptero=null; trollState=T_HIDDEN;
+  victoryMode=false; bursts=[]; sparks=[]; landPose=false;
 }
 
 export function keystroke() {
@@ -631,7 +800,20 @@ export function patternComplete() {
 }
 
 export function victory() {
-  victoryMode=true; homingFrames=0; player.vy=-10; player.vx=2.5;
+  victoryMode = true;
+  victoryStartMs = performance.now();
+  homingFrames = 0; homingTarget = null;
+  playerAttackTimer = 0; player.target = null;
+  player.vx = 0; player.vy = 0; player.grounded = false;
+  landPose = false; lastBurstAt = 0;
+  bursts = []; sparks = [];
+  // Clear the arena so the lone knight's victory lap owns the stage.
+  vultures = []; eggs = []; trail = [];
+  pteroState = P_INACTIVE; ptero = null; trollState = T_HIDDEN; trollRise = 0;
+  // Opening flourish as the lap begins.
+  const W = canvas.width || 1280, H = canvas.height || 800;
+  spawnBurst(W * 0.5, H * 0.22, '');
+  return VICTORY_MS;
 }
 
 window.addEventListener('resize',()=>{ if(active){resize();if(!victoryMode)spawnVultures();} });
