@@ -16,77 +16,58 @@
  */
 
 import { KEY_REACH } from '../levels.js';
+import { getKeyGeometry, KEYBOARD_UNITS_PER_ROW } from './hud.js';
 
 let canvas, ctx;
 let animId = null;
 let active = false;
 let frame = 0;
 
+// Canvas text can't be reached by the DOM [data-enter-key] swap (js/main.js),
+// so this preview resolves the platform label itself — same detection,
+// resolved once since platform never changes at runtime.
+const ENTER_LABEL = /Mac/.test(navigator.platform || navigator.userAgent) ? 'RETURN' : 'ENTER';
+
 // ─────────────────────────────────────────────────────────────
-// Full keyboard layout — 5 rows, complete
-// row -1 = number row, row 0 = Q-row, row 1 = home row,
-// row 2 = Z-row, row 3 = bottom row (Shift / Space / Shift)
-// col = stagger offset in units from left edge
-// w = width in units (default 1) — for wide keys like Backspace/Shift/Space
+// Keyboard geometry — derived from the ONE source of truth in hud.js.
+//
+// getKeyGeometry() returns every key of the true ANSI silhouette with its
+// absolute column offset, row index (0 = number row … 4 = space row), width,
+// and whether it's a never-taught structural key (Tab/Caps/Enter). This is the
+// SAME geometry the in-game keyboard guide draws — so the preview screen and
+// the guide can never drift apart again (an early build shipped this preview
+// with no number row because the layout was duplicated — see journal F5).
+//
+// We keep only presentation (labels) local, since labels are how the preview
+// chooses to render a key, not where it physically sits.
 // ─────────────────────────────────────────────────────────────
-const KB_LAYOUT = [
-  // Number row (13 keys, Backspace wide at the end)
-  { key: '`',         label: '`',      row: -1, col: 1.0  },
-  { key: '1',         label: '1',      row: -1, col: 2.0  },
-  { key: '2',         label: '2',      row: -1, col: 3.0  },
-  { key: '3',         label: '3',      row: -1, col: 4.0  },
-  { key: '4',         label: '4',      row: -1, col: 5.0  },
-  { key: '5',         label: '5',      row: -1, col: 6.0  },
-  { key: '6',         label: '6',      row: -1, col: 7.0  },
-  { key: '7',         label: '7',      row: -1, col: 8.0  },
-  { key: '8',         label: '8',      row: -1, col: 9.0  },
-  { key: '9',         label: '9',      row: -1, col: 10.0 },
-  { key: '0',         label: '0',      row: -1, col: 11.0 },
-  { key: '-',         label: '-',      row: -1, col: 12.0 },
-  { key: '=',         label: '=',      row: -1, col: 13.0 },
-  { key: 'Backspace', label: '⌫',      row: -1, col: 14.0, w: 1.8 },
-  // Q row (14 keys)
-  { key: 'q',  label: 'Q',  row: 0, col: 1.5  },
-  { key: 'w',  label: 'W',  row: 0, col: 2.5  },
-  { key: 'e',  label: 'E',  row: 0, col: 3.5  },
-  { key: 'r',  label: 'R',  row: 0, col: 4.5  },
-  { key: 't',  label: 'T',  row: 0, col: 5.5  },
-  { key: 'y',  label: 'Y',  row: 0, col: 6.5  },
-  { key: 'u',  label: 'U',  row: 0, col: 7.5  },
-  { key: 'i',  label: 'I',  row: 0, col: 8.5  },
-  { key: 'o',  label: 'O',  row: 0, col: 9.5  },
-  { key: 'p',  label: 'P',  row: 0, col: 10.5 },
-  { key: '[',  label: '[',  row: 0, col: 11.5 },
-  { key: ']',  label: ']',  row: 0, col: 12.5 },
-  { key: '\\', label: '\\', row: 0, col: 13.5 },
-  // Home row (11 keys)
-  { key: 'a',  label: 'A',  row: 1, col: 1.75 },
-  { key: 's',  label: 'S',  row: 1, col: 2.75 },
-  { key: 'd',  label: 'D',  row: 1, col: 3.75 },
-  { key: 'f',  label: 'F',  row: 1, col: 4.75 },
-  { key: 'g',  label: 'G',  row: 1, col: 5.75 },
-  { key: 'h',  label: 'H',  row: 1, col: 6.75 },
-  { key: 'j',  label: 'J',  row: 1, col: 7.75 },
-  { key: 'k',  label: 'K',  row: 1, col: 8.75 },
-  { key: 'l',  label: 'L',  row: 1, col: 9.75 },
-  { key: ';',  label: '?',  row: 1, col: 10.75 },
-  { key: "'",  label: "'",  row: 1, col: 11.75 },
-  // Z row (10 keys)
-  { key: 'z',  label: 'Z',  row: 2, col: 2.25 },
-  { key: 'x',  label: 'X',  row: 2, col: 3.25 },
-  { key: 'c',  label: 'C',  row: 2, col: 4.25 },
-  { key: 'v',  label: 'V',  row: 2, col: 5.25 },
-  { key: 'b',  label: 'B',  row: 2, col: 6.25 },
-  { key: 'n',  label: 'N',  row: 2, col: 7.25 },
-  { key: 'm',  label: 'M',  row: 2, col: 8.25 },
-  { key: ',',  label: ',',  row: 2, col: 9.25 },
-  { key: '.',  label: '.',  row: 2, col: 10.25 },
-  { key: '/',  label: '/',  row: 2, col: 11.25 },
-  // Bottom row (left Shift, Space, right Shift)
-  { key: 'Shift', label: 'SHIFT', row: 3, col: 1.0,  w: 2.5 },
-  { key: ' ',     label: 'SPACE', row: 3, col: 4.5,  w: 5.0 },
-  { key: 'Shift', label: 'SHIFT', row: 3, col: 11.5, w: 2.5 },
-];
+const KB_LAYOUT = getKeyGeometry()
+  // Drop the pure structural spacers on the space row (Ctrl/Alt/Cmd gaps):
+  // they carry no key and are never drawn.
+  .filter(k => k.key !== null)
+  .map(k => ({
+    key: k.key,
+    label: previewLabel(k.key),
+    row: k.row,
+    col: k.col,
+    w: k.w,
+    never: k.never,
+  }));
+
+// How a key is labelled on the preview canvas. Letters show uppercase; the
+// eighth key is the '?' it is everywhere in player-facing text (never
+// "semicolon"); wide/structural keys spell their name.
+function previewLabel(key) {
+  if (key === ';') return '?';
+  if (key === 'Backspace') return '⌫';
+  if (key === 'Shift') return 'SHIFT';
+  if (key === ' ') return 'SPACE';
+  if (key === 'Tab') return 'TAB';
+  if (key === 'Caps') return 'CAPS';
+  if (key === 'Enter') return ENTER_LABEL;
+  if (/^[a-z]$/.test(key)) return key.toUpperCase();
+  return key;
+}
 
 function getCanvas() {
   if (!canvas) {
@@ -104,12 +85,16 @@ function cssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
 }
 
-function keyColor(key, knownKeys, newKeys) {
-  if (newKeys.includes(key)) {
-    return { border: cssVar('--level-accent'), text: cssVar('--level-accent'), glow: true, fog: false };
-  }
-  if (knownKeys.includes(key)) {
-    return { border: cssVar('--level-accent-dim'), text: cssVar('--level-accent-dim'), glow: false, fog: false };
+function keyColor(key, knownKeys, newKeys, never) {
+  // Never-taught structural keys (Tab/Caps/Enter) only complete the silhouette —
+  // they're permanent fog and can never be "learned" or highlighted.
+  if (!never) {
+    if (newKeys.includes(key)) {
+      return { border: cssVar('--level-accent'), text: cssVar('--level-accent'), glow: true, fog: false };
+    }
+    if (knownKeys.includes(key)) {
+      return { border: cssVar('--level-accent-dim'), text: cssVar('--level-accent-dim'), glow: false, fog: false };
+    }
   }
   // Fog of war — barely visible silhouette only
   return { border: '#111', text: '#111', glow: false, fog: true };
@@ -129,7 +114,7 @@ function drawKeyboard(knownKeys, newKeys, unitSize, kbOriginX, kbOriginY) {
     const w = unitSize * wUnits - 3;
     const h = unitSize - 3;
 
-    const col = keyColor(k.key, knownKeys, newKeys);
+    const col = keyColor(k.key, knownKeys, newKeys, k.never);
 
     if (col.fog) {
       // Fog key: dark box with a barely-visible border — shape hint, no label
@@ -368,10 +353,9 @@ function render() {
   ctx.clearRect(0, 0, W, H);
 
   // Scale so the full keyboard fits at ~80% of screen width.
-  // Compute actual content bounds from the layout data itself.
-  const totalUnits = 15;
+  // Same 15-unit-per-row grid the in-game guide uses (shared constant).
   const targetKbWidth = Math.min(W * 0.80, 980);
-  const unitSize = Math.floor(targetKbWidth / totalUnits);
+  const unitSize = Math.floor(targetKbWidth / KEYBOARD_UNITS_PER_ROW);
 
   // Measure true left/right extents of key content (col + key width, accounting for wide keys)
   const minCol = Math.min(...KB_LAYOUT.map(k => k.col));
@@ -379,13 +363,38 @@ function render() {
   const contentW = (maxCol - minCol) * unitSize;
   const kbOriginX = Math.round((W - contentW) / 2 - minCol * unitSize);
 
-  // 5 rows total (number row -1 .. bottom row 3)
+  // Rows measured from the layout (0 = number row … 4 = space row)
   const minRow = Math.min(...KB_LAYOUT.map(k => k.row));
   const maxRow = Math.max(...KB_LAYOUT.map(k => k.row));
   const rowCount = maxRow - minRow + 1;
   const kbTotalH = rowCount * unitSize * 1.15;
   // Place keyboard in upper-middle of viewport — leave bottom 35% for hands
-  const kbOriginY = H * 0.42 - kbTotalH / 2 - minRow * unitSize * 1.15;
+  let kbOriginY = H * 0.42 - kbTotalH / 2 - minRow * unitSize * 1.15;
+
+  // The DOM header (.kbp-header title + subtitle + .kbp-legend row, see
+  // css/screens.css) occupies a fixed band at the top of this screen —
+  // measured ~48px–107px regardless of level (font sizes are constant;
+  // title text length doesn't grow that band). The canvas also draws its
+  // own "NEW KEYS" / reach-hint label just above the keyboard's top row
+  // (see labelY below). Once the keyboard geometry grew to include the
+  // number row (row 0), the silhouette's top row — and therefore that
+  // label — could land underneath/overlapping the DOM header (see journal:
+  // preview header overlap, all-level regression). Reserve a fixed vertical
+  // budget here so the label always clears the DOM header, on every level,
+  // without touching the keyboard geometry itself.
+  const rawKbTop = kbOriginY + minRow * unitSize * 1.15;
+  const labelClearance = unitSize * 1.6; // space the label needs above kbTop
+  const domHeaderBottom = 116; // DOM header + legend bottom, fixed across levels
+  // labelY (below) is the label's CENTER (textBaseline 'middle'), so clearing
+  // the header means clearing half the glyph height PLUS the pulsing glow —
+  // budgeting only to the centerline left the label's top half overlapping the
+  // legend row on every level (Trevor's report, 2026-07-12).
+  const labelFontSize = Math.max(7, Math.floor(W * 0.012));
+  const labelPad = Math.ceil(labelFontSize / 2) + 12; // half-height + glow bleed
+  const minKbTop = domHeaderBottom + labelPad + labelClearance;
+  if (rawKbTop < minKbTop) {
+    kbOriginY += (minKbTop - rawKbTop);
+  }
 
   // Draw keyboard
   drawKeyboard(_knownKeys, _newKeys, unitSize, kbOriginX, kbOriginY);

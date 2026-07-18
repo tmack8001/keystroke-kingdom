@@ -77,6 +77,17 @@ A glowing, buzzing **1979 arcade** — the kid's first time walking in. Cabinets
 Default name: **Player One**
 Customizable to any name (e.g. "Ready Oona!")
 
+**The Name Moment** *(built 2026-07-12)*: the player's own name becomes typeable
+content the instant the unlocked keys can spell it — often long before Level 24's
+capitalized ceremony (e.g. lowercase "oona" is spellable at Level 12). At that first
+level the name is injected as a guaranteed pattern right after the intro drills, and
+completing it fires a one-time warm **golden flourish** (letters gild left-to-right, a
+gold bloom, sparkles) — never a modal, never a pause. From that level on the name
+returns occasionally as a familiar low-frequency visitor with the normal celebration.
+Lowercase only (capitals need Shift); the untouched default **Player One** gets no
+moment; the golden first time persists in `kk-progress` and never re-fires (a rename
+earns a fresh one). Level 24's ALL-CAPS ceremony is unchanged.
+
 ### Opening Screen
 Styled after the classic arcade "READY PLAYER ONE" prompt — with a nod to the Spielberg film of the same name. Dark background, dramatic retro-futuristic pixel typography, scanline effect, cabinet glow. Press **Space** or **Enter** to begin.
 
@@ -105,13 +116,13 @@ In a dark corner of the arcade: a cabinet draped in a velvet curtain, barely glo
 - **Era:** Early NES (1983–1985)
 - **Visuals:** Richer backgrounds, characters emerging
 - **Music:** Call-and-response melody — left hand (S,D,F) answered by right hand (L,K,J)
-- **Content:** First real words appear: **ads, lads, falls, flask,lass**
+- **Content:** Still pattern drills, no real words yet — J F D K S L has no vowel, so nothing is spellable. But it's the richest pattern level yet: both ring fingers now in play, full six-key call-and-response rhythm across both hands.
 
 ### Level 4 — A & The Mystery Key (;)
 - **Era:** SNES / Early 90s Arcade glory
 - **Visuals:** Full color, rich backgrounds, dramatic reveal
 - **Music:** Starts mysterious and suspenseful, builds to massive celebratory fanfare
-- **Content:** Full home row unlocked: **dad, sad, fad, lad, lass, flask, skull, falls**
+- **Content:** Full home row unlocked, and with A comes the first real words the player can read: **dad, sad, fad, lad, ads, lads, lass, flask, falls, dads, asks, salad**. The double win — a whole level of patterns pays off the instant a real, readable word appears.
 - **The Mystery Key:** Never referred to as "semicolon" — it's *"the eighth key," "the final key," "the key to the right of L," "pressed by the right pinky"*
 - **Completion:** Huge celebration — the Mystery Cabinet begins to glow
 
@@ -126,9 +137,8 @@ In a dark corner of the arcade: a cabinet draped in a velvet curtain, barely glo
 
 | Stage | Keys Available | Example Words |
 |---|---|---|
-| Levels 1–2 | J, F, D, K | Patterns only |
-| Level 3 | + S, L | ads, lads, falls, flask |
-| Level 4 | + A, ; | dad, sad, fad, lad, skull |
+| Levels 1–3 | J, F, D, K, S, L | Patterns only — no vowel yet, nothing spellable |
+| Level 4 | + A, ; | dad, sad, fad, lad, ads, lads, lass, flask, falls |
 | Reaching Keys | + vowels (E, I, O, U) | lake, safe, jade, dusk, file |
 
 Words are chosen to be:
@@ -150,6 +160,9 @@ the keys", the default, always) vs **SURVIVAL** ("quarters on the line — 1979 
 | Play Style | ADVENTURE | SURVIVAL (opt-in; time pressure only — wrong keys NEVER cost anything) |
 | Lives (quarters) | 3 | 1–5 (Survival only) |
 | Difficulty | NOVICE | ARCADE / EXPERT — classic tiers, tuned "challenging, never cruel"; 15-streak earns a quarter back; game over is warm |
+| Experience | FIRST QUARTER (1x) | REGULAR (1.5x) / HOTSHOT (2.25x) / WIZARD (3.5x) — scales how much typing a level requires before it can be won, to a player's typing experience (never age). A higher tier is MORE play, never a penalty; works in both Adventure and Survival. Scales the engine minimum-patterns gate and wired themes' win targets (Tetris, Q\*bert); other themes scale via the engine minimum |
+| Min Word Length | ANY | 3 / 4 / 5 / 6 / 7 — raise to drop the easy short words. *(built 2026-07-13)* |
+| Max Word Length | ANY | 4 / 5 / 6 / 7 / 8 / 10 / 12 / 16 / 24 — raise to allow longer, harder words; 24 is the WIZARD-equivalent top rung. *(built 2026-07-13)* |
 | Hints | Moderate | Subtle / Obvious |
 | Mistakes Shown | Small | Hidden / Prominent |
 | Sound | ON | OFF |
@@ -158,6 +171,38 @@ the keys", the default, always) vs **SURVIVAL** ("quarters on the line — 1979 
 | Player Name | Player One | Customizable (title screen; persisted) |
 | Erase All Progress | — | Y/N confirm required |
 | Visual Theme | 1979 Arcade | Future: expandable (Oona's ideas!) — see docs/ROADMAP.md |
+
+### Word Length — the difficulty lever that ages with the player *(built 2026-07-13)*
+
+**Design tenet (Trevor):** the game must **age with the player** — it stays fun and
+challenging as the player grows in age *and* keyboard skill, not only for the early
+readers it was founded for. This is true to the arcade analogy: arcades were always
+for adults just as much as kids. The fixed curriculum "grows with the child" (keys
+unlock, graphics improve) but that arc *ends* at Level 25. Player-set difficulty levers
+are how the game keeps growing past it.
+
+**EXPERIENCE** was the first such lever (how much a level demands). **MIN/MAX WORD
+LENGTH** is the second, on the word-content axis: shorter words = easier (younger/newer
+hands), longer words = harder (older/keyboard-savvy). Both default to **ANY** — a fresh
+Settings screen changes nothing. The hard end has real headroom: MAX climbs past the
+early-reader ceiling of 8 in single steps to **24**, the aspirational top rung that
+mirrors EXPERIENCE's WIZARD, so a savvy player can crank genuine difficulty. The MIN
+floor likewise climbs (ANY, then 3…12) so a player can *demand* long words. The wordgen
+generation ceiling matches at 24, and the generation prompt itself **ages with the
+player**: a request for long words drops the early-reader framing and asks the model for
+harder vocabulary. (This was measured, not assumed — the fixed early-reader prompt was
+found to actively suppress long words, so it's now length-aware; see journal.) The
+longest words are served by both the curated static banks and generation; the engine
+filter honors the full setting, and winnability always falls back where a level's keys
+can't spell words that long.
+
+It is a **best-effort suggestion, never a wall**: winnability is the One Rule floor and
+is never traded for it. If a chosen range can't be met at a level (a high minimum at an
+early level whose few keys can't spell long words), that level quietly falls back to its
+own words — it can never become unwinnable. Guaranteed content (intro drills,
+history-card moment words, the player's name) is never filtered. Levels 1–3 (no real
+words) are a natural no-op. Word banks were expanded across the full length spectrum so
+the lever has real content to select at both ends.
 
 ---
 

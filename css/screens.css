@@ -200,6 +200,84 @@
   margin-top: 50px;
 }
 
+/* ===== CONTINUE SCREEN (returning player) ===== */
+
+#continue-screen {
+  text-align: center;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.continue-ready {
+  font-size: 12px;
+  color: #b8860b; /* muted amber — matches ready screen */
+  letter-spacing: 4px;
+  margin-bottom: 20px;
+}
+
+.continue-name {
+  font-size: 32px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 20px var(--crt-amber), 0 0 60px rgba(255, 176, 0, 0.5);
+  letter-spacing: 6px;
+  animation: readyPulse 0.8s ease-in-out infinite alternate;
+  margin-bottom: 40px;
+}
+
+.continue-level {
+  font-size: 12px;
+  color: var(--crt-green);
+  text-shadow: 0 0 8px var(--crt-green);
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+}
+
+.continue-learned {
+  font-size: 8px;
+  color: var(--atari-dim);
+  letter-spacing: 2px;
+  line-height: 2;
+  margin-bottom: 44px;
+}
+
+.continue-learned .learned-keys {
+  color: var(--crt-amber-dim);
+  font-size: 11px;
+  letter-spacing: 3px;
+}
+
+.continue-prompt {
+  font-size: 8px;
+  color: var(--crt-green);
+  text-shadow: 0 0 6px var(--crt-green);
+  animation: blink 1.2s step-end infinite;
+  margin-bottom: 22px;
+}
+
+.continue-restart {
+  font-size: 7px;
+  color: #777;
+  letter-spacing: 2px;
+}
+
+.continue-erase {
+  margin-top: 34px;
+}
+
+.continue-erase-title {
+  font-size: 10px;
+  color: var(--nudge-red);
+  text-shadow: 0 0 6px rgba(255, 68, 68, 0.5);
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+}
+
+.continue-erase-opt {
+  font-size: 8px;
+  color: var(--atari-dim);
+  letter-spacing: 2px;
+  line-height: 2.4;
+}
+
 /* ===== GAME SCREEN ===== */
 
 #game-screen {
@@ -407,6 +485,62 @@
   100% { box-shadow: 0 0 0 rgba(232, 224, 200, 0); }
 }
 
+/* ── The Name Moment flourish ──
+   The once-ever warm golden celebration the first time the player completes
+   their own name (js/main.js fireNameFlourish). Deliberately richer and
+   warmer than the card glint above: a fuller gold bloom on the panel, each
+   name letter gilded left-to-right, and a burst of gold sparkles. Personal,
+   never a pause, never a modal (the One Rule). */
+.prompt-area.name-flourish {
+  animation: nameFlourish 1.6s ease-out;
+}
+
+@keyframes nameFlourish {
+  0%   { box-shadow: 0 0 0 rgba(255, 214, 120, 0); }
+  20%  { box-shadow: 0 0 48px rgba(255, 205, 90, 0.85), inset 0 0 34px rgba(255, 214, 120, 0.28); }
+  55%  { box-shadow: 0 0 34px rgba(255, 205, 90, 0.55), inset 0 0 22px rgba(255, 214, 120, 0.18); }
+  100% { box-shadow: 0 0 0 rgba(255, 214, 120, 0); }
+}
+
+/* Each completed name letter turns warm gold, lit in a staggered marquee. */
+.prompt-letter.name-gold {
+  color: #ffd76a !important;
+  opacity: 1 !important;
+  animation: nameGold 1.3s ease-out both;
+  animation-delay: var(--name-gold-delay, 0ms);
+  text-shadow:
+    0 0 12px rgba(255, 214, 106, 0.95),
+    0 0 30px rgba(255, 190, 70, 0.6);
+}
+
+@keyframes nameGold {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  30%  { transform: scale(1.28); filter: brightness(1.6); }
+  60%  { transform: scale(1.05); filter: brightness(1.2); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+
+/* Decorative gold sparks flung from each name letter. Purely ornamental
+   (no text), absolutely positioned within the .prompt-area, self-removing. */
+.name-spark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: #ffe08a;
+  box-shadow: 0 0 8px 2px rgba(255, 210, 100, 0.9);
+  pointer-events: none;
+  z-index: 5;
+  animation: nameSpark 0.9s ease-out forwards;
+}
+
+@keyframes nameSpark {
+  0%   { transform: translate(0, 0) scale(1);   opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate(var(--sx, 0), var(--sy, 0)) scale(0.2); opacity: 0; }
+}
+
 .finger-hint-text {
   font-size: 8px;
   color: var(--nudge-red);
@@ -558,6 +692,16 @@
   animation: blink 1.2s step-end infinite;
 }
 
+/* Secondary "replay this level" affordance — dim, quiet, offered at the
+   natural pause point only. Same visual weight as the continue screen's
+   RESTART line so the two "do it again" moments read the same way. */
+.complete-replay {
+  font-size: 7px;
+  color: #777;
+  letter-spacing: 2px;
+  margin-top: 16px;
+}
+
 /* ===== SURVIVAL: GAME OVER OVERLAY =====
    The only failure state in the game, and it exists strictly behind the
    opt-in SURVIVAL toggle. Warm amber, not red/alarming — "challenging,
@@ -621,9 +765,20 @@
 }
 
 .gameover-prompt {
-  font-size: 7px;
-  color: var(--atari-dim);
+  font-size: 8px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 6px var(--crt-amber);
+  animation: blink 1.2s step-end infinite;
   letter-spacing: 1px;
+}
+
+/* Secondary "back to the arcade" affordance — dim, mirroring the level-complete
+   overlay's REPLAY line so the two end-of-level screens read consistently. */
+.gameover-replay {
+  font-size: 7px;
+  color: #777;
+  letter-spacing: 2px;
+  margin-top: 16px;
 }
 
 /* ===== HISTORY CARD ("picked up off the arcade floor") ===== */
@@ -828,6 +983,30 @@
 
 .select-cabinet:hover canvas {
   border-color: var(--crt-amber-dim);
+}
+
+/* Locked cabinets — earned one by one as levels complete. A dark, dimmed
+   silhouette with no game revealed and no hover affordance (not selectable). */
+.select-cabinet.locked {
+  cursor: default;
+  opacity: 0.32;
+}
+
+.select-cabinet.locked:hover {
+  transform: none;
+}
+
+.select-cabinet.locked canvas {
+  filter: brightness(0.25) grayscale(0.8);
+}
+
+.select-cabinet.locked:hover canvas {
+  border-color: transparent;
+}
+
+.select-cabinet.locked .cabinet-label {
+  color: #555;
+  letter-spacing: 3px;
 }
 
 .cabinet-label {

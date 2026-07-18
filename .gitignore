@@ -33,3 +33,15 @@ vendor/
 .obsidian/plugins/smart-connections/data.json
 .smart-env/
 research/.smart-env/
+
+# Ignore Smart Environment folder
+.smart-env
+
+# Stale file-based agent memory notes (superseded by the ~/.claude memory
+# system) — agent scratch, never a game deliverable.
+memory/
+
+# Screenshot verification scratch — frame-by-frame extraction the capture
+# scripts write for flaw-detection; regenerable, never a deliverable
+# (docs/screenshots/README.md).
+.verify-frames/

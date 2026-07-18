@@ -4,15 +4,17 @@
 
 | ID | Title | Status | Importance | Category | Found | Addressed |
 |---|---|---|---|---|---|---|
-| [[F21-levels-md-regrew-past-budget\|F21]] | levels.md regrew past the 40k budget that motivated its own split | open | medium | docs-process | 2026-07-11 |  |
 | [[F1-level-4-victory-crashed-rendering\|F1]] | Level 4 victory crashed rendering for every player | addressed | critical | engine | 2026-07-11 | 2026-07-11 |
 | [[F2-canvas-z-index-bug\|F2]] | The canvas z-index bug | addressed | critical | graphics | 2026-06-25 | 2026-06-25 |
 | [[F7-child-facing-card-overstated-history\|F7]] | A child-facing card overstated history | addressed | critical | research-integrity | 2026-07-11 | 2026-07-11 |
+| [[F23-level-8-shipped-unwinnable\|F23]] | Level 8 shipped unwinnable — nothing had ever tried to win it | addressed | critical | game-design | 2026-07-12 | 2026-07-12 |
 | [[F3-ui-elements-failed-contrast\|F3]] | 72.7% of measured UI elements failed contrast | addressed | high | a11y | 2026-07-11 | 2026-07-11 |
 | [[F4-history-cards-unearnable\|F4]] | History cards were routinely unearnable | addressed | high | game-design | 2026-07-11 | 2026-07-11 |
 | [[F6-fabricated-historical-justification\|F6]] | I fabricated a historical justification | addressed | high | research-integrity | 2026-07-11 | 2026-07-11 |
 | [[F9-myst-credited-with-sgi-pipeline-it-never-had\|F9]] | Myst was credited with an SGI pipeline it never had | addressed | high | research-integrity | 2026-07-11 | 2026-07-11 |
 | [[F17-street-fighter-ii-originally-assigned-to-level-4\|F17]] | Street Fighter II was originally assigned to Level 4 (home row) | addressed | high | game-design | 2026-06-25 | 2026-06-25 |
+| [[F24-recorder-synthesized-success-while-stalled\|F24]] | The playthrough recorder synthesized success while stalled for two hours | addressed | high | tooling | 2026-07-12 | 2026-07-12 |
+| [[F25-early-reader-prompt-suppressed-the-models-long-word-ability\|F25]] | I claimed the LLM couldn't make long words — it was the prompt suppressing it | addressed | high | research-integrity | 2026-07-13 | 2026-07-13 |
 | [[F5-keyboard-preview-had-no-number-row\|F5]] | The keyboard preview had no number row at all | addressed | medium | a11y | 2026-07-11 | 2026-07-11 |
 | [[F8-eniac-six-programmers-list-named-five\|F8]] | The ENIAC "six programmers" list named five people | addressed | medium | research-integrity | 2026-07-11 | 2026-07-11 |
 | [[F10-settings-survival-build-agent-died-twice\|F10]] | The settings/survival build agent died twice | addressed | medium | agent-process | 2026-07-11 | 2026-07-11 |
@@ -24,5 +26,6 @@
 | [[F18-select-screen-silently-clipped-second-row\|F18]] | The 10-cabinet select screen silently clipped its second row | addressed | medium | graphics | 2026-06-25 | 2026-06-25 |
 | [[F19-joust-four-movement-combat-models-in-one-session\|F19]] | Joust's gameplay went through four movement/combat models in one session | addressed | medium | game-design | 2026-06-25 | 2026-06-25 |
 | [[F20-dead-progress-bar-shipped-invisible\|F20]] | A dead progress bar shipped and sat invisible for a whole session | addressed | medium | tooling | 2026-06-25 | 2026-06-25 |
+| [[F21-levels-md-regrew-past-budget\|F21]] | levels.md regrew past the 40k budget that motivated its own split | addressed | medium | docs-process | 2026-07-11 | 2026-07-11 |
 | [[F22-second-wikilink-parser-blind-spot\|F22]] | Second wikilink-parser blind spot in one day | addressed | medium | tooling | 2026-07-11 | 2026-07-11 |
 | [[F13-settings-hotkey-near-miss\|F13]] | Near-miss: the settings hotkey was almost 'S' | addressed | low | game-design | 2026-07-11 | 2026-07-11 |

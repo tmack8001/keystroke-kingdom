@@ -8,8 +8,6 @@
 let canvas, ctx, animId;
 let active = false;
 let lines = [];
-let cursorVisible = true;
-let cursorTimer = 0;
 let chars = 0;
 let scanY = 0;
 let flickerT = 0;
@@ -175,6 +173,14 @@ function drawTerminalLines(W, H) {
 
   ctx.font = `${fontSize}px "Press Start 2P", monospace`;
   ctx.textBaseline = 'top';
+  // Left column status text must draw left-aligned FROM marginX — the
+  // canvas is shared across screens, and the immediately-prior screen
+  // (keyboard-preview.js) leaves ctx.textAlign = 'center'. Without resetting
+  // it here, these lines render centered ON marginX instead of starting
+  // there, clipping their left half off the viewport (see visual-validation
+  // fix: Level 20 terminal left-clip). Always set it explicitly rather than
+  // depending on other modules' cleanup.
+  ctx.textAlign = 'left';
 
   visibleLines.forEach((line, i) => {
     const y = startY + i * lineH;
@@ -230,11 +236,17 @@ function drawProgress(W, H) {
   const by = 14;
 
   ctx.font = '7px "Press Start 2P", monospace';
+  ctx.textAlign = 'left';   // defensive — see drawTerminalLines note above
+  ctx.textBaseline = 'top'; // was default 'alphabetic': by=14 is then the
+                             // BASELINE, so ascenders draw above y=14 and
+                             // clip against the canvas top edge. 'top' makes
+                             // by the glyph top instead, keeping it on-canvas.
   ctx.fillStyle = '#39ff14';
   ctx.shadowColor = '#39ff14';
   ctx.shadowBlur = 4;
   ctx.fillText(`PROGRAM ${chars}/${WIN_CHARS}`, bx, by);
   ctx.shadowBlur = 0;
+  ctx.textBaseline = 'alphabetic';
 
   ctx.fillStyle = '#001400';
   ctx.fillRect(bx, by + 5, barW, 8);

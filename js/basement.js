@@ -13,6 +13,29 @@ let bassNodes = [];
 let fmNodes = [];
 let milestoneJinglePlayed = false;
 
+// DOM elements we defensively hide for the duration of the cinematic so no
+// title-screen markup (logo, INSERT COIN, prompts) can ever bleed through on
+// top of the canvas. We record which were already hidden so stop() restores
+// the exact prior state and never un-hides something the caller meant to keep
+// hidden. main.js also hides all .screen elements before start() — this is a
+// belt-and-suspenders guarantee that holds regardless of the caller.
+let hiddenByUs = [];
+
+function hideAllScreens() {
+  hiddenByUs = [];
+  document.querySelectorAll('.screen').forEach(s => {
+    if (!s.classList.contains('hidden')) {
+      s.classList.add('hidden');
+      hiddenByUs.push(s);
+    }
+  });
+}
+
+function restoreHiddenScreens() {
+  hiddenByUs.forEach(s => s.classList.remove('hidden'));
+  hiddenByUs = [];
+}
+
 // Phase boundaries (ms)
 const P = {
   MILESTONE: { s: 0,     e: 5000  },  // 0 — TOP ROW UNLOCKED + key cascade
@@ -147,8 +170,12 @@ function drawPhase0(t, W, H) {
   ctx.fillStyle = '#050a14';
   ctx.fillRect(0, 0, W, H);
 
-  // "TOP ROW UNLOCKED" — appears fully on entry, fades slightly on exit
-  const textAlpha = t < 0.8 ? 1 : 1 - (t - 0.8) / 0.2;
+  // "TOP ROW UNLOCKED" — appears fully on entry, fades slightly on exit.
+  // Fade begins at 0.92 so the fully-lit row gets a genuine full-brightness
+  // hold (spec: "lights up completely... holds for a beat"). The alpha is
+  // scoped to the banner text ONLY — the key row must never inherit the fade
+  // (the milestone reference set caught the whole frame dimming, 2026-07-12).
+  const textAlpha = t < 0.92 ? 1 : 1 - (t - 0.92) / 0.08;
   const fontSize = Math.max(10, Math.floor(W * 0.016));
   ctx.font = `${fontSize}px "Press Start 2P", monospace`;
   ctx.textAlign = 'center';
@@ -159,6 +186,7 @@ function drawPhase0(t, W, H) {
   ctx.shadowBlur = 16 + Math.sin(t * Math.PI * 4) * 4;
   ctx.fillText('TOP ROW UNLOCKED', W / 2, H * 0.35);
   ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
 
   // Top row key cascade — Q W E R T Y U I O P
   const keySize = Math.max(18, Math.floor(W * 0.038));
@@ -167,9 +195,11 @@ function drawPhase0(t, W, H) {
   const rowX    = Math.round((W - rowW) / 2);
   const rowY    = Math.round(H * 0.52);
 
-  // Cascade: each key lights up at t = 0.1 + i * 0.08 (spread over ~0.8 of phase)
+  // Cascade: key i lights at 0.10 + i*0.055 — last key (P) fully lit by
+  // t = 0.595 + 0.06 ramp = 0.655, leaving a real full-brightness hold from
+  // ~0.66 to the phase end (fade only touches the banner text, never the keys).
   TOP_ROW.forEach((label, i) => {
-    const lightAt = 0.12 + i * 0.075;
+    const lightAt = 0.10 + i * 0.055;
     const lit = t >= lightAt;
     const keyT = lit ? Math.min(1, (t - lightAt) / 0.06) : 0;
 
@@ -482,6 +512,10 @@ export function start(callback) {
   bassNodes = [];
   fmNodes   = [];
 
+  // Defensively hide any visible title/game DOM so it can never bleed through
+  // on top of the cinematic canvas. Restored in stop().
+  hideAllScreens();
+
   startTime = performance.now();
   animId    = requestAnimationFrame(render);
 }
@@ -505,6 +539,11 @@ export function stop() {
   if (animId) { cancelAnimationFrame(animId); animId = null; }
   stopAllAudio();
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Restore whatever screen visibility we changed. When stop() is followed by
+  // the completion callback (confirm -> onDone -> showScreen), showScreen
+  // re-hides all screens synchronously in the same task, so the correct
+  // next-screen state is what actually paints — no title flash.
+  restoreHiddenScreens();
 }
 
 window.addEventListener('resize', () => {

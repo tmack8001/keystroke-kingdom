@@ -13,6 +13,29 @@ let chordNodes = [];
 let riserNodes = [];
 let jinglePlayed = false;
 
+// DOM elements we defensively hide for the duration of the cinematic so no
+// title-screen markup (logo, INSERT COIN, prompts) can ever bleed through on
+// top of the canvas. We record which were already hidden so stop() restores
+// the exact prior state and never un-hides something the caller meant to keep
+// hidden. main.js also hides all .screen elements before start() — this is a
+// belt-and-suspenders guarantee that holds regardless of the caller.
+let hiddenByUs = [];
+
+function hideAllScreens() {
+  hiddenByUs = [];
+  document.querySelectorAll('.screen').forEach(s => {
+    if (!s.classList.contains('hidden')) {
+      s.classList.add('hidden');
+      hiddenByUs.push(s);
+    }
+  });
+}
+
+function restoreHiddenScreens() {
+  hiddenByUs.forEach(s => s.classList.remove('hidden'));
+  hiddenByUs = [];
+}
+
 // Phase boundaries (ms)
 const P = {
   MILESTONE: { s: 0,     e: 8000  },  // rolling letter key wave + FULL KEYBOARD UNLOCKED
@@ -118,8 +141,12 @@ function drawPhase0(t, W, H) {
   ctx.fillStyle = '#04080a';
   ctx.fillRect(0, 0, W, H);
 
-  // FULL KEYBOARD UNLOCKED text — holds then fades
-  const textAlpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+  // FULL KEYBOARD UNLOCKED text — holds then fades. Fade begins at 0.90 so
+  // the completed 26-key wave (done by ~0.68 after the retime below) holds at
+  // full brightness WITH the banner — previously the fade started at 0.70,
+  // before the wave even finished, so the canonical all-lit+banner frame
+  // never existed (caught by the milestones reference set, 2026-07-12).
+  const textAlpha = t < 0.9 ? 1 : 1 - (t - 0.9) / 0.1;
   const fontSize = Math.max(9, Math.floor(W * 0.014));
   ctx.globalAlpha = textAlpha;
   ctx.font = `${fontSize}px "Press Start 2P", monospace`;
@@ -152,7 +179,9 @@ function drawPhase0(t, W, H) {
     row.forEach((label, li) => {
       // Find this key's global index in WAVE_ORDER
       const globalIdx = (ri === 0 ? 0 : ri === 1 ? 10 : 19) + li;
-      const lightAt = 0.05 + (globalIdx / WAVE_ORDER.length) * 0.7;
+      // Wave spans 0.05–0.60 (+0.08 ramp): last key fully lit by ~0.68,
+      // leaving a real full-brightness hold before the 0.90 banner fade.
+      const lightAt = 0.05 + (globalIdx / WAVE_ORDER.length) * 0.55;
       const lit = t >= lightAt;
       const keyT = lit ? Math.min(1, (t - lightAt) / 0.08) : 0;
 
@@ -424,6 +453,10 @@ export function start(callback) {
   chordNodes = [];
   riserNodes = [];
 
+  // Defensively hide any visible title/game DOM so it can never bleed through
+  // on top of the cinematic canvas. Restored in stop().
+  hideAllScreens();
+
   startTime = performance.now();
   animId    = requestAnimationFrame(render);
 }
@@ -445,6 +478,11 @@ export function stop() {
   if (animId) { cancelAnimationFrame(animId); animId = null; }
   stopAllAudio();
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Restore whatever screen visibility we changed. When stop() is followed by
+  // the completion callback (confirm -> onDone -> showScreen), showScreen
+  // re-hides all screens synchronously in the same task, so the correct
+  // next-screen state is what actually paints — no title flash.
+  restoreHiddenScreens();
 }
 
 window.addEventListener('resize', () => {

@@ -7,6 +7,8 @@ const TILE = 24;
 let cols, rows;
 let maze = [];
 let dots = [];
+let pellets = [];        // cosmetic corridor pellets (never the win gate)
+let completions = 0;     // pattern completions — every 4th is a power-pellet moment
 let pac = { x: 0, y: 0, dir: 0, mouthOpen: true, mouthFrame: 0, moving: false, speed: 2 };
 let ghosts = [];
 let cherries = [];
@@ -134,11 +136,29 @@ function generateMaze() {
   for (let i = 0; i < Math.min(targetDots, shuffled.length); i++) {
     dots.push({ x: shuffled[i].x, y: shuffled[i].y, eaten: false });
   }
+  spawnPellets();
+}
+
+// Cosmetic corridor pellets: Pac-Man visibly munches these as he travels (the
+// signature waka-chomp the audit found missing). They are NOT the win gate — the
+// 20 `dots` eaten via patternComplete() remain the sole win meter, untouched.
+// Bounded (~70) and quietly replenished so the maze never runs dry.
+const MAX_PELLETS = 70;
+function spawnPellets() {
+  pellets = [];
+  const taken = new Set(dots.map(d => d.x + ',' + d.y));
+  for (let y = 1; y < rows - 1 && pellets.length < MAX_PELLETS; y++) {
+    for (let x = 1; x < cols - 1 && pellets.length < MAX_PELLETS; x++) {
+      if (maze[y][x] === 0 && !isCenter(y, x) && !taken.has(x + ',' + y)) {
+        pellets.push({ x, y, eaten: false, eatenAt: 0 });
+      }
+    }
+  }
 }
 
 function spawnGhosts() {
   ghosts = [];
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 4; i++) {
     const cell = findOpenCell();
     ghosts.push({
       x: cell.x * TILE + TILE/2,
@@ -147,7 +167,8 @@ function spawnGhosts() {
       color: GHOST_COLORS[i],
       blue: false,
       eaten: false,
-      respawnTimer: 0
+      respawnTimer: 0,
+      flinch: 0        // brief wrong-key "flinch" frames (miss() ambient response)
     });
   }
 }
@@ -248,11 +269,38 @@ export function keystroke() {
   pac.moving = true;
 }
 
+// Wrong-key ambient response. Grounded in the Pac-Man wiki's documented iconic
+// mechanic — "Power Pellets reversing the chase dynamic" (research/wiki/games/pac-man.md):
+// a single nearby ghost gives a comic little double-take, flipping around the way every
+// ghost does the instant a power pellet is eaten, with a brief frightened-blue flinch.
+// Gentle, harmless, tiny: it touches ONE ghost, never the win gate, never the letter,
+// and settles in a few frames so rapid mistakes can't stack into chaos.
+export function miss() {
+  if (!active || victoryMode) return;
+  // Nearest non-eaten ghost to Pac-Man does the double-take.
+  let target = null, best = Infinity;
+  const pcx = pac.x + TILE / 2, pcy = pac.y + TILE / 2;
+  ghosts.forEach(g => {
+    if (g.eaten) return;
+    const dist = Math.abs(g.x - pcx) + Math.abs(g.y - pcy);
+    if (dist < best) { best = dist; target = g; }
+  });
+  if (!target) return;
+  target.dir = (target.dir + 2) % 4;   // reverse — the power-pellet flip
+  target.flinch = Math.min(24, target.flinch + 24);  // clamped; can't accumulate
+}
+
 export function patternComplete() {
   if (!active) return false;
 
-  blueTimer = 200;
-  ghosts.forEach(g => { if (!g.eaten) g.blue = true; });
+  // Power-pellet moment every 4th completion only — the audit found ghosts blue
+  // near-constantly (early patterns are 1-2 keys, so per-completion frightening
+  // erased the classic red/pink/cyan/orange identities the wiki documents).
+  completions++;
+  if (completions % 4 === 0) {
+    blueTimer = 200;
+    ghosts.forEach(g => { if (!g.eaten) g.blue = true; });
+  }
 
   const d = DIRS[pac.dir];
   let cherryX = Math.round(pac.x / TILE) + d.dx * 2;
@@ -319,6 +367,21 @@ function updatePac() {
 
   checkTunnel(pac);
 
+  // Munch corridor pellets on contact — the visible waka-chomp. Eaten pellets
+  // quietly respawn after ~12s so the maze never runs dry (cosmetic only).
+  pellets.forEach(p => {
+    if (p.eaten) {
+      if (Date.now() - p.eatenAt > 12000) p.eaten = false;
+      return;
+    }
+    const dist = Math.abs(p.x * TILE - pac.x) + Math.abs(p.y * TILE - pac.y);
+    if (dist < TILE * 0.7) {
+      p.eaten = true;
+      p.eatenAt = Date.now();
+      particles.push({ x: p.x * TILE + TILE/2, y: p.y * TILE + TILE/2, frame: 0, maxFrames: 12, color: '#ffd9a8' });
+    }
+  });
+
   for (let i = cherries.length - 1; i >= 0; i--) {
     const ch = cherries[i];
     if (ch.eaten) continue;
@@ -364,6 +427,7 @@ function updateGhosts() {
   }
 
   ghosts.forEach(g => {
+    if (g.flinch > 0) g.flinch--;
     if (g.eaten) {
       g.respawnTimer--;
       if (g.respawnTimer <= 0) {
@@ -445,11 +509,20 @@ function drawMaze() {
 }
 
 function drawDots() {
+  // Win-gate dots AND cosmetic corridor pellets both render as classic pale-peach
+  // pellets (the wiki-cited look — dots must READ against the blue maze; the old
+  // #6cf blended into the walls, which is exactly what the fidelity audit flagged).
+  ctx.fillStyle = '#ffd9a8';
   dots.forEach(d => {
     if (d.eaten) return;
-    ctx.fillStyle = '#6cf';
     ctx.beginPath();
     ctx.arc(d.x * TILE + TILE/2, d.y * TILE + TILE/2, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  pellets.forEach(p => {
+    if (p.eaten) return;
+    ctx.beginPath();
+    ctx.arc(p.x * TILE + TILE/2, p.y * TILE + TILE/2, 2, 0, Math.PI * 2);
     ctx.fill();
   });
 }
@@ -510,7 +583,16 @@ function drawPac() {
 function drawGhosts() {
   ghosts.forEach(g => {
     if (g.eaten) return;
-    const color = g.blue ? (blueTimer < 60 && blueTimer % 10 < 5 ? '#ffffff' : '#2222ff') : g.color;
+    // A brief wrong-key flinch tints the ghost toward its own frightened-blue for a
+    // few frames (the power-pellet palette, softened) — never the full frighten state.
+    let color;
+    if (g.blue) {
+      color = (blueTimer < 60 && blueTimer % 10 < 5) ? '#ffffff' : '#2222ff';
+    } else if (g.flinch > 0) {
+      color = (g.flinch % 8 < 4) ? '#5a6cff' : g.color;
+    } else {
+      color = g.color;
+    }
     const x = g.x;
     const y = g.y;
     const r = TILE/2;
@@ -608,6 +690,7 @@ export function start() {
   lastKeystroke = 0;
   typingSpeed = 2;
   blueTimer = 0;
+  completions = 0;
   particles = [];
   cherries = [];
 

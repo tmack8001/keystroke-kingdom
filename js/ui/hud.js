@@ -2,6 +2,60 @@ import { FINGER_MAP } from '../levels.js';
 
 const $ = (id) => document.getElementById(id);
 
+// ─────────────────────────────────────────────────────────────────────────
+// Small-glyph prompt legibility (journal O11: "font glyph coverage is a
+// silent failure class"). Press Start 2P renders several punctuation marks
+// as near-invisible specks at the prompt's normal size — worst offender is
+// the backtick, which draws as a single stray pixel in the upper-left of
+// its box (see docs/screenshots/levels/act5-full-circle/23-missile-command.png).
+//
+// Fix has two parts, both scoped to the handful of characters that need it:
+//   1. These tokens get a large size/weight boost in the prompt (CSS class
+//      injected below) so the mark itself is unmistakable at a glance.
+//   2. The genuinely ambiguous marks (backtick, apostrophe, comma, period —
+//      easily confused with each other or just "a dot") also get a tiny,
+//      quiet caption underneath using the game's own established kid-facing
+//      names (levels.js hint text calls the backtick a "tick mark"; the
+//      product docs use "comma"/"period"/"apostrophe" directly — never
+//      inventing new names, never "semicolon" for the eighth key).
+// Normal letters, digits, and the existing ␣/⌫/⇧ glyphs are untouched.
+const SMALL_GLYPH_BOOST = new Set(['`', "'", ',', '.', '-', '=']);
+const SMALL_GLYPH_CAPTION = {
+  '`': 'TICK MARK',
+  "'": 'APOSTROPHE',
+  ',': 'COMMA',
+  '.': 'PERIOD',
+};
+
+// Injected once so hud.js (the only file this fix may touch) can style the
+// boosted glyphs and their caption without editing css/screens.css, which
+// another agent owns right now.
+function ensureSmallGlyphStyles() {
+  if ($('kk-small-glyph-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'kk-small-glyph-styles';
+  style.textContent = `
+    .prompt-letter.small-glyph {
+      font-size: 64px;
+      font-weight: normal;
+      line-height: 1;
+    }
+    .prompt-letter.small-glyph.active {
+      /* the mark itself stays the hero — just much bigger, same glow language */
+      text-shadow: 0 0 15px var(--level-accent), 0 0 46px color-mix(in srgb, var(--level-accent) 35%, transparent);
+    }
+    .prompt-caption {
+      margin-top: 6px;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #999;
+      text-align: center;
+      min-height: 11px;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 // WPM is informational only — never enforced, never a failure condition.
 // Standard convention: one "word" = 5 correct keystrokes. Returns null until
 // 10 seconds have elapsed (not enough signal yet to show a meaningful rate).
@@ -144,6 +198,48 @@ const KEY_LAYOUT = [
   ],
 ];
 
+// Each row of KEY_LAYOUT sums to this many units; every renderer uses it to
+// keep rows aligned to one frame. Exported so the "KNOW YOUR KEYS" preview
+// scales to the exact same 15-unit grid as the in-game guide.
+export const KEYBOARD_UNITS_PER_ROW = 15;
+
+// The number of physical keyboard rows (number row through the space row).
+export const KEYBOARD_ROW_COUNT = KEY_LAYOUT.length;
+
+// SINGLE SOURCE OF TRUTH for keyboard geometry.
+// Flattens KEY_LAYOUT into absolute-positioned key descriptors by walking each
+// row left-to-right and accumulating unit widths. The in-game guide renders
+// KEY_LAYOUT sequentially; the "KNOW YOUR KEYS" canvas preview needs absolute
+// column offsets to draw the same silhouette — so both derive from THIS array
+// and there is exactly one place that defines where each key physically sits.
+//
+// Returned descriptor per key:
+//   key   - the token ('a', ';', 'Backspace', ' ', 'Shift', ...) — null for
+//           structural spacers (Ctrl/Alt/Cmd gaps on the space row)
+//   row   - 0 = number row, 1 = Q row, 2 = home row, 3 = Z row, 4 = space row
+//   col   - absolute left-edge offset in units from the row's left edge
+//   w     - key width in units
+//   never - true for keys the game never teaches (Tab, Caps, Enter) — they
+//           complete the silhouette but are never learnable/highlightable
+export function getKeyGeometry() {
+  const keys = [];
+  KEY_LAYOUT.forEach((row, rowIdx) => {
+    let col = 0;
+    for (const spec of row) {
+      const w = spec.w || 1;
+      keys.push({
+        key: spec.k,
+        row: rowIdx,
+        col,
+        w,
+        never: !!spec.never,
+      });
+      col += w;
+    }
+  });
+  return keys;
+}
+
 export function renderKeyboard(level, activeKey, wrongKey, state) {
   const guide = $('keyboard-guide');
 
@@ -198,6 +294,8 @@ function promptDisplay(token) {
 }
 
 export function renderPrompt(state, level, pattern) {
+  ensureSmallGlyphStyles();
+
   const seq = $('prompt-sequence');
   seq.innerHTML = pattern.map((letter, i) => {
     let cls = 'prompt-letter';
@@ -205,8 +303,23 @@ export function renderPrompt(state, level, pattern) {
     else if (i === state.currentIndex) cls += ' active';
     const display = promptDisplay(letter);
     if (display === '␣' || display === '⌫' || display === '⇧') cls += ' glyph';
+    if (SMALL_GLYPH_BOOST.has(letter)) cls += ' small-glyph';
     return `<div class="${cls}" data-index="${i}">${display}</div>`;
   }).join('');
+
+  // Quiet caption for the genuinely ambiguous marks — only shown for the
+  // character the player is on right now, never for completed/upcoming ones.
+  // Lives in a dedicated element so it never collides with the finger-hint
+  // (which still only appears after a wrong keypress).
+  let caption = $('kk-prompt-caption');
+  if (!caption) {
+    caption = document.createElement('div');
+    caption.id = 'kk-prompt-caption';
+    caption.className = 'prompt-caption';
+    seq.insertAdjacentElement('afterend', caption);
+  }
+  const activeLetter = pattern[state.currentIndex];
+  caption.textContent = SMALL_GLYPH_CAPTION[activeLetter] || '';
 
   renderKeyboard(level, pattern[state.currentIndex], null, state);
   $('finger-hint').innerHTML = '';

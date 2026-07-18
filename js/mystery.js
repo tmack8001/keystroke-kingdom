@@ -13,6 +13,29 @@ let crtHumNode = null;
 let chordNodes = [];
 let skipped = false;
 
+// DOM elements we defensively hide for the duration of the cinematic so no
+// title-screen markup (logo, INSERT COIN, prompts) can ever bleed through on
+// top of the canvas. We record which were already hidden so stop() restores
+// the exact prior state and never un-hides something the caller meant to keep
+// hidden. main.js also hides all .screen elements before start() — this is a
+// belt-and-suspenders guarantee that holds regardless of the caller.
+let hiddenByUs = [];
+
+function hideAllScreens() {
+  hiddenByUs = [];
+  document.querySelectorAll('.screen').forEach(s => {
+    if (!s.classList.contains('hidden')) {
+      s.classList.add('hidden');
+      hiddenByUs.push(s);
+    }
+  });
+}
+
+function restoreHiddenScreens() {
+  hiddenByUs.forEach(s => s.classList.remove('hidden'));
+  hiddenByUs = [];
+}
+
 // Phase boundaries (ms from sequence start)
 const P = {
   SILENCE:  { s: 0,     e: 3000  },  // 0 — black, held breath
@@ -106,6 +129,41 @@ function stopChord() {
   chordNodes = [];
 }
 
+// Phase 5 hinge-and-slide: a low, heavy, WARM slide under the chord — the
+// cabinet swinging aside like a bookcase. Two soft low oscillators gliding
+// down in pitch; nothing percussive, nothing scary (spec: "not triumphant,
+// not a fanfare — just arrival").
+function playHingeSlide() {
+  const c = getAudioCtx();
+  // Main slide: triangle gliding 74 → 52 Hz
+  const osc = c.createOscillator();
+  const gain = c.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(74, c.currentTime + 0.5);
+  osc.frequency.linearRampToValueAtTime(52, c.currentTime + 4.3);
+  gain.gain.setValueAtTime(0.0001, c.currentTime + 0.5);
+  gain.gain.linearRampToValueAtTime(0.032, c.currentTime + 1.6);
+  gain.gain.setValueAtTime(0.032, c.currentTime + 3.4);
+  gain.gain.linearRampToValueAtTime(0.0001, c.currentTime + 4.6);
+  osc.connect(gain);
+  gain.connect(c.destination);
+  osc.start(c.currentTime + 0.5);
+  osc.stop(c.currentTime + 4.7);
+  // Sub rumble underneath: sine 40 → 34 Hz, quieter
+  const sub = c.createOscillator();
+  const subGain = c.createGain();
+  sub.type = 'sine';
+  sub.frequency.setValueAtTime(40, c.currentTime + 0.5);
+  sub.frequency.linearRampToValueAtTime(34, c.currentTime + 4.3);
+  subGain.gain.setValueAtTime(0.0001, c.currentTime + 0.5);
+  subGain.gain.linearRampToValueAtTime(0.02, c.currentTime + 1.8);
+  subGain.gain.linearRampToValueAtTime(0.0001, c.currentTime + 4.6);
+  sub.connect(subGain);
+  subGain.connect(c.destination);
+  sub.start(c.currentTime + 0.5);
+  sub.stop(c.currentTime + 4.7);
+}
+
 // ─── Phase detection ─────────────────────────────────────────────────────────
 
 function getPhase(ms) {
@@ -124,9 +182,21 @@ function phaseT(phaseIdx, ms) {
 }
 
 // ─── Cabinet geometry (computed relative to W/H each frame) ──────────────────
-
-function cabinet(W, H) {
-  const cw = Math.round(W * 0.14);
+//
+// SINGLE SOURCE OF TRUTH for the mystery cabinet's rect (body + screen),
+// scale-parameterized for the Phase 4 dolly-in (revised spec 2026-07-12,
+// transitions.md "The Approach" / "The Secret Door"). Every phase calls this
+// exclusively via drawCabinetBase() — never recompute cw/ch/sx/sy
+// independently, or the phases will drift apart (same lesson as the
+// KEY_LAYOUT keyboard-geometry unification in js/ui/hud.js).
+//
+// scale = 1 is the "corner of the room" size (phases 1-3: pull, curtain).
+// Phase 4 dollies scale from 1 to DOLLY.MAX_SCALE (the cabinet dominating
+// the frame); phase 5 composes the hinge-aside at MAX_SCALE. All accessories
+// (curtain, tape, glow, coin door, marquee, feet) derive from this rect, so
+// they track every dolly position automatically.
+function cabinetRect(W, H, scale = 1) {
+  const cw = Math.round(W * DOLLY.BASE_FRAC * scale);
   const ch = Math.round(cw * 1.55);
   const cx = Math.round(W * 0.5 - cw / 2);
   const cy = Math.round(H * 0.5 - ch * 0.45);
@@ -137,14 +207,61 @@ function cabinet(W, H) {
   return { cx, cy, cw, ch, sx, sy, sw, sh };
 }
 
+// ─── The dolly (Phase 4 "The Approach") ──────────────────────────────────────
+//
+// BASE_FRAC 0.17W is the corner-of-the-room cabinet width; MAX_SCALE 2.5 puts
+// it at ~0.42W — taller than the frame (it dominates), while the screen rect
+// stays fully in frame (screen top = H/2 - ch*0.33 stays > 0 up to ~0.61W).
+const DOLLY = {
+  BASE_FRAC: 0.17,
+  MAX_SCALE: 2.5,
+};
+
+function clamp01(u) { return Math.min(1, Math.max(0, u)); }
+function smoothstep(u) { u = clamp01(u); return u * u * (3 - 2 * u); }
+
+// Scale curve over the approach: smoothstep ease-in-out over the phase —
+// a steady walk that settles, not a zoom. u = normalized phase time (0..1).
+function dollyScale(u) {
+  return 1 + (DOLLY.MAX_SCALE - 1) * smoothstep(u);
+}
+
+// The scale at which the terminal text reaches FULL crispness. Derived from
+// the terminal timeline (the moment the last character of the last line —
+// "COME IN." — lands), so the spec beat "full crispness lands exactly as
+// COME IN. completes" survives any future copy/timing change automatically.
+let crispScaleCache = null;
+function crispScale() {
+  if (crispScaleCache === null) {
+    let lastMs = 0;
+    TERMINAL_LINES.forEach(line => {
+      const end = line.delay + Math.max(0, line.text.length - 1) * 130;
+      if (end > lastMs) lastMs = end;
+    });
+    const phaseLen = P.TERMINAL.e - P.TERMINAL.s;
+    crispScaleCache = dollyScale(clamp01(lastMs / phaseLen));
+  }
+  return crispScaleCache;
+}
+
+// Blur is a FUNCTION OF APPARENT DISTANCE (the dolly scale), never a separate
+// timer — a paused frame anywhere in the approach reads as a coherent
+// distance (spec visual note). 1 = far / full phosphor smear, 0 = arrived /
+// crisp. Because dollyScale(u) is monotonic, blur hits 0 exactly when the
+// dolly passes crispScale() — the frame "COME IN." completes — and stays 0.
+function blurForScale(scale) {
+  const cs = crispScale();
+  return clamp01((cs - scale) / (cs - 1));
+}
+
 // ─── Drawing helpers ──────────────────────────────────────────────────────────
 
 function fillPixelRect(x, y, w, h) {
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 }
 
-function drawCabinetBase(W, H, glowAlpha = 0) {
-  const g = cabinet(W, H);
+function drawCabinetBase(W, H, glowAlpha = 0, scale = 1) {
+  const g = cabinetRect(W, H, scale);
 
   // Ambient glow behind cabinet
   if (glowAlpha > 0) {
@@ -320,7 +437,7 @@ function drawPhase3(t, W, H) {
   drawVelvetCurtain(g, curtainDrop);
 }
 
-// ─── Phase 4: Terminal ────────────────────────────────────────────────────────
+// ─── Phase 4: The Approach (dolly-in + resolving terminal) ───────────────────
 
 const TERMINAL_LINES = [
   { text: 'HELLO.', delay: 500 },
@@ -329,6 +446,111 @@ const TERMINAL_LINES = [
   { text: '',        delay: 7400 },
   { text: 'COME IN.', delay: 9500 },
 ];
+
+// Terminal font size in "cabinet space" — the size at dolly scale 1. The
+// rendered size is TERMINAL_FONT_BASE * scale: the text is physically ON the
+// cabinet's screen, so it rides the dolly with the geometry. Because both
+// text width and screen width scale linearly with the dolly, the containment
+// ratio is scale-INVARIANT — the original overflow bug is impossible at
+// every dolly position by construction. Sized so the longest line
+// ("YOU FOUND ME.", 13 chars × 1em advance in Press Start 2P) fits the
+// padded screen at scale 1 with margin (avail ≈ 140px vs 130px at 1280w).
+const TERMINAL_FONT_BASE = 10;
+
+// Defensive containment check: given the screen rect and the lines this
+// frame renders, verify every line fits inside the screen at the requested
+// size with the standard padding. If a future copy change ever makes a line
+// too long (or integer rounding pinches a tiny dolly scale), scale ALL
+// terminal text down together (uniform, not per-line, so the terminal
+// doesn't look mismatched) rather than silently clipping or overflowing
+// onto the cabinet body.
+function fitTerminalFontSize(g, lines, targetSize) {
+  const padX = Math.round(g.sw * 0.08);
+  const maxTextW = g.sw - padX * 2;
+  ctx.font = `${targetSize}px "Press Start 2P", monospace`;
+  let widest = 0;
+  lines.forEach(line => {
+    if (!line) return;
+    const w = ctx.measureText(line).width;
+    if (w > widest) widest = w;
+  });
+  if (widest <= maxTextW || widest === 0) return targetSize;
+  // Scale down uniformly, floor at 5px.
+  return Math.max(5, targetSize * (maxTextW / widest));
+}
+
+// Shared terminal-lines renderer — the single place both the approach phase
+// (4, live typing with distance blur) and the secret-door phase (5, stable
+// crisp state) draw the green CRT text. All positions are relative to the
+// SCREEN rect (g.sx/g.sy/g.sw/g.sh), never the cabinet body or the raw
+// canvas, so the text always tracks the screen at every dolly scale. Sets
+// textAlign/textBaseline explicitly (canvas state leaks between draw
+// calls/screens — L28).
+//
+// blur (0..1) renders the out-of-focus CRT phosphor smear: a fixed, bounded
+// set of dithered offset re-draws at low alpha plus a widened shadowBlur
+// bloom — era-appropriate "unfocused tube", not a gaussian filter. Cost is
+// capped at 7 fillText calls per line regardless of blur amount.
+function drawTerminalLines(g, lines, cursor, blur = 0, scale = 1) {
+  const fontSize = fitTerminalFontSize(g, lines, TERMINAL_FONT_BASE * scale);
+  ctx.font = `${fontSize}px "Press Start 2P", monospace`;
+  ctx.fillStyle = '#00ff44';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.shadowColor = '#00ff44';
+
+  const lineH = fontSize + Math.round(fontSize * 0.6);
+  const padX = Math.round(g.sw * 0.08);
+  const padY = Math.round(g.sh * 0.1);
+  const x = g.sx + padX;
+  const y = g.sy + padY;
+
+  // Hard containment guarantee: nothing (text, smear passes, bloom, cursor)
+  // can render outside the tube. The fit math above is the primary defense;
+  // this clip means even the blur passes' glow physically cannot leave the
+  // screen rect — phosphor can't escape the glass.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(g.sx, g.sy, g.sw, g.sh);
+  ctx.clip();
+
+  if (blur > 0.01) {
+    // Out-of-focus smear: dithered double-draw offsets, spread ∝ blur.
+    const spread = blur * fontSize * 0.55;
+    const OFFSETS = [
+      [-1, 0], [1, 0], [0, -0.6], [0, 0.6], [-0.7, 0.45], [0.7, -0.45],
+    ];
+    ctx.globalAlpha = 0.07 + 0.06 * (1 - blur);
+    ctx.shadowBlur = 6 + blur * 18;
+    OFFSETS.forEach(([ox, oy]) => {
+      lines.forEach((line, li) => {
+        if (!line) return;
+        ctx.fillText(line, x + ox * spread, y + li * lineH + oy * spread);
+      });
+    });
+  }
+
+  // Center pass — fades up to full strength as the blur resolves.
+  ctx.globalAlpha = 0.30 + 0.70 * (1 - blur);
+  ctx.shadowBlur = 4 + blur * 14;
+  lines.forEach((line, li) => {
+    ctx.fillText(line, x, y + li * lineH);
+  });
+
+  if (cursor && cursor.show) {
+    const lastLine = lines[lines.length - 1] || '';
+    const lastWidth = ctx.measureText(lastLine).width;
+    const cursorY = y + (lines.length - 1) * lineH;
+    ctx.fillStyle = '#00ff44';
+    fillPixelRect(x + lastWidth + 2, cursorY, Math.round(fontSize * 0.55), fontSize);
+  }
+
+  ctx.restore(); // drops the clip and restores globalAlpha/shadow state
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  ctx.textAlign = 'left';
+  return { fontSize, lineH, x, y };
+}
 
 // Precompute: per-character timing
 let termEvents = null;
@@ -349,42 +571,34 @@ function buildTermEvents() {
 
 let termClicksPlayed = new Set();
 
+// Phase 4 — "The Approach" (revised 2026-07-12): a slow dolly-in. The
+// cabinet grows from its corner-of-the-room size until it dominates the
+// frame; the terminal's green glow starts as an out-of-focus phosphor smear
+// and resolves to crisp TUI text in lockstep with the dolly (blur is a
+// function of scale — see blurForScale). Full crispness lands exactly as
+// "COME IN." completes.
 function drawPhase4(elapsed, W, H) {
   buildTermEvents();
 
-  const g = drawCabinetBase(W, H, 0.15);
+  const phaseLen = P.TERMINAL.e - P.TERMINAL.s;
+  const scale = dollyScale(elapsed / phaseLen);
+  const blur = blurForScale(scale);
+
+  const g = drawCabinetBase(W, H, 0.15, scale);
 
   // Screen background
   ctx.fillStyle = '#001200';
   fillPixelRect(g.sx, g.sy, g.sw, g.sh);
 
-  // Inner screen glow
-  ctx.globalAlpha = 0.08;
+  // Inner screen glow — stronger while unfocused (the smear IS the glow),
+  // settling as we arrive. Function of blur, hence of distance.
+  ctx.globalAlpha = 0.08 + blur * 0.07;
   ctx.fillStyle = '#00ff44';
   fillPixelRect(g.sx, g.sy, g.sw, g.sh);
   ctx.globalAlpha = 1;
 
-  // Determine what to draw
-  const fontSize = Math.max(5, Math.floor(g.sw * 0.09));
-  ctx.font = `${fontSize}px "Press Start 2P", monospace`;
-  ctx.fillStyle = '#00ff44';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.shadowColor = '#00ff44';
-  ctx.shadowBlur = 4;
-
-  const lineH = fontSize + Math.round(fontSize * 0.6);
-  const padX = Math.round(g.sw * 0.08);
-  const padY = Math.round(g.sh * 0.1);
-
-  let x = g.sx + padX;
-  let y = g.sy + padY;
-  let lineChars = '';
-
-  let lastEventIdx = -1;
   termEvents.forEach((ev, i) => {
     if (ev.ms <= elapsed) {
-      lastEventIdx = i;
       if (!termClicksPlayed.has(i) && ev.char !== null) {
         playKeyclick();
         termClicksPlayed.add(i);
@@ -403,121 +617,277 @@ function drawPhase4(elapsed, W, H) {
     }
   });
 
-  lines.forEach((line, li) => {
-    ctx.fillText(line, x, y + li * lineH);
-  });
-
-  // Blinking cursor
   const showCursor = Math.floor(elapsed / 500) % 2 === 0;
-  if (showCursor) {
-    const lastLine = lines[lines.length - 1];
-    const lastWidth = ctx.measureText(lastLine).width;
-    const cursorY = y + (lines.length - 1) * lineH;
-    ctx.fillStyle = '#00ff44';
-    fillPixelRect(x + lastWidth + 2, cursorY, Math.round(fontSize * 0.55), fontSize);
-  }
-
-  ctx.shadowBlur = 0;
-  ctx.textAlign = 'left';
+  drawTerminalLines(g, lines, { show: showCursor }, blur, scale);
 }
 
-// ─── Phase 5: Door ───────────────────────────────────────────────────────────
+// ─── Phase 5: The Secret Door ────────────────────────────────────────────────
+// (revised 2026-07-12, Trevor critique): the CABINET ITSELF hinges aside like a
+// bookcase secret passage, revealing a HIDDEN ROOM full of machines exactly
+// where it stood. The old separate back-wall door is gone — the Mystery
+// Cabinet wasn't just a computer, it was the door.
+//
+// THE SWING IS A REAL DOOR, NOT A TILT. A door hinges about a fixed VERTICAL
+// edge and stays perfectly vertical the whole time; what changes is its
+// apparent WIDTH as it turns away from the viewer's plane. We render that as
+// pure horizontal foreshortening about the hinge line — never a screen-plane
+// rotation. The hinge is the cabinet's LEFT edge (x = cx); the free right edge
+// swings toward the viewer. Every point (X,Y) maps to
+//   X' = cx + (X - cx) * cos(openAngle),   Y' = Y
+// i.e. a horizontal scale by cos(openAngle) about the vertical line x = cx.
+// A vertical line (constant X) maps to a vertical line (constant X') — so ALL
+// verticals stay exactly vertical at every open angle, by construction. The
+// terminal, painted on the cabinet's face, foreshortens with the body because
+// it rides the same single transform. drawCabinetBase / cabinetRect stay the
+// single source of geometry — foreshortening is just one more transform layered
+// over the drawn rect, plus a receding-face shade and a lit free-edge catch.
 
 let chordStarted = false;
+
+// ── The hidden room behind the cabinet ──
+// A dim room with real DEPTH: 3 depth ranks of machine silhouettes receding
+// and scaling down, each with its own small glowing screen (blues + a couple
+// ambers, a couple subtly flickering), keyboard ledges, a cartridge-shelf side
+// wall, and a floor line that spills light toward the viewer. Fixed data +
+// bounded draw cost (≤ MACHINES.length rects of work). Screen positions/tints
+// are static so the room reads the same every run; only the flicker animates.
+// rank: 0 = nearest (largest), 2 = farthest (smallest). fx/fy are fractions of
+// the doorway opening (dx,dy,dw,dh); amber flags the warm screens; flick flags
+// the ones that pulse.
+const ROOM_MACHINES = [
+  // Back rank (rank 2) — far wall, small, mostly cool blue
+  { rank: 2, fx: 0.30, fy: 0.30, fw: 0.11, amber: false, flick: false, tint: '#2a5088' },
+  { rank: 2, fx: 0.46, fy: 0.29, fw: 0.11, amber: true,  flick: true,  tint: '#b07820' },
+  { rank: 2, fx: 0.62, fy: 0.30, fw: 0.11, amber: false, flick: false, tint: '#3560a0' },
+  // Middle rank (rank 1)
+  { rank: 1, fx: 0.16, fy: 0.42, fw: 0.17, amber: false, flick: true,  tint: '#3a6cc0' },
+  { rank: 1, fx: 0.62, fy: 0.43, fw: 0.17, amber: false, flick: false, tint: '#2f5fb0' },
+  // Front rank (rank 0) — nearest the doorway, largest, one warm amber CRT
+  { rank: 0, fx: 0.06, fy: 0.56, fw: 0.24, amber: true,  flick: false, tint: '#c88a28' },
+  { rank: 0, fx: 0.70, fy: 0.57, fw: 0.24, amber: false, flick: true,  tint: '#4d84e0' },
+];
+
+// Draw the hidden room INTO the doorway opening (dx,dy,dw,dh). `reveal` 0..1
+// blooms the room in; `t` (phase seconds) drives the subtle screen flicker.
+// Everything is clipped to the opening so nothing spills onto the cabinet/wall.
+function drawHiddenRoom(dx, dy, dw, dh, reveal, t) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(dx, dy, dw, dh);
+  ctx.clip();
+
+  // Deep room backdrop: dark, cooling from a faint warm top to near-black
+  // floor — gives the room air behind the machines.
+  const back = ctx.createLinearGradient(0, dy, 0, dy + dh);
+  back.addColorStop(0, '#141018');
+  back.addColorStop(0.55, '#0c0a12');
+  back.addColorStop(1, '#060509');
+  ctx.fillStyle = back;
+  fillPixelRect(dx, dy, dw, dh);
+
+  // Perspective floor: a lighter wedge widening toward the viewer (bottom),
+  // with a bright floor line where wall meets floor and light spilling down.
+  const floorY = dy + Math.round(dh * 0.72);
+  ctx.globalAlpha = reveal;
+  // far (back) wall base — the horizon line, brightest catch of spill
+  const floorGrad = ctx.createLinearGradient(0, floorY, 0, dy + dh);
+  floorGrad.addColorStop(0, 'rgba(120, 96, 60, 0.55)');
+  floorGrad.addColorStop(1, 'rgba(30, 26, 20, 0.15)');
+  ctx.fillStyle = floorGrad;
+  fillPixelRect(dx, floorY, dw, dy + dh - floorY);
+  // horizon light line
+  ctx.fillStyle = `rgba(210, 180, 120, ${0.5 * reveal})`;
+  fillPixelRect(dx, floorY, dw, Math.max(1, Math.round(dh * 0.006)));
+  ctx.globalAlpha = 1;
+
+  // Left side wall: a cartridge-shelf strip (receding lines + colored spines).
+  ctx.globalAlpha = reveal * 0.9;
+  const wallW = Math.round(dw * 0.10);
+  ctx.fillStyle = '#181420';
+  fillPixelRect(dx, dy, wallW, floorY - dy);
+  const spineColors = ['#b03018', '#2a8030', '#c0a018', '#3050b0', '#a02890'];
+  for (let s = 0; s < 4; s++) {
+    const shelfY = dy + Math.round(dh * (0.16 + s * 0.13));
+    ctx.fillStyle = '#0d0b12';
+    fillPixelRect(dx + 1, shelfY, wallW - 2, Math.max(1, Math.round(dh * 0.008)));
+    // a few cartridge spines on the shelf
+    for (let k = 0; k < 4; k++) {
+      ctx.fillStyle = spineColors[(s + k) % spineColors.length];
+      fillPixelRect(
+        dx + 2 + k * Math.round((wallW - 4) / 4),
+        shelfY - Math.round(dh * 0.03),
+        Math.max(1, Math.round((wallW - 4) / 4) - 1),
+        Math.round(dh * 0.03)
+      );
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // Machines, drawn far rank first so nearer ones occlude.
+  const ranks = [2, 1, 0];
+  ranks.forEach(r => {
+    ROOM_MACHINES.filter(m => m.rank === r).forEach((m, idx) => {
+      const mrev = clamp01((reveal - 0.15 - r * 0.12) / 0.5);
+      if (mrev <= 0) return;
+      ctx.globalAlpha = mrev;
+
+      const mw = Math.round(dw * m.fw);
+      const mh = Math.round(mw * 1.35);           // machine taller than wide
+      const mx = dx + Math.round(dw * m.fx);
+      const my = dy + Math.round(dh * m.fy);
+
+      // Machine body silhouette — darker with depth
+      const bodyShade = ['#1c1824', '#151220', '#100e18'][r];
+      ctx.fillStyle = bodyShade;
+      fillPixelRect(mx, my, mw, mh);
+
+      // Screen: small, glowing, its own tint. A couple flicker subtly.
+      const flick = m.flick ? (0.72 + 0.28 * (0.5 + 0.5 * Math.sin(t * 7 + idx * 2 + r))) : 1;
+      const sw = Math.round(mw * 0.66);
+      const sh = Math.round(mh * 0.42);
+      const ssx = mx + Math.round((mw - sw) / 2);
+      const ssy = my + Math.round(mh * 0.12);
+      // screen glow halo
+      ctx.save();
+      ctx.shadowColor = m.tint;
+      ctx.shadowBlur = Math.round(mw * 0.5) * flick;
+      ctx.fillStyle = m.tint;
+      ctx.globalAlpha = mrev * flick;
+      fillPixelRect(ssx, ssy, sw, sh);
+      ctx.restore();
+      // brighter inner core
+      ctx.globalAlpha = mrev * flick;
+      ctx.fillStyle = m.amber ? '#ffd070' : '#a8d0ff';
+      fillPixelRect(ssx + Math.round(sw * 0.12), ssy + Math.round(sh * 0.14),
+        Math.round(sw * 0.76), Math.round(sh * 0.5));
+
+      // Keyboard ledge catching light, below the screen
+      ctx.globalAlpha = mrev;
+      ctx.fillStyle = '#2a2634';
+      fillPixelRect(mx - Math.round(mw * 0.06), my + Math.round(mh * 0.62),
+        Math.round(mw * 1.12), Math.round(mh * 0.09));
+      ctx.fillStyle = 'rgba(200,190,170,0.35)';
+      fillPixelRect(mx - Math.round(mw * 0.06), my + Math.round(mh * 0.62),
+        Math.round(mw * 1.12), Math.max(1, Math.round(mh * 0.02)));
+      ctx.globalAlpha = 1;
+    });
+  });
+
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
 
 function drawPhase5(t, W, H) {
   if (!chordStarted) {
     startChord();
     stopCRTHum();
+    playHingeSlide();
     chordStarted = true;
   }
 
-  const g = drawCabinetBase(W, H, 0.1);
+  // The dolly finished at MAX_SCALE; the whole phase composes at that scale.
+  // gHome is where the cabinet STOOD — the doorway lives exactly there.
+  const gHome = cabinetRect(W, H, DOLLY.MAX_SCALE);
 
-  // Draw terminal in stable state (all text visible)
-  ctx.fillStyle = '#001200';
-  fillPixelRect(g.sx, g.sy, g.sw, g.sh);
+  // Door-open ease: a slow heavy start that settles WELL before the phase
+  // ends, so the fully-revealed room gets a held beat (spec: the door opens,
+  // then we linger on the passage). Reaches full-open at t≈0.70.
+  const ease = smoothstep((t - 0.05) / 0.65);
 
-  const fontSize = Math.max(5, Math.floor(g.sw * 0.09));
-  ctx.font = `${fontSize}px "Press Start 2P", monospace`;
-  ctx.fillStyle = '#00ff44';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.shadowColor = '#00ff44';
-  ctx.shadowBlur = 4;
-  const lineH = fontSize + Math.round(fontSize * 0.6);
-  const padX = Math.round(g.sw * 0.08);
-  const padY = Math.round(g.sh * 0.1);
-  const finalLines = ['HELLO.', '', 'YOU FOUND ME.', '', 'COME IN.'];
-  finalLines.forEach((line, li) => {
-    ctx.fillText(line, g.sx + padX, g.sy + padY + li * lineH);
-  });
-  ctx.shadowBlur = 0;
+  // Soft ambient glow around the scene.
+  const amb = ctx.createRadialGradient(
+    W / 2, gHome.cy + gHome.ch * 0.5, 0,
+    W / 2, gHome.cy + gHome.ch * 0.5, gHome.cw * 1.4
+  );
+  amb.addColorStop(0, 'rgba(180, 120, 40, 0.08)');
+  amb.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = amb;
+  ctx.fillRect(0, 0, W, H);
 
-  // Door: appears in the wall to the right of the cabinet
-  const doorEase = t < 0.3 ? 0 : Math.min(1, ((t - 0.3) / 0.7) ** 0.5);
-  const doorW = Math.round(g.cw * 0.7);
-  const doorH = Math.round(g.ch * 0.65);
-  const doorX = g.cx + g.cw + Math.round(W * 0.05);
-  const doorY = g.cy + Math.round(g.ch * 0.2);
+  // ── The doorway, exactly where the cabinet stood ──
+  // The opening is the full footprint the cabinet occupied — as the cabinet
+  // foreshortens toward its hinge, it uncovers this doorway rightward. Drawn
+  // FIRST so the ajar cabinet occludes the still-covered part (the reveal is
+  // the cabinet actually turning, not a fade).
+  const dx = gHome.cx;
+  const dw = gHome.cw;
+  const dh = gHome.ch;
+  const dy = gHome.cy;
 
-  // Door frame (stone/wall)
+  // Frame (stone/wall) around the opening
   ctx.fillStyle = '#151515';
-  fillPixelRect(doorX - 3, doorY - 3, doorW + 6, doorH + 3);
-  ctx.fillStyle = '#0f0f0f';
-  fillPixelRect(doorX, doorY, doorW, doorH);
+  fillPixelRect(dx - 6, dy - 6, dw + 12, dh + 8);
 
-  // Light flooding through — NES-palette warmth visible
-  if (doorEase > 0) {
-    const openW = Math.round(doorW * doorEase);
+  // The hidden room, blooming in as the door opens.
+  drawHiddenRoom(dx, dy, dw, dh, ease, t);
 
-    // Warm amber/blue light from Computer Wing beyond
-    const lightGrad = ctx.createLinearGradient(doorX, 0, doorX + openW, 0);
-    lightGrad.addColorStop(0, `rgba(255, 200, 100, ${doorEase * 0.9})`);
-    lightGrad.addColorStop(0.3, `rgba(200, 160, 80, ${doorEase * 0.7})`);
-    lightGrad.addColorStop(0.7, `rgba(80, 140, 200, ${doorEase * 0.5})`);
-    lightGrad.addColorStop(1, `rgba(20, 80, 160, ${doorEase * 0.3})`);
-    ctx.fillStyle = lightGrad;
-    fillPixelRect(doorX, doorY, openW, doorH);
-
-    // Glimpse of computer equipment beyond — pixel art silhouettes
-    if (doorEase > 0.4) {
-      ctx.globalAlpha = (doorEase - 0.4) / 0.6;
-      // Monitor shape
-      ctx.fillStyle = '#2244aa';
-      fillPixelRect(doorX + 4, doorY + Math.round(doorH * 0.2), Math.round(doorW * 0.3), Math.round(doorH * 0.35));
-      ctx.fillStyle = '#4488ff';
-      fillPixelRect(doorX + 6, doorY + Math.round(doorH * 0.22), Math.round(doorW * 0.26), Math.round(doorH * 0.28));
-      // Keyboard silhouette
-      ctx.fillStyle = '#1a1a2a';
-      fillPixelRect(doorX + 4, doorY + Math.round(doorH * 0.6), Math.round(doorW * 0.35), Math.round(doorH * 0.08));
-      // Cartridge shelf
-      ctx.fillStyle = '#cc2200';
-      fillPixelRect(doorX + 6, doorY + Math.round(doorH * 0.15), 4, Math.round(doorH * 0.06));
-      ctx.fillStyle = '#00aa22';
-      fillPixelRect(doorX + 12, doorY + Math.round(doorH * 0.15), 4, Math.round(doorH * 0.06));
-      ctx.fillStyle = '#ccaa00';
-      fillPixelRect(doorX + 18, doorY + Math.round(doorH * 0.15), 4, Math.round(doorH * 0.06));
-      ctx.globalAlpha = 1;
-    }
-
-    // Light spill into arcade floor
-    ctx.globalAlpha = doorEase * 0.15;
+  // Warm-to-cool light spilling out of the opening onto the arcade floor.
+  if (ease > 0.02) {
+    ctx.globalAlpha = ease * 0.22;
     const spill = ctx.createRadialGradient(
-      doorX + openW / 2, doorY + doorH, 0,
-      doorX + openW / 2, doorY + doorH, g.cw * 1.5
+      dx + dw * 0.6, dy + dh, 0,
+      dx + dw * 0.6, dy + dh, gHome.cw * 1.3
     );
     spill.addColorStop(0, '#ffcc66');
+    spill.addColorStop(0.5, 'rgba(180,150,90,0.5)');
     spill.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = spill;
-    ctx.fillRect(0, doorY + doorH, W, H - (doorY + doorH));
+    ctx.fillRect(0, dy + dh, W, H - (dy + dh));
     ctx.globalAlpha = 1;
   }
 
-  // Door frame edge (pixel border)
-  ctx.strokeStyle = '#333';
+  // Doorway frame edge (pixel border)
+  ctx.strokeStyle = '#2a2a2a';
   ctx.lineWidth = 2;
-  ctx.strokeRect(doorX - 1, doorY - 1, doorW + 2, doorH + 2);
+  ctx.strokeRect(dx - 3, dy - 3, dw + 6, dh + 6);
+
+  // ── The cabinet, hinging aside like a door ──
+  // Pure horizontal foreshortening about the LEFT edge (the hinge). The free
+  // right edge swings toward the viewer; drawn width compresses by cos(angle).
+  // NO screen-plane rotation — a horizontal scale about x = cx keeps every
+  // vertical vertical. openAngle grows to ~72° so the door is well ajar and
+  // most of the room is revealed, while the ajar face (with its lit terminal)
+  // stays readable at frame left.
+  const openAngle = ease * (74 * Math.PI / 180);
+  const cos = Math.cos(openAngle);
+  const hinge = gHome.cx;                 // hinge line (left edge)
+
+  ctx.save();
+  // Horizontal scale by `cos` about the vertical hinge line x = hinge.
+  ctx.translate(hinge, 0);
+  ctx.scale(cos, 1);
+  ctx.translate(-hinge, 0);
+
+  drawCabinetBase(W, H, 0, DOLLY.MAX_SCALE);
+
+  // Terminal stays lit and crisp on the ajar face (blur 0 — already arrived).
+  ctx.fillStyle = '#001200';
+  fillPixelRect(gHome.sx, gHome.sy, gHome.sw, gHome.sh);
+  const finalLines = ['HELLO.', '', 'YOU FOUND ME.', '', 'COME IN.'];
+  drawTerminalLines(gHome, finalLines, { show: false }, 0, DOLLY.MAX_SCALE);
+
+  ctx.restore();
+
+  // ── Face shading, drawn in SCREEN space over the foreshortened cabinet ──
+  // The receding face darkens toward the free (right) edge; a bright catch
+  // rides the very free edge — reading the turn as light, not geometry.
+  // Compute the current on-screen span of the cabinet body.
+  const bodyLeft = hinge;
+  const bodyRight = hinge + gHome.cw * cos;
+  if (ease > 0.02 && bodyRight - bodyLeft > 2) {
+    // Receding-face shade: transparent at hinge, darkening toward free edge.
+    const shade = ctx.createLinearGradient(bodyLeft, 0, bodyRight, 0);
+    shade.addColorStop(0, 'rgba(0,0,0,0)');
+    shade.addColorStop(1, `rgba(0,0,0,${0.35 * ease})`);
+    ctx.fillStyle = shade;
+    fillPixelRect(bodyLeft, gHome.cy, bodyRight - bodyLeft, gHome.ch);
+
+    // Free-edge brightness catch — a thin lit strip on the leading edge.
+    ctx.globalAlpha = ease;
+    ctx.fillStyle = 'rgba(255, 226, 170, 0.5)';
+    fillPixelRect(bodyRight - 3, gHome.cy + 6, 3, gHome.ch - 12);
+    ctx.globalAlpha = 1;
+  }
 }
 
 // ─── Phase 6: Title Card ──────────────────────────────────────────────────────
@@ -581,7 +951,16 @@ function render(now) {
   // Phase transition side effects
   if (phase !== lastPhase) {
     if (phase === 1) startCRTHum();
-    if (phase === 3) bootBeepsPlayed = false; // reset so it plays once
+    if (phase === 2) bootBeepsPlayed = false; // reset so it plays once
+    if (phase === 3 && crtHumNode) {
+      // The Approach: the hum of the screen grows slightly louder as we
+      // close the distance (spec audio note). One scheduled ramp across the
+      // 12s dolly — no per-frame audio writes.
+      const c = getAudioCtx();
+      crtHumNode.gain.gain.linearRampToValueAtTime(
+        0.05, c.currentTime + (P.TERMINAL.e - P.TERMINAL.s) / 1000
+      );
+    }
     lastPhase = phase;
   }
 
@@ -617,6 +996,10 @@ export function start(callback) {
   bootBeepsPlayed  = false;
   chordStarted     = false;
 
+  // Defensively hide any visible title/game DOM so it can never bleed through
+  // on top of the cinematic canvas. Restored in stop().
+  hideAllScreens();
+
   startTime = performance.now();
   animId    = requestAnimationFrame(render);
 }
@@ -648,6 +1031,11 @@ export function stop() {
   stopCRTHum();
   stopChord();
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Restore whatever screen visibility we changed. When stop() is followed by
+  // the completion callback (confirm -> onDone -> showScreen), showScreen
+  // re-hides all screens synchronously in the same task, so the correct
+  // next-screen state is what actually paints — no title flash.
+  restoreHiddenScreens();
 }
 
 window.addEventListener('resize', () => {

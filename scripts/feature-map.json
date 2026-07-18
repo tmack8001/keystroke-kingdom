@@ -1,0 +1,285 @@
+{
+  "_comment": "GENERATED ARTIFACT of the source graph (Trevor's 'code-llmwiki'): the canonical source of truth is the YAML frontmatter of docs/features/*.md (code/screenshots/capture/rules fields) \u2014 edit THOSE pages, then have the content-librarian regenerate this JSON for hook/jq consumption. Consumed by .claude/agents/content-librarian.md and the doc-currency Stop hook. Two sections: `features` (first matching pattern wins; patterns are prefixes evaluated against repo-relative paths) and `themes` (per-theme-file minimal-blast-radius map: each theme's ONE level screenshot + the research/wiki page that grounds its mechanics \u2014 consult this for js/themes/*.js changes instead of the coarse js/themes/ catch-all in features). Regenerated 2026-07-12 (FEATURE scope: EXPERIENCE win-ratio, the Name Moment, local-LLM wordgen) \u2014 added the new wordgen page (main.go, js/wordgen.js); supersedes the 2026-07-12 inaugural LIBRARY build. 2026-07-13: added the `themes` per-file screenshot+research map (Trevor). 2026-07-14: added docs/features/text-worlds.md (Act 6 \u2014 all 5 worlds, feature scope) covering js/textworld/* + js/chat.js; also corrected the js/themes/ entry's stale `.claude/rules/act5-full-circle.md` rules reference (that file was consolidated into `.claude/rules/levels/act5.md` on 2026-07-12 \u2014 level-themes.md's own frontmatter already reflected this, this JSON had drifted) to match. SCHEMA LIMITATION surfaced by this change: `main.go` is now genuinely documented by TWO pages (wordgen.md's /api/wordgen* section, text-worlds.md's /api/chat section) but this schema's `features` array supports only one doc per pattern \u2014 kept routed to wordgen.md (the earlier, larger claim); text-worlds.md still lists main.go in its own `code:` frontmatter for accuracy. A main.go change should prompt checking BOTH docs until/unless this schema grows multi-doc-per-pattern support.",
+  "features": [
+    {
+      "pattern": "js/audio.js",
+      "feature": "audio",
+      "doc": "docs/features/audio.md",
+      "rules": [
+        ".claude/rules/tech.md"
+      ],
+      "screenshots": null,
+      "capture": null
+    },
+    {
+      "pattern": "js/mystery.js",
+      "feature": "cinematics",
+      "doc": "docs/features/cinematics.md",
+      "rules": [
+        ".claude/rules/transitions.md"
+      ],
+      "screenshots": "docs/screenshots/cinematics/",
+      "capture": "node docs/screenshots/capture-cinematics.js && node docs/screenshots/capture-fullcircle.js"
+    },
+    {
+      "pattern": "js/basement.js",
+      "feature": "cinematics",
+      "doc": "docs/features/cinematics.md",
+      "rules": [
+        ".claude/rules/transitions.md"
+      ],
+      "screenshots": "docs/screenshots/cinematics/",
+      "capture": "node docs/screenshots/capture-cinematics.js && node docs/screenshots/capture-fullcircle.js"
+    },
+    {
+      "pattern": "js/commandcenter.js",
+      "feature": "cinematics",
+      "doc": "docs/features/cinematics.md",
+      "rules": [
+        ".claude/rules/transitions.md"
+      ],
+      "screenshots": "docs/screenshots/cinematics/",
+      "capture": "node docs/screenshots/capture-cinematics.js && node docs/screenshots/capture-fullcircle.js"
+    },
+    {
+      "pattern": "js/fullcircle.js",
+      "feature": "cinematics",
+      "doc": "docs/features/cinematics.md",
+      "rules": [
+        ".claude/rules/transitions.md"
+      ],
+      "screenshots": "docs/screenshots/cinematics/",
+      "capture": "node docs/screenshots/capture-cinematics.js && node docs/screenshots/capture-fullcircle.js"
+    },
+    {
+      "pattern": "js/levels.js",
+      "feature": "curriculum-data",
+      "doc": "docs/features/curriculum-data.md",
+      "rules": [
+        ".claude/rules/levels.md",
+        ".claude/rules/levels/act5.md"
+      ],
+      "screenshots": "docs/screenshots/levels/",
+      "capture": "node docs/screenshots/capture-all.js"
+    },
+    {
+      "pattern": "js/themes/terminal.js",
+      "feature": "easter-eggs",
+      "doc": "docs/features/easter-eggs.md",
+      "rules": [
+        ".claude/rules/easter-eggs.md"
+      ],
+      "screenshots": "docs/screenshots/easter-eggs/",
+      "capture": "node docs/screenshots/capture-eggs.js"
+    },
+    {
+      "pattern": "js/main.js",
+      "feature": "engine-flow",
+      "doc": "docs/features/engine-flow.md",
+      "rules": [
+        ".claude/rules/tech.md",
+        ".claude/rules/security.md",
+        ".claude/rules/easter-eggs.md"
+      ],
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js"
+    },
+    {
+      "pattern": "index.html",
+      "feature": "engine-flow",
+      "doc": "docs/features/engine-flow.md",
+      "rules": [
+        ".claude/rules/tech.md",
+        ".claude/rules/security.md",
+        ".claude/rules/easter-eggs.md"
+      ],
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js"
+    },
+    {
+      "pattern": "main.go",
+      "feature": "wordgen",
+      "doc": "docs/features/wordgen.md",
+      "rules": [
+        ".claude/rules/security.md"
+      ],
+      "screenshots": null,
+      "capture": null
+    },
+    {
+      "pattern": "js/wordgen.js",
+      "feature": "wordgen",
+      "doc": "docs/features/wordgen.md",
+      "rules": [
+        ".claude/rules/security.md"
+      ],
+      "screenshots": null,
+      "capture": null
+    },
+    {
+      "pattern": "js/freeplay.js",
+      "feature": "free-play",
+      "doc": "docs/features/free-play.md",
+      "rules": [
+        ".claude/rules/product.md"
+      ],
+      "screenshots": "docs/screenshots/freeplay/",
+      "capture": "node docs/screenshots/capture-freeplay.js"
+    },
+    {
+      "pattern": "js/history-cards.js",
+      "feature": "history-cards",
+      "doc": "docs/features/history-cards.md",
+      "rules": [
+        "research/computing-history-moments.md"
+      ],
+      "screenshots": "docs/screenshots/history-cards/",
+      "capture": "node docs/screenshots/capture-cards.js"
+    },
+    {
+      "pattern": "js/ui/hud.js",
+      "feature": "hud-keyboard-guide",
+      "doc": "docs/features/hud-keyboard-guide.md",
+      "rules": [
+        ".claude/rules/visual-validation.md"
+      ],
+      "screenshots": "docs/screenshots/levels/",
+      "capture": "node docs/screenshots/capture-all.js"
+    },
+    {
+      "pattern": "js/ui/keyboard-preview.js",
+      "feature": "keyboard-preview",
+      "doc": "docs/features/keyboard-preview.md",
+      "rules": [
+        ".claude/rules/visual-validation.md"
+      ],
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js"
+    },
+    {
+      "pattern": "js/ui/screens.js",
+      "feature": "onboarding-continue",
+      "doc": "docs/features/onboarding-continue.md",
+      "rules": [
+        ".claude/rules/levels.md",
+        ".claude/rules/transitions.md"
+      ],
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js"
+    },
+    {
+      "pattern": "js/ui/cabinet-art.js",
+      "feature": "select-screen",
+      "doc": "docs/features/select-screen.md",
+      "rules": [
+        ".claude/rules/levels.md"
+      ],
+      "screenshots": "docs/screenshots/acts/",
+      "capture": "node docs/screenshots/capture-all.js"
+    },
+    {
+      "pattern": "js/settings.js",
+      "feature": "settings-survival",
+      "doc": "docs/features/settings-survival.md",
+      "rules": [
+        ".claude/rules/product.md"
+      ],
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js"
+    },
+    {
+      "pattern": "css/base.css",
+      "feature": "visual-styling",
+      "doc": "docs/features/visual-styling.md",
+      "rules": [
+        ".claude/rules/visual-validation.md"
+      ],
+      "screenshots": "docs/screenshots/levels/",
+      "capture": "node docs/screenshots/capture-all.js"
+    },
+    {
+      "pattern": "css/screens.css",
+      "feature": "visual-styling",
+      "doc": "docs/features/visual-styling.md",
+      "rules": [
+        ".claude/rules/visual-validation.md"
+      ],
+      "screenshots": "docs/screenshots/levels/",
+      "capture": "node docs/screenshots/capture-all.js"
+    },
+    {
+      "pattern": "css/levels.css",
+      "feature": "visual-styling",
+      "doc": "docs/features/visual-styling.md",
+      "rules": [
+        ".claude/rules/visual-validation.md"
+      ],
+      "screenshots": "docs/screenshots/levels/",
+      "capture": "node docs/screenshots/capture-all.js"
+    },
+    {
+      "pattern": "js/themes/",
+      "feature": "level-themes",
+      "doc": "docs/features/level-themes.md",
+      "rules": [
+        ".claude/rules/theme-authoring.md",
+        ".claude/rules/levels.md",
+        ".claude/rules/levels/act5.md"
+      ],
+      "screenshots": "docs/screenshots/levels/",
+      "capture": "node docs/screenshots/capture-all.js"
+    },
+    {
+      "pattern": "js/chat.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    }
+  ],
+  "themes": {
+    "_comment": "Per-theme minimal-blast-radius map (Trevor, 2026-07-13). Each js/themes/*.js file resolves to its ONE level screenshot (regenerate with `capture`, not the all-levels catch-all above) and the research/wiki page that GROUNDS its signature mechanic (theme-authoring.md's wiki-fidelity rule: the scene must show the original game's real play, judged against this page, never model memory). When a theme file changes, refresh its `screenshot` and re-check the theme against its `research` page. Every theme also carries rules .claude/rules/theme-authoring.md + its act file (see levels.md). `research: null` = not a game with a wiki page (terminal/high-score/word-processor) OR a known research gap (see notes). Source of truth: docs/features/level-themes.md frontmatter; keep both in sync. Keyed by theme file; the `js/themes/` entry in `features` remains the coarse fallback.",
+    "js/themes/breakout.js":       { "level": 1,  "screenshot": "docs/screenshots/levels/act1-arcade/01-breakout.png",              "capture": "node docs/screenshots/capture-all.js 1",  "research": "research/wiki/games/breakout.md" },
+    "js/themes/invaders.js":       { "level": 2,  "screenshot": "docs/screenshots/levels/act1-arcade/02-space-invaders.png",        "capture": "node docs/screenshots/capture-all.js 2",  "research": "research/wiki/games/space-invaders.md" },
+    "js/themes/pacman.js":         { "level": 3,  "screenshot": "docs/screenshots/levels/act1-arcade/03-pac-man.png",               "capture": "node docs/screenshots/capture-all.js 3",  "research": "research/wiki/games/pac-man.md" },
+    "js/themes/fighter.js":        { "level": 4,  "screenshot": "docs/screenshots/levels/act1-arcade/04-galaga.png",                "capture": "node docs/screenshots/capture-all.js 4",  "research": "research/wiki/games/galaga.md" },
+    "js/themes/joust.js":          { "level": 5,  "screenshot": "docs/screenshots/levels/act1-arcade/05-joust.png",                 "capture": "node docs/screenshots/capture-all.js 5",  "research": "research/wiki/games/joust.md" },
+    "js/themes/donkeykong.js":     { "level": 6,  "screenshot": "docs/screenshots/levels/act2-computer-wing/06-donkey-kong.png",    "capture": "node docs/screenshots/capture-all.js 6",  "research": "research/wiki/games/donkey-kong.md" },
+    "js/themes/dragonlair.js":     { "level": 7,  "screenshot": "docs/screenshots/levels/act2-computer-wing/07-dragons-lair.png",   "capture": "node docs/screenshots/capture-all.js 7",  "research": "research/wiki/games/dragons-lair.md" },
+    "js/themes/tetris.js":         { "level": 8,  "screenshot": "docs/screenshots/levels/act2-computer-wing/08-tetris.png",         "capture": "node docs/screenshots/capture-all.js 8",  "research": "research/wiki/games/tetris.md" },
+    "js/themes/mario.js":          { "level": 9,  "screenshot": "docs/screenshots/levels/act2-computer-wing/09-super-mario-bros.png","capture": "node docs/screenshots/capture-all.js 9",  "research": "research/wiki/games/super-mario-bros.md" },
+    "js/themes/zelda.js":          { "level": 10, "screenshot": "docs/screenshots/levels/act2-computer-wing/10-legend-of-zelda.png", "capture": "node docs/screenshots/capture-all.js 10", "research": "research/wiki/games/legend-of-zelda.md" },
+    "js/themes/sonic.js":          { "level": 11, "screenshot": "docs/screenshots/levels/act3-basement/11-sonic.png",               "capture": "node docs/screenshots/capture-all.js 11", "research": "research/wiki/games/sonic-the-hedgehog.md" },
+    "js/themes/streetfighter.js":  { "level": 12, "screenshot": "docs/screenshots/levels/act3-basement/12-street-fighter-ii.png",   "capture": "node docs/screenshots/capture-all.js 12", "research": "research/wiki/games/street-fighter-ii.md" },
+    "js/themes/myst.js":           { "level": 13, "screenshot": "docs/screenshots/levels/act3-basement/13-myst.png",                "capture": "node docs/screenshots/capture-all.js 13", "research": "research/wiki/games/myst.md" },
+    "js/themes/dkc.js":            { "level": 14, "screenshot": "docs/screenshots/levels/act3-basement/14-donkey-kong-country.png",  "capture": "node docs/screenshots/capture-all.js 14", "research": "research/wiki/games/donkey-kong-country.md" },
+    "js/themes/pokemon.js":        { "level": 15, "screenshot": "docs/screenshots/levels/act3-basement/15-pokemon.png",             "capture": "node docs/screenshots/capture-all.js 15", "research": "research/wiki/games/pokemon-red-blue.md" },
+    "js/themes/simcity.js":        { "level": 16, "screenshot": "docs/screenshots/levels/act4-command-center/16-simcity-2000.png",   "capture": "node docs/screenshots/capture-all.js 16", "research": "research/wiki/games/simcity-2000.md" },
+    "js/themes/goldeneye.js":      { "level": 17, "screenshot": "docs/screenshots/levels/act4-command-center/17-goldeneye-007.png",  "capture": "node docs/screenshots/capture-all.js 17", "research": "research/wiki/games/goldeneye-007.md" },
+    "js/themes/ageofempires.js":   { "level": 18, "screenshot": "docs/screenshots/levels/act4-command-center/18-age-of-empires.png", "capture": "node docs/screenshots/capture-all.js 18", "research": "research/wiki/games/age-of-empires.md" },
+    "js/themes/ff7.js":            { "level": 19, "screenshot": "docs/screenshots/levels/act4-command-center/19-final-fantasy-vii.png","capture": "node docs/screenshots/capture-all.js 19", "research": "research/wiki/games/final-fantasy-vii.md" },
+    "js/themes/terminal.js":       { "level": 20, "screenshot": "docs/screenshots/levels/act4-command-center/20-terminal.png",       "capture": "node docs/screenshots/capture-all.js 20", "research": null, "note": "Command line, not a game — no wiki page. Primary feature is easter-eggs (see features[]); this entry only maps its level screenshot." },
+    "js/themes/outrun.js":         { "level": 21, "screenshot": "docs/screenshots/levels/act5-full-circle/21-out-run.png",           "capture": "node docs/screenshots/capture-all.js 21", "research": "research/wiki/games/out-run.md" },
+    "js/themes/qbert.js":          { "level": 22, "screenshot": "docs/screenshots/levels/act5-full-circle/22-qbert.png",             "capture": "node docs/screenshots/capture-all.js 22", "research": "research/wiki/games/q-bert.md" },
+    "js/themes/missilecommand.js": { "level": 23, "screenshot": "docs/screenshots/levels/act5-full-circle/23-missile-command.png",   "capture": "node docs/screenshots/capture-all.js 23", "research": null, "note": "RESEARCH GAP: no research/wiki/games/missile-command.md yet — arcade-historian follow-up (theme-authoring.md: under-documented mechanics is a research task, not a license to improvise)." },
+    "js/themes/highscore.js":      { "level": 24, "screenshot": "docs/screenshots/levels/act5-full-circle/24-high-score-entry.png",  "capture": "node docs/screenshots/capture-all.js 24", "research": null, "note": "High-score entry (player types their own name) — not a game." },
+    "js/themes/wordprocessor.js":  { "level": 25, "screenshot": "docs/screenshots/levels/act5-full-circle/25-word-processor.png",   "capture": "node docs/screenshots/capture-all.js 25", "research": null, "note": "Word processor (first sentences) — not a game." }
+  }
+}

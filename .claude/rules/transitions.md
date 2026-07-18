@@ -61,8 +61,8 @@ PRESS [RETURN] TO CONTINUE
 - The input field shows "PLAYER ONE" pre-filled, dimmed — selected and ready to be overwritten
 - Any key press clears the default and starts typing fresh
 - Backspace works normally
-- Space and Return both confirm
-- Name is capped at 12 characters (arcade high score convention — feels right, not arbitrary)
+- Space types a literal space — names can be two words, like the default PLAYER ONE itself. Only Return confirms *(revised 2026-07-13, Trevor: "we need to support spaces due to 'Player One' being the default")*. This is the ONE screen where Space doesn't confirm: everywhere else in the game (title, ready, continue, level-flow screens) Space remains the primary quick-advance/confirm key on purpose — *"unlike enter/return the spacebar is where the thumbs rest continually, making it quick to advance"* (Trevor, 2026-07-13). Name entry is the deliberate exception because Space is itself typeable content there.
+- Name is capped at 16 characters (arcade high score convention — roomy enough for two-word names like the default) *(revised 2026-07-13, Trevor: "16 characters should be the largest word limit")*
 - No validation. Any characters accepted. If they type nothing and hit Return, "PLAYER ONE" is kept.
 - Name is saved to localStorage immediately on confirm
 
@@ -136,9 +136,14 @@ The velvet curtain falls. Simple pixel animation — the weight of fabric, the s
 
 ---
 
-### Phase 4 — The Terminal (12s)
+### Phase 4 — The Approach (12s)  *(revised 2026-07-12, Trevor)*
 
-A cursor blinks on the screen inside the cabinet. The same pixel font the game uses everywhere. Then text begins typing itself, one character at a time — using the game's own keyclick sound, as if the computer is typing to the player:
+The camera walks toward the cabinet — a slow, steady dolly-in. The cabinet grows from
+its corner-of-the-room size until it dominates the frame. On its screen, green text is
+already glowing — but at this distance it's a soft, fuzzy blur, an out-of-focus CRT
+phosphor smear. As the player draws closer, the blur resolves: bloom tightens, scanlines
+sharpen, and the smear becomes crisp green TUI text — the terminal typing one character
+at a time with the game's own keyclick sound, as if the computer is typing to the player:
 
 ```
 HELLO.
@@ -148,19 +153,32 @@ YOU FOUND ME.
 COME IN.
 ```
 
-Each line appears, pauses, then the next begins. No music. Just the keyclick of each letter and the hum of the screen.
+Each line appears, pauses, then the next begins. No music. Just the keyclick of each
+letter and the hum of the screen, growing slightly louder as we close the distance.
+The text reaches full crispness exactly as `COME IN.` completes — the invitation lands
+at the moment we arrive.
 
 *Design note:* "HELLO" here is intentional. It will echo again at Level 20, when the player types `01001000...` and the binary resolves to `H E L L O`. The first and last moments of the game are the same word — once the computer says it, once the player earns it.
 
+*Design note 2:* The fuzzy-to-crisp resolve is the walking-up made visible — distance
+rendered as focus. It also mirrors the game's whole thesis: the closer you get to the
+machine, the more legible it becomes.
+
 ---
 
-### Phase 5 — The Door (8s)
+### Phase 5 — The Secret Door (8s)  *(revised 2026-07-12, Trevor)*
 
-A door appears in the back wall of the arcade — in a place that was always dark, always background. It opens inward. Light spills through: warm amber and blue-white, the glow of many different screens from many different eras.
+Then the cabinet moves. Not the wall — the cabinet itself. It hinges aside slowly, like
+a bookcase in an old mystery — the secret passage trope, earned by typing. Behind where
+it stood: a doorway that was always there, hidden behind the one machine nobody could
+play. Light spills out: warm amber and blue-white, the glow of many different screens
+from many different eras.
 
 The Computer Wing is visible beyond — glimpses of keyboards, monitors, cartridge shelves. Not fully revealed yet. Just enough.
 
-*Sound:* A single sustained chord — not triumphant, not a fanfare. Just arrival. Something warm resolving into something open.
+The Mystery Cabinet wasn't just a computer. It was the door.
+
+*Sound:* A low, heavy hinge-and-slide under a single sustained chord — not triumphant, not a fanfare. Just arrival. Something warm resolving into something open.
 
 ---
 
@@ -186,6 +204,26 @@ PRESS SPACE TO CONTINUE
 
 - The entire sequence uses the Act 1 pixel art aesthetic — it's still the arcade, still 8-bit. The reveal is earned through the narrative, not a sudden graphical upgrade.
 - The computer screen *inside* the cabinet is rendered at slightly higher fidelity than the surrounding environment — a hint of what Act 2 will look like. The rest of the arcade hasn't changed; this one object is different.
+- The dolly-in (Phase 4) is a smooth scale-up of the cabinet in canvas space with the
+  screen's text blur resolving in lockstep (blur/bloom amount is a function of apparent
+  distance, not a separate timer) — so a paused frame anywhere in the approach reads as
+  a coherent distance, never as a rendering glitch.
+- The doorway revealed in Phase 5 sits exactly where the cabinet stood — the cabinet
+  hinges/slides far enough that both are visible in composition: the machine ajar, the
+  passage behind it.
+- **The swing is a real door swing** *(Trevor, 2026-07-12)*: the cabinet rotates about
+  its vertical hinge edge — both hinges on the same vertical plane — so it stays
+  completely vertical the whole time. On screen that reads as horizontal foreshortening
+  (the panel narrows toward the hinge edge as it opens, verticals never tilt). It must
+  NOT pivot around a corner point or tilt in the screen plane — that reads as the
+  cabinet falling over, not opening. A straight lateral slide is the acceptable
+  alternative; a corner-pivot tilt never is.
+- **Through the doorway is a ROOM, not a panel** *(Trevor, 2026-07-12)*: a glimpse of
+  the machine-filled Computer Wing with depth — silhouetted machines receding in
+  perspective, each with its own small glowing screen (varied blues and ambers, one or
+  two flickering), keyboard ledges, cartridge shelf lines. Dim and partial ("just
+  enough"), but unmistakably a hidden room full of more machines to play — never a
+  single flat lit rectangle.
 - The door, when open, shows the Computer Wing at Act 2 graphic quality — 16-color NES palette visible through the frame. The contrast with the arcade behind the player is immediate.
 
 ### Audio Notes

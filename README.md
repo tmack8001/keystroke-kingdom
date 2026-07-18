@@ -37,6 +37,55 @@ assets — **rebuild after any js/css change**.
 
 Pure browser tech: ES modules + Canvas + WebAudio, no frameworks, no build step beyond Go.
 
+## Dev loop
+A `Makefile` wraps the everyday commands (run `make` or `make help` to list them):
+
+| Target | Does |
+|---|---|
+| `make setup` | `brew bundle` (see `Brewfile`) + `ollama pull` the word-gen model |
+| `make build` | regenerate the wordgen manifest, then compile the Go server |
+| `make run` | (re)start the local dev server (`scripts/dev.sh`) |
+| `make lint` | `node --check` all JS, validate `settings.json`, `bash -n` hooks, wiki lint |
+| `make test` | lint + `go test ./...` (wordgen validation chain) + a fast recorder smoke |
+| `make screenshots` / `make film` | regenerate captures / re-record the playthrough |
+| `make wordgen-check` | curl + pretty-print the `/api/wordgen` endpoints |
+
+**Optional: local-LLM word generation.** If [Ollama](https://ollama.com) is running on
+the machine serving the game (`ollama pull llama3.2`, override with `OLLAMA_MODEL`), the
+Go server generates fresh, level-appropriate early-reader words to *augment* the static
+pools — so repeated play trains muscle memory, not memorization. Every generated word
+passes a server-side validation chain (charset limited to the level's unlocked keys,
+length/lowercase caps, a profanity/unsafe blocklist, dedup) before it's ever shown, and
+the request carries only a level number — never the player's name. **This is purely
+additive: on any static host with no Ollama, the game silently plays its static pools
+with zero behavior change, zero errors, and no loading pause** (feature-detected via
+`/api/wordgen/health`; client falls back in `js/wordgen.js`). Generated batches also
+pass a variability filter (suffix/rhyme caps, length spread) so words vary in shape
+instead of clustering around one ending.
+
+### Docker (portable server)
+The whole game is one static binary with every asset embedded, so the image is tiny and
+fully portable — build once, run anywhere:
+
+```bash
+make docker-build        # multi-stage build → distroless image
+make docker-run          # http://localhost:8080, wired to the host's Ollama
+```
+
+Or with compose profiles:
+
+```bash
+docker compose --profile game up           # game only (static word pools)
+docker compose --profile game-ollama up    # game + an Ollama sidecar
+# one-time model pull into the ollama volume:
+docker compose --profile game-ollama exec ollama ollama pull llama3.2
+```
+
+Inside a container the server needs `PORT` (fixed port, set by the Dockerfile) and —
+only if you want word generation — `OLLAMA_HOST` (`host.docker.internal:11434` on Docker
+Desktop to reach the host's Ollama; `ollama:11434` service-to-service in compose). No
+Ollama reachable → the same silent static fallback as everywhere else.
+
 ## Project map
 | Where | What |
 |---|---|

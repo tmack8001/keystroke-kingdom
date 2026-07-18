@@ -12,6 +12,71 @@ function getActForLevel(level) {
   return ACTS.find(a => a.levels.includes(level)) || ACTS[0];
 }
 
+// A cabinet is locked when the player hasn't earned it yet — unless the WOPR
+// bypass is active (dev/parent shortcut), which lights every cabinet. Cabinets
+// light up one by one as levels are completed (levels.md "The Arcade at Level 1").
+function isLevelLocked(state, levelNum) {
+  if (state.selectBypass) return false;
+  return levelNum > (state.maxUnlockedLevel || 1);
+}
+
+// The nearest selectable level at or below `levelNum`, walking backward. Used
+// so navigation never parks the cursor on a locked cabinet.
+function firstUnlockedAtOrBelow(state, levels, levelNum) {
+  const idx = levels.indexOf(levelNum);
+  for (let i = idx; i >= 0; i--) {
+    if (!isLevelLocked(state, levels[i])) return levels[i];
+  }
+  // Fall back to the lowest level in the list (always at least level 1 exists).
+  return levels[0];
+}
+
+// ─── The back-wall door → Act 6, Text Worlds ────────────────────────────────
+// A diegetic door sits one step BELOW the last act on the select screen. It
+// appears once the full keyboard is earned (or the WOPR dev bypass lights it).
+// state.doorFocused is a sub-state of the 'select' screen; entering it (Space)
+// hands off to the text-world engine (see main.js case 'select' / 'textworld').
+const DOOR_UNLOCK_LEVEL = 25;
+function doorUnlocked(state) {
+  return !!state.selectBypass || (state.maxUnlockedLevel || 1) >= DOOR_UNLOCK_LEVEL;
+}
+
+// Pixel-art door matching drawCabinet's 56×80 footprint: a glowing emerald
+// doorway in the dark back wall, gold handle, two faint dragon-eyes in the glow.
+function drawDoor(canvas, scale = 2) {
+  const w = 56, h = 80;
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = Math.round(w * scale) + 'px';
+  canvas.style.height = Math.round(h * scale) + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  ctx.fillStyle = '#0a0a12';        // dark back wall
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#2a2a33';        // stone frame
+  ctx.fillRect(12, 8, 32, 68);
+  ctx.fillStyle = '#15151c';
+  ctx.fillRect(15, 11, 26, 63);
+
+  const g = ctx.createLinearGradient(0, 11, 0, 74);   // the glowing doorway
+  g.addColorStop(0, '#0c3');
+  g.addColorStop(1, '#042');
+  ctx.fillStyle = g;
+  ctx.fillRect(17, 13, 22, 59);
+
+  ctx.globalAlpha = 0.5;            // green light spilling on the floor
+  ctx.fillStyle = '#0f6';
+  ctx.fillRect(9, 74, 38, 4);
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = '#ffd23f';        // gold handle
+  ctx.fillRect(34, 42, 3, 4);
+  ctx.fillStyle = '#7fffbf';        // two faint eyes in the glow
+  ctx.fillRect(24, 34, 2, 2);
+  ctx.fillRect(30, 34, 2, 2);
+}
+
 const CABINET_DATA = {
   1: {
     label: 'LEVEL 1',
@@ -939,6 +1004,7 @@ function drawCabinet(canvas, levelNum, scale = 2) {
 }
 
 export function renderSelectScreen(state) {
+  if (state.doorFocused) { renderDoorView(state); return; }
   const act = getActForLevel(state.selectedLevel);
   const actIdx = ACTS.indexOf(act);
 
@@ -969,8 +1035,12 @@ export function renderSelectScreen(state) {
     const data = CABINET_DATA[levelNum];
     if (!data) continue;
 
+    const locked = isLevelLocked(state, levelNum);
+
     const div = document.createElement('div');
-    div.className = 'select-cabinet' + (levelNum === state.selectedLevel ? ' selected' : '');
+    div.className = 'select-cabinet'
+      + (levelNum === state.selectedLevel ? ' selected' : '')
+      + (locked ? ' locked' : '');
     div.dataset.level = levelNum;
 
     const canvas = document.createElement('canvas');
@@ -978,22 +1048,61 @@ export function renderSelectScreen(state) {
 
     const label = document.createElement('div');
     label.className = 'cabinet-label';
-    label.textContent = data.label + ' · ' + data.era;
+    // Locked cabinets are dark silhouettes with no game revealed yet.
+    label.textContent = locked ? '???' : (data.label + ' · ' + data.era);
 
     const keys = document.createElement('div');
     keys.className = 'select-keys';
-    keys.textContent = data.keys;
+    keys.textContent = locked ? '' : data.keys;
 
     div.appendChild(canvas);
     div.appendChild(label);
     div.appendChild(keys);
     container.appendChild(div);
 
-    div.addEventListener('click', () => {
-      state.selectedLevel = levelNum;
-      updateSelectHighlight(state);
-    });
+    // Locked cabinets can't be selected ahead of progress.
+    if (!locked) {
+      div.addEventListener('click', () => {
+        state.selectedLevel = levelNum;
+        updateSelectHighlight(state);
+      });
+    }
   }
+}
+
+// The door sub-view of the select screen (state.doorFocused). Reuses the
+// cabinet DOM/labels so it sits naturally where the cabinet grid was.
+function renderDoorView(state) {
+  $('select-act-label').textContent = '◈   THE BACK OF THE ARCADE   ◈';
+
+  const promptEl = $('select-prompt');
+  if (promptEl.dataset.base === undefined) promptEl.dataset.base = promptEl.textContent;
+  promptEl.textContent = 'A door hums softly.   SPACE: ENTER   ·   ↑: BACK';
+
+  $('select-act-prev').textContent = '▲  ACT 5  —  FULL CIRCLE';
+  $('select-act-next').textContent = '';
+
+  const container = $('select-cabinets');
+  container.innerHTML = '';
+
+  const div = document.createElement('div');
+  div.className = 'select-cabinet selected';
+
+  const canvas = document.createElement('canvas');
+  drawDoor(canvas);
+
+  const label = document.createElement('div');
+  label.className = 'cabinet-label';
+  label.textContent = 'THE GREEN DRAGON · a text world';
+
+  const keys = document.createElement('div');
+  keys.className = 'select-keys';
+  keys.textContent = 'TYPE TO ENTER';
+
+  div.appendChild(canvas);
+  div.appendChild(label);
+  div.appendChild(keys);
+  container.appendChild(div);
 }
 
 export function updateSelectHighlight(state) {
@@ -1003,28 +1112,50 @@ export function updateSelectHighlight(state) {
 }
 
 export function navigateAct(state, delta) {
+  // The back-wall door sits one step BELOW the last act.
+  if (state.doorFocused) {
+    if (delta < 0) { state.doorFocused = false; renderSelectScreen(state); }
+    return; // ArrowDown while at the door does nothing — it's the last thing here.
+  }
   const act = getActForLevel(state.selectedLevel);
   const actIdx = ACTS.indexOf(act);
   const newActIdx = actIdx + delta;
-  if (newActIdx < 0 || newActIdx >= ACTS.length) return;
+  if (newActIdx < 0) return;
+  if (newActIdx >= ACTS.length) {
+    // Past the final act → reveal the door, if the full keyboard is earned.
+    if (delta > 0 && doorUnlocked(state)) { state.doorFocused = true; renderSelectScreen(state); }
+    return;
+  }
+  const newLevels = ACTS[newActIdx].levels;
   const posInAct = act.levels.indexOf(state.selectedLevel);
-  state.selectedLevel = ACTS[newActIdx].levels[posInAct];
+  const target = newLevels[posInAct];
+  // Landing on a locked cabinet in the new act would strand the cursor —
+  // clamp back to the last unlocked one there. (If the whole act is locked,
+  // this parks on its first cabinet, which stays unselectable at Enter time.)
+  state.selectedLevel = firstUnlockedAtOrBelow(state, newLevels, target);
   renderSelectScreen(state);
 }
 
 export function navigateWithinAct(state, delta) {
+  if (state.doorFocused) return; // the door has no left/right neighbours
   const act = getActForLevel(state.selectedLevel);
   const pos = act.levels.indexOf(state.selectedLevel);
   const newPos = pos + delta;
   if (newPos < 0 || newPos >= act.levels.length) return;
-  state.selectedLevel = act.levels[newPos];
+  const target = act.levels[newPos];
+  if (isLevelLocked(state, target)) return; // can't move onto a locked cabinet
+  state.selectedLevel = target;
   updateSelectHighlight(state);
 }
 
 export function selectByPosition(state, pos) {
+  if (state.doorFocused) return; // number keys don't apply at the door
   const act = getActForLevel(state.selectedLevel);
   const levelNum = act.levels[pos - 1];
   if (!levelNum) return;
+  if (isLevelLocked(state, levelNum)) return; // locked cabinets aren't pickable
   state.selectedLevel = levelNum;
   updateSelectHighlight(state);
 }
+
+export { isLevelLocked };
