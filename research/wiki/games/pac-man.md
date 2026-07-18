@@ -3,8 +3,8 @@ title: Pac-Man
 type: entity
 tags: [video-game-history, game, arcade, history-card, cabinet]
 level: 3
-sources: 2
-verified: 2026-07-11
+sources: 3
+verified: 2026-07-12
 ---
 
 Pac-Man (Namco, 1980), designed by Toru Iwatani, is the maze-chase game deliberately
@@ -33,7 +33,20 @@ Level 3. The Galaxian flagship appears as [[galaxian]]'s cameo bonus fruit in th
 - Iconic: the kill screen at Level 256 (integer overflow); Power Pellets reversing the chase
   dynamic; intermission cutscenes between levels.
 
+## Citation spot-check (2026-07-12, mechanics-fidelity audit follow-up)
+
+The ghost-colors claim ("four distinctly colored ghosts: red Blinky, pink Pinky, cyan
+Inky, orange Clyde") was checked against its sole existing citation, pacman.com's history
+page — that page names all four ghosts (Japanese and English) but does **not** state
+their colors in English text, making the citation thinner than it appeared. Added
+reference 3 below (Wikipedia's dedicated "Ghosts (Pac-Man)" page) to carry the color
+claim directly, and confirmed it also documents that all four ghosts were originally
+going to be a single color (red) until Iwatani's team won a 40–0 internal vote for
+multicolor — a fact not currently in this page's "facts" list but worth folding in on a
+future pass. No correction needed to the claim itself; it was accurate, just under-cited.
+
 ## References
 
-1. [HISTORY — The Official Site for PAC-MAN (pacman.com)](https://pacman.com/en/history/) — Bandai Namco's own history page: confirms Toru Iwatani as designer, the nine-person dev team, May 1980 Japan test, July 1980 Japan release.
-2. [Tōru Iwatani — Wikipedia](https://en.wikipedia.org/wiki/T%C5%8Dru_Iwatani) — biographical corroboration (design philosophy, prior Namco titles); used alongside the official Namco page, not alone.
+1. [HISTORY — The Official Site for PAC-MAN (pacman.com)](https://pacman.com/en/history/) — Bandai Namco's own history page: confirms Toru Iwatani as designer, the nine-person dev team, May 1980 Japan test, July 1980 Japan release; also names all four ghosts (Blinky/Pinky/Inky/Clyde with Japanese equivalents) but does not state their colors in English. **[fetched]**
+2. [Tōru Iwatani — Wikipedia](https://en.wikipedia.org/wiki/T%C5%8Dru_Iwatani) — biographical corroboration (design philosophy, prior Namco titles); used alongside the official Namco page, not alone. *(search result only, not fetched)*
+3. [Ghosts (Pac-Man) — Wikipedia](https://en.wikipedia.org/wiki/Ghosts_(Pac-Man)) — dedicated ghost-character page confirming the specific color assignments (Blinky red, Pinky pink, Inky cyan, Clyde orange) that reference 1 alone did not carry. **[fetched]**

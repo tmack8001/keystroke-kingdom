@@ -20,7 +20,19 @@ people drew with letters. ASCII gave every character a number — and gave us li
 people cheering."* ASCII is also the mechanism behind the binary HTML comment that
 decodes to `SHALL WE PLAY` and the `01001000...` = HELLO reveal at Level 20 — see
 [[hello-world]] and [[hacker-culture]]. See [[computing-history-moments]] for the full
-17-card table.
+17-card table. ASCII is also the display technology underneath [[roguelike|the
+roguelike genre]] (the `@` player glyph, letter-monsters) — see [[nethack]] for the
+confirmed reference to a 1990s raw-telnet, publicly-watched ASCII dungeon crawl —
+and every plain-text [[mud|MUD]] before [[ansi-escape-codes|ANSI color]] arrived —
+the visual language behind a possible Level 20 terminal/text-adventure direction.
+[[island-of-kesmai]] (1985) is the strongest researched match combining true ASCII
+pseudo-graphics with genuine persistent multiplayer — see
+[[early-graphical-mmorpgs-1990s]] for the ranked comparison against later, non-ASCII
+graphical MMORPGs with the clan/faction systems a related childhood memory recalled.
+[[megazeux]] (1994) and [[asciiroth]] (2009) are a second, single-player-by-design
+ASCII-text-character realm — hobbyist game-CREATION systems and their community RPGs,
+rather than dungeon-crawl roguelikes or MUD servers — researched 2026-07-13 as a
+possible Act 6 aesthetic anchor.
 
 ## The facts
 

@@ -16,7 +16,12 @@ incorrectly.
 The game itself isn't directly reproduced in Keystroke Kingdom, but its magic word
 [[xyzzy]] is a title-screen easter egg — see that page and [[hacker-culture]] for the
 in-game text. Listed here as an `entity` page since Colossal Cave Adventure is the
-origin work the XYZZY joke depends on for its accuracy.
+origin work the XYZZY joke depends on for its accuracy. It's also the shared ancestor
+of both branches of prose "type a direction, read what happens" games explored for a
+possible Level 20/text-adventure direction: single-player [[zork]] (its direct
+successor) and the inherently multiplayer [[mud]] line (MUD1's creator named his game
+in tribute to a Zork variant, having played Adventure-descended games first) — see
+[[mud]] for the archetype distinction.
 
 ## The facts
 
