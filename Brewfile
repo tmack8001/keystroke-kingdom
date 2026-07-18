@@ -8,4 +8,5 @@ brew "node"      # ES-module tooling: manifest gen, wiki-search lint, Playwright
 brew "python@3"  # `python3 -m http.server` — the static server used for lint-clean local serving and the recorder smoke in `make test`
 brew "jq"        # JSON: pretty-prints the /api/wordgen endpoints (`make wordgen-check`) and validates .claude/settings.json in `make lint`
 brew "ffmpeg"    # video muxing for the playthrough recorder (`make film`, and the fast recorder smoke in `make test`)
+brew "git-lfs"   # the playthrough film (docs/keystroke_kingdoms.mov, ~87MB) is stored in Git LFS — needed to clone/checkout the real video (else you get a 133B pointer)
 brew "ollama"    # OPTIONAL: local LLM for fresh word generation. Absent → the game silently uses its static word pools (zero behavior change).
