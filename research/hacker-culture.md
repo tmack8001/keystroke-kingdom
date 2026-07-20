@@ -107,6 +107,17 @@ This single source substantially supports the claim as written; no second corrob
 
 ---
 
+## Riddle-bank reuse (2026-07-18)
+
+Several references catalogued here (the [[mark-ii-moth-1947|Mark II moth]], [[forty-two|42]],
+[[xyzzy|XYZZY]], the [[konami-code|Konami Code]], [[eliza|ELIZA]], [[hello-world|hello
+world]], [[wopr-wargames|WOPR]], [[ascii|ASCII]], and rubber-duck debugging from
+[[proposed-egg-references]]) were reused — cited, not re-derived — as the "tech/hacker
+culture" flavor source for [[act6-riddle-bank|the Act 6 riddle bank]]
+(`research/act6-riddle-bank.md`), which asks a riddle *about* each fact rather than
+repeating this catalog's exact egg wording, so a player who's already found a
+title-screen egg gets a satisfying "oh, I know this" rather than a duplicate.
+
 ## Researched, proposed, not yet built (menu in easter-eggs.md)
 
 *Full menu synthesized at [[proposed-egg-references]].*

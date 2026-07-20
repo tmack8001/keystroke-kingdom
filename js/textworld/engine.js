@@ -26,6 +26,7 @@
 // The engine gives each run()/when()/desc() an `api` of world-mutation helpers.
 
 import * as Audio from '../audio.js';
+import { buildPool, answerMatches, ANSWER_CAP, HINT_AT_TRY, REVEAL_AT_TRY } from './riddles.js';
 
 let canvas, ctx, animId;
 let active = false;
@@ -44,6 +45,18 @@ let typed = '';           // the command being typed (lowercased for matching/di
 let nudgeT = 0;           // brief red-ish flash timer after a rejected key (frames)
 let won = false;
 let winT = 0;             // frames since victory (drives the gold flourish)
+
+// Riddle sub-mode (Act 6 — the prose world's riddling creatures, matching the
+// tile worlds): a command may carry `ask: <riddler>`; firing it drops the player
+// into a TYPED free-word answer prompt. Riddles are always BONUS (they never set
+// the goal). The cursor per creature advances on each ask, so a character you
+// come back to poses a NEW riddle — "different each time" (Trevor, 2026-07-18).
+let mode = 'command';      // 'command' | 'riddle'
+let activeRiddler = null;  // the creature def currently asking
+let activeRiddle = null;   // the pooled riddle it is currently posing
+let riddleAnswer = '';     // the letters-only word being typed as an answer
+let riddleTries = 0;       // wrong attempts on the CURRENT riddle (drives hint/reveal)
+const riddleCursors = new Map();  // riddler id → next pool index (rotation across asks)
 
 // Hybrid "hints fade" (Act 6 design): the offered-command hints start fully shown
 // and fade as the player masters typing — but ALWAYS return on a nudge, a new room,
@@ -96,6 +109,12 @@ export function start(w, opts = {}) {
   nudgeT = 0;
   won = false;
   winT = 0;
+  mode = 'command';
+  activeRiddler = null;
+  activeRiddle = null;
+  riddleAnswer = '';
+  riddleTries = 0;
+  riddleCursors.clear();
   mastery = 0;
   hintBoostT = 0;
   lastActMs = performance.now();
@@ -122,6 +141,7 @@ export function stop() {
 export function handleKey(e) {
   if (!active || won) return;
   lastActMs = performance.now();
+  if (mode === 'riddle') { handleRiddleKey(e); return; }
   const k = e.key;
 
   if (k === 'Backspace') {
@@ -183,7 +203,75 @@ function fire(cmd) {
   } catch (_) {
     // A world-data bug must never crash play; it just does nothing.
   }
+  // A riddler command drops into the TYPED answer prompt (bonus — never the goal).
+  if (cmd.ask) { openRiddle(cmd.ask); return; }
   if (!won && typeof world.goal === 'function' && world.goal(api)) triggerWin();
+}
+
+// ─── Riddle sub-mode (the prose world's riddling creatures) ─────────────────
+
+function openRiddle(def) {
+  const pool = buildPool(def);
+  const id = def.id || def.name || 'riddler';
+  const idx = riddleCursors.get(id) || 0;
+  activeRiddle = pool[idx % pool.length];
+  riddleCursors.set(id, idx + 1);     // next ask rotates to a new puzzle
+  activeRiddler = def;
+  mode = 'riddle';
+  riddleAnswer = '';
+  riddleTries = 0;
+  hintBoostT = 150;
+  pushLine('');
+  pushLine((def.name || 'A voice') + ' asks:');
+  pushLine(activeRiddle.riddle || '');
+}
+
+// The answer is the one free-text surface — allowlisted to letters, length-
+// capped, compared locally, never stored, never a DOM sink (security.md 1-3,6).
+function handleRiddleKey(e) {
+  const k = e.key;
+  if (k === ' ') { closeRiddle(); return; }          // Space steps back out (never stuck)
+  if (k === 'Backspace') { if (riddleAnswer) { riddleAnswer = riddleAnswer.slice(0, -1); Audio.correct(); } return; }
+  if (k === 'Enter') { submitRiddle(); return; }
+  if (k.length !== 1) return;
+  const ch = k.toLowerCase();
+  if (ch >= 'a' && ch <= 'z' && riddleAnswer.length < ANSWER_CAP) { riddleAnswer += ch; Audio.correct(); }
+  else { Audio.wrong(); nudgeT = 12; }
+}
+
+function submitRiddle() {
+  if (answerMatches(activeRiddle, riddleAnswer)) { solveRiddle(); return; }
+  pushLine('> ' + riddleAnswer);
+  riddleTries++;
+  Audio.wrong();
+  nudgeT = 12;
+  hintBoostT = 150;
+  if (riddleTries < HINT_AT_TRY) {
+    pushLine('Not quite — but there is no hurry. Try again, or press SPACE to step back.');
+  } else {
+    let h = 'hint: ' + (activeRiddle.hint || '');
+    if (riddleTries >= REVEAL_AT_TRY && activeRiddle.answers.length) h += '  (try: ' + activeRiddle.answers[0] + ')';
+    pushLine(h);
+  }
+  riddleAnswer = '';
+}
+
+function solveRiddle() {
+  pushLine('> ' + riddleAnswer);
+  if (activeRiddle.reward) pushLine(activeRiddle.reward);
+  mastery++;
+  Audio.levelComplete();
+  mode = 'command';
+  activeRiddler = null; activeRiddle = null; riddleAnswer = ''; riddleTries = 0;
+  hintBoostT = 120;
+}
+
+function closeRiddle() {
+  pushLine('You smile and step back. (Come ask again any time — there is always a new riddle.)');
+  Audio.correct();
+  mode = 'command';
+  activeRiddler = null; activeRiddle = null; riddleAnswer = ''; riddleTries = 0;
+  hintBoostT = 120;
 }
 
 function enterRoom(roomId) {
@@ -236,7 +324,8 @@ function render() {
   ctx.clearRect(0, 0, W, H);
   drawBackground(W, H);
   drawLog(W, H);
-  drawPromptAndHints(W, H);
+  if (mode === 'riddle') drawRiddlePrompt(W, H);
+  else drawPromptAndHints(W, H);
   if (won) drawWinFlourish(W, H);
   drawScanlines(W, H);
   if (nudgeT > 0) nudgeT--;
@@ -395,6 +484,40 @@ function drawPromptAndHints(W, H) {
     ctx.fillText(cmd, x, hintY);
     x += ctx.measureText(cmd).width;
   });
+  ctx.globalAlpha = 1;
+  ctx.textBaseline = 'alphabetic';
+}
+
+// The riddle prompt: the player TYPES their answer word (learn-to-type — a reply
+// is always typed, never selected). Mirrors the command line's look; the riddle
+// text + escalating hint live in the scrolling log above.
+function drawRiddlePrompt(W, H) {
+  const fontSize = fontFor(W);
+  const marginX = Math.round(W * 0.07);
+  const promptY = Math.round(H * 0.80);
+  const hintY = Math.round(H * 0.89);
+
+  ctx.font = `${fontSize}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  const promptStr = '> ' + riddleAnswer;
+  ctx.fillStyle = nudgeT > 0 ? '#d98a3f' : palette.accent;
+  ctx.shadowColor = ctx.fillStyle;
+  ctx.shadowBlur = 8;
+  ctx.fillText(promptStr, marginX, promptY);
+  const cursorX = marginX + ctx.measureText(promptStr).width + 2;
+  if (Math.floor(performance.now() / 500) % 2 === 0) {
+    ctx.fillRect(cursorX, promptY, Math.round(fontSize * 0.6), fontSize);
+  }
+  ctx.shadowBlur = 0;
+
+  const small = Math.max(9, Math.floor(fontSize * 0.72));
+  ctx.font = `${small}px "Press Start 2P", monospace`;
+  ctx.fillStyle = palette.dim;
+  ctx.globalAlpha = 0.8;
+  const who = activeRiddler && activeRiddler.name ? activeRiddler.name + '  ·  ' : '';
+  ctx.fillText(who + 'type your answer, then ENTER   ·   SPACE: step back', marginX, hintY);
   ctx.globalAlpha = 1;
   ctx.textBaseline = 'alphabetic';
 }

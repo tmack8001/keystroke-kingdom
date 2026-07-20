@@ -44,6 +44,7 @@
 //                everything else is looked up in world.glyphs (unknown → wall).
 
 import * as Audio from '../audio.js';
+import { buildPool, answerMatches, ANSWER_CAP, HINT_AT_TRY, REVEAL_AT_TRY } from './riddles.js';
 
 // ─── Movement vocabulary (the guided prefix-matcher's allowlist) ────────────
 // Full words are prefix-matched and auto-fire on an exact, unambiguous match; the
@@ -60,9 +61,8 @@ const LETTER_DIR = { n: 'north', s: 'south', e: 'east', w: 'west' };
 const HINT_WORDS = ['up', 'down', 'left', 'right'];   // the four shown as hints
 
 const FOG_RADIUS = 5;      // roguelike torch reach (tiles)
-const ANSWER_CAP = 20;     // riddle answer length cap (security: bounded free text)
-const HINT_AT_TRY = 2;     // show the authored hint after this many wrong answers
-const REVEAL_AT_TRY = 3;   // reveal the answer itself after this many (never stuck)
+// ANSWER_CAP / HINT_AT_TRY / REVEAL_AT_TRY now live in riddles.js — shared with
+// the prose engine so both wings escalate hints (and cap the answer) identically.
 
 let canvas, ctx, animId;
 let active = false;
@@ -86,6 +86,7 @@ let mode = 'move';  // 'move' | 'riddle'
 let buf = '';       // movement command buffer
 let swallow = '';   // tail of a compass word to quietly absorb after a letter alias
 let activeNpc = null;
+let activeRiddle = null;   // the pooled riddle the active NPC is currently posing
 let dismissedNpc = null;   // an NPC whose riddle you stepped back from — don't re-pop
                            // until you actually walk out of its adjacency and return
 let answer = '';
@@ -122,6 +123,7 @@ export function start(w, opts = {}) {
   buf = '';
   swallow = '';
   activeNpc = null;
+  activeRiddle = null;
   dismissedNpc = null;
   answer = '';
   tries = 0;
@@ -173,7 +175,10 @@ function buildScreens() {
         else if (ch === '*') { goal = { screen: si, r, c }; grid[r][c] = '.'; }
         else if (ch >= '1' && ch <= '9') {
           const def = defs.find((n) => n.slot === Number(ch));
-          if (def) npcs.push({ ...def, screen: si, r, c, solved: false });
+          // pool: the flat riddle stays index 0 (so a creature's own `.answers`
+          // still opens it), and `more:[…]` rotates in behind it — `_ri` advances
+          // on every open so a creature you revisit greets you with a new puzzle.
+          if (def) npcs.push({ ...def, screen: si, r, c, solved: false, pool: buildPool(def), _ri: 0 });
           grid[r][c] = '.';   // the creature is drawn on top; floor lies beneath
         }
       }
@@ -394,9 +399,12 @@ function checkArrival() {
 function openRiddle(npc) {
   mode = 'riddle';
   activeNpc = npc;
+  const pool = npc.pool && npc.pool.length ? npc.pool : buildPool(npc);
+  activeRiddle = pool[npc._ri % pool.length];
+  npc._ri++;                     // next visit rotates to the next puzzle
   answer = '';
   tries = 0;
-  message = npc.riddle || '';
+  message = activeRiddle.riddle || '';
   Audio.coin();
 }
 
@@ -414,9 +422,7 @@ function handleRiddleKey(e) {
 }
 
 function submitAnswer() {
-  const norm = answer.trim().toLowerCase();
-  const ok = (activeNpc.answers || []).some((a) => String(a).trim().toLowerCase() === norm);
-  if (norm && ok) { solveNpc(activeNpc); return; }
+  if (answerMatches(activeRiddle, answer)) { solveNpc(activeNpc); return; }
   tries++;
   answer = '';
   Audio.wrong();
@@ -433,7 +439,9 @@ function solveNpc(npc) {
   mode = 'move';
   activeNpc = null;
   answer = '';
-  message = npc.reward || 'The creature beams at you. "Yes! You have it. Go on — the way is open."';
+  message = (activeRiddle && activeRiddle.reward)
+    || 'The creature beams at you. "Yes! You have it. Go on — the way is open."';
+  activeRiddle = null;
   Audio.levelComplete();
 }
 
@@ -441,8 +449,9 @@ function closeRiddle() {
   dismissedNpc = activeNpc;
   mode = 'move';
   activeNpc = null;
+  activeRiddle = null;
   answer = '';
-  message = 'You step back. (Come say hello again any time.)';
+  message = 'You step back. (Come say hello again any time — they always have a new riddle.)';
   Audio.correct();
 }
 
@@ -753,6 +762,7 @@ function drawMoveChrome(W, H, fs) {
 
 function drawRiddlePanel(W, H, fs) {
   const npc = activeNpc;
+  const r = activeRiddle || {};
   if (!npc) return;
   const panelY = Math.round(H * 0.66);
   const panelH = Math.round(H * 0.34);
@@ -782,18 +792,18 @@ function drawRiddlePanel(W, H, fs) {
   const small = Math.max(10, Math.floor(fs * 0.85));
   ctx.font = `${small}px "Press Start 2P", monospace`;
   ctx.fillStyle = '#e7eef7';
-  wrap(npc.riddle || '', W - marginX * 2, small).forEach((line) => {
+  wrap(r.riddle || '', W - marginX * 2, small).forEach((line) => {
     ctx.fillText(line, marginX, y); y += Math.round(small * 1.6);
   });
 
   // Hint (after a couple tries) then the answer itself (after a few) — never stuck.
-  if (tries >= HINT_AT_TRY && npc.hint) {
+  if (tries >= HINT_AT_TRY && r.hint) {
     y += Math.round(small * 0.4);
     ctx.fillStyle = PAL.accent || '#ffd23f';
     ctx.globalAlpha = 0.9;
-    let hint = 'hint: ' + npc.hint;
-    if (tries >= REVEAL_AT_TRY && npc.answers && npc.answers.length) {
-      hint += '  (try: ' + npc.answers[0] + ')';
+    let hint = 'hint: ' + r.hint;
+    if (tries >= REVEAL_AT_TRY && r.answers && r.answers.length) {
+      hint += '  (try: ' + r.answers[0] + ')';
     }
     wrap(hint, W - marginX * 2, small).forEach((line) => {
       ctx.fillText(line, marginX, y); y += Math.round(small * 1.6);

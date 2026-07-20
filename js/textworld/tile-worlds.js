@@ -9,10 +9,22 @@
 // riddle opens a bonus way. Reaching the far `*` triggers the "surprisingly
 // amazing" reveal.
 //
+// RIDDLE POOLS (2026-07-18, Trevor): every creature carries a POOL — a flat
+// primary riddle plus a `more:[…]` list of extras. The engine rotates through the
+// pool on each engagement (tileworld.js openRiddle `_ri`), so coming BACK to a
+// character gives a NEW puzzle ("different each time"). Solving ANY riddle in the
+// pool satisfies the creature (opens its gate, if it holds one). The riddles are
+// logic / word-play / children's-lit / kid-safe tech-culture puzzles — NOT
+// "what am I" — sourced and citation-verified in research/act6-riddle-bank.md
+// (Tolkien's Riddles in the Dark, Grace Hopper's moth, the ONE→GONE trick, etc.).
+// Every answer is a SINGLE letters-only word: the answer input allowlists a-z
+// only (tileworld.js), so a multi-word/digit alternate is dead, unreachable data
+// (the old 'the river' / 'a fox' / '7' alternates are cleaned out below).
+//
 // SOLVABILITY CONTRACT (One Rule floor): in every world an open corridor runs the
 // full length of row 8 across every screen and straight to the goal, so the goal
 // is reachable WITHOUT solving a single riddle or opening a single gate. Riddles
-// and gates are always bonus. (Verified by BFS in the build wave — see report.)
+// and gates are always bonus. (Verified by BFS in the test suite — INV-55.)
 //
 // map markers: '@' start · '*' goal · '1'..'9' an NPC slot · 'G' a gate;
 // every other char is a glyph looked up in `glyphs` (unknown → wall). Rows are
@@ -46,20 +58,95 @@ export const GlimmerDeep = {
       riddle: 'I sleep in the rock, cold and hard, until a light finds me — then I shine blue and bright. I am what this whole deep is full of. What am I?',
       answers: ['crystal', 'crystals', 'gem', 'gems'],
       hint: 'It shines blue in the dark, and it starts with the letter C.',
-      reward: 'Glim glows brighter. "A CRYSTAL — yes! Go deeper. A whole sky of them is waiting for you."' },
+      reward: 'Glim glows brighter. "A CRYSTAL — yes! Go deeper. A whole sky of them is waiting for you."',
+      more: [
+        { riddle: 'Here is a trickier one: which letter of the whole alphabet holds the most water?',
+          answers: ['c'],
+          hint: 'Say the letter out loud — it sounds just like a great big body of salt water.',
+          reward: 'Glim ripples with light. "The letter C — it sounds just like SEA! Clever, clever."' },
+        { riddle: 'Every letter you type turns into a number inside a machine. Long ago, people agreed on which number means which letter. Its short name is five capital letters. What is it?',
+          answers: ['ascii'],
+          hint: 'It is the secret code hiding behind every key on the board. It starts with A.',
+          reward: 'Glim flickers like a little screen. "ASCII! Every letter you ever typed passed through it, in a way."' },
+      ] },
     { slot: 2, char: 'x', color: '#8fe3ff', name: 'Newt the cave-newt', gate: 'G',
       riddle: 'I flow in the dark and never rest. I am cold, I am wet, and you crossed me on the bridge. What am I?',
-      answers: ['water', 'river', 'stream', 'the river'],
+      answers: ['water', 'river', 'stream'],
       hint: 'You walked over me on the log bridge — it starts with W.',
-      reward: 'Newt claps its little feet. "WATER, of course! Here — I will pull the old gate aside for you."' },
+      reward: 'Newt claps its little feet. "WATER, of course! Here — I will pull the old gate aside for you."',
+      more: [
+        { riddle: 'I am alive but I never breathe, cold as a stone but never dead. I drink and drink, yet I am never thirsty. What am I?',
+          answers: ['fish', 'fishes'],
+          hint: 'One is swimming right beside you in the cold river. It starts with F.',
+          reward: 'Newt points a webbed toe at the water. "A FISH! You looked right at the answer. The gate is yours."' },
+        { riddle: 'There is a secret set of numbers every computer in the world can call to reach exactly one place: itself. What is that place, in one warm word?',
+          answers: ['home', 'localhost'],
+          hint: 'It is the place you always come back to, however far you wander. It starts with H.',
+          reward: 'Newt smiles a small newt smile. "HOME. The deep is a kind of home too. In you go."' },
+      ] },
     { slot: 3, char: 't', color: '#c9a3ff', name: 'Sella the stone turtle',
       riddle: 'A rainbow bends across the sky in bands of color. Count them for me — how many colors does a rainbow have?',
-      answers: ['seven', '7'],
+      answers: ['seven'],
       hint: 'It is one more than six.',
-      reward: 'Sella nods slowly. "Seven. Just so. You count as well as you walk."' },
+      reward: 'Sella nods slowly. "Seven. Just so. You count as well as you walk."',
+      more: [
+        { riddle: 'I have a face and two hands, but no arms and no legs at all. What am I?',
+          answers: ['clock', 'clocks'],
+          hint: 'I tell you when it is time to go. I start with C.',
+          reward: 'Sella taps her shell, slow and steady. "A CLOCK. Slow and steady — just like me."' },
+        { riddle: 'I eat up birds and beasts and trees, and even the tallest mountain, bite by bite — and nothing can ever hide from me. What am I?',
+          answers: ['time', 'years'],
+          hint: 'You cannot see me or hold me, but you always know when I have passed. I start with T.',
+          reward: 'Sella\'s ancient eyes gleam. "TIME. I have known a great deal of it down here."' },
+      ] },
+    { slot: 4, char: 'm', color: '#ffb86b', name: 'Ora the ember-moth',
+      riddle: 'Long ago, a real little flying creature got stuck inside a giant computer and stopped it cold. Someone taped it into the logbook: "first actual case of a bug." What was it?',
+      answers: ['moth', 'bug'],
+      hint: 'It has wings, it loves the light, and it started the whole word "debugging." It starts with M.',
+      reward: 'Ora flutters toward your torch, proud. "A MOTH! We have been finding trouble in machines ever since."',
+      more: [
+        { riddle: 'I speak without a mouth and hear without ears. I have no body, but I come alive whenever you shout in a cave like this. What am I?',
+          answers: ['echo', 'echoes'],
+          hint: 'Shout hello in here and listen for what shouts it back. It starts with E.',
+          reward: 'Ora answers in your own voice. "An ECHO — I only ever borrow other people\'s words."' },
+        { riddle: 'Some old games hid a secret code: up, up, down, down, left, right, left, right, B, and one last button. What is the very last letter of that code?',
+          answers: ['a'],
+          hint: 'It is the last button in the famous code — and the first letter of the alphabet.',
+          reward: 'Ora\'s wings flare bright. "The letter A! Thirty stars, small one — no extra lives needed."' },
+      ] },
+    { slot: 5, char: 'g', color: '#b98f6b', name: 'Boulder the rock-golem',
+      riddle: 'You cannot see me, touch me, hear me, or smell me — yet I am everywhere the light has not reached. I was here before your torch, and I will be here after. What am I?',
+      answers: ['dark', 'darkness', 'night'],
+      hint: 'It is what your torch is pushing back right now. It starts with D.',
+      reward: 'Boulder rumbles. "The DARK — you have been standing in the answer this whole cave."',
+      more: [
+        { riddle: 'I have a head and a tail, but no body at all. You drop me into arcade machines. What am I?',
+          answers: ['coin', 'coins'],
+          hint: 'Flip me — heads or tails? I start with C.',
+          reward: 'Boulder flips a little stone chip. "A COIN! Insert to continue, eh?"' },
+        { riddle: 'I have keys but open no locks. I have space, but no room to stand in. You can enter me, but never go inside. What am I?',
+          answers: ['keyboard', 'keyboards'],
+          hint: 'Your fingers are resting on one right now. It starts with K.',
+          reward: 'Boulder chuckles, a slow landslide sound. "A KEYBOARD — you held the answer the whole time."' },
+      ] },
+    { slot: 6, char: 'b', color: '#9fd3ff', name: 'Deep the echo-bat',
+      riddle: 'A giant thinking-machine once thought for millions of years about Life, the Universe, and Everything. Its answer was one number, spelled as a single word. What is the word?',
+      answers: ['fortytwo'],
+      hint: 'It is the number between forty-one and forty-three, spelled as one long word. It starts with F.',
+      reward: 'Deep swoops once around the cavern. "FORTY-TWO. Deep Thought took millions of years. You took one guess."',
+      more: [
+        { riddle: 'In the very first computer adventure game, one strange five-letter word did absolutely nothing — but everyone who played typed it anyway. What is the word?',
+          answers: ['xyzzy'],
+          hint: 'It is not a real word at all — just five letters in a row, and it starts with X.',
+          reward: 'Deep giggles, upside-down. "XYZZY! Nothing happens — and yet here you are, having typed it."' },
+        { riddle: 'I have words but I never speak, and pages but I am not a tree. What am I?',
+          answers: ['book', 'books'],
+          hint: 'You are reading one right now, in a way. It starts with B.',
+          reward: 'Deep folds a wing like a cover. "A BOOK! Even a deep dark cave needs a library."' },
+      ] },
   ],
   screens: [
-    // Screen 0 — THE CAVE MOUTH (east → screen 1)
+    // Screen 0 — THE CAVE MOUTH (east → screen 1). Glim (slot 1) lives here.
     { exits: { east: 1 }, map: [
       '##############################################',
       '#@...,,,....^^.....%.......o.....^^....,,....#',
@@ -78,11 +165,12 @@ export const GlimmerDeep = {
       '#....^^.......,,,.........o.....^^...........#',
       '##############################################',
     ] },
-    // Screen 1 — THE UNDERGROUND RIVER (west → 0, east → 2). Gate 'G' is a bonus.
+    // Screen 1 — THE UNDERGROUND RIVER (west → 0, east → 2). Newt's gate 'G' is a
+    // bonus. Ora (slot 4) and Boulder (slot 5) wait off the river.
     { exits: { west: 0, east: 2 }, map: [
       '##############################################',
       '#.....,,,....~~~~.......%%.......^^....,,....#',
-      '#...^^.......~~~~~..........o.........%%.....#',
+      '#...^^.......~~~~~..........4.........%%.....#',
       '#....o.......~~~~~....===........,,,.........#',
       '#.......%%...~~~~~....===...^^^..............#',
       '#..^^........~~~~.....===........o......%....#',
@@ -90,7 +178,7 @@ export const GlimmerDeep = {
       '#.....,,,....~~~~~.......GG..................#',
       '............====..............................',
       '#............~~~~~....%%.....,,,....^^.......#',
-      '#....o.......~~~~~..........o................#',
+      '#....5.......~~~~~..........o................#',
       '#.......^^...~~~~.......%%.......,,,....o....#',
       '#............~~~~~...^^..............%%......#',
       '#...,,,......~~~~~.........o.....^^..........#',
@@ -98,6 +186,7 @@ export const GlimmerDeep = {
       '##############################################',
     ] },
     // Screen 2 — THE CRYSTAL HALL (west → 1). Goal '*' on the row-8 corridor.
+    // Sella (slot 3) and Deep (slot 6) hide among the crystals.
     { exits: { west: 1 }, map: [
       '##############################################',
       '#...%%....%%.....%%%....%%.....%%....%%%.....#',
@@ -108,7 +197,7 @@ export const GlimmerDeep = {
       '#.%%...%%....%%....%%%....%%....%%....%%%....#',
       '#....%%....%%..3.%%....%%%....%%....%%.......#',
       '.........................................*...#',
-      '#..%%....%%%....%%....%%....%%%....%%....%%..#',
+      '#.6%%....%%%....%%....%%....%%%....%%....%%..#',
       '#.%%...%%....%%....%%%....%%....%%....%%%....#',
       '#....%%...%%%....%%....%%....%%.....%%.......#',
       '#.%%....%%....%%....%%%...%%....%%%....%%....#',
@@ -151,28 +240,119 @@ export const Whisperwood = {
   },
   npcs: [
     { slot: 1, char: 'v', color: '#ffb84d', name: 'Old Owl',
-      riddle: 'I sit in the tall trees and I say WHO-WHO in the night. I can turn my head all the way around. What bird am I?',
-      answers: ['owl', 'an owl', 'a owl'],
-      hint: 'You are looking right at one — a wise night bird. It starts with O.',
-      reward: 'Old Owl blinks one slow eye. "Whoo — an OWL, yes. Walk on, small one. The glade is glad tonight."' },
+      riddle: 'I begin every "eternity," and I end every "time" and every "space." What letter am I?',
+      answers: ['e'],
+      hint: 'Look at the very first letter of the word "eternity."',
+      reward: 'Old Owl blinks both eyes slowly. "The letter E. A poet asked that one once, long ago. You would have made him proud."',
+      more: [
+        { riddle: 'Long ago, one very old program pretended to be a gentle helper who only ever turned your own words into questions, right back at you. What job did people say it had?',
+          answers: ['doctor', 'therapist'],
+          hint: 'It is the job you visit when you need someone to listen. It starts with D.',
+          reward: 'Old Owl nods gravely. "A DOCTOR — though this one only ever gave good questions, never advice."' },
+        { riddle: 'I show up once in a minute, twice in a moment, but never once in a thousand years. What letter am I?',
+          answers: ['m'],
+          hint: 'Look closely at the spelling of the word "minute."',
+          reward: 'Old Owl hoots softly. "The letter M! Most travelers never once look at the letters themselves."' },
+      ] },
     { slot: 2, char: 'F', color: '#e8813a', name: 'Rusty the fox', gate: 'G',
-      riddle: 'I am orange with a big bushy tail. I am quick and I am sly, and I live in the wood. What animal am I?',
-      answers: ['fox', 'a fox'],
-      hint: 'You are talking to one right now — it starts with F.',
-      reward: 'Rusty grins and swishes his tail. "A FOX! Ha! Come — I will nose the brambles apart for you."' },
+      riddle: 'Thirty white shapes stand together on a warm pink hill. First they clack, then they clamp, then they go still. What are they?',
+      answers: ['teeth', 'tooth'],
+      hint: 'Open your mouth right now and you will find thirty of them. It starts with T.',
+      reward: 'Rusty grins wide, showing every one. "TEETH! Ha! Come — I will nose the brambles apart for you."',
+      more: [
+        { riddle: 'Here is a bit of word-magic: how do you make the number ONE disappear completely? Add just one letter to the very front of it.',
+          answers: ['gone'],
+          hint: 'Put a G at the front of the word "one" and read it again.',
+          reward: 'Rusty snaps a paw and a leaf vanishes. "GONE! Works every time. The way is open."' },
+        { riddle: 'I have a head and a tail, but no body at all. Dragons sleep on great piles of me. What am I?',
+          answers: ['coin', 'coins'],
+          hint: 'Flip me — heads or tails? I start with C.',
+          reward: 'Rusty flicks a shiny one from behind your ear. "A COIN! Good eye. Come along."' },
+      ] },
     { slot: 3, char: 'o', color: '#eaff8f', name: 'Blink the firefly',
-      riddle: 'We are tiny lights that dance in the dark. We blink on and off, on and off, all through the glade. What are we?',
-      answers: ['fireflies', 'firefly', 'fire flies', 'bugs', 'lights'],
-      hint: 'They will fill the glade you are about to find — it starts with F.',
-      reward: 'Blink spins in a happy circle. "FIREFLIES! You already knew us. Come and see."' },
+      riddle: 'Every treasure hunter knows something waits at the end of a rainbow. But the real answer is not gold at all — it is one letter. Which letter?',
+      answers: ['w'],
+      hint: 'Look at the very last letter of the word "rainbow."',
+      reward: 'Blink spins in a happy circle. "The letter W! Not gold — but a very good trick."',
+      more: [
+        { riddle: 'As I walked to town I met a traveler with seven bags, and in each bag seven cats, and with each cat seven kittens. But only I was going to town. How many of us were truly going?',
+          answers: ['one'],
+          hint: 'Read it again — only ONE of us is actually going anywhere. It starts with O.',
+          reward: 'Blink flickers with delight. "Just ONE! Everybody counts the cats. Nobody ever counts right."' },
+        { riddle: 'I have cities but no houses, forests but no trees, and rivers but no water. What am I?',
+          answers: ['map', 'maps'],
+          hint: 'Treasure hunters always carry one. It starts with M.',
+          reward: 'Blink lights up a little path. "A MAP! You could find the whole wood on one."' },
+      ] },
+    { slot: 4, char: 'y', color: '#a3ffcf', name: 'Pip the woodsprite',
+      riddle: 'I sat high on a wall, round and smooth, until I had a great fall — and nobody could ever put me back together again. What was I?',
+      answers: ['egg', 'eggs'],
+      hint: 'Humpty Dumpty was one of me. It starts with E.',
+      reward: 'Pip giggles and tumbles in the air. "An EGG! Poor Humpty. Good thing YOU climb walls so well."',
+      more: [
+        { riddle: 'I have many teeth, but I can never bite a single soul. What am I?',
+          answers: ['comb', 'combs'],
+          hint: 'You would use me on your hair, not on your dinner. It starts with C.',
+          reward: 'Pip runs one through a dandelion. "A COMB! Not much use on a sprite, but I do thank you."' },
+        { riddle: 'The wetter I get, the better I have done my job. What am I?',
+          answers: ['towel', 'towels'],
+          hint: 'You reach for me right after a swim in the brook. It starts with T.',
+          reward: 'Pip wrings out a leaf like a tiny towel. "A TOWEL! Even sprites must dry off."' },
+      ] },
+    { slot: 5, char: 'h', color: '#c7a97a', name: 'Bramble the hedgehog',
+      riddle: 'I have a face and two hands, but no arms and no legs at all. What am I?',
+      answers: ['clock', 'clocks'],
+      hint: 'I tell you when it is time for supper. I start with C.',
+      reward: 'Bramble checks the darkening sky. "A CLOCK! Right on time, as always."',
+      more: [
+        { riddle: 'I have words but I never speak, and pages but I am not a tree. What am I?',
+          answers: ['book', 'books'],
+          hint: 'You are reading one right now, in a way. It starts with B.',
+          reward: 'Bramble taps an acorn-cap like a little cover. "A BOOK! The best burrows are full of them."' },
+        { riddle: 'In an old movie, a giant computer asked one thing before it did anything else at all: "Shall we play a..." what?',
+          answers: ['game', 'games'],
+          hint: 'It is exactly what we have been doing this whole time. It starts with G.',
+          reward: 'Bramble\'s spines bristle happily. "A GAME! Always. Shall we play another?"' },
+      ] },
+    { slot: 6, char: 'U', color: '#f2c9ff', name: 'Silvermane the unicorn',
+      riddle: 'I have no voice, but I cry through the branches. I have no wings, but I flutter every leaf. I have no teeth, but I can bite your cheeks on a cold day. What am I?',
+      answers: ['wind', 'breeze'],
+      hint: 'It is moving the leaves high above you right now. It starts with W.',
+      reward: 'Silvermane tosses her mane, and the whole wood answers. "The WIND — you heard it before I even finished asking."',
+      more: [
+        { riddle: 'Everyone has one following them on a sunny day, but no one has ever managed to lose it for good. What is it?',
+          answers: ['shadow', 'shadows'],
+          hint: 'It is dark and flat, and it copies everything you do. It starts with S.',
+          reward: 'Silvermane glances at her own dark shape on the moss. "A SHADOW. Mine has walked with me my whole life."' },
+        { riddle: 'You cannot see me, touch me, hear me, or smell me — yet I am everywhere the light has not reached. What am I?',
+          answers: ['dark', 'darkness', 'night'],
+          hint: 'It is what the fireflies — and my own horn — push gently back. It starts with D.',
+          reward: 'Silvermane\'s horn kindles a soft glow. "The DARK — and you were not afraid of it. Good."' },
+      ] },
+    { slot: 7, char: 'd', color: '#ffe08f', name: 'Fen the duck',
+      riddle: 'When a coder gets stuck, some keep a little yellow bath-time friend on the desk and explain the whole problem out loud to it — and often solve it halfway through. What toy is it?',
+      answers: ['duck', 'rubberduck'],
+      hint: 'I float, I quack, and I am usually bright yellow. I start with D.',
+      reward: 'Fen paddles a proud little circle. "A DUCK! I have solved more bugs just by listening than anyone gives me credit for."',
+      more: [
+        { riddle: 'In the very first computer adventure game, one strange five-letter word did nothing at all — but everyone typed it anyway, just to see. What is the word?',
+          answers: ['xyzzy'],
+          hint: 'It is not a real word — just five letters in a row, and it starts with X.',
+          reward: 'Fen quacks once. "XYZZY! Nothing happens. And yet you typed it. Everyone does."' },
+        { riddle: 'There is a secret set of numbers every computer can call to reach exactly one place: itself. What is that place, in one warm word?',
+          answers: ['home', 'localhost'],
+          hint: 'It is the place you always come back to, however far you wander. It starts with H.',
+          reward: 'Fen settles down into the reeds. "HOME. There is no place quite like it."' },
+      ] },
   ],
   screens: [
-    // Screen 0 — THE FOREST EDGE (east → 1)
+    // Screen 0 — THE FOREST EDGE (east → 1). Old Owl (slot 1) and Pip the
+    // woodsprite (slot 4) are among the first trees.
     { exits: { east: 1 }, map: [
       'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
       'T@..,,,....TT.....f.......o.....^^....,,....fT',
       'T.......^....""......TTT.........^^..........T',
-      'T..^^...........o...TTTTT........,,,....ff...T',
+      'T..^^...........4...TTTTT........,,,....ff...T',
       'T.......""...........TTT.............o.ff....T',
       'T...1.......^^^......TT.......o..............T',
       'T...........,,,.....TTTT.........^^..........T',
@@ -186,11 +366,12 @@ export const Whisperwood = {
       'T....^^.......,,,.........o.....^^...........T',
       'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
     ] },
-    // Screen 1 — THE BROOK (west → 0, east → 2). Bramble gate 'G' is a bonus.
+    // Screen 1 — THE BROOK (west → 0, east → 2). Rusty's bramble gate 'G' is a
+    // bonus. Bramble the hedgehog (slot 5) snuffles near the water.
     { exits: { west: 0, east: 2 }, map: [
       'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
       'T.....,,,....~~~~.......ff.......^^....,,....T',
-      'T...^^.......~~~~~..........o.........ff.....T',
+      'T...^^.......~~~~~..........5.........ff.....T',
       'T....o.......~~~~~....===........,,,.........T',
       'T.......ff...~~~~~....===...^^^..............T',
       'T..^^........~~~~.....===........o......f....T',
@@ -206,11 +387,12 @@ export const Whisperwood = {
       'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
     ] },
     // Screen 2 — THE GLADE (west → 1). Goal '*' on the row-8 corridor.
+    // Silvermane the unicorn (slot 6) and Fen the duck (slot 7) keep the glade.
     { exits: { west: 1 }, map: [
       'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
       'T..ff...."".....fff...."".....ff...."""......T',
       'T."".."".....""......""...."""......"".."f...T',
-      'T....ff..."".....fff...."".....""....fff.....T',
+      'T....6f..."".....fff...."".....""....fff.....T',
       'T."f....""....""...."""....""....""....ff....T',
       'T...ff...."""....""....ff....""".....ff......T',
       'T.f"...ff....""....fff....""....""....fff....T',
@@ -219,7 +401,7 @@ export const Whisperwood = {
       'T..ff...."""...."".....""....."""....ff.."f..T',
       'T."".."".....""...."""....""....""....fff....T',
       'T....ff..."""....""....ff....""....."".......T',
-      'T."f....""....""...."""....""....."""....ff..T',
+      'T."7....""....""...."""....""....."""....ff..T',
       'T...ff...."".....fff...."".....ff....ff.."f..T',
       'T."".."""....""....""....."""....""....fff...T',
       'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',

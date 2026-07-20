@@ -1,10 +1,10 @@
 ---
 feature: text-worlds
-code: [js/textworld/hub.js, js/textworld/engine.js, js/textworld/greendragon.js, js/textworld/tileworld.js, js/textworld/tile-worlds.js, js/textworld/maker.js, js/textworld/imfriend.js, js/textworld/personas.js, js/chat.js, main.go]
+code: [js/textworld/hub.js, js/textworld/engine.js, js/textworld/greendragon.js, js/textworld/tileworld.js, js/textworld/tile-worlds.js, js/textworld/riddles.js, js/textworld/maker.js, js/textworld/imfriend.js, js/textworld/personas.js, js/chat.js, main.go]
 rules: [.claude/rules/product.md, .claude/rules/security.md, docs/handoffs/im-friend-build.md]
 screenshots: docs/screenshots/textworlds/
 capture: node docs/screenshots/capture-textworlds.js
-verified: 2026-07-14
+verified: 2026-07-18
 ---
 
 # Act 6 — The Text Worlds
@@ -110,6 +110,88 @@ mirroring `js/main.js`'s existing `getProgress()`/`saveProgress()` posture
 - **`kk-friends`** — owned entirely by `imfriend.js` (`loadFriends()`/
   `saveFriends()`), documented in detail under World 5 below.
 
+## Riddle system (`js/textworld/riddles.js`) — one shared pattern across all three story worlds
+
+Added 2026-07-18 (Trevor). THE GREEN DRAGON, THE GLIMMER DEEP, and THE
+WHISPERWOOD all now pose riddles the **same way**, through one small shared
+module both `engine.js` (prose) and `tileworld.js` (ASCII tile) import — a
+named creature/command carries a **pool** of logic/word-play puzzles that
+**rotates** on each engagement, so coming back to the same character gives a
+**different** riddle ("different each time," not a repeated single question).
+YOUR OWN WORLD (maker) and A FRIEND TO TALK TO (imfriend) are untouched — the
+riddle system is scoped to the three story worlds.
+
+- **Data shape** (`buildPool(def)`): a creature/command may carry one flat
+  `{riddle, answers, hint, reward}` plus optional `more:[…]` extras, OR a
+  `riddles:[…]` array outright. `buildPool` normalizes either into a non-empty
+  array with the **flat riddle always first** (index 0) — existing
+  single-riddle data (and any test reading a creature's own `.answers[0]`)
+  stays unchanged; adding `more` is purely additive, never a breaking change.
+- **Rotation, per engine**: `tileworld.js` stores a resolved NPC's pool plus a
+  `_ri` cursor (`npcs.push({ ...def, pool: buildPool(def), _ri: 0 })`);
+  `openRiddle()` reads `pool[npc._ri % pool.length]` then increments `_ri`, so
+  a solved-then-revisited creature poses its next puzzle in sequence, wrapping
+  around. `engine.js` keeps the same idea in a `riddleCursors` Map keyed by the
+  riddler's `id`/`name` (prose commands reference a shared creature object
+  across rooms, e.g. the badger's `ask the badger` command, so the cursor has
+  to live outside any one room).
+- **Escalation, never permanently stuck** (shared constants
+  `ANSWER_CAP = 20`, `HINT_AT_TRY = 2`, `REVEAL_AT_TRY = 3`): a wrong answer is
+  a gentle nudge, same as everywhere else in the wing; after 2 wrong tries the
+  riddle's authored `hint` appears; after 3, the answer itself is shown
+  alongside the hint. A riddle can be stepped away from at any time
+  (`Space` — "step back" in the tile worlds, "step back out" in the prose
+  engine) without penalty, and revisiting later poses a fresh pool entry.
+- **Always bonus — never gates the goal (the One Rule floor).** In the tile
+  worlds this is a proven invariant, not just a design intent: an
+  engine-equivalent BFS over each world's own screens/exits/glyphs data, with
+  **every gate closed and every riddle-creature tile blocked**, still reaches
+  the goal (`INV-55`, `tests/integration/textworld.test.mjs`, all green as of
+  this page's `verified:` date — 28/28 tests pass including INV-42/45/46/47/
+  53/55). In THE GREEN DRAGON, every riddle lives behind an `ask:` field on a
+  command that runs independently of the room's plain navigation commands —
+  the win path (`take lamp → go north → talk to the badger → go north → go
+  north → light lamp → go in → greet the dragon`) never touches a riddle.
+- **The Green Dragon's replies are always TYPED — never a menu.** Per Trevor's
+  2026-07-18 direction ("this is a learn-to-type game first, an adventure
+  second"): a riddle answer in the prose engine drops the player into the
+  same free-word typed prompt the tile worlds use (`mode = 'riddle'` in
+  `engine.js`), not a single-keypress selection. Every character interaction
+  in the wing — command or riddle — stays a typing rep.
+- **Security** (security.md rules 1-3, 6-8): the typed answer is the one
+  free-text surface a riddle introduces. Both engines allowlist it to
+  lowercase `a`-`z` **at the boundary** (a digit or symbol keystroke is never
+  appended to the answer buffer — `handleRiddleKey`/tileworld's equivalent),
+  length-cap it at `ANSWER_CAP`, compare it locally and case/whitespace-
+  insensitively (`answerMatches`), and never store it or send it anywhere —
+  drawn only with canvas `fillText`, thrown away on close. Answers are
+  authored as single letters-only words specifically so this narrow allowlist
+  is sufficient; no space/digit/punctuation answer can ever exist in the data.
+- **Content is logic/word-play, not "what am I," and is citation-grounded.**
+  `research/act6-riddle-bank.md` is the sourced, citation-verified bank this
+  wave's data was drawn from (Tolkien's *Riddles in the Dark*, Grace Hopper's
+  1947 moth, the ONE→GONE letter trick, Alice's raven-and-writing-desk, ASCII,
+  `localhost`, xyzzy, 42, the Konami Code, "shall we play a game" — each with
+  2-4 live-verified references, institutional/primary sources preferred). Two
+  new atomic wiki pages were written to ground the genuinely new research:
+  `research/wiki/culture/riddles-in-the-dark.md` and
+  `research/wiki/tech/localhost.md`. Facts already verified elsewhere in the
+  wiki (the moth, 42, xyzzy, Konami, ELIZA, hello world, WOPR, ASCII) are
+  reused by citing those existing pages rather than re-derived.
+- **Expanded casts** (tile worlds only — prose cast detailed in World 1 below):
+  THE GLIMMER DEEP grew from 3 to **6** riddle creatures (added Ora the
+  ember-moth, Boulder the rock-golem, Deep the echo-bat); THE WHISPERWOOD grew
+  from 3 to **7** (added Pip the woodsprite, Bramble the hedgehog, Silvermane
+  the unicorn, Fen the duck). Full roster + per-creature riddle content: World
+  2 & 3 section below. The two gate-holding creatures are unchanged (Newt in
+  THE GLIMMER DEEP, Rusty the fox in THE WHISPERWOOD) — a gate is still just
+  one bonus door among several bonus creatures, never the only door.
+- **Dead alternates cleaned out.** Because the answer input is a strict
+  `a`-`z` allowlist, any pre-existing authored alternate answer containing a
+  space or digit (`'the river'`, `'a fox'`, `'7'`, …) was structurally
+  unreachable — those were removed from the shipped data in this pass; only
+  reachable, letters-only alternates remain in each riddle's `answers[]`.
+
 ## World 1 — THE GREEN DRAGON (`js/textworld/engine.js` + `greendragon.js`)
 
 A world-agnostic prose-adventure runtime (`engine.js`) consuming pure data
@@ -120,9 +202,13 @@ room currently **offers** — never free text.
 **World data shape**: `{ id, title, palette?, start, intro:[str], outro:[str],
 goal(api)->bool, rooms:{ id: Room } }`, `Room = { title, desc:[str]|(api)=>[str],
 commands:[Command], onEnter?(api) }`, `Command = { text (lowercase, no
-lead/trail space), run(api), when?(api)->bool }`. Command-authoring rule: no
-offered command's text may be a prefix of another's within the same room, so an
-exact match can always auto-fire unambiguously.
+lead/trail space), run(api), when?(api)->bool, ask?: RiddlerDef }`.
+Command-authoring rule: no offered command's text may be a prefix of another's
+within the same room, so an exact match can always auto-fire unambiguously. A
+command carrying `ask` (added 2026-07-18 — see the Riddle system section
+above) drops the player into the typed riddle sub-mode instead of running to
+completion; those commands are always additional to a room's plain navigation
+commands, never a replacement for one.
 
 **Input contract** (`handleKey`): `Backspace` always self-corrects (never
 punished — "self-correction is always allowed", mirroring the Level 25 framing
@@ -145,48 +231,110 @@ longer one).
 help, no matter how far the hints had faded (`mastery` only ever increments,
 on each fired command).
 
-**THE GREEN DRAGON's own content**: `clearing` → `brook` → `cavemouth` →
-`hall`, a short warm walk (`take lamp` → `talk badger` → `light lamp`/`go in`
-→ `greet dragon`) ending in a gold win-flourish (`drawWinFlourish`, a soft
-radial bloom, never a modal) and `hasWon()` going true. Grounded in
-`research/wiki/games/legend-of-the-red-dragon.md` (LORD, 1989) and its "Green
-Dragon" web descendant, LORD's flirting/PvP/permadeath **deliberately
+**THE GREEN DRAGON's own content**: `clearing` → `brook` → `glade` →
+`cavemouth` → `hall` (`glade` is a new room, inserted 2026-07-18 between
+`brook` and `cavemouth`), a short warm walk — `take lamp` → `go north` →
+`talk to the badger` → `go north` → `go north` → `light lamp` → `go in` →
+`greet the dragon` (renamed from the pre-2026-07-18 `talk badger`/`greet
+dragon` short forms) — ending in a gold win-flourish (`drawWinFlourish`, a
+soft radial bloom, never a modal) and `hasWon()` going true. Along the walk, a
+cast of riddling creatures each offers a bonus `ask`/`meet` command, in every
+room; the room's own plain navigation is never gated by any of them: **Fern the
+wood-sprite** in `clearing` (`meet the sprite` — deliberately not a
+`talk to…` verb, since `clearing`'s only other room-specific command,
+`take lamp`, is the room's sole `t`-prefixed command and `INV-43` asserts that
+uniqueness; Fern had to pick a different opening letter), **the badger** in
+`brook` (`ask the badger`, offered once you've met him), **Astra the unicorn**
+in the new `glade` (`ask the unicorn`, offered once met), **Quill the raven**
+in `cavemouth` (`talk to the raven`, always offered), and **the Green Dragon**
+itself in `hall` (`ask the dragon`, alongside the win command `greet the
+dragon`). Grounded in `research/wiki/games/legend-of-the-red-dragon.md`
+(LORD, 1989) and its "Green Dragon" web descendant, LORD's flirting/PvP/
+permadeath **deliberately
 stripped** per the One Rule — you can never lose, only arrive. Typed commands
 (not LORD's original letter-menus) were chosen specifically for typing
 pedagogy.
 
 ## Worlds 2 & 3 — THE GLIMMER DEEP + THE WHISPERWOOD (`js/textworld/tileworld.js` + `tile-worlds.js`)
 
-A second, independent world-agnostic engine: an overhead ASCII grid (the
-MegaZeux / public-telnet-roguelike look — `research/wiki/tech/megazeux.md`,
-`roguelike.md`). World data: `{ id, title, palette, map:[rows], wallChar,
-intro, companionLine, wallLine, reveal:{kind:'crystals'|'fireflies', message,
-colors:[...]} }`. Map legend: `#` wall, `.` floor, `@` start, `k` a friendly
-companion, `*` the goal.
+*(This section describes the current, 2026-07-17-rebuilt engine — bigger,
+screen-chained, typed-movement, fog-of-war worlds; this page's prior
+`verified:` date, 2026-07-14, predated that rebuild, so the section below was
+substantially rewritten during this pass, not just the riddle content.)*
 
-**Input**: literal lowercase letter keys `n`/`s`/`e`/`w` (not arrow keys) map
-to a direction; a move into a wall or off the map edge is rejected
-(`Audio.wrong()`, `message = world.wallLine`, position unchanged — the One
-Rule's "gentle nudge, you don't move," never a loss); a legal move updates
-position (`Audio.correct()`). Reaching the companion tile once shows
-`world.companionLine`; reaching the goal (`*`) calls `triggerReveal()` exactly
-once (`won = true`), which seeds a bounded particle field (`motes`, capped at
-80) styled per `reveal.kind` — `'crystals'` (fixed twinkling field) or
-`'fireflies'` (drifting, respawning upward) — and plays `Audio.levelComplete()`.
-After winning, `Enter`/`Space` (not Escape — deliberately, unlike `maker.js`'s
+A second, independent world-agnostic engine: a large overhead ASCII grid, the
+MegaZeux / public-telnet-roguelike look (`research/wiki/tech/megazeux.md`,
+`roguelike.md`, `ascii-overhead-world-conventions.md`). World data:
+`{ id, title, wallChar?, gates?, palette, glyphs, screens:[{map:[rows],
+exits:{north?|south?|east?|west?: screenIndex}}], npcs:[NpcDef], intro,
+wallLine, crossLine?, reveal:{kind:'crystals'|'fireflies', message,
+colors:[...]} }`. Map legend: `#`/`wallChar` wall, `.` floor, `@` start (one
+per world, first screen), `*` the goal, `1`-`9` an NPC slot, `G`/`gates` a
+closed gate (opens once its holding NPC is solved); every other character is
+looked up in `glyphs` (unknown → treated as a solid wall). Each world chains
+**3 screens** via MegaZeux-style edge exits (`buildScreens()` parses `@`/`*`/
+digit markers out of the map text into engine state so authoring stays plain
+ASCII).
+
+**Movement is typed, not a raw arrow press**: the full words `up down left
+right north south east west` are prefix-matched through the same guided
+matcher `engine.js` uses (an accepted key must keep the buffer a prefix of
+some offered word; a break is a gentle nudge, the buffer waits); the single
+letters `n s e w` fire their direction **instantly** as a fast alias and then
+quietly "swallow" the rest of that compass word if the player keeps typing it
+out, so typing the full word after the alias still resolves to one move, not
+two. A move into a non-walkable glyph, a closed gate, an NPC's own tile, or
+off a map edge with no linked exit is rejected (`Audio.wrong()`,
+`message = world.wallLine`, position unchanged); a legal move advances
+position (`Audio.correct()`) and re-computes fog; a move off a **linked**
+edge crosses into the adjacent screen at the nearest walkable tile on the
+matching edge (`crossTo`).
+
+**Fog of war**: a roguelike lit/dark line-of-sight (`FOG_RADIUS = 5` tiles,
+Bresenham sight-line, `computeFog()`/`hasSight()`) — unexplored tiles stay
+hidden, previously-seen-but-not-currently-lit tiles render dim/remembered,
+and only the currently-lit radius around the player renders at full
+brightness. A big map becomes something to discover step by step, not a grid
+laid bare from the start.
+
+**Riddle creatures** (see the Riddle system section above for the shared
+`riddles.js` mechanics): stepping adjacent (Chebyshev distance 1) to an
+unsolved NPC opens its pooled riddle automatically (`checkArrival()` →
+`openRiddle()`); solving it plays a warm authored `reward` line and, if the
+creature holds a `gate` character, opens that gate permanently
+(`gatesOpen.add`). Stepping back with `Space` dismisses the riddle without
+solving it — the creature won't re-pop until the player has actually left its
+adjacency and returned (`dismissedNpc` tracking), so "just walking past"
+doesn't spam the same prompt repeatedly.
+
+Reaching the goal (`*`) calls `triggerReveal()` exactly once (`won = true`),
+seeding a bounded particle field (`motes`, capped at 150) styled per
+`reveal.kind` — `'crystals'` (a fixed twinkling field) or `'fireflies'`
+(drifting, respawning upward) — and playing `Audio.levelComplete()`. After
+winning, `Enter`/`Space` (not Escape — deliberately, unlike `maker.js`'s
 now-dead relic key) calls `finish()`; the reveal also auto-returns to the hub
-after 300 frames (~5s) if the player doesn't press anything, so no one is
+after 330 frames (~5.5s) if the player doesn't press anything, so no one is
 stuck admiring it forever either.
 
-Both shipped worlds are **authored to be solvable via the exact same simple
-route** ("south then east" — the left column and the bottom row of every map
-are kept open by design, never a frustrating maze; verified in
-`tests/integration/textworld.test.mjs`'s fixture-sanity block):
+**Solvability floor — a proven invariant, not a hand-authored path.** Both
+worlds are grounded so an always-open corridor spans every screen straight to
+the goal; this is verified by an engine-equivalent breadth-first search over
+each world's own screens/exits/glyphs data with **every gate closed and every
+riddle-creature tile blocked**, confirming the goal is still reachable without
+opening a single gate or solving a single riddle (`INV-55`,
+`tests/integration/textworld.test.mjs`). Riddles and gates are always bonus
+content layered on top of a structurally guaranteed win path — the One Rule
+floor (product.md) holds even in the worst case where a player solves
+nothing.
 
-| World | `id` | Palette register | Reveal |
-|---|---|---|---|
-| THE GLIMMER DEEP | `cave` | slate/blue-grey walls, gold player, cyan glint | a vast crystal cavern — "like a whole night sky brought underground" |
-| THE WHISPERWOOD | `forest` | forest green walls, gold player, yellow-green glint | a moonlit glade of drifting fireflies |
+Each world's own riddle-creature roster (all pooled — see Riddle system
+section above for how the pool/rotation/hint-escalation works; a creature
+marked **gate** additionally opens a `G` gate on solve):
+
+| World | `id` | Palette register | Reveal | Riddle creatures (screen) |
+|---|---|---|---|---|
+| THE GLIMMER DEEP | `cave` | slate/blue-grey walls, gold player, cyan glint | a vast crystal cavern — "like a whole night sky brought underground" | Glim the glow-worm (0), Newt the cave-newt — **gate** (1), Ora the ember-moth (1), Boulder the rock-golem (1), Sella the stone turtle (2), Deep the echo-bat (2) — 6 total |
+| THE WHISPERWOOD | `forest` | forest green walls, gold player, yellow-green glint | a moonlit glade of drifting fireflies | Old Owl (0), Pip the woodsprite (0), Rusty the fox — **gate** (1), Bramble the hedgehog (1), Blink the firefly (2), Silvermane the unicorn (2), Fen the duck (2) — 7 total |
 
 ## World 4 — YOUR OWN WORLD (`js/textworld/maker.js`)
 
@@ -371,13 +519,45 @@ the original set — **THE GLIMMER DEEP had no screenshot of its own**, only its
 sibling THE WHISPERWOOD). New captures land under descriptive `-standalone`
 names rather than renumbering the original set, so nothing gets clobbered:
 `door-standalone`, `hub-standalone`, `greendragon-standalone`,
+`greendragon-riddle-standalone` (new, 2026-07-18 — the riddle system),
 `greendragon-finale-standalone`, `glimmerdeep-standalone`,
-`glimmerdeep-reveal-standalone` (new — fills the gap above),
+`glimmerdeep-riddle-standalone` (new, 2026-07-18),
+`glimmerdeep-reveal-standalone` (fills the gap above),
 `whisperwood-standalone`, `whisperwood-reveal-standalone`,
 `maker-built-standalone`, `maker-alive-standalone`, `friend-picker-standalone`,
 `friend-chat-standalone`, `friend-make-standalone`. The script supports a
 comma-separated subset filter (its own argv[2]) matching the narrowest-blast-
 radius convention every other capture script in this repo follows.
+
+**2026-07-18 riddle-system regeneration** (narrowest-blast-radius: 4 of 13
+`-standalone` captures, not the full set — the other captures' states were
+checked against the day's diff and found visually unaffected, see below):
+
+- `greendragon-standalone` — **regenerated**; the clearing room's description
+  text changed (now mentions Fern the wood-sprite).
+- `greendragon-riddle-standalone` — **new**; the prose engine's typed riddle
+  sub-mode, captured mid-riddle (`meet the sprite` fired in the clearing,
+  showing Fern's first pool riddle and the "type your answer, then ENTER"
+  prompt).
+- `greendragon-finale-standalone` — **regenerated**; the capture script's
+  hardcoded win-path had gone stale against the code (the new `glade` room
+  and the `talk to the badger`/`greet the dragon` command renames broke the
+  old `talk badger`/`greet dragon` sequence) — `capture-textworlds.js` was
+  fixed to walk the current room graph and win path, in addition to adding
+  the two new subset filters above.
+- `glimmerdeep-riddle-standalone` — **new**; the tile engine's riddle panel,
+  captured after moving adjacent to Glim the glow-worm (`south` x4, `east`
+  x2 from the start — the riddle opens automatically on arrival, per
+  `checkArrival()`).
+- **Unaffected, not regenerated**: `door-standalone`/`hub-standalone` (no UI
+  in scope); `glimmerdeep-standalone` and `whisperwood-standalone` (each
+  world's screen-0 map gained a new riddle-creature marker this pass, but
+  both new markers sit well outside the `FOG_RADIUS = 5` visibility circle
+  around the player's starting tile — checked against the map data, not
+  assumed); `glimmerdeep-reveal-standalone`/`whisperwood-reveal-standalone`
+  (the reveal sequence and its south/east route are untouched by the riddle
+  changes); `maker-*`/`friend-*` (out of this change's scope — `riddles.js`
+  is not consumed by `maker.js` or `imfriend.js`).
 
 `friend-chat-standalone.png` was captured twice to verify both documented
 paths: once against a plain static server (no `/api/chat` route → 501/404 →
@@ -404,10 +584,16 @@ next refresh finds it still true.
 settings of its own; `js/wordgen.js`'s length-window settings machinery is
 unrelated, though `chat.js` deliberately reuses wordgen's `/api/wordgen/health`
 endpoint) · `.claude/rules/security.md` (rules 1-3 guided-input allowlisting
-for worlds 1-4, rules 6-8 free-text/PII-floor for world 5) ·
-`docs/testing/STRATEGY.md` INV-42 through INV-47 (worlds 1-4) ·
-`docs/testing/FINDINGS.md` TF-T1 (fixed) · `research/wiki/tech/megazeux.md`,
-`research/wiki/tech/roguelike.md`, `research/wiki/games/legend-of-the-red-dragon.md`
+for worlds 1-4, rules 6-8 free-text/PII-floor for world 5, rules 1-3/6-8 again
+for the riddle-answer surface added 2026-07-18) ·
+`docs/testing/STRATEGY.md` INV-42 through INV-47, INV-53, INV-55 (worlds 1-4;
+INV-55 is the riddle One-Rule-floor BFS invariant) — all green, 28/28, as of
+this page's `verified:` date · `docs/testing/FINDINGS.md` TF-T1 (fixed) ·
+`research/act6-riddle-bank.md` (the sourced, citation-verified riddle content
+this page's Riddle system section describes) · `research/wiki/tech/megazeux.md`,
+`research/wiki/tech/roguelike.md`, `research/wiki/tech/ascii-overhead-world-conventions.md`,
+`research/wiki/games/legend-of-the-red-dragon.md`,
+`research/wiki/culture/riddles-in-the-dark.md`, `research/wiki/tech/localhost.md`
 (the worlds' groundings) · [[engine-flow]] (the `js/main.js` screen-routing
 convention this wing follows, shared with the act cinematics) ·
 [[select-screen]] (the door itself, `js/ui/cabinet-art.js`).

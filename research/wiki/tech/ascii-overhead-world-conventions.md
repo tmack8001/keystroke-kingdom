@@ -362,11 +362,16 @@ Everything below is a **flag for whoever next touches `js/textworld/tileworld.js
   single highest-value addition if the map grows, since it's what would make
   discovery feel earned on a larger world rather than the player simply seeing
   everything from the start.
-- **No NPC/riddle interaction exists in the current engine** — the companion tile
-  (`k`) currently only plays one fixed line once. Per Q5, a gentle, always-solvable,
-  typed-answer riddle exchange with a creature is well-precedented and readily
-  kid-safe if built with zero cost, zero wrong-answer penalty, matching the existing
-  wrong-keypress contract.
+- **NPC/riddle interaction has since shipped** *(update, 2026-07-18 — this line was
+  accurate when written on 2026-07-17 but is now stale within a day, per Trevor's
+  tile-world redesign landing the same window)*: `js/textworld/tile-worlds.js` now
+  has authored, curated (no-LLM) riddle NPCs per world — confirming Q5's precedent was
+  acted on essentially as researched: gentle, always-solvable, typed-answer riddles,
+  zero cost, zero wrong-answer penalty (hint after 2 tries, answer after 3, per the
+  wrong-keypress contract). See [[act6-riddle-bank]] (`research/act6-riddle-bank.md`)
+  for a large proposed EXTENSION bank of new logic/word-play riddles (as opposed to
+  the shipped riddles' "what am I" creature-identity style) grounded directly in this
+  page's Q5 precedent.
 
 ## Corrections from citation pass
 

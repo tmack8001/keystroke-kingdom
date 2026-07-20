@@ -8,9 +8,14 @@
 //   DEV_URL=http://127.0.0.1:8210 node docs/screenshots/capture-textworlds.js
 //   DEV_URL=http://127.0.0.1:8210 node docs/screenshots/capture-textworlds.js glimmerdeep,glimmerdeep-reveal
 //
-// Subset names: door, hub, greendragon, greendragon-finale, glimmerdeep,
-// glimmerdeep-reveal, whisperwood, whisperwood-reveal, maker-built,
-// maker-alive, friend-picker, friend-chat, friend-make
+// Subset names: door, hub, greendragon, greendragon-riddle, greendragon-finale,
+// glimmerdeep, glimmerdeep-riddle, glimmerdeep-reveal, whisperwood,
+// whisperwood-reveal, maker-built, maker-alive, friend-picker, friend-chat,
+// friend-make
+//
+// greendragon-riddle / glimmerdeep-riddle (added 2026-07-18, riddle-system
+// wave): the riddle panel UI is new — no prior capture showed it. These land
+// under their own descriptive names, same convention as everything else here.
 //
 // Writes docs/screenshots/textworlds/*.png. This script does NOT renumber the
 // existing 01-11 reference set (captured ad hoc while the wing was built) —
@@ -97,29 +102,47 @@ async function enterWorld(page, worldIdx) {
     } catch (e) { fail('greendragon', e.message); }
   }
 
+  // Riddle-system wave (2026-07-18): the clearing's start room now offers
+  // "meet the sprite" (Fern), which drops into the typed riddle sub-mode —
+  // never on the golden path (see greendragon-finale below, which never
+  // engages a riddle and still wins).
+  if (shouldRun('greendragon-riddle')) {
+    try {
+      await goToSelect(page, baseUrl);
+      await goToDoor(page);
+      await enterDoor(page);
+      await enterWorld(page, 0);
+      for (const ch of 'meet the sprite') await page.keyboard.press(ch === ' ' ? ' ' : ch, { delay: 5 });
+      await page.waitForTimeout(300);
+      await shot('greendragon-riddle-standalone');
+    } catch (e) { fail('greendragon-riddle', e.message); }
+  }
+
   if (shouldRun('greendragon-finale')) {
     try {
       await goToSelect(page, baseUrl);
       await goToDoor(page);
       await enterDoor(page);
       await enterWorld(page, 0);
-      // clearing: take lamp, go north
-      for (const cmd of ['take lamp', 'go north']) {
-        for (const ch of cmd) await page.keyboard.press(ch === ' ' ? ' ' : ch, { delay: 5 });
-        await page.waitForTimeout(150);
+      // clearing: take lamp, go north -> brook
+      // brook: talk to the badger, go north -> glade (NEW ROOM, 2026-07-18)
+      // glade: go north -> cavemouth (no gating action needed; the unicorn's
+      //   riddle here is bonus-only, same as every other creature)
+      // cavemouth: light lamp, go in -> hall
+      // hall: greet the dragon (renamed from "greet dragon", 2026-07-18)
+      const walk = [
+        ['take lamp', 'go north'],
+        ['talk to the badger', 'go north'],
+        ['go north'],
+        ['light lamp', 'go in'],
+        ['greet the dragon'],
+      ];
+      for (const room of walk) {
+        for (const cmd of room) {
+          for (const ch of cmd) await page.keyboard.press(ch === ' ' ? ' ' : ch, { delay: 5 });
+          await page.waitForTimeout(150);
+        }
       }
-      // brook: talk badger, go north
-      for (const cmd of ['talk badger', 'go north']) {
-        for (const ch of cmd) await page.keyboard.press(ch === ' ' ? ' ' : ch, { delay: 5 });
-        await page.waitForTimeout(150);
-      }
-      // cavemouth: light lamp, go in
-      for (const cmd of ['light lamp', 'go in']) {
-        for (const ch of cmd) await page.keyboard.press(ch === ' ' ? ' ' : ch, { delay: 5 });
-        await page.waitForTimeout(150);
-      }
-      // hall: greet dragon
-      for (const ch of 'greet dragon') await page.keyboard.press(ch === ' ' ? ' ' : ch, { delay: 5 });
       await page.waitForTimeout(1500); // let the gold win-flourish land
       await shot('greendragon-finale-standalone');
     } catch (e) { fail('greendragon-finale', e.message); }
@@ -134,6 +157,23 @@ async function enterWorld(page, worldIdx) {
       await enterWorld(page, 1);
       await shot('glimmerdeep-standalone');
     } catch (e) { fail('glimmerdeep', e.message); }
+  }
+
+  // Riddle-system wave (2026-07-18): south x4, east x2 from the start lands the
+  // player adjacent to Glim the glow-worm (slot 1, screen 0) and the riddle
+  // opens automatically on arrival — no gate, no `more` extras needed to show
+  // the panel (a fresh creature always poses its pool's first riddle).
+  if (shouldRun('glimmerdeep-riddle')) {
+    try {
+      await goToSelect(page, baseUrl);
+      await goToDoor(page);
+      await enterDoor(page);
+      await enterWorld(page, 1);
+      for (let i = 0; i < 4; i++) { await page.keyboard.press('s', { delay: 5 }); await page.waitForTimeout(80); }
+      for (let i = 0; i < 2; i++) { await page.keyboard.press('e', { delay: 5 }); await page.waitForTimeout(80); }
+      await page.waitForTimeout(300);
+      await shot('glimmerdeep-riddle-standalone');
+    } catch (e) { fail('glimmerdeep-riddle', e.message); }
   }
 
   if (shouldRun('glimmerdeep-reveal')) {
