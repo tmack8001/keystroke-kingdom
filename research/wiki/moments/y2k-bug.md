@@ -43,3 +43,7 @@ unbuilt Y2K easter egg — a monitor frozen at 12/31/99 23:59 — in
 2. [Y2K bug — Britannica](https://www.britannica.com/technology/Y2K-bug) — confirms the fix (expanding to 4-digit years) and states the effort "was viewed as a success because few major failures occurred."
 3. [20 Years Later, the Y2K Bug Seems Like a Joke. That's Because Those Behind the Scenes Then Took It Seriously — TIME](https://time.com/5752129/y2k-bug-history/) — journalistic retrospective arguing the smooth transition was a result of remediation work.
 4. [Y2K: Looking Back on the Bug That Wasn't — NPR](https://www.npr.org/2024/12/27/nx-s1-5231820/y2k-looking-back-on-the-bug-that-wasnt) — balanced counterweight: a historian calls Y2K "both somewhat overblown and a valuable exercise."
+
+## See also
+
+[[brain-virus-1986]] — this game's other "real tech-history event, calmly explained" card, Level 12 (added 2026-07-19).

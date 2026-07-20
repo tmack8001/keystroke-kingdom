@@ -4,7 +4,7 @@ code: [js/main.js, index.html]
 rules: [.claude/rules/tech.md, .claude/rules/security.md, .claude/rules/easter-eggs.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js
-verified: 2026-07-13
+verified: 2026-07-19
 ---
 
 **Graph gap note:** the Name Moment's golden flourish (below) has no screenshot set —
@@ -20,12 +20,13 @@ the EXPERIENCE gate. `index.html` is the one markup file for every screen.
 
 ## Screens (`state.screen`)
 
-`title → continue (returning players only) → ready → keyboard-preview → game →
-victory → complete → (next ready, or a cinematic, or back to title)`, plus
-`settings`, `gameover` (Survival only), and the four cinematic screens
-(`mystery`/`basement`/`commandcenter`/`fullcircle` — see [[cinematics]]). One giant
-`document.addEventListener('keydown', ...)` switches on `state.screen`; there is no
-per-screen module owning its own listener.
+`title → slots (returning players only, replaces the old single continue screen —
+see [[save-slots]]) → ready → keyboard-preview → game → victory → complete → (next
+ready, or a cinematic, or back to title)`, plus `collection` (read-only card gallery,
+reached from `slots`), `settings`, `gameover` (Survival only), and the four cinematic
+screens (`mystery`/`basement`/`commandcenter`/`fullcircle` — see [[cinematics]]). One
+giant `document.addEventListener('keydown', ...)` switches on `state.screen`; there is
+no per-screen module owning its own listener.
 
 ## Name entry — the `#player-name-input` reveal sites
 
@@ -63,9 +64,15 @@ expected token requires an exact match (Shift held); every other token is compar
 lowercase, so CapsLock never affects levels 1-23.
 
 **Correct key**: advance `currentIndex`; on pattern completion, check the history-card
-glint (see [[history-cards]]), advance `currentPattern`/`patternsCompleted`, ask the
-active theme's `patternComplete()` ([[level-themes]]); level ends only when
-`themeComplete && patternsCompleted >= minPatterns && !cardPending`.
+glint against `state.currentCard` (see [[history-cards]]), advance
+`currentPattern`/`patternsCompleted`, ask the active theme's `patternComplete()`
+([[level-themes]]); level ends only when `themeComplete && patternsCompleted >=
+minPatterns && !cardPending && !namePending`. `cardPending` is
+`!freePlay && state.currentCard && !state.cardWordTyped` — the "exactly one guaranteed
+card per play" invariant is unchanged by the 2026-07-19 history-cards rebuild (a level
+may now hide a *pool* of several cards, but `pickGuaranteedCard()` still resolves the
+pool down to exactly one card, stashed as `state.currentCard`, before the level starts —
+see [[history-cards]]).
 
 **Wrong key**: `state.mistakes[expected]++`, `streak = 0`, theme's `miss()` fires,
 `Audio.wrong()`, gentle 300ms `.wrong` flash — **the letter never advances**. This is
@@ -87,14 +94,22 @@ quarters, only the clock does. Mercy: every 15-correct-streak returns one quarte
 to the starting count, `maybeAwardMercyQuarter()`). Zero quarters →
 `showGameOver()`. See [[settings-survival]].
 
-## Returning-player persistence — `kk-progress`
+## Returning-player persistence — now per save slot (`js/slots.js`)
 
-`{ furthestLevel: 1-25, completed: { "<n>": true, ... } }`. `recordLevelComplete(n)`
-never regresses `furthestLevel`; Free Play never records. `hasProgress()` gates
-`boot()`'s choice between the continue screen and the first-time cold-open/title flow.
-`eraseProgress()` is the single shared erase helper (clears `kk-progress` + `kk-cards`,
-deliberately preserves `kk-settings`) — called identically by the continue screen's
-`R→Y` and Settings' "ERASE ALL PROGRESS" row. See [[onboarding-continue]].
+**Rebuilt 2026-07-19.** Progress used to be one global `kk-progress` localStorage key.
+It now lives inside whichever save slot is active (`Slots.getProgress()` /
+`Slots.saveProgress(p)`, `js/slots.js`, localStorage key `kk-slots` — full model at
+[[save-slots]]); `main.js`'s local `getProgress()`/`saveProgress()` wrappers just
+delegate to `Slots`, so every existing call site in this file (`{ furthestLevel: 1-25,
+completed: { "<n>": true, ... }, nameMoment, textWorlds }`) is unchanged in shape.
+`recordLevelComplete(n)` never regresses `furthestLevel`; Free Play never records.
+`Slots.anySlotExists()` gates `boot()`'s choice between the slot picker and the
+first-time cold-open/title flow (see [[save-slots]] for the picker itself and the
+one-time `kk-progress`/`kk-cards` → `kk-slots` migration). `eraseProgress()` is the
+single shared erase helper — it now calls `Slots.eraseActiveSlot()` (clears the active
+slot's progress AND its collected cards together, deliberately preserves
+`kk-settings` and every OTHER slot) — called identically by Settings' "ERASE ALL
+PROGRESS" row and the slot picker's own per-slot `X→Y/N` erase. See [[save-slots]].
 
 ## Level 24 — Shift capitals
 
@@ -294,5 +309,6 @@ word-bank pools `drawablePool` filters) · [[hud-keyboard-guide]]
 `getWinRatio` source; MIN/MAX WORD LENGTH rows, `getWordLengthRange` source) ·
 [[wordgen]] (client integration points above; word-length range also travels to the
 wordgen request) · [[history-cards]] · [[free-play]] · [[easter-eggs]] ·
-[[select-screen]] · [[onboarding-continue]] · [[visual-styling]] (z-index/CRT
+[[select-screen]] · [[save-slots]] (progress/card persistence owner + the slot picker
+that now precedes the returning-player flow) · [[visual-styling]] (z-index/CRT
 contract this file's screen-hiding relies on)

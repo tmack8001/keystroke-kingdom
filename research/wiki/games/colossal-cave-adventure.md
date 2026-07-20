@@ -1,9 +1,10 @@
 ---
 title: Colossal Cave Adventure
 type: entity
-tags: [hacker-culture, game, easter-egg]
+tags: [hacker-culture, game, easter-egg, history-card]
+level: 13
 sources: 4
-verified: 2026-07-17
+verified: 2026-07-19
 ---
 
 Colossal Cave Adventure, written by Will Crowther c. 1975–76 and expanded by Don Woods
@@ -12,6 +13,12 @@ in 1977, is the founding work of the text-adventure genre — the game that intr
 incorrectly.
 
 ## In this game
+
+**Also a Level 13 history card** *(added 2026-07-19)*, word `cave`. Letters c, a, v, e
+are all available the moment C lands at Level 13 (see `.claude/rules/levels/act3.md`
+Level 13) — c is the bottleneck (a@4, v@11, e@6 already unlocked). This gives the
+`xyzzy` title-screen easter egg (see [[xyzzy]]) its documented origin story, mid-game
+rather than only in the hidden layer.
 
 The game itself isn't directly reproduced in Keystroke Kingdom, but its magic word
 [[xyzzy]] is a title-screen easter egg — see that page and [[hacker-culture]] for the

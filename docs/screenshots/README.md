@@ -23,7 +23,7 @@ shots — was retired for exactly this reason; see below.)
 | `cinematics/commandcenter/` | The Act 3→4 Command Center transition (after Level 15) | `node docs/screenshots/capture-cinematics.js commandcenter` |
 | `easter-eggs/` | The hidden hacker-culture layer: title-screen magic words, Konami stars, WOPR select | `node docs/screenshots/capture-eggs.js` |
 | `freeplay/` | Free Play HUD (sentence + WPM), and Free Play layered under Survival | `node docs/screenshots/capture-freeplay.js` |
-| `screens/` | Game chrome: title, name entry, READY reveal, keyboard-preview, continue/erase-confirm, settings (default + Survival), level-complete, survival game-over | `node docs/screenshots/capture-screens.js` |
+| `screens/` | Game chrome: title, name entry, READY reveal, keyboard-preview, the slot picker + its erase-confirm, the card collection gallery, settings (default + Survival), level-complete, survival game-over | `node docs/screenshots/capture-screens.js` (slots/collection captured ad-hoc as of 2026-07-19 — see note below; not yet wired into the script) |
 | `textworlds/` | The Act 6 "Text Worlds" bonus wing (behind the select-screen door): the door, the hub chooser, and each of the 5 worlds — Green Dragon (prose), Glimmer Deep + Whisperwood (ASCII tile), Your Own World (the maker), and the IM-friend (local-LLM chat) — with reveal/standalone variants. Act 6 is its own surface here, NOT in `levels/`/`acts/` (which are the 25 curriculum levels + 5 curriculum act pages) | `node docs/screenshots/capture-textworlds.js` |
 
 Regenerate everything:
@@ -56,6 +56,32 @@ Every script:
 
 **Screenshots are validating reference artifacts — regenerate the affected set after
 changing its feature. Name directories by game surface, never by process or agent.**
+
+## screens/ — continue screen retired, save slots + collection gallery added (2026-07-19)
+
+The single-save continue screen (`continue-screen.png`, `continue-erase-confirm.png`)
+no longer exists — `js/slots.js` replaced the single `kk-progress`/`kk-cards` save with
+an unlimited list of independent per-family-member saved games, and the returning-player
+front door is now the "CHOOSE YOUR GAME" slot picker (`state.screen === 'slots'`; see
+`docs/features/save-slots.md` + `docs/features/onboarding-continue.md`). Both retired
+PNGs are deleted; regenerating `capture-screens.js` today will NOT reproduce them (its
+old "continue" section seeds legacy `kk-progress`, which now auto-migrates into the slot
+picker on load rather than showing a continue screen — that section is stale and needs
+a rewrite by whoever owns the capture scripts).
+
+New captures, taken ad-hoc (not yet wired into `capture-screens.js` — tooling debt, see
+above): `slots-picker.png` (5 seeded saved games + the trailing "+ NEW GAME" row,
+demonstrating the picker has no fixed cap), `slots-erase-confirm.png` (the picker's
+per-game `X` → Y/N erase confirmation), `collection-gallery.png` (the `C`-key card
+gallery — `★ found / total` header, owned cards revealed, unfound cards `???`, the
+secret WarGames card shown in green). Seed shape for reproducing these:
+```js
+localStorage.setItem('kk-slots', JSON.stringify({
+  v: 1, active: null,
+  slots: [ { name, furthestLevel, completed: {}, nameMoment: null, textWorlds: {},
+             cards: [<card id>, ...], cardRotation: {} }, ... ],
+}));
+```
 
 ## milestones/ — why it exists (2026-07-12)
 

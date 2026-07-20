@@ -4,7 +4,7 @@ code: [js/ui/cabinet-art.js]
 rules: [.claude/rules/levels.md]
 screenshots: docs/screenshots/acts/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-07-12
+verified: 2026-07-19
 ---
 
 # Select Screen ("GREETINGS PROFESSOR FALKEN")
@@ -32,7 +32,19 @@ Two-layer canvas draw, `drawCabinet(canvas, levelNum, scale=2)`:
 — UNLESS `state.selectBypass` is true (WOPR dev/parent bypass), in which case nothing
 is ever locked. Locked cabinets get CSS class `locked`, label forced to `'???'`, keys
 text blanked, and no click listener — dark and inert. `state.maxUnlockedLevel` is
-seeded from the `kk-progress` localStorage key at boot (owned by [[engine-flow]]).
+seeded from the **active save slot's** progress (`js/slots.js`'s `getProgress()` —
+see [[save-slots]]) at boot and whenever a game is resumed from the slot picker (owned
+by [[engine-flow]]).
+
+## Boot path (landed 2026-07-19)
+
+Reaching this screen for a returning player now routes through the slot picker first —
+see [[save-slots]]. `boot()` migrates any pre-slots single save into Slot 1, then shows
+the slot picker (`CHOOSE YOUR GAME`) if any save slot exists; picking a slot resumes
+straight to the ready screen (not this screen) with that slot's `maxUnlockedLevel`
+already seeded, and the select screen is reached exactly as it always was — via the
+ready screen's Escape or a level's own Escape path. A first-time machine (no slots at
+all) is unaffected: it still falls through to the untouched cold-open/title flow.
 
 ## Navigation
 
@@ -60,6 +72,7 @@ See [[easter-eggs]].
 
 ## Related
 
-[[onboarding-continue]] (continue screen reads the same `kk-progress` gate) ·
-[[curriculum-data]] (the level/act data this screen visualizes) · [[engine-flow]]
-(key-routing owner) · [[easter-eggs]] (WOPR bypass)
+[[save-slots]] (the slot picker that now precedes this screen for returning players;
+`maxUnlockedLevel` is seeded from the active slot) · [[curriculum-data]] (the level/act
+data this screen visualizes) · [[engine-flow]] (key-routing owner) · [[easter-eggs]]
+(WOPR bypass)

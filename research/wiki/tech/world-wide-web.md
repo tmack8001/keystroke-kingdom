@@ -37,3 +37,7 @@ away for free — to everyone, forever."* See [[computing-history-moments]] for 
 2. [30 years of a free and open Web — CERN](https://home.cern/computing/30-years-free-and-open-web) — directly supports "gave it away for free": CERN's public-domain release language. **[fetched]**
 3. [The original proposal of the WWW, HTMLized — W3C](https://www.w3.org/History/1989/proposal.html) — the actual original 1989 proposal document, hosted by W3C; shows the project was initially called "Mesh." **[fetched]**
 4. [CERN puts the World Wide Web in the public domain — CERN Timeline](https://timeline.web.cern.ch/cern-puts-world-wide-web-public-domain) — CERN's own timeline entry for the 1993 public-domain release.
+
+## See also
+
+[[email-invented-1971]] — an earlier networking-history card, Level 11 (added 2026-07-19). [[ipv4]] — the addressing standard underneath it all, Level 17 (added 2026-07-19). [[xerox-alto-gui]] — another "the interface changed everything" card, Level 7 (added 2026-07-19).

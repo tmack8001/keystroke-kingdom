@@ -6,6 +6,13 @@ BINARY       := keystroke-kingdom
 SMOKE_PORT   := 8137
 SMOKE_URL    := http://127.0.0.1:$(SMOKE_PORT)
 
+# Keep the machine awake for the duration of long browser/recorder runs. macOS
+# suspend kills headless Chromium mid-run and the suite stalls silently (no error,
+# just hangs) — a repeat foot-gun. `caffeinate -i CMD` runs CMD, prevents idle
+# sleep only while it runs, and exits with CMD's status (so `make` still sees
+# failures). Empty on systems without caffeinate, so the targets stay portable.
+CAFFEINATE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -i")
+
 .DEFAULT_GOAL := help
 
 ## help: list available targets
@@ -60,7 +67,7 @@ test-go:
 # the driver-hardening follow-ups in docs/testing/FINDINGS.md land.
 test-integration:
 	@echo "→ node --test tests/integration (L2 behavior, serial — see comment)"
-	@node --test --test-concurrency=1 "tests/integration/*.test.mjs"
+	@$(CAFFEINATE) node --test --test-concurrency=1 "tests/integration/*.test.mjs"
 
 ## test-fast: the quick gate — lint + static + unit + go (no browser)
 test-fast: lint test-unit test-go
@@ -71,7 +78,7 @@ test: test-fast test-integration
 	@python3 -m http.server $(SMOKE_PORT) --directory . >/dev/null 2>&1 & \
 		SRV=$$!; \
 		sleep 1; \
-		DEV_URL=$(SMOKE_URL) node scripts/record-playthrough.js \
+		DEV_URL=$(SMOKE_URL) $(CAFFEINATE) node scripts/record-playthrough.js \
 			--single-level=1 --profile=steady --out=/tmp/kk-smoke.mov; \
 		RC=$$?; \
 		kill $$SRV 2>/dev/null; \
@@ -80,13 +87,13 @@ test: test-fast test-integration
 
 ## screenshots: regenerate all docs/screenshots (needs a running server / DEV_URL)
 screenshots:
-	node docs/screenshots/capture-all.js
+	$(CAFFEINATE) node docs/screenshots/capture-all.js
 
 ## film: re-record the full kid-profile playthrough film
 # WARNING: record only from a SETTLED tree (see swarm-playbook §6). Needs a
 # running dev server; pass DEV_URL or start `make run` first.
 film:
-	node scripts/record-playthrough.js --profile=kid --out=docs/keystroke_kingdoms.mov
+	$(CAFFEINATE) node scripts/record-playthrough.js --profile=kid --out=docs/keystroke_kingdoms.mov
 
 ## wordgen-check: curl + pretty-print the two /api/wordgen endpoints (needs `make run`)
 wordgen-check:

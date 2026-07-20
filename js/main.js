@@ -1,7 +1,7 @@
 import * as Audio from './audio.js';
 import { LEVELS, FINGER_MAP } from './levels.js';
 import { updateHUD, showFingerHint, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter } from './ui/hud.js';
-import { showScreen, applyLevelTheme, renderReadyScreen, renderContinueScreen, showContinueEraseConfirm, createStars } from './ui/screens.js';
+import { showScreen, applyLevelTheme, renderReadyScreen, renderSlotsScreen, renderCollectionScreen, createStars } from './ui/screens.js';
 import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked } from './ui/cabinet-art.js';
 import { Themes, activeTheme, stopAll } from './themes/index.js';
 import * as KeyboardPreview from './ui/keyboard-preview.js';
@@ -10,14 +10,21 @@ import * as Basement from './basement.js';
 import * as CommandCenter from './commandcenter.js';
 import * as FullCircle from './fullcircle.js';
 import { FREEPLAY_KEYS, buildFreePlayPatterns } from './freeplay.js';
-import { HISTORY_CARDS, TOTAL_CARDS, wordToTokens, patternMatchesCard, collectCard, collectedCount } from './history-cards.js';
+import { TOTAL_CARDS, wordToTokens, patternMatchesCard, cardsForLevel, cardById, allCards, pickGuaranteedCard } from './history-cards.js';
+import * as Slots from './slots.js';
 import { getSettings, saveSettings, getRows, applyRowChange, DIFFICULTY_MULTIPLIER, getWinRatio, getWordLengthRange } from './settings.js';
 import { initWordgen, prefetch as wordgenPrefetch, takeWords as wordgenTakeWords } from './wordgen.js';
 import * as TextWorldHub from './textworld/hub.js';
 
 const $ = (id) => document.getElementById(id);
 
-const SECRET_PHRASES = ['shallweplayagame', 'wopr', 'wargames'];
+// The WarGames (1983) magic words that open the cabinet-select bypass. JOSHUA
+// is the WOPR's backdoor password and the machine's own name — the film's whole
+// "SHALL WE PLAY A GAME?" thread. Typing any of them ALSO collects the hidden
+// WarGames history card into the active game's collection (a secret Skulltula —
+// findable only by the curious who know the words). See easter-eggs.md.
+const SECRET_PHRASES = ['shallweplayagame', 'wopr', 'wargames', 'joshua'];
+const WARGAMES_CARD_ID = 'wargames-joshua';
 let secretBuffer = '';
 
 // ─── Hidden hacker-culture responses (title screen) ─────────────────────────
@@ -62,55 +69,20 @@ function trackKonami(key) {
 }
 
 // ─── Returning-player persistence ────────────────────────────────────────
-// Progress lives in its own localStorage key (kk-progress), separate from
-// kk-settings, so erasing progress and changing settings stay independent.
-// Shape: { furthestLevel: n, completed: { "3": true, ... } }.
-// furthestLevel = the highest level the player has UNLOCKED (reached). A level
-// becomes unlocked the moment the previous one is completed; completing level n
-// unlocks n+1. A fresh player has no key at all (getProgress returns level 1,
-// no completions) so the very first session behaves exactly as before.
-const PROGRESS_KEY = 'kk-progress';
-
+// Progress now lives inside a SAVE SLOT (js/slots.js) — up to three independent
+// saved games, each with its own name, curriculum progress, Act-6 text-world
+// progress, name-moment record, and collected history-card set. These thin
+// wrappers keep the SAME shape main.js has always used
+// ({ furthestLevel, completed, nameMoment, textWorlds }) but read/write the
+// ACTIVE slot, so every existing call site below is unchanged. With no active
+// slot (WOPR dev bypass before a game is picked) reads return a fresh default
+// and writes are no-ops — the dev path just doesn't persist.
 function getProgress() {
-  let raw = null;
-  try {
-    raw = JSON.parse(localStorage.getItem(PROGRESS_KEY));
-  } catch (e) {
-    raw = null;
-  }
-  const furthest = raw && Number.isFinite(raw.furthestLevel)
-    ? Math.max(1, Math.min(25, Math.round(raw.furthestLevel)))
-    : 1;
-  const completed = (raw && raw.completed && typeof raw.completed === 'object') ? raw.completed : {};
-  // nameMoment: { name: "<sanitized words>" } — the once-ever golden name
-  // flourish record. Tolerate garbage: only accept the exact expected shape.
-  const nameMoment = (raw && raw.nameMoment && typeof raw.nameMoment === 'object'
-    && typeof raw.nameMoment.name === 'string')
-    ? { name: raw.nameMoment.name }
-    : null;
-  // Act 6 text worlds persist in their OWN namespace, separate from the 25-level
-  // curriculum's furthestLevel. Tolerate garbage: only accept an object.
-  const textWorlds = (raw && raw.textWorlds && typeof raw.textWorlds === 'object')
-    ? raw.textWorlds
-    : {};
-  return { furthestLevel: furthest, completed, nameMoment, textWorlds };
-}
-
-// True only when the player has actually made progress worth resuming — i.e.
-// completed at least one level (furthestLevel has advanced past 1). A player
-// who opened the game once and quit at level 1 still sees the fresh cold open.
-function hasProgress() {
-  const p = getProgress();
-  return p.furthestLevel > 1 || Object.keys(p.completed).length > 0;
+  return Slots.getProgress();
 }
 
 function saveProgress(p) {
-  try {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
-  } catch (e) {
-    // localStorage unavailable — progress stays in-memory for the session.
-    // Never throw; never block play.
-  }
+  Slots.saveProgress(p);
 }
 
 // Called at the level-complete moment: mark this level done and unlock the
@@ -133,36 +105,14 @@ function recordTextWorldComplete(id) {
   saveProgress(p);
 }
 
-// The single shared "erase all progress" helper. BOTH erase paths — the
-// continue screen's R→Y and the Settings screen's ERASE ALL PROGRESS row —
-// call this, so their semantics can never drift apart again.
-//
-// "Erase all progress" means progress, NOT identity: a child starting over
-// keeps her name and her CRT/sound preferences. So this clears the gameplay
-// keys only —
-//   kk-progress  (this file: furthest level + completions)
-//   kk-cards     (history-cards.js: collected history-card levels)
-// — and deliberately KEEPS kk-settings (player name + all preferences).
-//
-// Per-letter mistakes/stats live only in state.mistakes (in-memory, never
-// persisted), so a fresh startGame() already resets them — nothing to clear.
-//
-// kk-cards is owned by history-cards.js (read-only here); it exposes no erase
-// export, so we remove its key by name. Keep this string in sync with
-// history-cards.js's STORAGE_KEY if that ever changes.
-const CARDS_KEY = 'kk-cards';
-
+// The Settings-screen "ERASE ALL PROGRESS / ERASE EVERYTHING?" path — a true
+// factory reset that wipes EVERY saved game (kk-slots), matching its label,
+// while KEEPING kk-settings (name + global preferences). Reloading afterward
+// cold-opens as a brand-new machine. This is distinct from the slot picker's
+// per-game erase (X → Y/N), which removes just one game. Per-letter mistakes
+// live only in state.mistakes (in-memory), so a fresh startGame() resets them.
 export function eraseProgress() {
-  try {
-    localStorage.removeItem(PROGRESS_KEY);
-  } catch (e) {
-    // ignore — never throw, never block
-  }
-  try {
-    localStorage.removeItem(CARDS_KEY);
-  } catch (e) {
-    // ignore
-  }
+  Slots.eraseAll();
 }
 
 const settings = getSettings();
@@ -189,6 +139,11 @@ const state = {
   startTime: null,
   patterns: [],
   cardWordTyped: false,
+  // The single guaranteed history card chosen for THIS play of the level (or
+  // null if the level hides none). Rotates across replays (pickGuaranteedCard),
+  // preferring a card not yet collected in the active slot. Everything about the
+  // card gate — sparkle detect, win-gate, reveal — keys off this one object.
+  currentCard: null,
 
   // Name Moment (see nameWordForLevel etc.): the lowercase name-word that
   // earns this level's guaranteed golden injection, or null. nameMomentDone
@@ -197,8 +152,13 @@ const state = {
   nameMomentWord: null,
   nameMomentDone: false,
 
-  // Continue (returning-player) screen state
-  continueEraseConfirm: false,
+  // Slot picker ("CHOOSE YOUR GAME") — the returning-player front door. Games
+  // are an unlimited, growable list; the picker shows one row per game plus a
+  // trailing "＋ NEW GAME" row, so slotsSelected ranges over [0 .. count].
+  slotsSelected: 0,          // 0-based highlighted row (count == the NEW GAME row)
+  slotsEraseConfirm: false,  // X → Y/N erase confirmation sub-state
+  pendingNewGame: false,     // a new-game name entry is in progress (append on confirm)
+  collectionForSlot: 0,      // which game the collection gallery is showing
 
   // Select-screen gating: the highest level the player may enter. Cabinets
   // beyond this render dark/locked and can't be selected — EXCEPT the WOPR
@@ -582,7 +542,7 @@ function handleGameKey(e) {
       // History card sparkle: the word is just a normal pattern in every way
       // — this only fires an ambient shimmer, it never pauses or gates flow.
       if (!state.freePlay && !state.cardWordTyped) {
-        const card = HISTORY_CARDS[state.level];
+        const card = state.currentCard;
         if (card && patternMatchesCard(pattern, card)) {
           state.cardWordTyped = true;
           const promptArea = document.querySelector('.prompt-area');
@@ -637,7 +597,7 @@ function handleGameKey(e) {
       // If this level hides a history card, the level can't end until its
       // moment word has been typed — the card is earned, never missable.
       const cardPending = !state.freePlay
-        && HISTORY_CARDS[state.level]
+        && state.currentCard
         && !state.cardWordTyped;
       // Likewise, if this is the level where the player's name first becomes
       // spellable, the level can't end until they've completed their name —
@@ -736,14 +696,14 @@ function showLevelComplete() {
   // History card reveal — never shown in free play (curriculum-only feature).
   // Not every level hides one; that's what makes finding them special.
   const historyCard = $('history-card');
-  const card = !state.freePlay ? HISTORY_CARDS[state.level] : null;
+  const card = !state.freePlay ? state.currentCard : null;
   if (card && state.cardWordTyped) {
-    const isNew = collectCard(state.level);
+    const isNew = Slots.collectCardId(card.id);
     $('history-card-word').textContent = card.word.toUpperCase();
     $('history-card-title').textContent = card.title;
     $('history-card-year').textContent = card.year;
     $('history-card-fact').textContent = card.fact;
-    $('history-card-count').textContent = `CARD ${collectedCount()} OF ${TOTAL_CARDS}`;
+    $('history-card-count').textContent = `CARD ${Slots.collectedCount()} OF ${TOTAL_CARDS}`;
     $('history-card-new').classList.toggle('hidden', !isNew);
     historyCard.classList.remove('hidden');
   } else {
@@ -1056,13 +1016,26 @@ function startGame() {
     }
   }
 
-  // History card word: splice this level's "moment word" into the pattern
-  // list at a mid-to-late position, guaranteeing it gets typed — same
-  // technique as the level-24 name injection above. On level 24 both
-  // injections coexist: the name pattern lands near the front/middle, the
-  // card word ('Eniac') lands later, so neither displaces the other.
+  // History card word: pick the ONE guaranteed card for this play (a level may
+  // now hide a pool of several — pickGuaranteedCard prefers one not yet
+  // collected in the active slot, rotating for variety), then splice its moment
+  // word into the pattern list right after the intro drills. Guaranteeing
+  // exactly one card word per play preserves the win-gate invariant every
+  // winability proof rests on; which card it is just varies across replays,
+  // driving the Skulltula-style collection loop.
   state.cardWordTyped = false;
-  const card = !state.freePlay ? HISTORY_CARDS[state.level] : null;
+  state.currentCard = null;
+  if (!state.freePlay) {
+    const chosen = pickGuaranteedCard(
+      state.level, Slots.collectedIds(), Slots.getCardRotation(state.level));
+    if (chosen) {
+      state.currentCard = chosen;
+      // Advance this slot's per-level rotation so the NEXT visit surfaces a
+      // different card (mirrors the Act-6 riddle `_ri` "different each time").
+      Slots.bumpCardRotation(state.level);
+    }
+  }
+  const card = state.currentCard;
   if (card) {
     // Inject right after the intro drills — before the earliest possible
     // level-win — so the moment word is always reached in real play. The
@@ -1141,27 +1114,53 @@ function startGame() {
 
 // ─── Continue screen (returning player) ──────────────────────────────────
 
-// The cumulative set of keys the player has already mastered, in a stable
-// order, for the level they're about to resume. It's every key the resume
-// level knows about minus the ones that level itself is about to teach.
-function learnedKeysForLevel(resumeLevel) {
-  const level = LEVELS[resumeLevel];
-  if (!level) return [];
-  const newSet = new Set(level.newKeys);
-  return level.keys.filter(k => !newSet.has(k));
+// ─── Slot picker ("CHOOSE YOUR GAME") — the returning-player front door ────
+// Replaces the old single continue screen. Each family member keeps her own
+// saved game; the picker shows every slot's name, level, and cards-found count,
+// and is the one place games are resumed, started, erased, or browsed.
+
+function showSlotsScreen() {
+  state.selectBypass = false;
+  state.freePlay = false;
+  state.slotsEraseConfirm = false;
+  if (typeof state.slotsSelected !== 'number') state.slotsSelected = 0;
+  applyLevelTheme(1); // arcade-era chrome, like the title
+  renderSlotsScreen(state, Slots.listSlots());
+  showScreen('slots', state);
 }
 
-function showContinueScreen() {
-  const p = getProgress();
-  state.maxUnlockedLevel = p.furthestLevel;
+// Route into name entry to CREATE a brand-new game. The name-entry confirm
+// handler appends the new game (state.pendingNewGame). No slot index — games are
+// an unlimited, growable list (Trevor: no reason to cap a family's members).
+function startNewGameFlow() {
+  state.pendingNewGame = true;
+  state.level = 1;
   state.selectBypass = false;
-  state.level = p.furthestLevel;
   state.freePlay = false;
-  state.continueEraseConfirm = false;
-  const level = LEVELS[state.level] || LEVELS[1];
-  renderContinueScreen(state, level, learnedKeysForLevel(state.level));
-  applyLevelTheme(1); // continue screen is arcade-era chrome, like the title
-  showScreen('continue', state);
+  state.coinInserted = true; // straight to name entry, past INSERT COIN
+  applyLevelTheme(1);
+  showScreen('title', state);
+  $('insert-coin').classList.add('hidden');
+  $('reboot-hint').classList.add('hidden');
+  $('settings-hint').classList.add('hidden');
+  $('name-setup').classList.remove('hidden');
+  $('wopr-text').textContent = '';
+  $('player-name-input').value = ''; // a fresh name for a fresh game
+  Audio.coin();
+  setTimeout(() => {
+    $('player-name-input').focus();
+    $('player-name-input').select();
+  }, 0);
+}
+
+// The collection gallery for a given slot — found cards revealed, still-locked
+// cards shown as "???" silhouettes to tease replay. Read-only; opening it never
+// changes which game is active.
+function showCollectionScreen(slotIndex) {
+  state.collectionForSlot = slotIndex;
+  const collected = new Set(Slots.slotCards(slotIndex));
+  renderCollectionScreen(state, allCards(), collected);
+  showScreen('collection', state);
 }
 
 // ─── Settings screen ────────────────────────────────────────────────────
@@ -1276,45 +1275,83 @@ function returnToArcadeFromTextWorld() {
 
 document.addEventListener('keydown', (e) => {
   switch (state.screen) {
-    case 'continue':
-      // Returning-player continue screen. Its ONLY bindings are Space (resume),
-      // R (restart→confirm), and inside confirm Y/N. No secret-phrase or Konami
-      // listener lives here — those stay on the title/ready screens (see EGGS).
+    case 'slots': {
+      // Slot picker ("CHOOSE YOUR GAME") — the returning-player front door.
+      // Rows = one per saved game + a trailing "＋ NEW GAME" row (index == count).
+      // Navigate ↑/↓ (or number keys for the first nine games); Space/Enter
+      // resumes a game or, on the NEW GAME row, starts one; N = new game; X =
+      // erase highlighted game (Y/N confirm); C = browse its cards; Escape → attract.
       e.preventDefault();
-      if (state.continueEraseConfirm) {
-        // Only Y erases. N or ANY other key returns to the continue screen —
-        // never trap the kid in the confirmation.
-        if (e.key === 'y' || e.key === 'Y') {
-          eraseProgress();
-          state.continueEraseConfirm = false;
-          state.maxUnlockedLevel = 1;
-          state.selectBypass = false;
-          state.level = 1;
-          state.coinInserted = false;
-          // Fresh start: go to the normal title/name flow, exactly as a
-          // first-time player would see it (minus the one-time cold open).
-          applyLevelTheme(1);
-          showScreen('title', state);
-          $('insert-coin').classList.remove('hidden');
-          $('reboot-hint').classList.remove('hidden');
-          $('settings-hint').classList.remove('hidden');
-          $('name-setup').classList.add('hidden');
-          $('wopr-text').textContent = '';
+      const slots = Slots.listSlots();
+      const rows = slots.length + 1;          // +1 for the NEW GAME row
+      const newRow = slots.length;            // index of the NEW GAME row
+      let sel = state.slotsSelected;
+      if (sel >= rows) sel = state.slotsSelected = rows - 1; // clamp after an erase
+
+      if (state.slotsEraseConfirm) {
+        // Only Y erases; N or ANY other key backs out — never trap the child.
+        if ((e.key === 'y' || e.key === 'Y') && sel < slots.length) Slots.eraseSlot(sel);
+        state.slotsEraseConfirm = false;
+        const after = Slots.listSlots();
+        if (state.slotsSelected > after.length) state.slotsSelected = after.length;
+        renderSlotsScreen(state, after);
+        break;
+      }
+
+      if (e.key === 'ArrowUp') {
+        state.slotsSelected = (sel - 1 + rows) % rows;
+        renderSlotsScreen(state, slots);
+      } else if (e.key === 'ArrowDown') {
+        state.slotsSelected = (sel + 1) % rows;
+        renderSlotsScreen(state, slots);
+      } else if (e.key >= '1' && e.key <= '9' && parseInt(e.key, 10) <= slots.length) {
+        state.slotsSelected = parseInt(e.key, 10) - 1;
+        renderSlotsScreen(state, slots);
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        if (sel < slots.length) {
+          // Resume this saved game.
+          Slots.setActive(sel);
+          const p = getProgress();
+          state.playerName = slots[sel].name;
+          state.maxUnlockedLevel = p.furthestLevel;
+          state.level = p.furthestLevel;
+          Object.assign(settings, saveSettings({ ...settings, playerName: state.playerName }));
           Audio.start();
+          $('ready-name').textContent = state.playerName;
+          renderReadyScreenWithSurvivalTag();
+          applyLevelTheme(state.level);
+          showScreen('ready', state);
         } else {
-          state.continueEraseConfirm = false;
-          showContinueEraseConfirm(false);
+          startNewGameFlow(); // the NEW GAME row
         }
-      } else if (e.key === ' ') {
-        Audio.start();
-        state.level = state.maxUnlockedLevel;
-        $('ready-name').textContent = state.playerName;
-        renderReadyScreenWithSurvivalTag();
-        applyLevelTheme(state.level);
-        showScreen('ready', state);
-      } else if (e.key === 'r' || e.key === 'R') {
-        state.continueEraseConfirm = true;
-        showContinueEraseConfirm(true);
+      } else if (e.key === 'n' || e.key === 'N') {
+        startNewGameFlow();
+      } else if (e.key === 'x' || e.key === 'X') {
+        if (sel < slots.length) {
+          state.slotsEraseConfirm = true;
+          renderSlotsScreen(state, slots);
+        }
+      } else if (e.key === 'c' || e.key === 'C') {
+        if (sel < slots.length) showCollectionScreen(sel);
+      } else if (e.key === 'Escape') {
+        // Back to the attract title (settings via Tab, WOPR phrases, etc.).
+        applyLevelTheme(1);
+        state.coinInserted = false;
+        showScreen('title', state);
+        $('insert-coin').classList.remove('hidden');
+        $('reboot-hint').classList.remove('hidden');
+        $('settings-hint').classList.remove('hidden');
+        $('name-setup').classList.add('hidden');
+        $('wopr-text').textContent = '';
+      }
+      break;
+    }
+
+    case 'collection':
+      // Read-only card gallery. Any of Escape/Space/Enter returns to the picker.
+      e.preventDefault();
+      if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
+        showSlotsScreen();
       }
       break;
 
@@ -1363,6 +1400,9 @@ document.addEventListener('keydown', (e) => {
             secretBuffer = '';
             $('wopr-text').textContent = '';
             Audio.start();
+            // Secret WarGames card into the active game's collection (no-op if
+            // no game is active yet — the dev bypass before a slot is chosen).
+            Slots.collectCardId(WARGAMES_CARD_ID);
             // WOPR is the dev/parent bypass: every cabinet is selectable,
             // regardless of saved progress.
             state.selectBypass = true;
@@ -1378,9 +1418,26 @@ document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           const input = $('player-name-input').value.trim().toUpperCase();
-          state.playerName = input || 'PLAYER ONE';
+          const name = input || 'PLAYER ONE';
+          // Resolve which save this name belongs to:
+          //   • a pending NEW GAME (from the slot picker) → append a new game,
+          //   • an active game being renamed (Escape-from-ready re-entry) → rename,
+          //   • genuine first-time player (no games yet) → create the first game,
+          //   • WOPR dev bypass into an existing machine with no active game →
+          //     ephemeral: set the name only, persist nothing.
+          if (state.pendingNewGame) {
+            Slots.createSlot(name);
+            state.pendingNewGame = false;
+          } else if (Slots.getActive() !== null) {
+            Slots.setActiveName(name);
+          } else if (!Slots.anySlotExists()) {
+            Slots.createSlot(name);
+          }
+          state.playerName = name;
+          Object.assign(settings, saveSettings({ ...settings, playerName: name }));
+          // Seed the select-screen gate from the (now) active game.
+          state.maxUnlockedLevel = getProgress().furthestLevel;
           $('ready-name').textContent = state.playerName;
-          Object.assign(settings, saveSettings({ ...settings, playerName: state.playerName }));
           renderReadyScreenWithSurvivalTag();
           applyLevelTheme(state.level);
           Audio.start();
@@ -1421,6 +1478,7 @@ document.addEventListener('keydown', (e) => {
           e.preventDefault();
           secretBuffer = '';
           Audio.start();
+          Slots.collectCardId(WARGAMES_CARD_ID); // secret WarGames card
           state.selectBypass = true; // WOPR dev/parent bypass — unlock all cabinets
           state.selectedLevel = 1;
           renderSelectScreen(state);
@@ -1672,18 +1730,18 @@ document.querySelectorAll('[data-enter-key]').forEach(el => { el.textContent = e
 createStars();
 
 // ─── Boot: returning player vs first-time player ─────────────────────────
-// Seed the select-screen gate from saved progress so lit-vs-dark cabinets are
-// correct regardless of entry path. Then, if the player has real progress,
-// skip the cold open and show the continue screen. A brand-new player (no
-// kk-progress) falls through to the untouched title/name flow.
+// First fold any pre-slots single save into Slot 1 (idempotent migration), so a
+// returning child never loses her game. Then: if ANY saved game exists, the
+// slot picker ("CHOOSE YOUR GAME") is the front door. A brand-new machine (no
+// slots) falls through to the untouched cold-open title/name flow, which creates
+// Slot 1 on the first name confirm.
 (function boot() {
-  const p = getProgress();
-  state.maxUnlockedLevel = p.furthestLevel;
+  Slots.ensureMigrated(settings.playerName);
   // One-time wordgen health probe — fire-and-forget, never awaited; on static
   // hosting this fails fast once and wordgen stays silently dormant.
   initWordgen();
-  if (hasProgress()) {
-    showContinueScreen();
+  if (Slots.anySlotExists()) {
+    showSlotsScreen();
   }
 })();
 

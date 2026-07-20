@@ -41,3 +41,7 @@ device into the dial-up era specifically. It's also the shared access ritual for
 1. [Why Did Dial-Up Modems Make So Much Noise? — How-To Geek](https://www.howtogeek.com/670455/why-did-dial-up-modems-screech-and-make-funny-noises/) — explains the handshake process and why it produced audible tones. *(search result only, not fetched)*
 2. [Understanding The Iconic Modem Sound: A Nostalgic Digital Handshake Explained — SoundCy](https://soundcy.com/article/what-is-a-modem-sound) — corroborates the handshake/negotiation framing and Hayes' role in the built-in speaker feature. *(search result only, not fetched)*
 3. [The Nostalgic, Ear-Piercing Symphony Of Dial-Up Internet Sounds — SoundCy](https://soundcy.com/article/what-dial-up-sounds-like) — corroborates the cultural-memory framing of the sound as a shared generational artifact. *(search result only, not fetched)*
+
+## See also
+
+[[56k-modem]] — the specific speed standard (V.90, 1998) behind this handshake sound, and a Level 16 history card (added 2026-07-19).

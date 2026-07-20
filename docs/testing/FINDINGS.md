@@ -191,6 +191,48 @@ strings. Orchestrator triage notes added; final call is Trevor's.*
   smaller, more conservative change and mirrors the pattern the tile worlds
   already use safely.
 
+## Save Slots (2026-07-19, test-engineer lane — history-card + save-system rebuild)
+
+### TF-S1 — `Slots.ensureMigrated()` throws when localStorage is unavailable (private-mode style)
+- **Invariant:** INV-27/INV-60 (security.md rule 4: "localStorage is untrusted
+  input... tolerate garbage... Writes never throw"; js/slots.js's own header
+  comment: "Every read parses inside try/catch, validates shape field-by-field,
+  and tolerates garbage by falling back to a safe default... Writes never throw —
+  localStorage being unavailable (private mode) degrades to an in-session-only
+  game, exactly like the old single-save did.")
+- **Status:** RESOLVED 2026-07-19 — `ensureMigrated`'s first `localStorage.getItem`
+  is now wrapped in try/catch (js/slots.js): a throwing localStorage returns early
+  (nothing to migrate), so `boot()` no longer breaks in private-browsing mode. The
+  `t.todo` placeholder was promoted to a live `assert.doesNotThrow` assertion.
+- **Repro (now a passing regression test):** `tests/unit/slots.test.mjs` → "TF-S1:
+  ensureMigrated tolerates a throwing localStorage" under "garbage
+  tolerance — corrupt/malformed kk-slots never crashes, never bricks the picker".
+  Install a `localStorage` stub whose `getItem`/`setItem`/`removeItem` all throw,
+  then call `Slots.ensureMigrated('PLAYER ONE')`.
+- **Evidence:** every other read in slots.js wraps its `localStorage.getItem` call
+  inside a `try { ... } catch` (e.g. `readState()`'s
+  `JSON.parse(localStorage.getItem(SLOTS_KEY))`), but `ensureMigrated`'s very
+  first line is a bare, unguarded call:
+  `if (localStorage.getItem(SLOTS_KEY) !== null) return; // already slotted`
+  (js/slots.js, top of `ensureMigrated`). With a throwing localStorage (private
+  browsing in some engines, storage quota/security errors) this line throws
+  synchronously, and since `ensureMigrated` is called unconditionally from
+  `js/main.js`'s IIFE boot sequence (`Slots.ensureMigrated(settings.playerName)`,
+  called BEFORE any try/catch in `boot()`), the exception would propagate out of
+  the boot IIFE itself — the one path in the whole persistence layer that isn't
+  defensive, at the one moment (first script load) where a crash is most visible.
+  Every other function exercised in the same test (`anySlotExists`, `createSlot`,
+  `getProgress`, `saveProgress`, `collectCardId`, `collectedCount`,
+  `eraseActiveSlot`) degrades gracefully with the identical throwing stub — this
+  is an isolated omission on the one function that also happens to run first.
+- **Orchestrator note:** low realistic severity (this specific browser
+  configuration — storage APIs present but every call throwing — is rare, and
+  `readState()`'s own defensive read a few lines later would have caught it if
+  the guard were folded into a try/catch, or removed in favor of just calling
+  `readState()`), but it is a genuine, narrow contradiction of the module's own
+  documented "writes never throw" / "every read... tolerates garbage" promise,
+  worth a one-line try/catch around that guard clause.
+
 ## Dismissed at close-out (test misread the doc; tests corrected 2026-07-12)
 
 ### ex-TF-1 — index.html "ENTER YOUR NAME" — DISMISSED

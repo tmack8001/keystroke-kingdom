@@ -222,14 +222,38 @@ Press **F** on the level-select screen: play ANY cabinet with the full keyboard,
 real sentences (cabinet-flavored + shared early-reader pools), with live WPM shown.
 Speed is displayed, never enforced. Completion returns to the arcade for cabinet-hopping.
 
-## History Cards *(built 2026-07-11)*
-Seventeen computing-history moments hidden in the curriculum — each level's "moment word"
-is typeable with exactly that level's keys (`ada` the moment home row completes; ARPANET's
+## History Cards *(built 2026-07-11; grown into a completionist system 2026-07-19)*
+Computing/gaming-history moments hidden in the curriculum — each "moment word" is typeable
+with exactly the level's unlocked keys (`ada` the moment home row completes; ARPANET's
 crashed "LO" login on the 1/0 level; `Eniac` in capitals; `hello world` at the end).
-Typing it mid-play earns only a gold glint (flow is never interrupted); at level complete,
-a little business card is "picked up off the arcade floor" with the story. Cards are
-guaranteed — a level won't end until its moment word has appeared. Collection persists;
-the album UI belongs to the Stats Cabinet. Research: `research/computing-history-moments.md`.
+Typing one mid-play earns only a gold glint (flow is never interrupted); at level complete,
+a little business card is "picked up off the arcade floor" with the story. A card is always
+guaranteed — a level won't end until a moment word has appeared.
+
+**The collect-them-all loop (2026-07-19):** the bank grew from 17 to **41 cards** (+1
+SECRET card), **every level carded**, now **several cards per level** as a rotating POOL.
+Each play surfaces exactly ONE guaranteed card — preferring one not yet collected in this
+save, rotating for variety — so a level with N cards takes ~N visits to fully collect. This
+is a deliberate Skulltula-style completionist hook (Trevor: the kids love the cards, so
+reward replay): a per-game **"★ found / total"** counter shows on the slot picker, and a
+browsable **collection gallery** (found cards revealed, still-locked ones shown as `???`
+silhouettes to tease replay) is reachable with **C** from the picker. Each card attaches to
+the EARLIEST level where its word becomes typeable. **Secret cards** (e.g. the WarGames
+`joshua` card) are found only by typing a magic word — a hidden Skulltula that still counts
+toward the total. Collection is stored **per save slot** (see Save Slots below). Research
+(all citation-verified): `research/computing-history-moments.md`.
+
+## Save Slots — a saved game per player *(built 2026-07-19)*
+The single global save became **any number of independent saved games** (no cap — a family
+can have as many players as it likes; Trevor: "no reason to limit"), so a shared machine
+holds a game each for Oona, a sibling, a parent, a grandparent. Returning players land on a
+**"CHOOSE YOUR GAME"** slot picker (the new front door, replacing the old continue screen):
+each slot shows its **name, level, and ★ cards-found count**; Space resumes, N starts a new
+game, X erases (Y/N confirm), C browses that game's card collection. The **player name is
+now per-slot**; global machine preferences (sound, CRT, difficulty tiers) stay shared. A
+pre-slots single save auto-migrates into Slot 1 the first time — no returning player ever
+loses their game. The first-time cold open is untouched; it simply creates Slot 1 on the
+first name confirm. Data model + storage: `js/slots.js` (`kk-slots`).
 
 ## The Hidden Layer *(built 2026-07-10)*
 A hacker-culture easter-egg layer: the title screen listens for old magic words, the

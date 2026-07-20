@@ -1,10 +1,17 @@
 # Computing History Moments
-## Research behind the 17 history cards
+## Research behind the history cards (17 original + 24 new = 41)
 
 *Compiled 2026-07-11 for the "picked up off the arcade floor" feature. Implementation:
 `js/history-cards.js`; mechanics in `.claude/rules/*` and docs/ROADMAP.md (album pending).
 This file records the research: the moment, why it matters, and the typeability constraint
 that assigned it to its level.*
+
+*Expanded 2026-07-19 (arcade-historian pass): 24 new moments researched and added below,
+under "Expansion Pass — 17 → 41 Cards (2026-07-19)", growing coverage from 17 levels with
+a card to all 25, at 1–4 cards per level. See that section for the full new-card table,
+typeability derivations, and references. **Downstream implementation note:** this growth
+requires a data-shape change in `js/history-cards.js` — see that section's "Downstream
+impact" callout; no code was touched by this research pass.*
 
 *Citation pass added 2026-07-11: every claim below was independently re-verified via live
 web search and, for at least a third of sources, a direct page fetch. Preference order used:
@@ -37,9 +44,12 @@ itself decides when history becomes speakable, and some assignments landed poeti
 | 24 | `Eniac` | [[eniac|ENIAC]] (1946), programmed by six women mathematicians | Shift unlocks at 24 — the first capital-letter card |
 | 25 | `hello world` | K&R's first program ([[hello-world|1978 tradition]]) | Space unlocks at 25; the game's final card is every programmer's first sentence |
 
-**Levels without cards** (1-3, 6, 7, 16, 21, 23): either too few letters for a worthy word
-or no strong era fit. Deliberate — "not every floor tile hides one; that's what makes
-finding them special."
+**Levels without cards, as of the original 2026-07-11 pass** (1-3, 6, 7, 16, 21, 23):
+either too few letters for a worthy word or no strong era fit. Deliberate — "not every
+floor tile hides one; that's what makes finding them special." **Superseded 2026-07-19**
+(see "Expansion Pass" below): Levels 6, 7, 16, 21, and 23 now have cards; Levels 1-3
+remain permanently card-less on the same no-vowel-available constraint (confirmed, not
+merely asserted, in that section).
 
 ## Fact-checking notes (original pass)
 - Hopper didn't find the moth personally (her team did); card says "Grace Hopper's team." ✓
@@ -289,6 +299,185 @@ Card claim: *"The first program every coder writes makes the computer say hello.
   historical paper (identified via search, though its PDF text did not extract cleanly on
   fetch) corroborated independently by two Wikipedia articles. Treated as sourced, but
   weaker than the museum-first standard used elsewhere in this document.
+
+## Expansion Pass — 17 → 41 Cards (2026-07-19)
+
+*Mode A research pass (topic: grow history-card coverage to every level). Wiki-first:
+searched `node scripts/wiki-search.mjs` before any web research; three moments (Pac-Man's
+pizza-slice story, Zork, Colossal Cave Adventure) reused existing verified wiki pages
+rather than re-researching from scratch. The same citation standard as the 2026-07-11
+pass applies: 2–4 references per moment, institutional/primary sources preferred, at
+least a third of URLs verified by direct WebFetch, no URL written from memory. Every new
+page lives under `research/wiki/**` with full frontmatter/References — this table is the
+index into them.*
+
+**Levels 1–3 could not receive a card, and this is by design, not an oversight.** Their
+cumulative key sets are `f j` (L1), `d f j k` (L2), and `d f j k l s` (L3) — **zero
+vowels** at any of the three levels (confirmed against `js/levels.js` `LEVELS[1..3]`).
+No English word, name, or common initialism is spellable without a vowel from this
+letter set. This is the exact same constraint product.md already documents ("no real
+words until Level 4"), and it was treated as absolute: no word was invented to force a
+card onto these levels. The honest earliest slot for anything is Level 4, once `a`
+unlocks — already carrying `ada`.
+
+### The 24 new cards
+
+| Lvl | Word | Moment | Typeability check (bottleneck key **bolded**) |
+|---|---|---|---|
+| 4 | `asdf` | [[qwerty-keyboard\|The QWERTY keyboard]] (1868) | a(**4**), s(3), d(2), f(1) |
+| 5 | `flash` | [[flash-memory\|Flash memory]] invented (1984) | f(1), l(3), a(4), s(3), **h(5)** |
+| 6 | `ai` | [[dartmouth-ai-1956\|"Artificial Intelligence" coined]] (1956) | a(4), **i(6)** |
+| 6 | `disk` | [[ibm-ramac\|IBM RAMAC]], first hard disk (1956) | d(2), **i(6)**, s(3), k(2) |
+| 7 | `gui` | [[xerox-alto-gui\|The first GUI]] (1973) | g(5), **u(7)**, i(6) |
+| 8 | `atari` | [[atari-inc\|Atari, Inc. founded]] (1972) | a(4), **t(8)**, a(4), r(7), i(6) |
+| 8 | `altair` | [[altair-8800\|The Altair 8800]] (1975) | a(4), l(3), **t(8)**, a(4), i(6), r(7) |
+| 9 | `software` | [[the-word-software\|The word "software"]] coined (1958) | s(3), **o(9)**, f(1), **t(8)**... max=9 |
+| 10 | `apple` | [[apple-computer\|Apple Computer founded]] (1976) | a(4), **p(10)**, p(10), l(3), e(6) |
+| 11 | `email` | [[email-invented-1971\|The first email]] (1971) | e(6), **m(11)**, a(4), i(6), l(3) |
+| 12 | `brain` | [[brain-virus-1986\|The Brain virus]] (1986) | **b(12)**, r(7), a(4), i(6), **n(12)** |
+| 12 | `intel` | [[intel\|Intel founded]] (1968) | i(6), **n(12)**, t(8), e(6), l(3) |
+| 13 | `pacman` | [[pac-man\|Pac-Man's pizza-slice legend]] (1980) | p(10), a(4), **c(13)**, m(11), n(12) |
+| 13 | `cave` | [[colossal-cave-adventure\|Colossal Cave Adventure]] (1976) | **c(13)**, a(4), v(11), e(6) |
+| 14 | `unix` | [[unix\|Unix]] created (1969) | u(7), n(12), i(6), **x(14)** |
+| 15 | `zork` | [[zork\|Zork]] (1977) | **z(15)**, o(9), r(7), k(2) |
+| 16 | `56k` | [[56k-modem\|The 56K modem]] (V.90, 1998) | **5(16)**, **6(16)**, k(2) |
+| 17 | `ipv4` | [[ipv4\|IPv4 / RFC 791]] (1981) | i(6), p(10), v(11), **4(17)** |
+| 18 | `486` | [[intel-486\|Intel 486]] (1989) | 4(17), **8(18)**, 6(16) |
+| 20 | `1970` | [[unix-epoch-1970\|The Unix epoch]] (1970) | **1(20)**, 9(19), 7(17), **0(20)** |
+| 21 | `wi-fi` | [[wi-fi\|Wi-Fi gets its name]] (1999) | w(9), i(6), **-(21)**, f(1), i(6) |
+| 23 | `` `hack` `` | [[hack-etymology\|The word "hack"]] (TMRC, 1959) | **`(23)**, h(5), a(4), c(13), k(2) |
+| 24 | `IBM` | [[ibm-company\|IBM]] founded (1911/1924) | requires Shift → **24** (capitals) |
+| 25 | `rubber duck` | [[rubber-duck-debugging\|Rubber duck debugging]] (1999) | r(7), u(7), b(12)... **space(25)** |
+
+Full derivations (letter-by-letter) live in each linked wiki page's "In this game"
+section. All 24 were checked against the cumulative key closure given in this task
+(matching `js/levels.js` `LEVELS[n].newKeys`), never assumed.
+
+### Per-level card counts after this pass
+
+| Level | Cards (existing + new) | Total |
+|---|---|---|
+| 1–3 | — (no vowel possible; see above) | 0 |
+| 4 | ada + **asdf** | 2 |
+| 5 | hal + **flash** | 2 |
+| 6 | (none) + **ai**, **disk** | 2 |
+| 7 | (none) + **gui** | 1 |
+| 8 | hedy + **atari**, **altair** | 3 |
+| 9 | www + **software** | 2 |
+| 10 | floppy + **apple** | 2 |
+| 11 | mouse + **email** | 2 |
+| 12 | turing + **brain**, **intel** | 3 |
+| 13 | grace + **pacman**, **cave** | 3 |
+| 14 | pixel + **unix** | 2 |
+| 15 | eliza + **zork** | 2 |
+| 16 | (none) + **56k** | 1 |
+| 17 | c64 + **ipv4** | 2 |
+| 18 | 386 + **486** | 2 |
+| 19 | y2k | 1 |
+| 20 | 1969 + **1970** | 2 |
+| 21 | (none) + **wi-fi** | 1 |
+| 22 | \o/ | 1 |
+| 23 | (none) + `` **`hack`** `` | 1 |
+| 24 | Eniac + **IBM** | 2 |
+| 25 | hello world + **rubber duck** | 2 |
+
+Levels 19 and 22 were deliberately left without a new addition — see "Compromises and
+things deliberately not forced" below.
+
+### Downstream impact — `js/history-cards.js` data shape (flag, not fixed)
+
+**`HISTORY_CARDS` is currently `{ [level]: { word, title, year, fact } }` — one card
+object per level key, enforced structurally (an object key can only hold one value).**
+Supporting 1–3 cards per level (as this research now provides for most levels) requires
+changing the value at each level key to an **array** of card objects, e.g.:
+
+```js
+export const HISTORY_CARDS = {
+  4: [
+    { word: 'ada', title: 'ADA LOVELACE', year: '1843', fact: '...' },
+    { word: 'asdf', title: 'A-S-D-F', year: '1868', fact: '...' },
+  ],
+  ...
+};
+```
+
+This touches: `TOTAL_CARDS` (currently `Object.keys(HISTORY_CARDS).length`, would need
+to sum array lengths), `patternMatchesCard` (currently takes one card, would need to
+check all cards at a level), the level-complete injection/gating logic in `js/main.js`
+(currently assumes at most one card word per level needs to appear and be collected),
+and `collectCard`/`collectedCount` (currently keyed by level number, one card per level
+— would need a compound key like `` `${level}:${word}` ``). **This research pass did not
+touch any file outside `research/**` per its instructions — this is a required
+follow-up for whoever implements the new cards**, not a change made here.
+
+### New card fact text (kid-facing, ready to paste)
+
+Each fact is written in the same warm, early-reader voice as the existing 17 cards
+(one card note per level, ≤ ~220 characters, no reference newer than the level's own
+era except where the moment's own year is later — same convention the Y2K/386 cards
+already use).
+
+```js
+4:  { word: 'asdf',  title: 'A-S-D-F',            year: '1868', fact: "A man named Christopher Sholes arranged these very keys so an old typewriter wouldn't jam. A-S-D-F has been waiting under your fingers ever since." },
+5:  { word: 'flash', title: 'FLASH MEMORY',        year: '1984', fact: "An engineer named Fujio Masuoka invented flash memory at Toshiba — the trick that lets you unplug a drive and keep its data safe. He named it after a camera flash." },
+6:  { word: 'ai',    title: 'ARTIFICIAL INTELLIGENCE', year: '1956', fact: "At a summer workshop called Dartmouth, scientists picked a brand new name for machines that think: Artificial Intelligence. Just two little letters — a whole new idea." },
+6:  { word: 'disk',  title: 'THE FIRST HARD DISK',  year: '1956', fact: "IBM's first hard disk was the size of two refrigerators and held less than one photo does today. It was also the very first hard disk ever built." },
+7:  { word: 'gui',   title: 'THE FIRST GUI',         year: '1973', fact: "At a lab called Xerox PARC, computers first got windows, icons, and a mouse to click them with. Before that, every computer only understood typed words." },
+8:  { word: 'atari', title: 'ATARI IS BORN',         year: '1972', fact: "A company called Atari opened in California — the same company that made Breakout, the very first cabinet you played. Video games had a hometown now." },
+8:  { word: 'altair', title: 'THE ALTAIR 8800',      year: '1975', fact: "The Altair 8800 was a computer kit you built yourself from a magazine ad. It was so exciting that two young programmers named Bill and Paul wrote its first software." },
+9:  { word: 'software', title: 'THE WORD "SOFTWARE"', year: '1958', fact: "A mathematician named John Tukey needed a word for the instructions inside a computer, since they weren't hard like its wires and tubes. He wrote down 'software' — and it stuck." },
+10: { word: 'apple', title: 'APPLE IS BORN',         year: '1976', fact: "Two friends named Steve built their first computer by hand in a garage and called their company Apple. It started with fifty computers — and one bitten-fruit logo." },
+11: { word: 'email', title: 'THE FIRST EMAIL',       year: '1971', fact: "Ray Tomlinson sent the first email between two computers sitting right next to each other. He picked the @ symbol to mean 'at' — it's still there in every email today." },
+12: { word: 'brain', title: 'THE FIRST PC VIRUS',    year: '1986', fact: "Two brothers wrote the first PC virus to stop people from copying their own software. It was so harmless it even left the brothers' real phone number inside, in case anyone had questions!" },
+12: { word: 'intel', title: 'INTEL IS BORN',          year: '1968', fact: "Two chip pioneers, Robert and Gordon, started a little company called Intel. Its chips would end up inside computers all over the world." },
+13: { word: 'pacman', title: "PAC-MAN'S PIZZA",      year: '1980', fact: "The story goes that a pizza with one slice missing inspired Pac-Man's shape. Toru Iwatani later said the real answer was simpler — a rounded Japanese symbol for 'mouth.'" },
+13: { word: 'cave', title: 'THE FIRST TEXT ADVENTURE', year: '1976', fact: "Long before pictures, a caver named Will Crowther wrote a game made only of typed words: Colossal Cave Adventure. Typing 'xyzzy' inside it still means 'nothing happens' today." },
+14: { word: 'unix', title: 'UNIX IS BORN',           year: '1969', fact: "Two programmers at Bell Labs, Ken and Dennis, built a whole new kind of computer system the same summer astronauts walked on the moon. Unix still powers phones and computers today." },
+15: { word: 'zork', title: 'THE GREAT UNDERGROUND EMPIRE', year: '1977', fact: "A group of MIT students built Zork, a game made entirely of typed sentences and imagination. You walk through its world one word at a time — sound familiar?" },
+16: { word: '56k',  title: 'THE 56K MODEM',          year: '1998', fact: "For a while, 56,000 was the fastest a home computer could talk to the internet over a phone line — with a screech and a whistle. Every family remembers that sound." },
+17: { word: 'ipv4', title: 'EVERY COMPUTER GETS A NUMBER', year: '1981', fact: "IPv4 gave every computer on the internet its own numbered address, so messages always knew where to go. Billions of computers still use addresses from that same rulebook." },
+18: { word: '486',  title: 'THE INTEL 486',          year: '1989', fact: "The 486 chip packed over a million tiny switches onto one sliver of silicon — the first of its kind to do it. It was the muscle behind the computers that followed the 386." },
+20: { word: '1970', title: 'THE DAY COMPUTER TIME BEGAN', year: '1970', fact: "Computers everywhere agree that time began on January 1st, 1970. Every clock inside every computer still counts forward from that exact morning." },
+21: { word: 'wi-fi', title: 'WI-FI GETS ITS NAME',   year: '1999', fact: "A team of name-makers invented something catchier than '802.11b' — and came up with Wi-Fi, a playful cousin of 'hi-fi.' It doesn't actually stand for anything at all." },
+23: { word: '`hack`', title: 'THE FIRST "HACK"',     year: '1959', fact: "At MIT's model train club, a clever trick was called a 'hack.' When those same students got their hands on early computers, the name came right along with them." },
+24: { word: 'IBM',  title: 'IBM',                     year: '1911', fact: "IBM started as a company that made scales, clocks, and card-punching machines — not computers at all. Thirteen years later, it took the name International Business Machines." },
+25: { word: 'rubber duck', title: 'THE RUBBER DUCK METHOD', year: '1999', fact: "Programmers sometimes explain their stuck code out loud to a rubber duck on their desk — and the answer often appears before they finish talking. Try it. It really works." },
+```
+
+### Compromises and things deliberately not forced
+
+- **`ai` (Level 6) is a 2-character moment word** — shorter than any of the 17 original
+  cards (the prior shortest were the 3-character `www`/`c64`/`386`/`y2k`). It was kept
+  because "AI" is a genuinely ubiquitous, real initialism (same category as those four),
+  not an invented abbreviation — but it's flagged here as the one length compromise in
+  this batch.
+- **Level 19 and Level 22 received no new card.** Both only add digits/symbols (2, 9 at
+  L19; `[`, `]`, `\` at L22) with no new letters, so any candidate word had to be
+  digit- or bracket-bottlenecked. Real, well-documented computing-history terms using
+  only digits 2/9 (with no 0 or 1, both of which don't unlock until Level 20) proved
+  hard to find without reaching for something thin (`rs232`, the RS-232 serial
+  standard, was considered and dropped — a technically real but recognitionally weak
+  card for a young reader) or historically strained. No word was forced into either
+  slot rather than compromise accuracy or age-appropriateness.
+- **Level 20 now carries two digit-only cards (`1969`, `1970`).** Flagged as a
+  deliberate choice, not an oversight: they're one digit apart but describe two
+  unrelated foundational moments (ARPANET's first message vs. the Unix epoch
+  convention), and the game's own precedent (Level 8, Level 12, Level 13 all now carry
+  2–3 cards) supports more than one card per level where the content earns it.
+- **The Pac-Man pizza-slice legend (Level 13) is a genuinely disputed anecdote**, not
+  merely a simplification — see [[pac-man]]'s updated "The pizza-slice origin story"
+  section. Iwatani himself called it a "half-truth" as early as 1986. The card fact
+  text above is written to hedge this explicitly ("the story goes... he later said...")
+  rather than assert the pizza story as settled fact — this is the one moment in this
+  batch closest to the "fluent but wrong" failure class the citation standard warns
+  against, and it was caught and corrected before being written into a wiki page,
+  not after.
+- **Flash memory's date (Level 5) has a two-date nuance**, similar to the existing
+  WWW/hello-world cards: Masuoka's underlying patent work (with Hisakazu Iizuka) began
+  around 1980, but the Computer History Museum's own institutional framing dates "the
+  invention" to 1984, the year he publicly presented NOR flash. This pass used 1984 to
+  match the institutional source rather than the earlier, less publicly documented
+  patent-filing date. See [[flash-memory]].
 
 ## Mechanics decisions (why they're this way)
 

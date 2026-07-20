@@ -17,35 +17,40 @@ Cold open (3s, dark arcade, one cabinet glows) → title screen "READY PLAYER ON
 
 *Full phase-by-phase cinematic detail: see [`../transitions.md`](../transitions.md)*
 
-### Returning Player Flow
+### Returning Player Flow *(rebuilt as the slot picker, 2026-07-19)*
 
-localStorage has the player's name and level progress. No cold open. The session starts at:
-
-```
-READY [NAME]!
-
-LEVEL 3 — S & L
-KEYS LEARNED: J F D K
-
-PRESS SPACE TO CONTINUE
-```
-
-Space takes them back to exactly where they left off — same level, same position in the word sequence. A second option sits below, dimmer:
+localStorage (`kk-slots`) holds **any number** of independent saved games (no cap — a family
+can have as many players as it likes). No cold open. When any saved game exists, the session
+starts on the **"CHOOSE YOUR GAME"** slot picker — the front door for returning players (it
+replaced the old single continue screen). It lists every game plus an always-present
+"＋ NEW GAME" row, and scrolls if the list gets long:
 
 ```
-PRESS R TO RESTART
+        CHOOSE YOUR GAME
+
+  ▶ 1  OONA     LV 12   ★ 14 / 42
+    2  DAD      LV 20   ★  9 / 42
+    3  GRAM     LV  4   ★  1 / 42
+    4  SAM      LV  8   ★  3 / 42
+         ＋ NEW GAME
+
+  SPACE PLAY · N NEW GAME · C CARDS · X ERASE
 ```
 
-R triggers a confirmation before doing anything:
+- **↑ / ↓** (or number keys for the first nine games) move the cursor; the highlighted row glows.
+- **Space / Enter** on a game resumes exactly where it left off (same level); on the
+  **＋ NEW GAME** row it starts a fresh game (→ name entry, which appends a new game).
+- **N** always starts a new game (→ name entry).
+- **C** opens that game's **card collection** gallery (found cards revealed, still-locked
+  ones shown as `???`).
+- **X** erases the highlighted game after a Y/N confirm (only Y erases; N or any other key
+  backs out — never trap the child). Erasing one game never touches the others or shared
+  preferences.
+- **Escape** returns to the attract title (settings via Tab, WOPR/`joshua` magic words).
 
-```
-ERASE ALL PROGRESS?
-
-Y — YES, START OVER
-N — NO, KEEP GOING
-```
-
-Only Y clears localStorage. N or any other key returns to the continue screen.
+A pre-slots single save is migrated into Slot 1 automatically the first time, so no returning
+player ever loses their game. Each slot shows its **name, level, and ★ cards-found count** —
+a Skulltula-style completionist nudge to keep collecting across replays.
 
 ### The Arcade at Level 1
 
@@ -55,10 +60,10 @@ At Level 1, only one cabinet is lit. The rest are dark silhouettes — no labels
 
 - **Name entry is optional in one keypress.** Never trap a kid in a form.
 - **The arcade is never explained.** No "here's how to play" screen. The visual design carries it.
-- **The cold open is shown exactly once.** The drama of first arrival is preserved; returning players skip straight to their name.
+- **The cold open is shown exactly once.** The drama of first arrival is preserved; returning players skip straight to the slot picker ("CHOOSE YOUR GAME").
 - **The first finger guide is the only unprompted hint in the whole game.** Every other hint appears only after a wrong keypress. This exception is intentional — the player has zero context at the very first prompt and needs a single orientation moment.
 - **"INSERT COIN" does nothing.** It's set dressing. Don't wire it to anything.
-- **Space confirms/advances everywhere except the name field.** On title, ready, continue, and level-flow screens, Space is the primary quick-advance key by design — *"unlike enter/return the spacebar is where the thumbs rest continually, making it quick to advance"* (Trevor, 2026-07-13). Name entry alone requires Return, because Space is itself typeable there (multi-word names like the PLAYER ONE default).
+- **Space confirms/advances everywhere except the name field.** On title, ready, the slot picker, and level-flow screens, Space is the primary quick-advance key by design — *"unlike enter/return the spacebar is where the thumbs rest continually, making it quick to advance"* (Trevor, 2026-07-13). Name entry alone requires Return, because Space is itself typeable there (multi-word names like the PLAYER ONE default).
 
 ---
 

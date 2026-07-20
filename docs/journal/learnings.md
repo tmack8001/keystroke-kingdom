@@ -46,3 +46,5 @@
 | [[L37-optimize-the-builder-base-the-runtime-was-already-minimal\|L37]] | In a multi-stage build, the heavy download is the builder — not the runtime | adopted | medium | tooling | 2026-07-13 |  |
 | [[L39-generation-buffer-vs-fallback-cache-are-opposite-structures\|L39]] | A generation buffer and a fallback cache are opposite structures — don't conflate them | adopted | medium | engine | 2026-07-13 |  |
 | [[L41-one-contract-two-implementations-test-that-they-agree\|L41]] | One validation contract implemented twice — test that the two copies agree | adopted | medium | engine | 2026-07-14 |  |
+| [[L43-a-test-discriminator-probe-couples-to-current-content\|L43]] | A test's discriminator-probe silently couples it to current content | adopted | medium | testing | 2026-07-18 |  |
+| [[L44-the-one-rule-makes-levels-safely-fuzzable\|L44]] | The One Rule makes any level safely auto-playable by cycling its candidate keys | adopted | medium | tooling | 2026-07-19 |  |

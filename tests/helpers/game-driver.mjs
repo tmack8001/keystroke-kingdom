@@ -444,6 +444,119 @@ export async function readScreen(page) {
   });
 }
 
+// ── Save slots (js/slots.js `kk-slots`) — seeding + reading ────────────────
+// The single-global-save model was rebuilt 2026-07-19 into an unbounded, dynamic
+// list of independent saved games ("CHOOSE YOUR GAME"). `kk-progress` is now
+// ONLY a one-time legacy-migration input (js/slots.js `ensureMigrated`) — the
+// game itself reads/writes exclusively through `kk-slots`, scoped to whichever
+// game is ACTIVE. These helpers seed/read that real persisted shape directly
+// (documented in js/slots.js's own header + STRATEGY.md INV-59/60/61) rather
+// than reconstructing it from private module internals.
+
+/**
+ * Build a raw `kk-slots` localStorage seed value: an array of full game objects
+ * (each `{ name, furthestLevel, completed, nameMoment, textWorlds, cards,
+ * cardRotation }`, all fields optional — missing ones take the same fresh
+ * defaults js/slots.js's own `createSlot` would) plus which index (if any) is
+ * active. Pass to `startGame({ localStorage: { 'kk-slots': slotsSeed(...) } })`.
+ * Sugar: `slotsSeed({ name, furthestLevel, completed, ... })` (no `games`) seeds
+ * exactly ONE active game — the common case for most persistence tests.
+ * @param {Object} [opts]
+ * @param {Array<Object>} [opts.games] full list of game objects; overrides the
+ *   single-game sugar fields below when provided.
+ * @param {number|null} [opts.active] which index is active (default: 0 if any
+ *   games exist, else null). Pass null explicitly for "no active game" (e.g. the
+ *   WOPR dev-bypass-before-a-game-is-chosen scenario).
+ * @param {string} [opts.name='PLAYER ONE']
+ * @param {number} [opts.furthestLevel=1]
+ * @param {Object} [opts.completed={}]
+ * @param {Object|null} [opts.nameMoment=null]
+ * @param {Object|any} [opts.textWorlds={}] (accepts a deliberately garbage value
+ *   for tolerance tests — normalization happens inside the game, not here)
+ * @param {string[]} [opts.cards=[]]
+ * @param {Object} [opts.cardRotation={}]
+ * @returns {{v:number, active:(number|null), slots:Array<Object>}}
+ */
+export function slotsSeed(opts = {}) {
+  const {
+    games,
+    active,
+    name = 'PLAYER ONE',
+    furthestLevel = 1,
+    completed = {},
+    nameMoment = null,
+    textWorlds = {},
+    cards = [],
+    cardRotation = {},
+  } = opts;
+  const slots = games || [{ name, furthestLevel, completed, nameMoment, textWorlds, cards, cardRotation }];
+  const resolvedActive = active !== undefined ? active : (slots.length ? 0 : null);
+  return { v: 1, active: resolvedActive, slots };
+}
+
+/**
+ * Read the ACTIVE game's progress directly from `kk-slots` in localStorage —
+ * the shape `Slots.getProgress()` returns (`{ furthestLevel, completed,
+ * nameMoment, textWorlds }`). Returns null if there is no active game (absent/
+ * corrupt `kk-slots`, or an active pointer that doesn't resolve to a real game —
+ * both are the documented "no active slot" no-persistence path, js/slots.js's
+ * own header comment) — mirrors `Slots.getProgress()`'s no-active-game default
+ * shape being indistinguishable from "nothing was ever written" at this layer,
+ * so callers polling for a specific completion should treat null the same as
+ * "not yet".
+ * @param {import('playwright').Page} page
+ * @returns {Promise<{furthestLevel:number, completed:Object, nameMoment:(Object|null), textWorlds:Object}|null>}
+ */
+export async function readActiveSlotProgress(page) {
+  return page.evaluate(() => {
+    let raw;
+    try { raw = JSON.parse(localStorage.getItem('kk-slots')); } catch (e) { return null; }
+    if (!raw || typeof raw !== 'object' || !Array.isArray(raw.slots)) return null;
+    const i = raw.active;
+    const s = (Number.isInteger(i) && i >= 0 && i < raw.slots.length) ? raw.slots[i] : null;
+    if (!s || typeof s !== 'object') return null;
+    return {
+      furthestLevel: s.furthestLevel,
+      completed: s.completed,
+      nameMoment: s.nameMoment,
+      textWorlds: s.textWorlds,
+    };
+  });
+}
+
+/**
+ * Read the slot picker's ("CHOOSE YOUR GAME") rendered game rows from
+ * `#slots-list` — one entry per EXISTING game (the trailing "+ NEW GAME" row,
+ * `.slot-new`, is excluded). Player-observable DOM only (js/ui/screens.js
+ * `renderSlotsScreen`), never a game internal.
+ * @param {import('playwright').Page} page
+ * @returns {Promise<Array<{name:string, level:string, cards:string, selected:boolean}>>}
+ */
+export async function readSlotsList(page) {
+  return page.evaluate(() => {
+    const rows = [...document.querySelectorAll('#slots-list .slot-row:not(.slot-new)')];
+    return rows.map((row) => ({
+      name: row.querySelector('.slot-name')?.textContent ?? null,
+      level: row.querySelector('.slot-level')?.textContent ?? null,
+      cards: row.querySelector('.slot-cards')?.textContent ?? null,
+      selected: row.classList.contains('selected'),
+    }));
+  });
+}
+
+/**
+ * True when the slot picker's "+ NEW GAME" trailing row (`.slot-new`) is
+ * currently the highlighted/selected row.
+ * @param {import('playwright').Page} page
+ * @returns {Promise<boolean>}
+ */
+export async function isNewGameRowSelected(page) {
+  return page.evaluate(() => {
+    const row = document.querySelector('#slots-list .slot-new');
+    return !!row && row.classList.contains('selected');
+  });
+}
+
 /**
  * True when the LEVEL COMPLETE overlay (`#complete-overlay`) is visible. Note
  * this appears AFTER the theme's victory animation window, not the instant the

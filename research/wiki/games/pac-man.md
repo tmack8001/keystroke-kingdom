@@ -3,8 +3,8 @@ title: Pac-Man
 type: entity
 tags: [video-game-history, game, arcade, history-card, cabinet]
 level: 3
-sources: 3
-verified: 2026-07-12
+sources: 5
+verified: 2026-07-19
 ---
 
 Pac-Man (Namco, 1980), designed by Toru Iwatani, is the maze-chase game deliberately
@@ -18,6 +18,12 @@ words appear in Keystroke Kingdom's word bank (ads, lads, falls, flask, lass). I
 colors on black (blue maze, yellow Pac-Man, four distinct ghost colors) define Act 1's third
 visual step — "the first recognizable face in the game." See `.claude/rules/levels.md`
 Level 3. The Galaxian flagship appears as [[galaxian]]'s cameo bonus fruit in this game.
+
+**Also a Level 13 history card** *(added 2026-07-19)*, word `pacman`. Even though the
+cabinet itself lives at Level 3, the typeable-word constraint (letters p, a, c, m, n —
+c is the bottleneck, unlocking at Level 13) pushes the history-card moment eleven
+levels later — a normal consequence of the game's earliest-typeable-level rule, not an
+error. Card fact: the pizza-slice design-origin anecdote below.
 
 ## The facts
 
@@ -45,8 +51,22 @@ going to be a single color (red) until Iwatani's team won a 40–0 internal vote
 multicolor — a fact not currently in this page's "facts" list but worth folding in on a
 future pass. No correction needed to the claim itself; it was accurate, just under-cited.
 
+## The pizza-slice origin story (2026-07-19) — genuinely disputed, not just simplified
+
+The pizza anecdote is real and widely repeated, but Iwatani himself has called it a
+"half-truth" (on record as early as 1986): his more consistent explanation is that
+Pac-Man's shape came from heavily rounding the Japanese kanji for "mouth" (口, kuchi).
+A 2017 interview with fellow Namco designer Masanobu Endo (Xevious) goes further,
+claiming the pizza resemblance was noticed by others *after* release and the press
+ran with it as an origin story rather than Iwatani inventing it as one. **This is a
+genuine, sourced dispute, not just an origin-vs-popularization date compression** — the
+card text should hedge it explicitly ("the story goes... he later said...") rather than
+state the pizza claim as settled fact.
+
 ## References
 
 1. [HISTORY — The Official Site for PAC-MAN (pacman.com)](https://pacman.com/en/history/) — Bandai Namco's own history page: confirms Toru Iwatani as designer, the nine-person dev team, May 1980 Japan test, July 1980 Japan release; also names all four ghosts (Blinky/Pinky/Inky/Clyde with Japanese equivalents) but does not state their colors in English. **[fetched]**
 2. [Tōru Iwatani — Wikipedia](https://en.wikipedia.org/wiki/T%C5%8Dru_Iwatani) — biographical corroboration (design philosophy, prior Namco titles); used alongside the official Namco page, not alone. *(search result only, not fetched)*
 3. [Ghosts (Pac-Man) — Wikipedia](https://en.wikipedia.org/wiki/Ghosts_(Pac-Man)) — dedicated ghost-character page confirming the specific color assignments (Blinky red, Pinky pink, Inky cyan, Clyde orange) that reference 1 alone did not carry. **[fetched]**
+4. [The Pac-Man/Pizza Story - Video Gaming's Creation Myth? — The Golden Age Arcade Historian](http://allincolorforaquarter.blogspot.com/2012/09/the-pac-manpizza-story-video-gamings.html) — specialist retro-arcade history blog; documents Iwatani's own 1986 "half-truth" characterization of the pizza story and the kanji-mouth alternative explanation. *(search result only, not fetched)*
+5. [List of Pac-Man rumors — Pac-Man Wiki (Fandom)](https://pacman.fandom.com/wiki/List_of_Pac-Man_rumors) — canonical community wiki for this exact topic; corroborates the disputed origin, including the 2017 Masanobu Endo interview claiming the pizza link was a post-release media narrative. *(search result only, not fetched)*

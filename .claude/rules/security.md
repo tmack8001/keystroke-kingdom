@@ -31,7 +31,12 @@ HTML, shell, or JavaScript.
    (Level 25 free-type finale!) must allowlist the same way at the boundary.
 4. **localStorage is untrusted input.** Parse inside try/catch, validate shape,
    tolerate garbage (the erase/persistence helpers in main.js are the model). Never
-   feed parsed values to any sink in rules 1–2 without going through them.
+   feed parsed values to any sink in rules 1–2 without going through them. *The
+   `kk-slots` save-slot store (`js/slots.js`, added 2026-07-19) is the reference
+   implementation:* every read normalizes field-by-field, a malformed slot reads as
+   EMPTY (never crashes the picker), writes never throw, and the player NAME it holds
+   (per-slot) reaches the DOM only via `textContent` (slot-picker rows are built with
+   `createElement` — rule 1).
 5. **No dynamic code.** No `eval`, `new Function`, string `setTimeout`/`setInterval`,
    or runtime `<script>` construction. *Check:* `grep -rnE "\beval\(|new Function\(" js/`
    must return nothing.
@@ -65,7 +70,10 @@ HTML, shell, or JavaScript.
    server's play-logic length range (a request can never widen words past what the
    game will display, nor invert the window into an empty pool).
 8. **PII floor:** the only personal datum the game stores is the display name. Never
-   add more (no ages, no surnames prompted, no location).
+   add more (no ages, no surnames prompted, no location). *(Save slots, 2026-07-19: one display
+   name per saved game now lives in `kk-slots` (an unlimited, growable list) — still the
+   same PII class, just one per game. Everything else a slot holds is gameplay data:
+   progress, collected-card ids, rotation counters. No new PII class was introduced.)*
    *Documented exception — the Act 6 IM-friend (Trevor-approved, 2026-07-14):* the
    `kk-friends` localStorage namespace persists chat TRANSCRIPTS and the child's
    made-up FRIENDS (persona spec + message history) — more than the display-name

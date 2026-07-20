@@ -36,3 +36,7 @@ Demos.'"* See [[computing-history-moments]] for the full 17-card table.
 2. [The computer mouse and interactive computing — SRI International](https://www.sri.com/hoi/computer-mouse-and-interactive-computing/) — primary institutional source (SRI is the lab where it was built).
 3. [The Mother of All Demos — Smithsonian Lemelson Center](https://invention.si.edu/invention-stories/mother-all-demos) — confirms December 9, 1968, Brooks Hall, San Francisco.
 4. [Milestones: Public Demonstration of Online Systems and Personal Computing, 1968 — ETHW (IEEE)](https://ethw.org/Milestones:Public_Demonstration_of_Online_Systems_and_Personal_Computing,_1968) — IEEE Milestone citation, institutional confirmation of date/location/significance.
+
+## See also
+
+[[xerox-alto-gui]] — the interface this mouse was built to drive, Level 7 (added 2026-07-19).

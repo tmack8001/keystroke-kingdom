@@ -36,7 +36,7 @@ import {
   isLevelCompleteVisible,
   waitForComplete,
 } from '../helpers/game-driver.mjs';
-import { HISTORY_CARDS, wordToTokens } from '../../js/history-cards.js';
+import { cardsForLevel, pickGuaranteedCard, wordToTokens } from '../../js/history-cards.js';
 
 // A key that is a VALID game key but never the expected token at the given
 // active token — so the engine registers a miss (not an ignored keystroke).
@@ -315,12 +315,20 @@ describe('INV-22 — a level does not end before its moment word appears', () =>
   before(async () => { g = await startGame(); await toLevel(g.page, g.baseUrl, CARD_LEVEL); });
   after(async () => { await g.stop(); });
 
-  test("the level's moment word (from HISTORY_CARDS) is typed before LEVEL COMPLETE", { timeout: HARD_TIMEOUT }, async () => {
+  test("the level's guaranteed card word (from HISTORY_CARDS, via pickGuaranteedCard) is typed before LEVEL COMPLETE", { timeout: HARD_TIMEOUT }, async () => {
     // product.md §History Cards: "a level won't end until its moment word has
     // appeared." Derive the expected word from the game's own data file — never
-    // hardcode it (STRATEGY.md §2).
-    const card = HISTORY_CARDS[CARD_LEVEL];
-    assert.ok(card, `level ${CARD_LEVEL} has a history card in the game's own data`);
+    // hardcode it (STRATEGY.md §2). js/history-cards.js's flat/pool model
+    // (rebuilt 2026-07-19) may hold several cards per level; the engine injects
+    // exactly ONE guaranteed word per play via pickGuaranteedCard (INV-58),
+    // preferring an uncollected card and rotating by the active game's own
+    // per-level counter. toLevel's wopr bypass confirms a fresh default-name
+    // game first, so this session's collectedIds()/rotation are empty/zero —
+    // the exact (level, [], 0) inputs pickGuaranteedCard resolves deterministically.
+    const pool = cardsForLevel(CARD_LEVEL);
+    assert.ok(pool.length > 0, `level ${CARD_LEVEL} has at least one history card in the game's own data`);
+    const card = pickGuaranteedCard(CARD_LEVEL, [], 0);
+    assert.ok(card, `pickGuaranteedCard resolves a real card for level ${CARD_LEVEL}`);
     const momentTokens = wordToTokens(card.word); // e.g. ['a','d','a']
     const momentKey = momentTokens.join(' ');
 

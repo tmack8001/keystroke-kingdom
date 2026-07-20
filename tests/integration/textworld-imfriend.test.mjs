@@ -50,7 +50,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { startGame, toTextWorldDoor, readScreen, typeSequence } from '../helpers/game-driver.mjs';
+import { startGame, toTextWorldDoor, readScreen, typeSequence, readActiveSlotProgress } from '../helpers/game-driver.mjs';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -202,9 +202,12 @@ async function exitToHubThenReenterImfriend(page) {
 
 // ─── Persisted-state readers ─────────────────────────────────────────────────
 
+// Progress persistence moved 2026-07-19 from the single global `kk-progress` key
+// to `kk-slots`, scoped to whichever saved game is ACTIVE (js/slots.js). See the
+// identical note in tests/integration/textworld.test.mjs. Kept as a same-named
+// local wrapper so every existing call site below is unchanged.
 async function readKkProgress(page) {
-  const raw = await page.evaluate(() => localStorage.getItem('kk-progress'));
-  try { return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
+  return readActiveSlotProgress(page);
 }
 
 async function readKkFriends(page) {

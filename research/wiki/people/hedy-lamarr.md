@@ -37,3 +37,7 @@ Wi-Fi work today."* See [[computing-history-moments]] for the full 17-card table
 2. [IEEE SA — Actress/Inventor Hedy Lamarr and How Far Wireless Communication Has Come](https://standards.ieee.org/beyond-standards/hedy-lamarr/) — institutional (IEEE); ties her work to "modern wireless communication technologies, including Wi-Fi and Bluetooth." **[fetched]**
 3. [Random Paths to Frequency Hopping — American Scientist](https://www.americanscientist.org/article/random-paths-to-frequency-hopping) — establishes the more nuanced, indirect technical lineage from her patent to modern spread-spectrum tech.
 4. [Actress Hedy Lamarr Patents Basis for WiFi — Jewish Women's Archive](https://jwa.org/thisweek/aug/11/1942/actress-hedy-lamarr-patents-basis-for-wifi) — confirms August 1942 patent grant date.
+
+## See also
+
+[[wi-fi]] — the 1999 branding moment IEEE cites her patent as inspiring (Level 21, added 2026-07-19).

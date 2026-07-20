@@ -26,10 +26,14 @@ by the curious. Every egg rewards the instinct this game exists to create —
 
 ## Implemented
 
-### The WOPR select screen *(pre-existing — the original gem)*
-Type `wopr`, `wargames`, or `shallweplayagame` on the title or ready screen →
+### The WOPR select screen *(pre-existing — the original gem; `joshua` + secret card added 2026-07-19)*
+Type `wopr`, `wargames`, `shallweplayagame`, or `joshua` on the title or ready screen →
 "GREETINGS PROFESSOR FALKEN / SHALL WE PLAY A GAME?" level select.
-*(WarGames, 1983.)*
+*(WarGames, 1983 — `joshua` is the WOPR's backdoor password and the machine's own name.)*
+Typing any of these four also **collects the hidden WarGames history card** (`joshua` /
+"W.O.P.R. — WARGAMES") into the active game's collection — a **secret card** (`level: null`
+in `js/history-cards.js`, never in a level's pool) findable only by knowing the words, but
+counting toward the collection total. A hidden Skulltula for the curious.
 
 ### Title-screen magic words *(js/main.js `EGGS`)*
 Typed blind on the attract screen; answer appears in the WOPR text line for 5s:

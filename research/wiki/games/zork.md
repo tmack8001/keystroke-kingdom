@@ -1,9 +1,10 @@
 ---
 title: Zork
 type: entity
-tags: [computing-history, game, interactive-fiction, terminal]
+tags: [computing-history, game, interactive-fiction, terminal, history-card]
+level: 15
 sources: 3
-verified: 2026-07-17
+verified: 2026-07-19
 ---
 
 Zork, developed 1977–1979 at MIT by Tim Anderson, Marc Blank, Bruce Daniels, and Dave
@@ -13,6 +14,13 @@ canonical example of Archetype B's *single-player* branch, as distinct from
 [[mud]]'s inherently multiplayer branch.
 
 ## In this game
+
+**Also a Level 15 history card** *(added 2026-07-19)*, word `zork`. All four letters
+are already available (o@9, r@7, k@2); z is the level's own new key, making it the
+bottleneck. A deliberate resonance card: Zork's "type a sentence, read what happens"
+play loop is the direct ancestor of this game's own Act 6 Green Dragon world (see
+[[text-worlds]] in `docs/features/`) — the card lets the player meet the ancestor of a
+bonus wing they may not have discovered yet.
 
 **Archetype B comparison point.** Zork/Colossal Cave Adventure and MUD1 share the
 exact same surface presentation (room description text, typed compass directions,

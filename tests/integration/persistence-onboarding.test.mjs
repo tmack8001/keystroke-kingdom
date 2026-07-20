@@ -5,7 +5,8 @@
 // §Returning-player persistence; .claude/rules/transitions.md §Phase 3 (name entry
 // detail: 16-char cap, Backspace, Space types a space / only Return confirms,
 // no validation — revised 2026-07-13, Trevor triage of TF-H2/TF-H3);
-// security.md rule 4 ("localStorage is untrusted input... tolerate garbage").
+// security.md rule 4 ("localStorage is untrusted input... tolerate garbage");
+// js/slots.js's own header comment (the 2026-07-19 save-system rebuild).
 //
 // Persistence & onboarding flows, driven through the real browser via the shared
 // driver (tests/helpers/game-driver.mjs). Raw (non-wopr) flows are used wherever
@@ -14,8 +15,22 @@
 // bypass sets state.selectBypass = true, which unlocks every cabinet and would
 // mask exactly the gating behavior these tests exist to verify.
 //
-// Expected level text ("LEVEL 3 — S & L") is derived from js/levels.js's LEVELS
-// data (the game's own data file), never hardcoded, per STRATEGY.md §2.
+// REVISED 2026-07-19 for the history-card + save-system rebuild: the single
+// "continue screen" ('continue-screen', `#continue-name`/`#continue-level`/
+// `#continue-erase`) is RETIRED. The returning-player front door is now the slot
+// picker ("CHOOSE YOUR GAME", screen id 'slots', `#slots-list` rows read via the
+// driver's `readSlotsList()`) — ANY saved game (one or many) sends a returning
+// player there, never straight back into gameplay; resuming is always an explicit
+// choice. Progress/cards persist in `kk-slots` (js/slots.js), scoped to whichever
+// game is ACTIVE; `kk-progress` is now read ONLY once, during one-time legacy
+// migration (`Slots.ensureMigrated`) — it is no longer the game's live persistence
+// key, so seeding it only matters for migration-boundary tests (INV-27's hostile
+// seeds below exploit exactly that boundary). Erase moves from continue-screen's
+// R→Y/N to the slot picker's X→Y/N ("ERASE THIS GAME?").
+//
+// Expected level text is derived from the game's own rendered format ('LV n', from
+// js/ui/screens.js renderSlotsScreen) or js/levels.js's LEVELS data, never
+// hardcoded, per STRATEGY.md §2.
 
 import { test, describe, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,14 +43,12 @@ import {
   readScreen,
   press,
   winLevel,
+  slotsSeed,
+  readSlotsList,
 } from '../helpers/game-driver.mjs';
 
 const require = createRequire(import.meta.url);
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-
-// Pure data import — no DOM deps — used only to DERIVE expected display text
-// from the game's own curriculum data, never to hardcode a copied constant.
-const { LEVELS } = await import(join(REPO_ROOT, 'js', 'levels.js'));
 
 const SETTLE_MS = 400;
 
@@ -44,20 +57,21 @@ const SETTLE_MS = 400;
 // element with id="pwned" we can detect.
 const HOSTILE_NAME = '<img src=x onerror="window.__pwned=1" id="pwned">';
 
-// startGame({ progress }) seeds localStorage via page.addInitScript, which
+// startGame({ localStorage }) seeds localStorage via page.addInitScript, which
 // (by design, per game-driver.mjs's own JSDoc) re-runs BEFORE EVERY
 // navigation — including a page.reload() the test itself triggers later. That
 // makes it the wrong tool for any scenario that needs to reload AFTER the
 // game has written new localStorage state (winning a level, erasing progress)
 // within the same test: the init script would silently stomp the game's own
 // write back to the original seed on the next reload, which would look like
-// (but is not) a persistence bug. For those scenarios we seed progress via a
+// (but is not) a persistence bug. For those scenarios we seed `kk-slots` via a
 // one-time in-page localStorage.setItem AFTER the first real navigation
 // instead — a plain write no future reload re-applies — using an UNSEEDED
-// startGame().
-async function seedProgressLive(page, baseUrl, progress) {
+// startGame(). (Renamed from the old kk-progress-era seedProgressLive; the
+// persisted key itself moved to kk-slots, see the file header above.)
+async function seedSlotsLive(page, baseUrl, slotsValue) {
   await page.goto(baseUrl);
-  await page.evaluate((json) => localStorage.setItem('kk-progress', json), JSON.stringify(progress));
+  await page.evaluate((json) => localStorage.setItem('kk-slots', json), JSON.stringify(slotsValue));
 }
 
 // ── INV-24 — Name Entry ──────────────────────────────────────────────────────
@@ -179,17 +193,15 @@ describe('INV-24 — name entry (onboarding.md §Name Entry, transitions.md §Ph
     assert.equal(readyName, 'PLAYER TWO', 'the space-separated two-word name is confirmed correctly');
   });
 
-  test('confirmed name persists across reload (continue screen shows it)', async () => {
+  test('confirmed name persists across reload (the slot picker shows it)', async () => {
     await coldOpenToTitle(g.page, g.baseUrl);
     await g.page.keyboard.press('Enter');
     await g.page.waitForTimeout(SETTLE_MS);
     await clearAndType(g.page, 'PERSISTNAME');
-    await g.page.keyboard.press('Enter'); // confirm -> ready screen
+    await g.page.keyboard.press('Enter'); // confirm -> ready screen (also creates + activates the first saved game)
     await g.page.waitForTimeout(SETTLE_MS);
 
-    // Win level 1 so there is real progress to resume (hasProgress() requires
-    // furthestLevel > 1 or a completion — onboarding.md's continue screen is
-    // for RETURNING players, distinct from a name-only session).
+    // Win level 1 so there is real progress to resume with.
     await g.page.keyboard.press('Space'); // ready -> keyboard-preview
     await g.page.waitForTimeout(SETTLE_MS);
     await g.page.keyboard.press('Space'); // keyboard-preview -> game
@@ -203,53 +215,53 @@ describe('INV-24 — name entry (onboarding.md §Name Entry, transitions.md §Ph
     await g.page.reload();
     await g.page.waitForTimeout(SETTLE_MS + 200);
     const screen = await readScreen(g.page);
-    assert.equal(screen, 'continue-screen', 'a returning player with progress sees the continue screen');
-    const continueName = await g.page.$eval('#continue-name', (el) => el.textContent);
-    assert.equal(continueName, 'PERSISTNAME', 'the confirmed name persisted across reload');
+    assert.equal(screen, 'slots-screen', 'a returning player with ANY saved game sees the "CHOOSE YOUR GAME" picker, never straight back into play');
+    const rows = await readSlotsList(g.page);
+    assert.equal(rows.length, 1, 'exactly the one game created during name entry is listed');
+    assert.equal(rows[0].name, 'PERSISTNAME', 'the confirmed name persisted across reload');
   });
 });
 
 // ── INV-25 — furthestLevel never regresses ──────────────────────────────────
 // CLAUDE.md §Returning-player persistence + js/main.js's own doc comment:
 // "Never regresses furthestLevel (replaying an early level can't lock later
-// ones)." Observed via the continue screen's level line (onboarding.md's
-// documented "LEVEL n — <keys>" format), which is fed directly from
+// ones)." Observed via the slot picker's own rendered "LV n" line (js/ui/
+// screens.js renderSlotsScreen, `slot-level`), fed directly from
 // getProgress().furthestLevel.
 describe('INV-25 — furthestLevel never regresses (onboarding.md §Returning Player Flow)', () => {
   let g;
   before(async () => {
     // Unseeded startGame() — no addInitScript re-seeding — so we can reload
     // freely afterward and see only what the game itself has written (see the
-    // seedProgressLive() note above). Progress is seeded live: already
-    // completed levels 1-2 (furthestLevel 3), so the continue screen resumes
-    // at level 3 without needing to win two levels through raw onboarding.
+    // seedSlotsLive() note above). A game is seeded live directly into
+    // kk-slots, active, with levels 1-2 already completed (furthestLevel 3),
+    // so the picker resumes at level 3 without needing to win two levels
+    // through raw onboarding first.
     g = await startGame();
-    await seedProgressLive(g.page, g.baseUrl, { furthestLevel: 3, completed: { 1: true, 2: true } });
+    await seedSlotsLive(g.page, g.baseUrl, slotsSeed({ furthestLevel: 3, completed: { 1: true, 2: true } }));
   });
   after(async () => {
     await g.stop();
   });
 
-  test('seeded progress opens directly on the continue screen at LEVEL 3', async () => {
+  test('seeded progress opens directly on the slot picker showing LV 3', async () => {
     await g.page.reload(); // pick up the live-seeded localStorage from `before`
     await g.page.waitForTimeout(SETTLE_MS + 200);
     const screen = await readScreen(g.page);
-    assert.equal(screen, 'continue-screen');
-    const levelText = await g.page.$eval('#continue-level', (el) => el.textContent);
-    assert.ok(
-      levelText.startsWith(LEVELS[3].name),
-      `continue screen should resume at ${LEVELS[3].name}, got "${levelText}"`,
-    );
+    assert.equal(screen, 'slots-screen');
+    const rows = await readSlotsList(g.page);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].level, 'LV 3', `the picker should show LV 3, got "${rows[0].level}"`);
   });
 
-  test('winning level 3 advances furthestLevel to 4, then replaying level 3 does not regress it', async () => {
+  test('winning level 3 advances furthestLevel to 4, then replaying (re-winning) it does not regress it', async () => {
     // Resume into level 3 (Space -> ready -> Space -> keyboard-preview -> Space -> game).
     // No init-script seed is in play (unseeded startGame() + a one-time live
     // localStorage write in `before`), so localStorage persists across this
     // navigation exactly as a real browser would carry it.
     await g.page.goto(g.baseUrl);
     await g.page.waitForTimeout(SETTLE_MS + 200);
-    await press(g.page, ' '); // continue -> ready
+    await press(g.page, ' '); // slots -> resume the (only, already-selected) game -> ready
     await g.page.waitForTimeout(SETTLE_MS);
     await press(g.page, ' '); // ready -> keyboard-preview
     await g.page.waitForTimeout(SETTLE_MS);
@@ -258,27 +270,21 @@ describe('INV-25 — furthestLevel never regresses (onboarding.md §Returning Pl
     await winLevel(g.page);
     await g.page.waitForTimeout(SETTLE_MS);
 
-    // Reload: furthestLevel should now be 4.
+    // Reload: furthestLevel should now be 4. A reload always returns to the
+    // picker (the front door), never straight back into gameplay.
     await g.page.reload();
     await g.page.waitForTimeout(SETTLE_MS + 200);
-    let levelText = await g.page.$eval('#continue-level', (el) => el.textContent);
-    assert.ok(
-      levelText.startsWith(LEVELS[4].name),
-      `after winning level 3, continue screen should resume at ${LEVELS[4].name}, got "${levelText}"`,
-    );
+    let rows = await readSlotsList(g.page);
+    assert.equal(rows[0].level, 'LV 4', `after winning level 3, the picker should show LV 4, got "${rows[0].level}"`);
 
-    // Now manually rewrite progress back to an EARLIER level (simulating a
-    // player who goes back and replays level 1) while keeping furthestLevel's
-    // true value inaccessible to us directly — instead we re-seed the SAME
-    // localStorage key with furthestLevel still at 4 but re-navigate through
-    // an earlier resume point is not reachable without wopr (select-screen
-    // navigation always sets selectBypass=true). We approximate "replay an
-    // earlier level" the way the game itself allows it: winning the CURRENT
-    // (already-furthest) level again is idempotent and must not move
-    // furthestLevel backward either.
-    await g.page.reload();
+    // There is no documented UI path for a returning (non-WOPR) player to jump
+    // back to an EARLIER level than furthestLevel — the picker always resumes
+    // at furthestLevel. We approximate "replay an earlier level" the way the
+    // game itself allows it: winning the CURRENT (already-furthest) level
+    // again is idempotent and must not move furthestLevel backward either.
+    await g.page.goto(g.baseUrl);
     await g.page.waitForTimeout(SETTLE_MS + 200);
-    await press(g.page, ' '); // continue -> ready (level 4 now)
+    await press(g.page, ' '); // slots -> resume (level 4 now)
     await g.page.waitForTimeout(SETTLE_MS);
     await press(g.page, ' ');
     await g.page.waitForTimeout(SETTLE_MS);
@@ -289,42 +295,36 @@ describe('INV-25 — furthestLevel never regresses (onboarding.md §Returning Pl
 
     await g.page.reload();
     await g.page.waitForTimeout(SETTLE_MS + 200);
-    levelText = await g.page.$eval('#continue-level', (el) => el.textContent);
+    rows = await readSlotsList(g.page);
     assert.ok(
-      levelText.startsWith(LEVELS[5].name) || levelText.startsWith(LEVELS[4].name),
-      `furthestLevel must never regress below its prior value (4); got "${levelText}"`,
+      rows[0].level === 'LV 5' || rows[0].level === 'LV 4',
+      `furthestLevel must never regress below its prior value (4); got "${rows[0].level}"`,
     );
     // Explicitly assert it did NOT fall back to an earlier level like LEVEL 1/2/3.
     for (const n of [1, 2, 3]) {
-      assert.ok(
-        !levelText.startsWith(LEVELS[n].name + ' —') && levelText !== LEVELS[n].name,
-        `furthestLevel regressed to ${LEVELS[n].name} — INV-25 violation`,
-      );
+      assert.notEqual(rows[0].level, 'LV ' + n, `furthestLevel regressed to LEVEL ${n} — INV-25 violation`);
     }
   });
 
-  test('a fresh session seeded with a HIGH furthestLevel and re-winning an earlier already-seeded level does not regress it (direct localStorage replay check)', async () => {
+  test('a fresh session seeded with a HIGH furthestLevel and lower completed levels still resumes at the HIGH level (direct persistence-layer check)', async () => {
     // Directly exercises the documented guarantee at the persistence layer:
-    // seed furthestLevel=10, load, replay (win) level 2 via raw resume is not
-    // reachable without the select screen, so instead we assert the INVARIANT
-    // the way the game itself implements it — recordLevelComplete only ever
-    // raises furthestLevel, never lowers it — by seeding completed levels that
-    // are BELOW furthestLevel and confirming the continue screen still honors
-    // the higher furthestLevel, never falling back to a completed-but-earlier
-    // level.
+    // recordLevelComplete only ever raises furthestLevel, never lowers it — by
+    // seeding completed levels that are BELOW furthestLevel and confirming the
+    // picker still honors the higher furthestLevel, never falling back to a
+    // completed-but-earlier level.
     const g2 = await startGame();
     try {
-      await seedProgressLive(g2.page, g2.baseUrl, {
+      await seedSlotsLive(g2.page, g2.baseUrl, slotsSeed({
         furthestLevel: 10,
         completed: { 1: true, 2: true, 3: true },
-      });
+      }));
       await g2.page.reload();
       await g2.page.waitForTimeout(SETTLE_MS + 200);
-      const levelText = await g2.page.$eval('#continue-level', (el) => el.textContent);
-      assert.ok(
-        levelText.startsWith(LEVELS[10].name),
-        `continue screen must resume at the furthest level (10), not an earlier ` +
-          `completed one; got "${levelText}"`,
+      const rows = await readSlotsList(g2.page);
+      assert.equal(rows.length, 1);
+      assert.equal(
+        rows[0].level, 'LV 10',
+        `the picker must show the furthest level (10), not an earlier completed one; got "${rows[0].level}"`,
       );
     } finally {
       await g2.stop();
@@ -335,98 +335,102 @@ describe('INV-25 — furthestLevel never regresses (onboarding.md §Returning Pl
 // ── INV-26 — Erase requires explicit Y ───────────────────────────────────────
 // onboarding.md §Returning Player Flow: "R triggers a confirmation... Only Y
 // clears localStorage. N or any other key returns to the continue screen."
-describe('INV-26 — erase progress requires explicit Y (onboarding.md §Returning Player Flow)', () => {
+describe('INV-26 — erase progress requires explicit Y (onboarding.md §Returning Player Flow, adapted to the slot picker\'s X→Y/N "ERASE THIS GAME?" confirm)', () => {
   let g;
   before(async () => {
     // Unseeded startGame() (no addInitScript) so reloads within a test reflect
-    // only what the game itself has written — required for the R->Y erase
+    // only what the game itself has written — required for the X->Y erase
     // test, which must observe a REAL localStorage removal surviving reload.
     g = await startGame();
   });
   after(async () => {
     await g.stop();
   });
-  // Re-seed identical fresh progress before EVERY test in this block, so each
+  // Re-seed an identical fresh game before EVERY test in this block, so each
   // test starts from the same known state regardless of what a prior test in
   // the block did to localStorage (erase, etc).
   beforeEach(async () => {
-    await seedProgressLive(g.page, g.baseUrl, { furthestLevel: 3, completed: { 1: true, 2: true } });
+    await seedSlotsLive(g.page, g.baseUrl, slotsSeed({ furthestLevel: 3, completed: { 1: true, 2: true } }));
     await g.page.reload();
     await g.page.waitForTimeout(SETTLE_MS + 200);
   });
 
-  test('R shows the ERASE ALL PROGRESS confirm', async () => {
-    await press(g.page, 'r');
+  test('X shows the ERASE THIS GAME confirm', async () => {
+    await press(g.page, 'x');
     await g.page.waitForTimeout(SETTLE_MS);
-    const eraseVisible = await g.page.$eval('#continue-erase', (el) => !el.classList.contains('hidden'));
-    assert.ok(eraseVisible, 'R reveals the erase confirmation panel');
-    const promptHidden = await g.page.$eval('#continue-prompt', (el) => el.classList.contains('hidden'));
-    assert.ok(promptHidden, 'the normal continue prompt hides while confirming erase');
+    const eraseVisible = await g.page.$eval('#slots-erase', (el) => !el.classList.contains('hidden'));
+    assert.ok(eraseVisible, 'X reveals the erase confirmation panel');
+    const hintHidden = await g.page.$eval('#slots-hint', (el) => el.classList.contains('hidden'));
+    assert.ok(hintHidden, 'the normal action hint hides while confirming erase');
   });
 
-  test('N preserves progress — continue screen still shows the level', async () => {
-    await press(g.page, 'r');
+  test('N preserves the game — the picker still lists it', async () => {
+    await press(g.page, 'x');
     await g.page.waitForTimeout(SETTLE_MS);
     await press(g.page, 'n');
     await g.page.waitForTimeout(SETTLE_MS);
 
     const screen = await readScreen(g.page);
-    assert.equal(screen, 'continue-screen', 'N returns to the continue screen, not erased/title');
-    const eraseHidden = await g.page.$eval('#continue-erase', (el) => el.classList.contains('hidden'));
+    assert.equal(screen, 'slots-screen', 'N returns to the picker, not erased/title');
+    const eraseHidden = await g.page.$eval('#slots-erase', (el) => el.classList.contains('hidden'));
     assert.ok(eraseHidden, 'the erase confirm panel hides again after N');
+    let rows = await readSlotsList(g.page);
+    assert.equal(rows.length, 1, 'the game is still listed after N');
 
     // Reload to prove localStorage itself was untouched.
     await g.page.reload();
     await g.page.waitForTimeout(SETTLE_MS + 200);
     const screenAfterReload = await readScreen(g.page);
-    assert.equal(screenAfterReload, 'continue-screen', 'progress survives after N + reload');
-    const levelText = await g.page.$eval('#continue-level', (el) => el.textContent);
-    assert.ok(levelText.startsWith(LEVELS[3].name), 'progress (level 3) intact after N');
+    assert.equal(screenAfterReload, 'slots-screen', 'progress survives after N + reload');
+    rows = await readSlotsList(g.page);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].level, 'LV 3', 'progress (level 3) intact after N');
   });
 
   test('a random OTHER key (not Y) also preserves progress — never trap or erase on ambiguity', async () => {
-    await press(g.page, 'r');
+    await press(g.page, 'x');
     await g.page.waitForTimeout(SETTLE_MS);
     await press(g.page, 'q'); // an arbitrary key that is neither Y nor N
     await g.page.waitForTimeout(SETTLE_MS);
 
     const screen = await readScreen(g.page);
-    assert.equal(screen, 'continue-screen', 'a stray key returns to the continue screen safely');
+    assert.equal(screen, 'slots-screen', 'a stray key returns to the picker safely');
+    let rows = await readSlotsList(g.page);
+    assert.equal(rows.length, 1, 'a stray key does not erase the game');
 
     await g.page.reload();
     await g.page.waitForTimeout(SETTLE_MS + 200);
-    const levelText = await g.page.$eval('#continue-level', (el) => el.textContent);
-    assert.ok(levelText.startsWith(LEVELS[3].name), 'progress intact after a non-Y/N key');
+    rows = await readSlotsList(g.page);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].level, 'LV 3', 'progress intact after a non-Y/N key');
   });
 
-  test('R then Y actually erases progress — fresh title/name flow with default level', async () => {
-    await press(g.page, 'r');
+  test('X then Y actually erases the game — fresh title/name flow once no saved games remain', async () => {
+    await press(g.page, 'x');
     await g.page.waitForTimeout(SETTLE_MS);
     await press(g.page, 'y');
     await g.page.waitForTimeout(SETTLE_MS);
 
-    const screen = await readScreen(g.page);
-    assert.equal(screen, 'title-screen', 'Y erases progress and returns to the title/name flow');
+    // The picker re-renders in place immediately after an erase (it does not
+    // itself navigate away) — the erased game is simply gone from the list.
+    const rowsRightAfter = await readSlotsList(g.page);
+    assert.equal(rowsRightAfter.length, 0, 'the erased game is gone from the list right away');
 
     // Confirm the erase is REAL at the persistence layer (not just an
-    // in-memory state flip): kk-progress must actually be gone from
-    // localStorage. (We assert via localStorage directly, not a reload,
-    // because this describe block's `before` uses an unseeded startGame() +
-    // beforeEach's live seed — a reload here is safe and equivalent, but a
-    // direct read is the most refactor-proof observable of "erase happened".)
-    const progressAfterErase = await g.page.evaluate(() => localStorage.getItem('kk-progress'));
-    assert.equal(progressAfterErase, null, 'kk-progress is removed from localStorage after R then Y');
+    // in-memory state flip): the raw kk-slots value has an empty slots array.
+    const raw = await g.page.evaluate(() => localStorage.getItem('kk-slots'));
+    const parsed = JSON.parse(raw);
+    assert.deepEqual(parsed.slots, [], 'kk-slots.slots is empty after X then Y erases the only game');
 
-    // Confirm the erase also holds across a real reload — no init-script
-    // re-seeding is in play in this describe block, so this reload reflects
-    // the true persisted state, not a test artifact.
+    // With no saved games left, a reload boots the untouched cold-open title
+    // flow (anySlotExists() is false), never the picker.
     await g.page.reload();
     await g.page.waitForTimeout(SETTLE_MS + 200);
     const screenAfterReload = await readScreen(g.page);
     assert.equal(
       screenAfterReload,
       'title-screen',
-      'after erase + reload, the game boots fresh (no continue screen) — progress was truly cleared',
+      'after erasing the only saved game + reload, the game boots fresh (no picker) — progress was truly cleared',
     );
   });
 });
@@ -434,7 +438,13 @@ describe('INV-26 — erase progress requires explicit Y (onboarding.md §Returni
 // ── INV-27 — hostile / corrupt kk-progress tolerated ─────────────────────────
 // security.md rule 4: "localStorage is untrusted input... tolerate garbage;
 // never feed parsed values to any sink [innerHTML etc.] without going through
-// [sanitizing]." js/main.js getProgress() is the documented model.
+// [sanitizing]." js/slots.js's `ensureMigrated`/`normalizeSlot` are now the
+// documented model (kk-progress itself is read only once, at the legacy-
+// migration boundary — see the file header note above); some of these hostile
+// values are "real enough" progress to trigger a migration into a new saved
+// game (landing on the slot picker), others are not (landing on the untouched
+// title screen) — both are legitimate, crash-free outcomes, so the assertion
+// below accepts either real screen rather than asserting which.
 describe('INV-27 — hostile kk-progress values degrade to defaults, never crash (security.md rule 4)', () => {
   const hostileSeeds = [
     { label: 'corrupt JSON string', value: '{not valid json!!' },
@@ -454,7 +464,7 @@ describe('INV-27 — hostile kk-progress values degrade to defaults, never crash
         await g.page.waitForTimeout(SETTLE_MS + 200);
         const screen = await readScreen(g.page);
         assert.ok(
-          screen === 'title-screen' || screen === 'continue-screen',
+          screen === 'title-screen' || screen === 'slots-screen',
           `game boots to a real screen (got ${screen}) for hostile seed: ${label}`,
         );
         assert.deepEqual(
@@ -469,6 +479,11 @@ describe('INV-27 — hostile kk-progress values degrade to defaults, never crash
   }
 
   test('a script-tag string in the player name field is NEVER interpreted as HTML', async () => {
+    // furthestLevel: 3 is "real enough" legacy progress to trigger migration
+    // into a new saved game named from the hostile settings.playerName — so
+    // this boots straight to the slot picker, exercising the SAME sink
+    // (js/ui/screens.js renderSlotsScreen's `slot-name` span) a real returning
+    // player's name always renders through.
     const g = await startGame({
       progress: { furthestLevel: 3, completed: { 1: true } },
       settings: { playerName: HOSTILE_NAME },
@@ -477,8 +492,8 @@ describe('INV-27 — hostile kk-progress values degrade to defaults, never crash
       await g.page.goto(g.baseUrl);
       await g.page.waitForTimeout(SETTLE_MS + 200);
 
-      // The hostile "name" is 44 chars — settings.js's sanitize() slices
-      // playerName to 16 chars, so the literal string that reaches the DOM is
+      // The hostile "name" is 44 chars — slots.js's normalizeSlot slices
+      // names to 16 chars, so the literal string that reaches the DOM is
       // truncated, not the full payload. Either way it must land as literal
       // TEXT (textContent), never parsed as an <img> element.
       const pwned = await g.page.evaluate(() => window.__pwned);
@@ -487,10 +502,11 @@ describe('INV-27 — hostile kk-progress values degrade to defaults, never crash
       const injectedEl = await g.page.$('#pwned');
       assert.equal(injectedEl, null, 'no element with the injected id was created in the DOM');
 
-      const continueNameHtml = await g.page.$eval('#continue-name', (el) => el.innerHTML);
+      assert.equal(await readScreen(g.page), 'slots-screen', 'fixture sanity: the hostile-but-real progress migrated into a listed game');
+      const slotsListHtml = await g.page.$eval('#slots-list', (el) => el.innerHTML);
       assert.ok(
-        !continueNameHtml.includes('<img'),
-        `#continue-name must render the hostile string as literal text, not markup; got: ${continueNameHtml}`,
+        !slotsListHtml.includes('<img'),
+        `#slots-list must render the hostile string as literal text, not markup; got: ${slotsListHtml}`,
       );
 
       assert.deepEqual(
@@ -503,11 +519,11 @@ describe('INV-27 — hostile kk-progress values degrade to defaults, never crash
     }
   });
 
-  test('a hostile name surviving into the ready screen after erase+replay is still literal text', async () => {
+  test('a hostile name surviving erase+a fresh name entry is still literal text', async () => {
     // Round-trip through the real UI: seed a hostile name in settings (kept
     // across erase, per CLAUDE.md — erase clears progress, not identity),
-    // erase progress via R->Y, and confirm the name still renders safely on
-    // the resulting title/name-entry flow.
+    // erase the migrated game via X->Y, and confirm the name still renders
+    // safely once we're back on the resulting title/name-entry flow.
     const g = await startGame({
       progress: { furthestLevel: 2, completed: { 1: true } },
       settings: { playerName: HOSTILE_NAME },
@@ -515,17 +531,34 @@ describe('INV-27 — hostile kk-progress values degrade to defaults, never crash
     try {
       await g.page.goto(g.baseUrl);
       await g.page.waitForTimeout(SETTLE_MS + 200);
-      await press(g.page, 'r');
+      assert.equal(await readScreen(g.page), 'slots-screen', 'fixture sanity: the hostile-but-real progress migrated into a listed game');
+      await press(g.page, 'x');
       await g.page.waitForTimeout(SETTLE_MS);
       await press(g.page, 'y');
       await g.page.waitForTimeout(SETTLE_MS);
 
-      // Erase keeps kk-settings (identity), so the name-entry input should be
-      // pre-filled with the (truncated, sanitized) hostile string as plain
-      // text value — never executed as markup.
       const pwned = await g.page.evaluate(() => window.__pwned);
-      assert.equal(pwned, undefined, 'no script executed after erase+reload with a hostile stored name');
+      assert.equal(pwned, undefined, 'no script executed erasing a game with a hostile stored name');
       assert.deepEqual(g.consoleErrors, [], 'zero console errors through the erase flow with a hostile name');
+
+      // With no saved games left, a reload boots the cold-open title/name
+      // flow, whose name field is pre-filled from kk-settings (identity
+      // survives an erase) — still just a literal <input> VALUE, never markup.
+      await g.page.reload();
+      await g.page.waitForTimeout(SETTLE_MS + 200);
+      assert.equal(await readScreen(g.page), 'title-screen');
+      await g.page.keyboard.press('Enter'); // reveal name entry
+      await g.page.waitForTimeout(SETTLE_MS);
+      // #player-name-input is a real <input>; its `.value` is always plain text
+      // by construction (an attribute/property value, never parsed as markup)
+      // regardless of content — the meaningful assertion is that nothing
+      // executed and the field is genuinely pre-filled from the surviving
+      // (truncated) hostile settings name, not that the substring is absent.
+      const inputValue = await g.page.$eval('#player-name-input', (el) => el.value);
+      assert.ok(inputValue.length > 0, 'the name field is pre-filled from kk-settings after the erase');
+      const pwnedAfter = await g.page.evaluate(() => window.__pwned);
+      assert.equal(pwnedAfter, undefined, 'no script executed on the fresh name-entry screen either');
+      assert.deepEqual(g.consoleErrors, [], 'zero console errors through the full erase + fresh name-entry flow');
     } finally {
       await g.stop();
     }

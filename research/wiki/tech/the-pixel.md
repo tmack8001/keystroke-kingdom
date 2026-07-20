@@ -36,3 +36,7 @@ on this screen is made of tiny squares of light called pixels."* See
 1. [A Brief History of "Pixel" — Richard F. Lyon, SPIE](https://www.dicklyon.com/tech/Photography/Pixel-SPIE06-Lyon.pdf) — the authoritative etymological paper on this term; confirms Billingsley's two 1965 JPL papers and the earlier oral-use account from Keith E. McFarland. (identified via search; PDF text extraction was garbled on fetch — corroborated independently by items 2–3)
 2. [Pixel — Wikipedia](https://en.wikipedia.org/wiki/Pixel) — "The word pixel was first published in 1965 by Frederic C. Billingsley of JPL"; notes the McFarland oral-use claim and the even older "picture element" phrase (Wireless World, 1927). **[fetched]** (used as one of several, not alone)
 3. [Frederic C. Billingsley — Wikipedia](https://en.wikipedia.org/wiki/Frederic_C._Billingsley) — confirms Billingsley "published two papers in 1965 using the word pixel" and "may have been the first to publish that neologism."
+
+## See also
+
+[[the-word-software]] — this game's other "the word for something you've been using the whole game" card, Level 9 (added 2026-07-19).

@@ -39,3 +39,7 @@ zero anti-aliasing — the "raw beginning" of the [[discrete-logic-era]]. See
 
 1. [New Insight into Breakout's Origins — Atari](https://atari.com/blogs/atari/new-insight-into-breakout-s-origins) — Atari's own account: Bushnell/Bristow concept, Wozniak's ~45-chip prototype, and Gary Waters' ~100-chip production redesign at Cyan Engineering.
 2. [Steve Jobs, Breakout Pioneer — The Strong National Museum of Play](https://www.museumofplay.org/blog/steve-jobs-breakout-pioneer/) — corroborates the sub-50-chip prototype and confirms Atari judged it unfit for mass manufacture, hence the production redesign.
+
+## See also
+
+[[atari-inc]] — the company that made this cabinet, its own Level 8 history card (added 2026-07-19).

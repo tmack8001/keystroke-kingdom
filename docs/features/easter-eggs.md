@@ -4,7 +4,7 @@ code: [js/themes/terminal.js]
 rules: [.claude/rules/easter-eggs.md]
 screenshots: docs/screenshots/easter-eggs/
 capture: node docs/screenshots/capture-eggs.js
-verified: 2026-07-12
+verified: 2026-07-19
 ---
 
 # Easter Eggs (The Hidden Layer)
@@ -38,12 +38,15 @@ trims the buffer live.
 
 ## WOPR select-screen bypass
 
-`SECRET_PHRASES = ['shallweplayagame', 'wopr', 'wargames']`, checked in **two**
-separate listeners: the title screen (pre-coin, buffer echoed to `#wopr-text`) and the
-ready screen (buffer not echoed anywhere, with an extra prefix-reset optimization the
-title listener lacks). Exact match sets `state.selectBypass = true`,
-`state.selectedLevel = 1`, renders and shows the select screen — every cabinet becomes
-selectable regardless of `kk-progress`. See [[select-screen]].
+`SECRET_PHRASES = ['shallweplayagame', 'wopr', 'wargames', 'joshua']` (`joshua` added
+2026-07-19 alongside the history-cards rebuild), checked in **two** separate listeners:
+the title screen (pre-coin, buffer echoed to `#wopr-text`) and the ready screen (buffer
+not echoed anywhere, with an extra prefix-reset optimization the title listener lacks).
+Exact match on any phrase sets `state.selectBypass = true`, `state.selectedLevel = 1`,
+renders and shows the select screen — every cabinet becomes selectable regardless of
+progress — **and** calls `Slots.collectCardId('wargames-joshua')`, awarding the secret
+WarGames history card (`WARGAMES_CARD_ID`) to the active save slot (harmless no-op if no
+slot is active yet). See [[select-screen]] and [[history-cards]].
 
 ## Konami code
 
@@ -77,4 +80,6 @@ through all 20 fragments in a fixed order every 60 keystrokes.
 ## Related
 
 [[select-screen]] (WOPR bypass consumer) · [[level-themes]] (terminal.js is Level 20's
-theme) · [[visual-styling]] (console banner styling)
+theme) · [[visual-styling]] (console banner styling) · [[history-cards]] (the secret
+`wargames-joshua` card the WOPR bypass now also awards) · [[save-slots]] (the slot the
+secret card is written into)

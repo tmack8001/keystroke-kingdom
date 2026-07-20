@@ -33,6 +33,33 @@ over). Go binary rebuilt + dev server restarted. New follow-ups from the swarm: 
 
 ---
 
+*2026-07-19: **History Cards 2.0 + Save Slots + Collection** (uncommitted, working tree).
+Trevor: the kids love the cards — so expand them and reward replay. Landed:
+(1) **Card bank 17 → 41** (+1 secret), every level carded, **multiple per level** as a
+rotating POOL; each play guarantees ONE card (`pickGuaranteedCard`, prefers uncollected,
+per-slot rotation) — a Skulltula-style collect-them-all loop. Flat/id data model
+(`js/history-cards.js`), each card attached to its EARLIEST-typeable level (verified: 0
+untypeable, all at strict earliest). Content citation-verified by arcade-historian
+(research/computing-history-moments.md "17 → 41", 21 new wiki pages).
+(2) **Save slots** — ANY NUMBER of independent saved games (no cap; `js/slots.js`,
+`kk-slots` = growable dense array), a "CHOOSE YOUR GAME" picker (rows + a "＋ NEW GAME" row)
+replaces the single continue screen (retired); per-game name + progress + cards + rotation;
+legacy single-save auto-migrates into the first game. main.js progress/card helpers delegate
+to the active game.
+(3) **Collection gallery** (`collection` screen, C from picker) + per-game ★ found/total
+counter. (4) **`joshua`** added as a WOPR magic word + a SECRET WarGames card collected by
+any WarGames phrase (Trevor request). Screens validated in-browser (slots/collection render,
+zero console errors). Docs reconciled (product/onboarding/tech/security/easter-eggs/CLAUDE).
+Tests: test-engineer rewrote the suite (history-cards flat/id + slots isolation/migration +
+earliest-typeable + rotation INVs; game-driver seeds kk-slots now) — test-fast 220/0. It
+surfaced TF-S1 (`ensureMigrated`'s first localStorage.getItem was unguarded → would throw at
+boot in private-browsing mode); FIXED (try/catch guard) and its todo promoted to a passing
+regression test. Settings "ERASE EVERYTHING" is now an honest factory reset (`Slots.eraseAll`
+wipes all games); the picker's X erases one game (`eraseSlot`). Integration suite re-run
+pending a clean pass. Follow-ups: §3 below.*
+
+---
+
 *2026-07-12 (day): second + third waves COMPLETE — all landed, uncommitted:
 (1) **Level 8 unwinnable — FIXED per Trevor's gameplay design** (journal F23 closed):
 tetris win = ≥8 letter sequences AND ≥4 rows, latching exactly on a row-clear; optimal-
@@ -257,10 +284,12 @@ recordLevelComplete write was verified structurally, not by a full end-to-end pl
 — confirm during Trevor's playthrough.
 
 ### 1.3 The Stats Cabinet
-Documented in `.claude/rules/product.md`, unbuilt. Now has three tenants waiting:
+Documented in `.claude/rules/product.md`, unbuilt. Remaining tenants:
 - Accuracy-over-time graph, keys-learned timeline, words unlocked, session history
-- **History-card album** — collection already persists in localStorage `kk-cards`
-  (17 cards; see `js/history-cards.js`); needs the browsing UI
+- ~~**History-card album**~~ BUILT (2026-07-19) as a standalone **collection gallery**
+  (`collection` screen, reached with C from the slot picker) — 41 cards +1 secret, found
+  vs `???`, per-game ★ count. Collection now persists per save slot (`kk-slots`), not the
+  retired `kk-cards`. If the Stats Cabinet is ever built, it can host/duplicate this view.
 - **Cinematic replays** — Mystery/Basement/CommandCenter/FullCircle sequences are
   skippable-after-first-view per spec; the replay entry point belongs here
 
@@ -288,6 +317,21 @@ already exist inline in `.claude/rules/levels.md` (each level's "Music:" line).
 ---
 
 ## 3 — Tech debt & polish (discovered this session)
+
+- **`docs/screenshots/capture-screens.js` §5 is stale after save slots (2026-07-19).** It
+  seeded legacy `kk-progress` to shoot the "continue screen"; that key now auto-migrates
+  into `kk-slots` on load, so the flow lands on the slot picker, not a continue screen. The
+  content-librarian captured `slots-picker.png` / `slots-erase-confirm.png` /
+  `collection-gallery.png` ad-hoc; the persistent capture script needs rewriting to seed
+  `kk-slots` and shoot those three (+ retire the continue shots it referenced). Follow-up
+  for the screenshot-tool owner.
+- **Save-slot polish nice-to-haves (2026-07-19):** (a) confirm the slot-picker still reads
+  well at very large game counts on small viewports (scroll landed: `.slots-list` is
+  `max-height:62vh; overflow-y:auto`, verified at 12 games); (b) consider a per-game
+  "last played" ordering or timestamp so the most-recent game floats to the top (no
+  `Date.now()` in engine code — would need a play-counter or similar); (c) the WOPR/`joshua`
+  dev bypass into a level with no active game is ephemeral (collects/records nothing) — fine
+  as a dev path, revisit only if it becomes a real player path.
 
 - ~~**Act 6 — Text Worlds: the Green Dragon "first room"**~~ **BUILT 2026-07-13** (first
   slice of the §2 Act 6 vision). A back-wall **door** on the select screen (navigate down
@@ -317,7 +361,22 @@ already exist inline in `.claude/rules/levels.md` (each level's "Music:" line).
   — see the research). **Authored riddle creatures** (no LLM): step adjacent → read an early-reader
   riddle → TYPE the answer (forgiving, case-insensitive; wrong = gentle nudge, hint after 2 tries,
   answer after 3; Space steps back). **One-Rule floor proven by BFS:** the goal is always reachable
-  without solving any riddle or opening any gate — riddles/gates are pure bonus. The door **hub
+  without solving any riddle or opening any gate — riddles/gates are pure bonus.
+  **RIDDLE ENRICHMENT — all three worlds, one pattern (2026-07-18, Trevor):** a new shared
+  `js/textworld/riddles.js` (`buildPool`/`answerMatches`, letters-only, hint escalation) drives
+  BOTH engines. Every creature now carries a **rotating riddle POOL** (a flat primary + `more:[…]`),
+  so revisiting a character gives a NEW puzzle ("different each time"). The riddles are **logic /
+  word-play** puzzles (not "what am I") — children's-lit (Tolkien's *Riddles in the Dark*, Alice's
+  raven, Humpty), kid-safe tech/hacker winks (Grace-Hopper moth, `xyzzy`, `hello`, rubber duck,
+  ONE→GONE), a difficulty spread that ages up — all citation-verified in `research/act6-riddle-bank.md`
+  + new wiki pages [[riddles-in-the-dark]]/[[localhost]]. **Casts expanded:** THE GLIMMER DEEP now
+  6 creatures (added Ora the ember-moth, Boulder the rock-golem, Deep the echo-bat); THE WHISPERWOOD
+  now 7 (added Pip the woodsprite, Bramble the hedgehog, Silvermane the unicorn, Fen the duck).
+  **THE GREEN DRAGON now has riddlers too** (the prose engine gained a TYPED riddle sub-mode — a
+  reply is always typed, never selected: it is a learn-to-type game first): Fern the wood-sprite,
+  the badger, Astra the unicorn (new MOSSY GLADE room), Quill the raven, and the Dragon itself —
+  riddles are BONUS, never on the win path (BFS/derivation floors intact; INV-42/45/55 green). Dead
+  unreachable answer alternates (`'the river'`,`'a fox'`,`'7'`…) cleaned out. The door **hub
   chooser** `js/textworld/hub.js` lists them (unchanged ids/titles). **Act 6 = 5 worlds; ALL 5 BUILT (2026-07-14) — Act 6 is COMPLETE:** Green Dragon
   (prose) + Glimmer Deep + Whisperwood (tile) + **YOUR OWN WORLD** (`js/textworld/maker.js` — the
   keystone: type words at a prompt bar → things appear in the scene above → type `wake` and the

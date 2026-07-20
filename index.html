@@ -54,19 +54,24 @@
   </div>
 </div>
 
-<!-- CONTINUE SCREEN (returning player) -->
-<div class="screen hidden" id="continue-screen">
-  <div class="continue-ready">READY</div>
-  <div class="continue-name" id="continue-name">PLAYER ONE</div>
-  <div class="continue-level" id="continue-level"></div>
-  <div class="continue-learned" id="continue-learned"></div>
-  <div class="continue-prompt" id="continue-prompt">PRESS SPACE TO CONTINUE</div>
-  <div class="continue-restart" id="continue-restart">PRESS R TO RESTART</div>
-  <div class="continue-erase hidden" id="continue-erase">
-    <div class="continue-erase-title">ERASE ALL PROGRESS?</div>
-    <div class="continue-erase-opt">Y — YES, START OVER</div>
-    <div class="continue-erase-opt">N — NO, KEEP GOING</div>
+<!-- SLOT PICKER — "CHOOSE YOUR GAME" (returning-player front door) -->
+<div class="screen hidden" id="slots-screen">
+  <div class="slots-title">CHOOSE YOUR GAME</div>
+  <div class="slots-list" id="slots-list"></div>
+  <div class="slots-hint" id="slots-hint">SPACE PLAY &middot; N NEW GAME &middot; C CARDS &middot; X ERASE</div>
+  <div class="slots-erase hidden" id="slots-erase">
+    <div class="slots-erase-title">ERASE THIS GAME?</div>
+    <div class="slots-erase-opt">Y — YES, ERASE</div>
+    <div class="slots-erase-opt">N — NO, KEEP IT</div>
   </div>
+</div>
+
+<!-- CARD COLLECTION GALLERY (per save slot) -->
+<div class="screen hidden" id="collection-screen">
+  <div class="collection-title">COLLECTION</div>
+  <div class="collection-count" id="collection-count">★ 0 / 0</div>
+  <div class="collection-grid" id="collection-grid"></div>
+  <div class="collection-hint">★ FOUND &middot; ??? KEEP PLAYING &middot; ESC BACK</div>
 </div>
 
 <!-- READY SCREEN -->

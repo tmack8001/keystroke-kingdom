@@ -60,3 +60,7 @@ was confined to internal research notes and has been corrected in this document.
 2. [Penn's ENIAC, the World's First Electronic Computer, Turns 80 — Penn Today](https://penntoday.upenn.edu/news/penns-eniac-worlds-first-electronic-computer-turns-80) — confirms 1946 launch year, "world's first general-purpose, electronic, programmable computer," 30-ton weight, and lists the same six names individually.
 3. [ENIAC — Computer History Museum, Revolution exhibit](https://www.computerhistory.org/revolution/birth-of-the-computer/4/78) — more cautious institutional framing: "the first large-scale computer to run at electronic speed without being slowed by any mechanical parts."
 4. [ENIAC Programmers Project](https://eniacprogrammers.org/) — the dedicated primary project on this exact topic; confirms the correct six names and explicitly documents that Lichterman and Teitelbaum are the same woman (maiden name / married name).
+
+## See also
+
+[[ibm-company]] — this game's other capitalized-acronym card, also at Level 24 (added 2026-07-19). [[ibm-ramac]] — an earlier IBM milestone, the 1956 first hard disk, Level 6 (added 2026-07-19).

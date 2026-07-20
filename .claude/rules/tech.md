@@ -41,7 +41,8 @@ platform until a deliberate decision says otherwise (see Future Considerations).
     main.js             # Engine: state machine, input contract, survival wrapper
     levels.js           # Curriculum data: FINGER_MAP, KEY_REACH, LEVELS 1-25
     freeplay.js         # Free Play sentences + full-keyboard session builder
-    history-cards.js    # 17 computing-history moments + collection persistence
+    history-cards.js    # 41 history moments (+1 secret), flat/id model, rotating-pool picker
+    slots.js            # Save slots: kk-slots owner, migration, active-slot progress + cards
     settings.js         # Settings model (localStorage kk-settings) + rows
     audio.js            # WebAudio procedural sounds (+ global enable toggle)
     mystery.js basement.js commandcenter.js fullcircle.js   # Act cinematics

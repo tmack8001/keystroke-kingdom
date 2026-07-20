@@ -70,6 +70,8 @@ import {
   readScreen,
   press,
   typeSequence,
+  readActiveSlotProgress,
+  slotsSeed,
 } from '../helpers/game-driver.mjs';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -120,7 +122,11 @@ function deriveProseSolution(world) {
   while (!world.goal(api) && guard++ < 50) {
     const room = world.rooms[box.room];
     const offered = room.commands.filter((c) => !c.when || c.when(api));
-    const nonMove = offered.find((c) => c.text !== 'look' && !c.text.startsWith('go '));
+    // A command carrying `ask` drops into the riddle sub-mode (engine.js fire()):
+    // it is BONUS content, never on the golden path (its `.run` never sets the
+    // goal), and it stays offered forever (repeatable, for rotation) — so skip it
+    // here, or this greedy walker would fire it every iteration and never move.
+    const nonMove = offered.find((c) => c.text !== 'look' && !c.text.startsWith('go ') && !c.ask);
     const choice = nonMove || offered.find((c) => c.text.startsWith('go '));
     if (!choice) break;
     path.push(choice.text);
@@ -321,9 +327,19 @@ async function typeCommand(page, cmd) {
   await page.waitForTimeout(150);
 }
 
+// Progress persistence moved 2026-07-19 from a single global `kk-progress` key
+// to `kk-slots`, scoped to whichever saved game is ACTIVE (js/slots.js). The
+// game itself no longer writes `kk-progress` at all outside one-time legacy
+// migration — so the real observable for "did this text-world completion
+// persist" is the active game's own record inside `kk-slots`. `toTextWorldDoor`
+// (via `toSelect`/`goToSelect`) always clears localStorage then confirms a
+// fresh default name before typing the wopr phrase, which — per the title
+// screen's own name-confirm handler — creates AND activates a brand-new saved
+// game first, so a real active game is always in place by the time a text
+// world can be reached this way. Kept as a same-named local wrapper so every
+// existing call site below (`readKkProgress(g.page)`) is unchanged.
 async function readKkProgress(page) {
-  const raw = await page.evaluate(() => localStorage.getItem('kk-progress'));
-  try { return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
+  return readActiveSlotProgress(page);
 }
 
 // Poll for readScreen() to reach `expected` (used for the Escape chain, which
@@ -661,10 +677,15 @@ describe('INV-43 — when-gated commands (greendragon.js "take lamp" when: !w.ha
 });
 
 // ── INV-44 — persistence: tolerant read, durable write, never on abandonment ──
-describe('INV-44 — text-world persistence (main.js getProgress()/recordTextWorldComplete; security.md rule 4 "localStorage is untrusted input")', () => {
-  test('a garbage (non-object) textWorlds field in kk-progress is tolerated and a fresh completion still records cleanly', { timeout: T }, async () => {
+describe('INV-44 — text-world persistence (js/slots.js getProgress()/main.js recordTextWorldComplete; security.md rule 4 "localStorage is untrusted input")', () => {
+  test('a garbage (non-object) textWorlds field on the active saved game is tolerated and a fresh completion still records cleanly', { timeout: T }, async () => {
+    // Progress now persists in kk-slots (js/slots.js), scoped to the ACTIVE
+    // game — seed a real active game directly with a garbage textWorlds field
+    // (the shape js/slots.js's normalizeSlot must tolerate). toTextWorldDoor's
+    // clear+reload (via goToSelect) re-applies this addInitScript seed, so the
+    // door is reached with this exact seeded game already active.
     const g = await startGame({
-      progress: { furthestLevel: 1, completed: {}, textWorlds: 'not-an-object' },
+      localStorage: { 'kk-slots': slotsSeed({ furthestLevel: 1, completed: {}, textWorlds: 'not-an-object' }) },
     });
     try {
       await toTextWorldDoor(g.page, g.baseUrl);
@@ -680,12 +701,12 @@ describe('INV-44 — text-world persistence (main.js getProgress()/recordTextWor
     }
   });
 
-  test('completely corrupt kk-progress JSON is tolerated on boot (no throw, no console error, defaults apply)', { timeout: T }, async () => {
-    const g = await startGame({ localStorage: { 'kk-progress': '{not-valid-json::::' } });
+  test('completely corrupt kk-slots JSON is tolerated on boot (no throw, no console error, defaults apply)', { timeout: T }, async () => {
+    const g = await startGame({ localStorage: { 'kk-slots': '{not-valid-json::::' } });
     try {
       await g.page.goto(g.baseUrl);
       await g.page.waitForTimeout(600);
-      assert.notEqual(await readScreen(g.page), null, 'the game still boots to a real screen despite corrupt kk-progress');
+      assert.notEqual(await readScreen(g.page), null, 'the game still boots to a real screen despite corrupt kk-slots');
       assert.deepEqual(g.consoleErrors, [], `expected zero console errors, saw:\n${g.consoleErrors.join('\n')}`);
     } finally {
       await g.stop();

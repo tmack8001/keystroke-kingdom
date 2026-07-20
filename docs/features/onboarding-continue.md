@@ -4,14 +4,16 @@ code: [js/ui/screens.js]
 rules: [.claude/rules/levels.md, .claude/rules/transitions.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-07-12
+verified: 2026-07-19
 ---
 
-# Onboarding & Continue Screen
+# Onboarding, the Slot Picker & Collection Gallery
 
-`js/ui/screens.js` holds generic screen-switching plus the ready/continue screen
-renderers. Key routing for all of these lives in `js/main.js` (see [[engine-flow]]),
-not here.
+`js/ui/screens.js` holds generic screen-switching plus the ready/slot-picker/collection
+screen renderers. Key routing for all of these lives in `js/main.js` (see
+[[engine-flow]]), not here. The **model and persistence** behind the slot picker (the
+save-slot data itself, migration, erase semantics) is owned by `js/slots.js` — see
+[[save-slots]], the primary page for that side of this feature.
 
 ## Screen switching primitives
 
@@ -33,41 +35,53 @@ distinctly), and `level.hint`. New-key labels: `;` → **"THE EIGHTH KEY"** (nev
 wraps this in `renderReadyScreenWithSurvivalTag()` to also show/hide the
 `#survival-tag` badge per the current play style.
 
-## Continue screen (returning player)
+## The slot picker — "CHOOSE YOUR GAME" (returning-player front door, replaces the retired continue screen)
 
-`renderContinueScreen(state, level, learnedKeys)` — sets `#continue-name`
-(`state.playerName`), `#continue-level` (`"{level.name} — {newKeyLabels}"`, same
-eighth-key labeling as the ready screen), and `#continue-learned`
-(`KEYS LEARNED: <learned keys>` or empty). Resets the erase-confirm sub-panel visible
-state on every render. `showContinueEraseConfirm(show)` toggles the "ERASE ALL
-PROGRESS?" sub-panel and inversely hides the normal continue/restart prompts — the
-child is never shown two conflicting instructions at once.
+**Landed 2026-07-19**, replacing the old single-save continue screen entirely (that
+screen, and its `kk-progress`-only model, no longer exist). Full behavior — boot
+routing, row semantics, the four-case name-entry funnel for a new game, erase, the
+collection gallery's data — lives at [[save-slots]]; this section covers only what
+`js/ui/screens.js` itself renders.
 
-**Key handling (in `js/main.js`'s `case 'continue':`)**:
-- `Space` → resumes at `state.maxUnlockedLevel` (reads `kk-progress`).
-- `R` → shows the Y/N erase confirmation.
-- Inside confirmation: **only** `y`/`Y` erases; any other key cancels back to the
-  continue screen (never traps the player).
+`renderSlotsScreen(state, slots)` — `slots` is `Slots.listSlots()`: an array of
+`{ name, furthestLevel, cardsFound }`, one per existing saved game (no fixed count, no
+null padding — see [[save-slots]] "no fixed cap"). Rebuilds `#slots-list` from scratch
+on every call, via `createElement`/`textContent` only (never `innerHTML` for the
+player-chosen name — security.md rule 1): one row per game (cursor, number, name,
+`LV <furthestLevel>`, `★ <cardsFound>`), highlighted when `i === state.slotsSelected`,
+**plus an always-appended trailing "+ NEW GAME" row** (`.slot-row.slot-new`,
+highlighted when `state.slotsSelected === slots.length`). The erase-confirm sub-panel
+(`#slots-erase`) and the action hint (`#slots-hint`) are mutually exclusive — showing
+one hides the other, so the child is never shown two conflicting instructions at once
+(the same rule the old continue screen's erase-confirm followed).
 
-`showContinueScreen()` (main.js) assembles the whole flow: re-reads progress via
-`getProgress()`, sets `state.level = p.furthestLevel`, forces `state.freePlay = false`,
-calls `renderContinueScreen`, `applyLevelTheme(1)` (continue screen deliberately uses
-arcade/level-1 chrome, not the resume level's), `showScreen('continue', state)`.
+## The collection gallery (`collection` screen)
+
+`renderCollectionScreen(state, cards, collectedSet)` — `cards` is
+`allCards()` (all history cards, including the secret one — see [[history-cards]]),
+`collectedSet` a `Set` of collected ids for whichever game the picker's `C` key was
+pressed on. Rebuilds `#collection-grid`: each card becomes a cell — owned cards show
+their word (uppercase) + title, `.owned` styled (green border/glow if `card.secret`);
+unfound cards show a `???` silhouette, `.locked` styled and dimmed. Header
+`#collection-count` reads `★ {found} / {total}`. Read-only — opening it never changes
+which game is active. All text is fixed literal card data (never user input), so
+`textContent` is used for consistency with the picker's convention rather than any
+security necessity here.
 
 ## localStorage
 
-- **`kk-progress`** (owned by `js/main.js`, read here only via the state object) —
-  `{ furthestLevel: 1-25, completed: { "<levelNum>": true, ... } }`.
-  `hasProgress()` (`furthestLevel > 1 || completed` non-empty) gates whether `boot()`
-  shows this screen at all — a player with no real progress falls through to the
-  normal cold-open/title flow instead.
-- **`kk-cards`** — erased alongside `kk-progress` by `main.js`'s shared
-  `eraseProgress()`, called by both this screen's `R→Y` path and the Settings
-  "ERASE ALL PROGRESS" row, so their semantics can't drift apart. `kk-settings`
-  (name + preferences) is deliberately untouched by either erase path.
+- **`kk-slots`** — owned entirely by `js/slots.js`; see [[save-slots]] for the full
+  shape, migration, and lifecycle API. `js/ui/screens.js` never touches localStorage
+  directly — it only renders whatever `main.js` hands it from `Slots.*`.
+- **Retired**: `kk-progress` and `kk-cards` (the old single-save keys) are migrated into
+  `kk-slots` once, then deleted (`Slots.ensureMigrated()`). `kk-settings` (name +
+  preferences) is untouched by any of this — it's a separate concern (the *default*
+  name prefill on a genuinely fresh cold open, before any game exists).
 
 ## Related
 
-[[select-screen]] (shares the `maxUnlockedLevel` gate) · [[curriculum-data]] (the
-`LEVELS` data these screens render) · [[engine-flow]] (owns all key routing +
-`kk-progress` read/write) · [[settings-survival]] (shares the erase mechanic)
+[[save-slots]] (the model/persistence/key-routing this screen renders — start here for
+full behavior) · [[select-screen]] (shares the `maxUnlockedLevel` gate, now seeded from
+the active save) · [[curriculum-data]] (the `LEVELS` data these screens render) ·
+[[engine-flow]] (owns all key routing + `Slots` delegation) · [[history-cards]]
+(collection gallery data) · [[settings-survival]] (shares the erase mechanic)

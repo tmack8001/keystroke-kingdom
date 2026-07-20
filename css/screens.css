@@ -202,80 +202,208 @@
 
 /* ===== CONTINUE SCREEN (returning player) ===== */
 
-#continue-screen {
+/* ===== SLOT PICKER — "CHOOSE YOUR GAME" ===== */
+
+#slots-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   animation: fadeIn 0.6s ease-out;
 }
 
-.continue-ready {
-  font-size: 12px;
-  color: #b8860b; /* muted amber — matches ready screen */
-  letter-spacing: 4px;
-  margin-bottom: 20px;
-}
-
-.continue-name {
-  font-size: 32px;
+.slots-title {
+  font-size: 14px;
   color: var(--crt-amber);
   text-shadow: 0 0 20px var(--crt-amber), 0 0 60px rgba(255, 176, 0, 0.5);
   letter-spacing: 6px;
-  animation: readyPulse 0.8s ease-in-out infinite alternate;
   margin-bottom: 40px;
 }
 
-.continue-level {
-  font-size: 12px;
+.slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 36px;
+  /* Unlimited saved games — the list scrolls in place rather than overflowing
+     the viewport once a family has many players (js/slots.js has no cap). */
+  max-height: 62vh;
+  overflow-y: auto;
+  padding: 2px 6px;
+}
+
+.slot-row {
+  display: grid;
+  grid-template-columns: 18px 20px 210px 66px 66px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border: 2px solid #333;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--crt-amber-dim);
+}
+
+.slot-row.selected {
+  border-color: var(--crt-amber);
+  box-shadow: 0 0 16px rgba(255, 176, 0, 0.4);
+  color: var(--crt-amber);
+  text-shadow: 0 0 8px var(--crt-amber);
+}
+
+.slot-row.empty,
+.slot-row.empty .slot-name {
+  color: #666;
+}
+
+.slot-cursor { color: var(--crt-amber); text-align: center; }
+.slot-num { color: var(--crt-green); }
+.slot-name {
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.slot-level { font-size: 9px; color: var(--crt-green); text-align: right; }
+.slot-cards { font-size: 9px; color: var(--crt-amber-dim); text-align: right; }
+.slot-row.selected .slot-cards { color: var(--crt-amber); }
+
+/* The always-present "+ NEW GAME" row — breaks out of the 5-column game grid
+   and centers, with a dashed border + green accent to read as "add another". */
+.slot-row.slot-new {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  border-style: dashed;
+  color: var(--crt-green);
+}
+.slot-new-label { color: var(--crt-green); }
+.slot-row.slot-new.selected {
+  border-color: var(--crt-green);
+  box-shadow: 0 0 16px rgba(57, 255, 20, 0.35);
   color: var(--crt-green);
   text-shadow: 0 0 8px var(--crt-green);
-  letter-spacing: 2px;
-  margin-bottom: 14px;
 }
 
-.continue-learned {
+.slots-hint {
   font-size: 8px;
-  color: var(--atari-dim);
-  letter-spacing: 2px;
-  line-height: 2;
-  margin-bottom: 44px;
-}
-
-.continue-learned .learned-keys {
-  color: var(--crt-amber-dim);
-  font-size: 11px;
-  letter-spacing: 3px;
-}
-
-.continue-prompt {
-  font-size: 8px;
-  color: var(--crt-green);
-  text-shadow: 0 0 6px var(--crt-green);
-  animation: blink 1.2s step-end infinite;
-  margin-bottom: 22px;
-}
-
-.continue-restart {
-  font-size: 7px;
-  color: #777;
+  color: #888;
   letter-spacing: 2px;
 }
 
-.continue-erase {
-  margin-top: 34px;
-}
+.slots-erase { margin-top: 30px; }
 
-.continue-erase-title {
+.slots-erase-title {
   font-size: 10px;
   color: var(--nudge-red);
   text-shadow: 0 0 6px rgba(255, 68, 68, 0.5);
   letter-spacing: 2px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
-.continue-erase-opt {
+.slots-erase-opt {
   font-size: 8px;
   color: var(--atari-dim);
   letter-spacing: 2px;
   line-height: 2.4;
+}
+
+/* ===== CARD COLLECTION GALLERY ===== */
+
+#collection-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 38px 20px 18px;
+  text-align: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.collection-title {
+  font-size: 13px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 16px var(--crt-amber);
+  letter-spacing: 5px;
+  margin-bottom: 10px;
+}
+
+.collection-count {
+  font-size: 11px;
+  color: var(--crt-green);
+  text-shadow: 0 0 8px var(--crt-green);
+  letter-spacing: 3px;
+  margin-bottom: 22px;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 104px);
+  gap: 10px;
+  justify-content: center;
+  max-width: 92%;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin-bottom: 18px;
+}
+
+.collection-cell {
+  width: 104px;
+  height: 74px;
+  border: 2px solid #333;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px;
+}
+
+.collection-cell.owned {
+  border-color: var(--crt-amber);
+  box-shadow: 0 0 10px rgba(255, 176, 0, 0.35);
+}
+
+.collection-cell.owned.secret {
+  border-color: var(--crt-green);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+}
+
+.collection-cell-label {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 6px var(--crt-amber);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 96px;
+  text-overflow: ellipsis;
+}
+
+.collection-cell.locked .collection-cell-label {
+  color: #555;
+  text-shadow: none;
+}
+
+.collection-cell.owned.secret .collection-cell-label {
+  color: var(--crt-green);
+  text-shadow: 0 0 6px var(--crt-green);
+}
+
+.collection-cell-title {
+  font-size: 6px;
+  letter-spacing: 1px;
+  line-height: 1.5;
+  color: var(--atari-dim);
+}
+
+.collection-hint {
+  font-size: 8px;
+  color: #888;
+  letter-spacing: 2px;
 }
 
 /* ===== GAME SCREEN ===== */

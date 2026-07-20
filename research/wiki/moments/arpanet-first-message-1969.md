@@ -39,3 +39,7 @@ table.
 2. [Internet50/Press — UCLA Samueli School of Engineering](https://samueli.ucla.edu/internet50-press/) — institutional (UCLA); confirms Charley Kline typing LOGIN under Kleinrock's supervision, message sent to Bill Duvall at SRI, crash after two letters.
 3. [The First Message Transmission — ICANN blog (50th anniversary)](https://www.icann.org/en/blogs/details/the-first-message-transmission-29-10-2019-en) — institutional; includes Kleinrock's own quote calling "LO" a "prophetic" accidental "hello."
 4. [How a Simple 'Hello' Became the First Message Sent via the Internet — PBS NewsHour](https://www.pbs.org/newshour/science/internet-got-started-simple-hello) — established journalism corroborating date, nodes, and the crash story with a direct Kleinrock quote.
+
+## See also
+
+[[unix-epoch-1970]] — this game's other Level 20 card, one digit later and a completely different 1969/1970 milestone (added 2026-07-19). [[email-invented-1971]] — the next networking-history card chronologically, Level 11 (added 2026-07-19).

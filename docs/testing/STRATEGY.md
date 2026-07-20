@@ -135,11 +135,28 @@ files cite these IDs. (L0/L1/L2/L3 = layer.)
 - **INV-18** (L1) Level 4's pool contains real readable words (the double-win moment exists).
 - **INV-19** (L1) `FINGER_MAP`/`KEY_REACH` cover every taught key exactly once per hand/finger assignment; keyboard geometry has one source of truth (`hud.js KEY_LAYOUT`) — preview derives, never redefines.
 
-### History cards — product.md §History Cards, research/computing-history-moments.md
-- **INV-20** (L1) Every card's moment word is typeable with exactly its level's unlocked key set (tokenization included — capitals only where Shift is unlocked).
-- **INV-21** (L1) 17 cards; TOTAL_CARDS consistent; card levels are valid levels.
-- **INV-22** (L2) A level does not end before its moment word has appeared (guarantee mechanism).
-- **INV-23** (L1) Collection persists across sessions; garbage localStorage tolerated silently.
+### History cards — product.md §History Cards, research/computing-history-moments.md, js/history-cards.js, js/slots.js
+*(revised 2026-07-19 — the single-card-per-level object was rebuilt into a flat list
+where a level may hold a rotating POOL of several cards, `id`-addressed; collection
+ownership moved out of history-cards.js entirely into the per-save-slot store,
+`js/slots.js`. The bank is still growing — TOTAL_CARDS is 42 as of this revision and
+climbing; never hardcode a count, always derive it from `HISTORY_CARDS.length`.)*
+- **INV-20** (L1) Every non-secret card's moment word is typeable with exactly its
+  `level`'s cumulative unlocked key set (tokenization included — capitals only where
+  Shift is unlocked at/after L24, spaces only where Space is unlocked at/after L25) —
+  iterated over the flat `HISTORY_CARDS` list keyed by each card's own `level` field,
+  never a hardcoded per-level table.
+- **INV-21** (L1) `TOTAL_CARDS === HISTORY_CARDS.length` (never a copied constant —
+  the bank keeps growing); every non-secret card's `level` is a real level (integer
+  1–25) that exists in `LEVELS`; every card `id` is unique across the whole list
+  (secret cards included).
+- **INV-22** (L2) A level does not end before its moment word has appeared (guarantee
+  mechanism) — unchanged by the rebuild (the engine still injects exactly one
+  guaranteed card word per play, see INV-58).
+- **INV-23** (L1/L2) Card collection persists across sessions PER SAVE SLOT
+  (`js/slots.js` `kk-slots`, keyed by stable card `id`, never a level number); garbage/
+  corrupt storage is tolerated silently and degrades to an empty collection for that
+  slot, never a crash.
 
 ### Persistence & onboarding — onboarding.md, CLAUDE.md §Returning-player persistence
 - **INV-24** (L2) Name entry: 16-char cap; empty confirm keeps PLAYER ONE; any key clears the pre-filled default; Space types a literal space (multi-word names, like the default), only Return confirms.
@@ -190,6 +207,48 @@ files cite these IDs. (L0/L1/L2/L3 = layer.)
 - **INV-53** (L2) **Typed movement prefix-matcher** (tileworld.js copies engine.js's guided prefix-matcher): the child TYPES a direction — `up`/`down`/`left`/`right` (shown, mastery-fading) plus aliases `n`/`s`/`e`/`w` and `north`/`south`/`east`/`west`. A key is appended only while the buffer stays a prefix of some offered direction; a key outside every offered prefix (and every alias) is REJECTED with a gentle nudge and the buffer WAITS — it is never reset, so completing the same word afterward still fires the move (the One-Rule wrong-key contract, product.md §"Reinforce, Don't Punish"). An exact unambiguous direction fires a move; a single-letter alias fires instantly from an empty buffer and silently swallows the rest of the word it abbreviates (typing the full `north` after `n` already fired never corrupts the buffer). Backspace edits; Space/non-letters are ignored in move mode (never a nudge). Verified end-to-end: a world still WINS after a Backspace probe, an alias-swallow probe, and a mid-word prefix-break-then-complete probe — the only way that happens is if the buffer behaves exactly as documented.
 - **INV-54** (L1/L2) **Fog-of-war data integrity** (tileworld.js `glyphSpec`; `research/wiki/tech/ascii-overhead-world-conventions.md`): the tile worlds render roguelike lit/dark fog — undiscovered tiles hidden, ever-seen tiles remembered dim, the torch radius lit via line-of-sight, and creatures + the goal glint appearing only once their tile is lit. Fog RENDERING is canvas-only and not pixel-asserted (STRATEGY §2); its testable PRECONDITION is data integrity: every glyph that appears in any screen's map of either world is explicitly declared in that world's `glyphSpec` (walkability/opacity/color), so the LOS/fog renderer can never meet an undeclared tile. A pure data assertion over the worlds' own `tile-worlds.js` maps + glyph tables.
 - **INV-55** (L1/L2) **Riddle creatures — One-Rule floor (SAFETY-CRITICAL)**: authored (curated, NO-LLM) riddle creatures live in the tile worlds. The safety floor is proven by DATA — an engine-equivalent BFS over each world's own screens/exits/glyphs, with every gate CLOSED and every riddle-creature tile blocked, still reaches the goal, so a riddle can NEVER block the only path (tileworld.js: "a riddle is ALWAYS optional/bonus: it can never block the only path to the goal"). Behaviorally: stepping adjacent to a creature opens its authored riddle and captures typed keys as an ANSWER (not movement); the answer field allowlists to LETTERS ONLY (a spliced digit is rejected, never appended — security.md rules 1/3/6) and is length-capped, matched case-insensitively/trimmed against the creature's OWN authored acceptable-answers; wrong answers never crash or falsely-solve (gentle nudge; an authored hint after 2 tries, the answer after 3); the authored correct answer solves it (warm reaction + optional gate→floor); Space steps back — engaging or solving a riddle never traps forward progress (proven by the world still completing after wrong-then-correct answers on the approach tile). (product.md One Rule; module headers.)
+
+### History cards & save slots — the flat/pool/multi-save rebuild — product.md §History Cards, js/history-cards.js, js/slots.js, js/main.js §Boot
+*(added 2026-07-19 — the history-card + save system rebuild: a flat card list with
+per-level rotating pools, and up to three independent save slots replacing the single
+global save. Module headers are the design source: history-cards.js's own comment
+block, slots.js's own comment block.)*
+- **INV-56** (L1) **Earliest-typeable attachment:** every non-secret card's `level`
+  equals the minimum level whose cumulative unlocked-key closure can spell its `word`
+  (the same closure construction as INV-16/INV-20, generalized so an uppercase letter
+  requires both its base key AND Shift's unlock level, and a space requires Space's
+  unlock level) — a card is never attached to a level later than the level its word
+  first becomes spellable at (history-cards.js: "`level` (= the EARLIEST level where
+  its word becomes typeable)").
+- **INV-57** (L1) **Secret cards never enter a level pool:** for every level 1–25,
+  `cardsForLevel(level)` never returns a card with `secret: true` / `level: null` —
+  secret cards (found only via magic words, easter-eggs.md) are structurally excluded
+  from level pooling; they still count toward `allCards()`/`TOTAL_CARDS`.
+- **INV-58** (L1) **Exactly-one-guaranteed-card-per-play survives rotation:**
+  `pickGuaranteedCard(level, collectedIds, rotation)` returns exactly one card object
+  for any level holding a pool, and `null` for a level with no cards; it prefers a
+  card NOT YET present in `collectedIds`; the `rotation` counter deterministically
+  cycles through the remaining candidate set (no `Math.random` — reproducible given
+  the same three inputs), so a level's full pool is discoverable across replays
+  without ever surfacing more than one guaranteed card per call.
+- **INV-59** (L1) **Slot isolation:** writing to (progress, card collection, card
+  rotation) or erasing one save slot never mutates any other slot's stored data —
+  every `js/slots.js` read/write scopes strictly to the ACTIVE slot index, or to an
+  explicitly targeted index for `eraseSlot`/`slotCards`, and no other slot's raw JSON
+  changes as a byte.
+- **INV-60** (L1) **Legacy → Slot 1 migration:** `ensureMigrated(legacyName)` folds a
+  pre-slots single save (`kk-progress` + `kk-cards` as an array of level numbers) into
+  Slot 1 exactly once, mapping each legacy card level to its stable id via
+  `legacyLevelToCardId`; a second call is a no-op once `kk-slots` already exists
+  (idempotent); a genuine first-time player (no real legacy progress — `furthestLevel`
+  ≤ 1 and no completed levels — and no legacy cards) is left with NO `kk-slots` key at
+  all, preserving the untouched cold-open path (onboarding.md).
+- **INV-61** (L1/L2) **Per-slot erase scope:** `eraseActiveSlot()` / `eraseSlot(i)`
+  clears only the targeted slot (progress + its collected cards + its rotation
+  counters) back to empty; `kk-settings` (global preferences, including the player's
+  display name) and every OTHER slot are left completely untouched — mirrors the
+  original erase-progress guarantee (product.md, CLAUDE.md §Returning-player
+  persistence) now scoped per game rather than globally.
 
 ## 6. Findings protocol
 
