@@ -1,10 +1,10 @@
 ---
 feature: engine-flow
-code: [js/main.js, index.html]
-rules: [.claude/rules/tech.md, .claude/rules/security.md, .claude/rules/easter-eggs.md]
+code: [js/main.js, js/finale-quote.js, js/keyboard-story.js, js/keyboard-story-gen.js, js/keyboard-story-cache.js, index.html]
+rules: [.claude/rules/tech.md, .claude/rules/security.md, .claude/rules/easter-eggs.md, research/wiki/culture/hacker-manifesto.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js
-verified: 2026-07-19
+verified: 2026-07-28
 ---
 
 **Graph gap note:** the Name Moment's golden flourish (below) has no screenshot set —
@@ -50,9 +50,15 @@ clears the whole selection at once (native `<input>` selection behavior — a
 valid reading of "Backspace works normally," though the doc doesn't spell out
 the all-at-once nuance); an empty `Enter` keeps `'PLAYER ONE'` unchanged.
 
-TF-H2 (16-char cap vs. the documented 12) and TF-H3 (Space doesn't confirm
-name entry — only `Enter` does, unlike every other screen) remain open per
-FINDINGS.md; not touched by this fix.
+TF-H2 (name cap) and TF-H3 (Space at name entry) were both ruled **BY-DESIGN**
+(Trevor triage 2026-07-13) and are resolved: the **16-char cap is intended**
+("16 characters should be the largest word limit" — roomy for two-word names), and
+**Space types a literal space** at name entry with only Return confirming (multi-word
+names like the "PLAYER ONE" default need it — name entry is the one screen where Space
+is content, not the quick-advance command). `transitions.md` §Phase 3, `onboarding.md`,
+and INV-24 all say 16 + Space-types-space, and `persistence-onboarding.test.mjs` carries
+passing assertions for both (`TF-H2 by-design: … caps at 16`, `TF-H3 by-design: Space
+types a literal space … and does not confirm`).
 
 ## The input contract (`handleGameKey`)
 
@@ -67,12 +73,16 @@ lowercase, so CapsLock never affects levels 1-23.
 glint against `state.currentCard` (see [[history-cards]]), advance
 `currentPattern`/`patternsCompleted`, ask the active theme's `patternComplete()`
 ([[level-themes]]); level ends only when `themeComplete && patternsCompleted >=
-minPatterns && !cardPending && !namePending`. `cardPending` is
+minPatterns && !cardPending && !namePending` — the "normal target" (see `normalTargetMet`
+below). **Except on Level 25**, where reaching this normal target launches the "MY STORY"
+coda instead of ending the level; the level then ends only once the whole coda has been
+typed. `cardPending` is
 `!freePlay && state.currentCard && !state.cardWordTyped` — the "exactly one guaranteed
 card per play" invariant is unchanged by the 2026-07-19 history-cards rebuild (a level
 may now hide a *pool* of several cards, but `pickGuaranteedCard()` still resolves the
 pool down to exactly one card, stashed as `state.currentCard`, before the level starts —
-see [[history-cards]]).
+see [[history-cards]]). See "Level 25 finale — the walk-the-keyboard coda" below for the
+Level 25 exception and its own guaranteed-completion gate.
 
 **Wrong key**: `state.mistakes[expected]++`, `streak = 0`, theme's `miss()` fires,
 `Audio.wrong()`, gentle 300ms `.wrong` flash — **the letter never advances**. This is
@@ -192,6 +202,105 @@ Themes with their own internal win targets read the same `getWinRatio()` directl
 scale together — see [[level-themes]] for Tetris's `MIN_SEQUENCES` and Q\*bert's
 extra-sequence floor, both wired this way.
 
+## Level 25 finale — the "MY STORY" coda (REDESIGNED 2026-07-28)
+
+*(Landed 2026-07-27 as an up-front manifesto splice; REDESIGNED 2026-07-28 — this
+section describes the current, redesigned behavior only. The old up-front splice is
+gone; `js/finale-quote.js` survives, but only as the manifesto DATA module the coda
+pulls its capstone lines from.)*
+
+Level 25 (the Word Processor "MY STORY" theme) no longer front-loads its finale. The
+level now plays its **normal pool to the traditional win target** exactly like every
+other level, and only THEN — once that target is first met — extends **past** it into
+an earned **coda**: a short, readable "walk the keyboard" STORY the player types,
+covering every letter A-Z, that includes a scripted typo-\>Backspace-\>correct gag
+(L25 is where Backspace is taught) and whose FINAL line(s) are the EXPERIENCE-tier
+Hacker Manifesto excerpt as its capstone. The coda ROTATES a different story per play
+(per-slot `storyRotation`) and gets LONGER at higher EXPERIENCE tiers. This is a guaranteed,
+never-missable **post-target** win-gate — the traditional history-card/Name-Moment gates
+still fire during normal play, before the coda even begins.
+
+- **Two new data/logic modules, mirroring [[history-cards]]'s shape (pure data + pure
+  helpers, no DOM/state/storage):**
+  - `js/finale-quote.js` — unchanged in shape from the original 2026-07-27 build, now
+    consumed ONLY as the coda's capstone source. `finaleLinesForRatio(winRatio)` still
+    resolves four distinct, strictly-increasing tiers (7 → 13 → 17 → 40 lines):
+    winRatio 1 (FIRST QUARTER) → "...the beauty of the baud." only; 1.5 (REGULAR) → +
+    the truncated belonging line; 2.25 (HOTSHOT) → + "Yes, I am a criminal. My crime is
+    that of curiosity."; 3.5 (WIZARD) → its OWN ordered set — the manifesto's
+    near-**entire** closing passage verbatim (full belonging line, anti-prejudice
+    lines, "...outsmarting you...", "I am a hacker, and this is my manifesto.", "You
+    may stop this individual...we're all alike."). The "atomic bombs / wage wars /
+    murder" sentence is intentionally omitted at EVERY tier including WIZARD
+    (kid-safety); the self-declared-"criminal" content is gated to HOTSHOT+. Verbatim
+    source: `research/wiki/culture/hacker-manifesto.md` "Verbatim excerpts." Lines are
+    pre-broken into ≤17-char prompt sub-lines; WIZARD's added lines carry straight-ASCII
+    apostrophes (`can't`, `we're`, the Level-23 key) — never a curly smart-quote.
+  - `js/keyboard-story.js` (NEW) — the coda assembler. `STATIC_STORIES` is a bank of 6
+    all-26-letter "pangram" stories (`{ id, base, extra: [...] }`; each `base` alone
+    covers every letter, so coverage holds even at the shortest tier and fully
+    offline); `TYPO_BEATS` is a small bank of choreographed typo→Backspace→correct
+    token beats (e.g. `we cna` → ⌫⌫⌫ → `can do it`) — SCRIPTED content where every
+    token is the expected key at its position, so the sacred wrong-keypress contract is
+    untouched; `storyBodyForRatio`/`beatCountForRatio` scale the story length and beat
+    count up at each EXPERIENCE step (base only at 1×, +1/+2/+3 extra sentences at
+    1.5/2.25/3.5; more beats at higher tiers) — more typing, never a penalty
+    (product.md §Word Length). `pickKeyboardStory`/`pickTypoBeats` are deterministic
+    on the per-slot `storyRotation` counter (no `Math.random`, mirrors the history-card
+    rotation) so a different story/beat set surfaces each replay.
+    `assembleCoda(story, winRatio, rotation)` composes the final ordered coda as engine
+    token lines: `[base sub-lines] + [typo beats] + [extra sub-lines] + [manifesto
+    capstone from finale-quote.js]`. `validateGeneratedStory`/`buildStoryPool` validate
+    untrusted LLM-generated stories (security.md rules 6-7: charset allowlist, all-26
+    coverage on the base, length caps, a safety-word blocklist) — a bad generated story
+    is dropped and the static bank is the fallback floor.
+- **Optional local-LLM variety (`js/keyboard-story-gen.js`, NEW) + server endpoint:**
+  mirrors `js/wordgen.js`'s shape but far simpler — a single fire-and-forget fetch to
+  the game's own `/api/keyboard-story?tier=&count=` (main.go `handleKeyboardStory`,
+  same-origin only, no player-identifying data) is kicked when Level 25 starts
+  (`prefetchKeyboardStories`), and its validated result (or `[]`) is read when the coda
+  is assembled a few seconds later. Server-side generation is validated independently
+  (charset/coverage/length/blocklist, mirroring the client) before being returned; a
+  missing/erroring Ollama yields an empty batch, never a 500. If nothing is ready by
+  the time the coda starts, the coda plays entirely on `STATIC_STORIES` — the always-
+  working offline floor. This is an enhancement-only layer; **static hosting (no Go
+  server) is fully supported with zero behavior loss.**
+- **Wiring in `js/main.js` — `startCoda()`:** once the level's traditional win target
+  is FIRST met (`normalTargetMet` — `themeComplete && patternsCompleted >= minPatterns
+  && !cardPending && !namePending`), the engine calls `startCoda()` instead of ending
+  the level: it picks a story (`pickKeyboardStory` against `Slots.getStoryRotation(25)`),
+  builds the coda via `assembleCoda`, bumps the slot's rotation
+  (`Slots.bumpStoryRotation(25)`), TRUNCATES any un-reached normal patterns from
+  `state.patterns`, and APPENDS the coda's token lines as the new tail — so the very
+  next prompt is the coda's first line, served through the engine's existing
+  `getNextPattern()` index mechanism. `state.codaActive`/`state.codaTyped`/
+  `state.codaLines`/`state.codaSubLens` track progress. In `handleGameKey`'s
+  pattern-completion branch, Level 25 branches specially: if `normalTargetMet &&
+  !state.codaActive`, call `startCoda()`; if `state.codaActive && state.codaTyped >=
+  state.codaLines.length`, the level ends — otherwise (still in normal play, or
+  mid-coda) it falls through to the next prompt. Free Play and every non-25 level are
+  untouched (no coda, `codaActive` always false).
+- **Rendered via a fresh document paragraph (`js/themes/wordprocessor.js`
+  `beginFinale(subLens)`):** the moment the first coda line becomes the active prompt,
+  `js/main.js` `maybeSignalCoda()` fires once and calls the theme's `beginFinale()`
+  hook with `state.codaSubLens` (the ordered non-Backspace token count per coda line —
+  a dynamic, rotating, tier-scaled sequence the theme can no longer derive from
+  `finale-quote.js` alone, since it now includes story/typo-beat lines too). The theme
+  breaks the document to a fresh paragraph and clamps the visible "story" to a top band
+  above the prompt, inserting a display-only space at each sub-line boundary, so the
+  accumulated coda (story + resolved typo + manifesto) reads as natural prose instead
+  of wrapping behind the prompt or running sub-lines together. This is a render-side
+  newline, NOT a typed Enter. `victory()` clears the coda render state for the normal
+  centered "THE END." beat.
+- **Winnability holds at every tier:** the coda is finite, fully typeable with Level
+  25's complete unlocked-key closure, and sits ahead of any pool draw — the One Rule
+  floor is intact at winRatio 1 AND 3.5, and `STATIC_STORIES` alone guarantees a
+  non-empty, all-26-letter coda with zero server.
+- Invariants: INV-62 (manifesto capstone tier escalation/typeability/no-wording-drift),
+  INV-63 (guaranteed post-target win-gate), INV-64 (A-Z coverage at every tier,
+  offline-guaranteed), INV-65 (tier-scaled length/rotation/typo-beat well-formedness),
+  INV-66 (server-side generated-story validation, Go) in `docs/testing/STRATEGY.md`.
+
 ## The word-length DIFFICULTY lever (landed 2026-07-13)
 
 `js/settings.js`'s `getWordLengthRange()` (MIN/MAX WORD LENGTH rows, both default
@@ -310,5 +419,10 @@ word-bank pools `drawablePool` filters) · [[hud-keyboard-guide]]
 [[wordgen]] (client integration points above; word-length range also travels to the
 wordgen request) · [[history-cards]] · [[free-play]] · [[easter-eggs]] ·
 [[select-screen]] · [[save-slots]] (progress/card persistence owner + the slot picker
-that now precedes the returning-player flow) · [[visual-styling]] (z-index/CRT
-contract this file's screen-hiding relies on)
+that now precedes the returning-player flow, including the L25 `storyRotation` counter
+`startCoda` reads) · [[visual-styling]] (z-index/CRT contract this file's
+screen-hiding relies on) · `js/finale-quote.js` (Level 25 coda's manifesto-capstone
+data module) · `js/keyboard-story.js` (Level 25 coda assembler: static story bank,
+typo beats, tier scaling, generated-story validation) · `js/keyboard-story-gen.js`
+(Level 25 coda's optional local-LLM prefetch client) — see "Level 25 finale — the
+'MY STORY' coda" above; grounded in `research/wiki/culture/hacker-manifesto.md`

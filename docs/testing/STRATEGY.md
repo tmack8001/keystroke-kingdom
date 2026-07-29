@@ -250,6 +250,159 @@ block, slots.js's own comment block.)*
   original erase-progress guarantee (product.md, CLAUDE.md §Returning-player
   persistence) now scoped per game rather than globally.
 
+### Level 25 "MY STORY" coda — the earned post-target finale — product.md §5/§Word Length + the One Rule, transitions.md (L25 "You built this"), js/keyboard-story.js, js/finale-quote.js, js/main.js §startCoda + handleGameKey win-gate
+*(added 2026-07-27; REDESIGNED 2026-07-28 — the Level 25 finale is no longer an
+up-front manifesto block. L25 now plays its NORMAL pool to the traditional win target,
+then EXTENDS PAST it into an earned CODA (Trevor's "MY STORY"): the player types a
+short, readable walk-the-keyboard STORY covering every letter A–Z, whose FINAL line(s)
+are the EXPERIENCE-tier Hacker Manifesto excerpt as its capstone, plus ≥1 choreographed
+typo→Backspace→correct beat. Static story bank + optional local-LLM variety. Verified
+manifesto text: research/wiki/culture/hacker-manifesto.md. Design sources:
+js/keyboard-story.js + js/finale-quote.js header comments.)*
+- **INV-62** (L1) **The manifesto CAPSTONE escalates by tier — FOUR distinct,
+  strictly-increasing sets + age-gated + typeable + verbatim:** `finaleLinesForRatio(winRatio)`
+  (the coda's final line(s)) returns four DISTINCT sets, one per EXPERIENCE tier
+  (strictly increasing line counts): winRatio 1 → sentence 1; 1.5 → +2 (the truncated
+  belonging line); 2.25 → +3. The 1/1.5/2.25 sets are exact prefixes of each other.
+  **WIZARD (3.5) is its OWN ordered set** — the manifesto's near-ENTIRE closing passage,
+  VERBATIM, with ONE sentence intentionally OMITTED (the "atomic bombs / wage wars /
+  murder" line — kept out of a kids' game even at the top tier; asserted absent at every
+  tier). WIZARD uses the FULL belonging line ("...religious bias... and you call us
+  criminals.", not the truncated tier-2 version), so it begins with sentence 1 exactly
+  but is NOT an exact array-prefix of 2.25. The delicate "Yes, I am a criminal... my
+  crime is that of curiosity." content is age-gated to HOTSHOT (2.25x) and above (a
+  strong opt-in tier, never the default); the whole closing passage (sentences 4–7)
+  appears ONLY at WIZARD. Every token of every capstone line at every tier is typeable
+  with exactly Level 25's cumulative unlocked-key closure (the same closure construction
+  as INV-20/INV-56: an uppercase letter needs both its base key and Shift), **including
+  the straight-ASCII apostrophe `'` (0x27, the Level-23 key) in WIZARD's "can't"/"we're"**
+  — never a curly `’`; tiers 1/1.5/2.25 carry no apostrophes. Ellipses are exactly three
+  `'.'` tokens; and joining a line group with single spaces reproduces its canonical
+  verbatim excerpt (no wording drift). (js/finale-quote.js.)
+- **INV-63** (L2) **The coda is a guaranteed, never-missable POST-TARGET win-gate:** at
+  Level 25 (non-free-play), the level plays its normal pool to the traditional target
+  (`themeComplete && patternsCompleted >= minPatterns && !cardPending && !namePending`)
+  and, instead of ending, rolls into the coda (`startCoda`): the assembled coda lines are
+  served as the deterministic TAIL from that point, and the completion condition carries
+  a `codaPending` term (`codaActive && codaTyped < codaLines.length`) so the level ends
+  ONLY once the WHOLE coda is typed. The gate clears — the level stays winnable — at BOTH
+  winRatio 1 and 3.5 (the One-Rule floor: the coda is finite, fully typeable at L25, and
+  sits ahead of any pool draw). The guaranteed history card + Name Moment still fire
+  during NORMAL play, BEFORE the coda begins (they gate the target the coda extends past).
+  Free-play and every non-25 level are a no-op (no coda). (js/main.js; product.md One Rule.)
+- **INV-64** (L1) **The coda covers every letter A–Z at every tier, offline-guaranteed:**
+  `assembleCoda(story, winRatio, rotation)`'s full rendered text (via `renderCodaText`,
+  which simulates the Backspace beats) contains all 26 letters at winRatio 1, 1.5, 2.25,
+  AND 3.5 — because every static story's `base` sentence is itself a pangram (asserted for
+  all of `STATIC_STORIES`), and the base is present at every tier. When local-LLM
+  generation is absent or fails (the static-host shipping default), `buildStoryPool([])`
+  falls back to the static bank, so coverage holds with ZERO server. A generated story is
+  only admitted if its base validates AND `coversAllLetters` — a generated story failing
+  charset/coverage/safety/length is rejected in favor of a static one. (js/keyboard-story.js;
+  product.md §5 "the eighth key" / full-keyboard mastery.)
+- **INV-65** (L1) **Higher tier → longer coda, rotation varies the story, and every coda
+  carries a well-formed typo beat:** `storyBodyForRatio` appends one extra sentence per
+  EXPERIENCE step (base only at 1×, +1/+2/+3 at 1.5/2.25/3.5) and `beatCountForRatio`
+  scales the choreographed beats (≥1 always), so a higher tier is strictly MORE typing,
+  never a penalty (product.md §Word Length). `pickKeyboardStory(pool, rotation)` /
+  `pickTypoBeats(rotation, n)` are DETERMINISTIC in the per-slot `storyRotation` counter
+  (a different story/beat set each successive replay, no `Math.random` — mirrors the
+  history-card rotation; `js/slots.js getStoryRotation/bumpStoryRotation`). Every
+  `TYPO_BEATS` entry is a self-contained typo→Backspace→correct token beat whose
+  cumulative Backspaces NEVER exceed the characters typed so far (no underflow — it can
+  never erase earlier text) and whose FINAL rendered text equals its intended readable
+  word (`renderCodaText([beat.tokens]) === beat.text`); L25 is where Backspace is taught,
+  so the coda exercises it as a playful "trip-up", still fully scripted (every token is
+  the expected key — the sacred wrong-keypress contract is untouched). Manifesto capstone
+  is always the coda's FINAL line(s). (js/keyboard-story.js; js/slots.js.)
+- **INV-66** (L1, Go) **Generated coda stories are validated on BOTH ends:** the
+  `/api/keyboard-story` server (`parseAndValidateStories`/`validateStorySentenceGo`)
+  admits a story only if every sentence passes the charset allowlist (letters, space,
+  `. , ' -` — the L25-typeable set, mirroring the client's `STORY_SENTENCE_RE`), the
+  length caps, the exact-word safety blocklist (`chatOutputOK`), and the sub-line-width
+  cap, AND its base clears `storyCoversAllLetters` (a pangram). A missing/erroring model
+  yields an empty batch (never a 500), so the client uses the static bank. The client
+  RE-validates via `validateGeneratedStory` (defense in depth — neither the model nor our
+  own server is trusted). No player-identifying data is sent (security.md rules 6-7).
+  (main.go; js/keyboard-story.js; js/keyboard-story-gen.js.)
+- **INV-67** (L1/L2, Go) **Generation yield is robust to model line-drift, and variety
+  accumulates without loosening any safety check.** THREE guarantees, none of which may
+  trade winnability or safety for yield:
+  1. **Robust parse (main.go `parseAndValidateStories`):** stories are reconstructed by
+     scanning EVERY line and IGNORING blank lines — a valid pangram line starts a story
+     (its base), subsequent valid non-pangram lines are its extras, the next pangram
+     starts the next story. It no longer depends on `\n\n` as a block separator (small
+     models insert a stray blank line between a valid pangram opener and its
+     continuations; the old split dropped BOTH fragments — measured ~7% yield). Every
+     per-sentence safety gate (`validateStorySentenceGo`: charset allowlist, length/word
+     caps, `chatOutputOK` blocklist) and the base-pangram / min-extras gates are
+     UNCHANGED — a junk/empty/unsafe reply still yields `{stories:[]}`. `buildStoryPrompt`
+     carries a one-shot format example (a NON-static pangram + continuations, "do not
+     copy") to keep drift low. (Tests: blank-line-drift recovery, multi-pangram seeding,
+     junk-yields-none.)
+  2. **Accumulating variety + dedup (js/keyboard-story-cache.js `kk-stories`):**
+     validated generations persist to a NEW localStorage namespace (already-validated
+     GAME CONTENT — pangram sentences — NOT PII; rule 8 floor preserved). Reads are
+     defensive (rule 4: try/catch, shape-validated, every entry RE-validated, garbage →
+     empty, never throws); writes never throw (private-mode → in-session only, like
+     kk-slots); capped to the most recent 20. `buildStoryPool` folds the cache in BEFORE
+     the static bank AND DEDUPS: a generated/cached story whose normalized base
+     (`normalizeStoryBase`: lowercase, collapsed whitespace, stripped edge punctuation)
+     matches a STATIC base or an earlier accepted base is dropped — fixing the observed
+     exact-static-pangram repeat and keeping the offline floor undiluted.
+  3. **Anti-dup context (rule 6):** recent cached bases are sent as `avoid` hints on
+     `/api/keyboard-story` so the model makes something DIFFERENT. It carries story TEXT
+     only — never a player name/PII. Inbound `avoid` values are structurally validated
+     symmetric to the outbound content (`sanitizeAvoidList`: same charset/length/safety
+     chain, count capped at `maxAvoid`).
+  **Winnability NEVER depends on generation or the cache:** if generation, the cache,
+  dedup, or anti-dup all fail/empty, `buildStoryPool` still appends the 6 static
+  all-26-letter stories, so the coda assembles and covers A–Z at every tier (INV-64
+  holds). (main.go; js/keyboard-story.js; js/keyboard-story-cache.js; js/keyboard-story-gen.js;
+  js/main.js §startCoda.)
+- **INV-68** (L1, Go+JS) **The kid-safety word blocklist is single-sourced, and any
+  parent control over it is ADDITIVE to an immovable floor.** The canonical bad-word
+  list lives in ONE file, `js/word-blocklist.json`, read by BOTH languages: the Go
+  server embeds + unmarshals it (`//go:embed`, `loadChatWordBlocklist` at init →
+  `chatWordBlocklist`; asserted by `TestChatWordBlocklistLoaded`) and the client imports
+  it (`import … with { type: 'json' }` → `js/word-blocklist.js` `BASE_WORDS`; asserted by
+  `tests/unit/word-blocklist-sync.test.mjs`, which also verifies the client array equals
+  the file verbatim). Editing the JSON changes both sides at once — no drift possible,
+  no hard-coded copy in either language (journal L41; the file is served with an
+  `application/json` content-type by `http.FileServer`, so the browser JSON-module import
+  works). `BASE_WORDS` is the FLOOR: every consumer (coda story validation, IM-friend
+  chat) always enforces it. A parent may ADD words via `settings.blockedWords`
+  (`setUserBlockedWords`, seeded on settings load/save) but can NEVER remove a floor word
+  — the API only unions an additive set on top. User words are untrusted free text
+  (security.md rule 7): allowlisted to `[a-z]`, length-bounded (2–20), deduped, and
+  count-capped (≤40) on BOTH the storage side (`settings.sanitizeBlockedWords`) and the
+  safety side (`word-blocklist.setUserBlockedWords`); garbage degrades to an empty
+  additive layer, never throws, never weakens the floor. Default `blockedWords` is `[]`,
+  so an untouched preferences screen changes nothing. (js/word-blocklist.js; js/settings.js;
+  main.go; js/keyboard-story.js.)
+- **INV-69** (L1/L2) **The BLOCKED WORDS editor is a parent-facing, additive-only,
+  floor-immutable free-text control.** A dedicated settings row (`getRows()` entry
+  `key:'blockedWords'`, `action:true`, `editor:'blockwords'`, with a `summary()` that
+  shows the current parent-added COUNT — never the words themselves) opens, on
+  Enter/Space, a dedicated editor screen (`#blockwords-screen`, `state.screen ===
+  'blockwords'`) reachable ONLY from Settings; Escape from it always returns cleanly to
+  Settings (One Rule — never trapped). In the editor a parent may: (a) TYPE a word into
+  `#blockword-input` and ADD it with Enter — sanitized at the boundary exactly like the
+  model (lowercased, stripped to `[a-z]`, length 2–20, deduped, count-capped ≤40 via
+  `saveSettings`→`sanitizeBlockedWords`), persisted to `kk-settings.blockedWords`, and
+  installed into the live filter immediately (`setUserBlockedWords`, INV-68); (b) SEE
+  only their OWN additions rendered as chips — each word via `textContent` only, NEVER
+  `innerHTML` (security.md rule 1), so a hostile typed string can never reach a DOM sink;
+  (c) REMOVE one of their additions (Backspace on the empty box removes the highlighted
+  chip, or click the chip) — a removal only ever splices `settings.blockedWords`. The
+  built-in FLOOR (`BASE_WORDS`) is NEVER shown as a chip and has NO UI-reachable removal
+  path: typing a floor word reports "ALREADY BLOCKED" and adds no removable chip
+  (`isBlockedWord` guard), and `isBlockedWord` keeps every floor word blocked regardless
+  of the parent list. Default `blockedWords: []` → an empty editor that changes nothing.
+  (js/main.js openBlockWords/addBlockWord/removeBlockWord/handleBlockWordsKey; js/settings.js
+  ROWS `blockedWords`; index.html `#blockwords-screen`; security.md rules 1/4/7; product.md
+  §One Rule + "settings are toggles".)
+
 ## 6. Findings protocol
 
 `docs/testing/FINDINGS.md` is the ledger. Each entry:

@@ -4,7 +4,7 @@ code: [css/base.css, css/screens.css, css/levels.css]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-07-12
+verified: 2026-07-28
 ---
 
 # Visual Styling
@@ -65,8 +65,23 @@ exist anywhere — motion/contrast accommodation is entirely manual (the CRT tog
 the scrim-panel fixes above). `--atari-dim` was changed from `#555` to `#8a8a8a`
 after measuring ~2.3:1 contrast on black (failing WCAG); noted inline in `base.css`.
 
+## Collection gallery card labels (fixed 2026-07-28)
+
+`.collection-cell-label` (the card WORD shown on an owned cell in the [[history-cards]]
+collection gallery) previously clipped multi-word words with a CSS ellipsis —
+`RUBBER DU…`, `HELLO WOR…` — since it had no wrap rule. It now wraps to a centered
+second line instead: `white-space: normal; overflow-wrap: break-word; text-align:
+center; line-height: 1.3`, with `max-width: 96px` unchanged, so `RUBBER DUCK` and
+`HELLO WORLD` render in full on two lines while single-word labels (which have no
+space to break on) stay on one line exactly as before. Cells keep their fixed size —
+only the label's own wrap behavior changed. Verified via a regenerated
+`docs/screenshots/screens/collection-gallery.png` (synthetic fully-collected slot);
+see [[history-cards]] for the before/after detail.
+
 ## Related
 
 [[level-themes]] (canvas-side era fidelity, glyph coverage) · [[hud-keyboard-guide]]
 (scrim consumers) · [[settings-survival]] (CRT toggle owner) · [[easter-eggs]]
-(console banner styling, separate from this CSS layer)
+(console banner styling, separate from this CSS layer) · [[history-cards]] (the
+collection gallery this CSS layer's card-label wrap fix serves) ·
+[[onboarding-continue]] (renders the collection gallery screen this CSS styles)

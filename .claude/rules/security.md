@@ -69,11 +69,66 @@ HTML, shell, or JavaScript.
    declared [minWordLength, maxWordLength] length window, itself clamped to the
    server's play-logic length range (a request can never widen words past what the
    game will display, nor invert the window into an empty pool).
+   *The Level 25 "MY STORY" coda generator (`/api/keyboard-story?tier&count`, added
+   Trevor 2026-07-28) is the second instance of this rule and follows it identically:*
+   the local-Ollama endpoint returns readable "walk the keyboard" story sentences, and
+   BOTH the server (`parseAndValidateStories`/`validateStorySentenceGo`/`storyCoversAllLetters`
+   in main.go) AND the client (`validateGeneratedStory`, js/keyboard-story.js — defense in
+   depth) enforce the same chain: charset allowlist (letters + space + `. , ' -`, all
+   L25-typeable), per-sentence length + sub-line-width caps, the shared exact-word safety
+   blocklist (`chatOutputOK`), and a mandatory all-26-letters coverage check on the base
+   sentence. Failure class A (a bad sentence) drops that sentence; class B (missing/erroring/
+   unparseable model, or a structurally bad batch) yields `{stories:[]}` → the client uses the
+   static bank (js/keyboard-story.js `STATIC_STORIES`, the offline floor). Same loopback
+   default + `OLLAMA_HOST` override, same-origin only, and — like wordgen — the request
+   carries only act/tier/count constraints, NEVER the player name or any PII. Generated
+   story text is data (fillText/pattern-stream only, rule 1).
+   *Yield/variety hardening (Trevor, 2026-07-28) — no safety check was loosened:* the
+   server parser (`parseAndValidateStories`) was made robust to small-model line-drift
+   (it scans all lines and IGNORES blank lines rather than splitting stories on `\n\n`,
+   which was silently dropping ~93% of valid generations) — the ONLY change is
+   block-splitting; every per-sentence safety gate and the pangram/min-extras gates are
+   unchanged, so a junk/unsafe reply still yields `{stories:[]}`. Validated generations
+   now persist client-side to the **`kk-stories`** localStorage namespace (see rule 8) so
+   variety ACCUMULATES across sessions; `buildStoryPool` DEDUPS a generated/cached base
+   (normalized) against the static bank and against earlier entries, so the static floor
+   is never diluted and the exact-static-pangram repeat is fixed. An optional **`avoid`**
+   query param (`/api/keyboard-story?tier&count&avoid=…`) feeds a few recent CACHED bases
+   back as an "make something different" hint — it carries story TEXT only, never the
+   player name/PII (rule 6), and each inbound value is structurally validated symmetric
+   to the outbound content (`sanitizeAvoidList`: same charset/length/safety chain, count
+   capped). Winnability never depends on generation or the cache — the static bank is
+   always appended (INV-64/INV-67).
+   *Single-source blocklist + additive parent control (Trevor, 2026-07-28):* the
+   kid-safety word blocklist is defined in ONE file, `js/word-blocklist.json`, read by
+   BOTH languages — the Go server embeds+unmarshals it (`loadChatWordBlocklist` →
+   `chatWordBlocklist`) and the client imports it (`js/word-blocklist.js` `BASE_WORDS`).
+   No hard-coded copy exists in either language; editing the JSON changes both at once
+   (journal L41; `TestChatWordBlocklistLoaded` + `word-blocklist-sync.test.mjs` gate that
+   a good file loaded on each side). `BASE_WORDS` is the immovable FLOOR every consumer (coda + chat)
+   enforces. A parent MAY extend it via `settings.blockedWords` (an ADDITIVE layer,
+   `setUserBlockedWords`) but can NEVER remove a floor word — matching the house law that
+   a setting only ever makes play safer (Survival opt-in, additive difficulty, the
+   unremovable server safety prompt). Those user words are untrusted free text (rule 7):
+   allowlisted to `[a-z]`, length-bounded, deduped, count-capped on BOTH the storage and
+   safety sides; they stay 100% local (never sent to any endpoint — rule 6) and are not a
+   new PII class (parent-authored filter words, not data about the child — rule 8). NOTE:
+   the settings-SCREEN control that lets a parent TYPE these words is a new free-text
+   input surface and MUST run `/security-review` before it ships.
 8. **PII floor:** the only personal datum the game stores is the display name. Never
    add more (no ages, no surnames prompted, no location). *(Save slots, 2026-07-19: one display
    name per saved game now lives in `kk-slots` (an unlimited, growable list) — still the
    same PII class, just one per game. Everything else a slot holds is gameplay data:
    progress, collected-card ids, rotation counters. No new PII class was introduced.)*
+   *(Story cache, 2026-07-28: the **`kk-stories`** namespace (js/keyboard-story-cache.js)
+   persists already-VALIDATED L25 coda story text — pangram sentences + kid-safe
+   continuations — so generation variety accumulates across sessions. This is GAME
+   CONTENT, NOT a new PII class: no age/name/surname/location is ever stored, and the
+   anti-dup `avoid` context it feeds back to the generator is story text only (rule 6).
+   It reads defensively (rule 4: try/catch, shape-validated, every entry re-validated as
+   untrusted, garbage → empty, never throws; writes never throw), is capped to the last
+   20, and holds nothing to "forget" — the static bank remains the winnability floor
+   regardless of its state.)*
    *Documented exception — the Act 6 IM-friend (Trevor-approved, 2026-07-14):* the
    `kk-friends` localStorage namespace persists chat TRANSCRIPTS and the child's
    made-up FRIENDS (persona spec + message history) — more than the display-name

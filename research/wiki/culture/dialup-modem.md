@@ -45,3 +45,4 @@ device into the dial-up era specifically. It's also the shared access ritual for
 ## See also
 
 [[56k-modem]] — the specific speed standard (V.90, 1998) behind this handshake sound, and a Level 16 history card (added 2026-07-19).
+[[acoustic-coupler]] — the earlier, rubber-cup-cradle predecessor technology that let modems work over any ordinary telephone handset (2026-07-27 research batch).

@@ -37,6 +37,7 @@ func main() {
 	mux.HandleFunc("/api/wordgen/health", handleHealth)
 	mux.HandleFunc("/api/wordgen", handleWordgen)
 	mux.HandleFunc("/api/chat", handleChat)
+	mux.HandleFunc("/api/keyboard-story", handleKeyboardStory)
 	mux.Handle("/", http.FileServer(http.FS(content)))
 
 	// PORT env → container/operator mode: bind a FIXED port on all interfaces
@@ -1404,12 +1405,40 @@ func clampReply(s string) string {
 // words ("hello" contains "hell"). Instead we tokenize on non-letters and reject
 // only on an EXACT unsafe-WORD match. A hit fails the whole reply (caller swaps a
 // safe line).
-var chatWordBlocklist = map[string]bool{
-	"sex": true, "sexy": true, "porn": true, "rape": true, "nazi": true,
-	"kill": true, "kills": true, "killed": true, "murder": true, "suicide": true,
-	"gun": true, "guns": true, "drug": true, "drugs": true, "beer": true, "wine": true,
-	"fuck": true, "shit": true, "damn": true, "bitch": true, "dick": true,
-	"blood": true, "gore": true, "dead": true, "die": true, "death": true,
+//
+// SINGLE SOURCE OF TRUTH (journal L41): the word FLOOR is NOT hard-coded here — it is
+// loaded at startup from js/word-blocklist.json, the SAME file the client imports as
+// BASE_WORDS (js/word-blocklist.js). One file, both languages. Edit the list ONLY in
+// that JSON. (This is the built-in floor; the client also supports an ADDITIVE parent
+// layer on top — the server always enforces at least this floor.)
+//
+//go:embed js/word-blocklist.json
+var blocklistJSON []byte
+
+var chatWordBlocklist = map[string]bool{}
+
+// Load the floor at package init so it is present for BOTH the server and the test
+// binary (the safety blocklist tests depend on it), before any handler runs.
+func init() { loadChatWordBlocklist() }
+
+func loadChatWordBlocklist() {
+	var parsed struct {
+		Words []string `json:"words"`
+	}
+	// Embedded at build time, so this only fails on a malformed committed file — caught
+	// by TestChatWordBlocklistLoaded. Never leave the floor empty: a load failure keeps
+	// whatever is already there (empty on first load) but the test gates a good build.
+	if err := json.Unmarshal(blocklistJSON, &parsed); err != nil {
+		return
+	}
+	m := make(map[string]bool, len(parsed.Words))
+	for _, w := range parsed.Words {
+		w = strings.ToLower(strings.TrimSpace(w))
+		if w != "" {
+			m[w] = true
+		}
+	}
+	chatWordBlocklist = m
 }
 
 func chatOutputOK(reply string) bool {
@@ -1492,6 +1521,305 @@ func chatWithOllama(ctx context.Context, msgs []ollamaChatMessage) (string, bool
 		return "", false
 	}
 	return out.Message.Content, true
+}
+
+// ─── Level 25 "MY STORY" coda — keyboard-story generation ─────────────────
+//
+// The client (js/keyboard-story-gen.js) asks for fresh, all-26-letter "walk the
+// keyboard" stories to ADD variety to the L25 coda's rotation pool. This endpoint
+// is an ENHANCEMENT only: if Ollama is absent/erroring it returns an empty batch
+// and the client plays the built-in STATIC bank (js/keyboard-story.js — the offline
+// shipping default). It never blocks and never 500s.
+//
+// Untrusted content (security.md rules 6-7): every generated sentence passes a
+// validation chain HERE (charset allowlist, all-26 coverage on the base, length
+// caps, an exact-word safety blocklist, sub-line-fit) AND is RE-validated on the
+// client (validateGeneratedStory) — the model, and even our own server, are never
+// trusted. Local-only + PII floor (rule 6): traffic goes ONLY to the operator's
+// Ollama endpoint (loopback default; OLLAMA_HOST override, never request-derived),
+// and the request carries NOTHING user-identifying — only a tier number and a count.
+
+// storySentenceCharset is the ONLY set of runes a generated story sentence may
+// contain — all typeable at Level 25: letters, space, and the punctuation the game
+// teaches (period, comma, apostrophe, hyphen). Mirrors the client's STORY_SENTENCE_RE
+// (js/keyboard-story.js) — keep the two in sync (single-source contract, journal L41).
+var storySentenceCharset = func() map[rune]bool {
+	const s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ .,'-"
+	m := make(map[rune]bool, len(s))
+	for _, r := range s {
+		m[r] = true
+	}
+	return m
+}()
+
+const (
+	maxStorySentenceLen  = 120 // a readable sentence, generously capped (mirrors client)
+	maxStoryWordLen      = 17  // no word wider than a prompt sub-line
+	maxStoriesPerBatch   = 5   // return at most this many validated stories
+	maxStoryExtra        = 4   // extras kept per story
+	minStoryExtra        = 3   // extras required (enough for tier-scaled length)
+	maxStoryResponseSize = 8 * 1024
+)
+
+type storyOut struct {
+	Base  string   `json:"base"`
+	Extra []string `json:"extra"`
+}
+
+func handleKeyboardStory(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// count is a small hint (how many story options to try for); tier is optional
+	// prompt flavor. Neither is trusted beyond a bounded integer parse.
+	count := 3
+	if c := strings.TrimSpace(r.URL.Query().Get("count")); c != "" {
+		if n, err := strconv.Atoi(c); err == nil {
+			count = n
+		}
+	}
+	if count < 1 {
+		count = 1
+	}
+	if count > maxStoriesPerBatch {
+		count = maxStoriesPerBatch
+	}
+
+	// Optional anti-dup context: a few recent story bases the client has already seen
+	// (from its kk-stories cache) so the model is asked to make something DIFFERENT.
+	// This is GAME CONTENT only (story text) — never the player name or any PII
+	// (security.md rule 6). Each avoid value is structurally validated symmetric to the
+	// outbound content (rule 7): charset allowlist + length/word caps + safety blocklist
+	// via validateStorySentenceGo; a malformed one is dropped, the count is capped.
+	avoid := sanitizeAvoidList(r.URL.Query()["avoid"])
+
+	// If the model is known-unreachable, don't even try — return empty immediately so
+	// the client uses the static bank (never a 500, never a wait).
+	if !modelReachable.Load() {
+		// One cheap tags probe: the model may have come up since the last call.
+		tags, reachable := ollamaTags(250 * time.Millisecond)
+		if !reachable || !modelPresent(tags, ollamaModel()) {
+			writeJSON(w, map[string]any{"stories": []storyOut{}})
+			return
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), chatGenBudget)
+	defer cancel()
+	stories := generateKeyboardStories(ctx, count, avoid)
+	if stories == nil {
+		stories = []storyOut{}
+	}
+	writeJSON(w, map[string]any{"stories": stories})
+}
+
+// maxAvoid caps how many story bases the anti-dup hint may carry — bounded so a
+// crafted/huge query can never bloat the prompt (structural validation, rule 7). Sized
+// to fit the static bank (which the client seeds first, to steer the model off the
+// memorized classics it would otherwise reproduce) plus a few recent cached bases.
+const maxAvoid = 12
+
+// sanitizeAvoidList validates each inbound `avoid` value with the SAME chain used for
+// generated content (charset allowlist, length caps, safety blocklist, word-width) and
+// caps the count. Malformed entries are dropped, never trusted or reflected raw. The
+// values are our own already-validated story bases (game content), never PII.
+func sanitizeAvoidList(vals []string) []string {
+	out := []string{}
+	for _, v := range vals {
+		s := validateStorySentenceGo(v)
+		if s == "" {
+			continue
+		}
+		out = append(out, s)
+		if len(out) >= maxAvoid {
+			break
+		}
+	}
+	return out
+}
+
+// buildStoryPrompt renders the Ollama prompt for the coda story generator. It asks
+// for kid-safe, all-26-letter stories in a parseable, one-sentence-per-line format,
+// with a concrete ONE-SHOT example so a small model's output structure is predictable
+// (the parser ignores blank lines, but a clean example keeps drift low). `avoid` is an
+// optional list of recent story bases the model should NOT reuse (anti-dup); it is
+// GAME CONTENT only — never a player name or any PII (security.md rule 6).
+func buildStoryPrompt(count int, avoid []string) string {
+	var b strings.Builder
+	b.WriteString("You write tiny, warm, gentle stories for a young child learning to read and type.\n")
+	b.WriteString("Write " + strconv.Itoa(count) + " short stories.\n")
+	b.WriteString("For EACH story:\n")
+	// The pangram is the hard part for a small model, so make it the loudest rule and
+	// spell out the alphabet. (Measured: llama3.2 rarely INVENTS a pangram but reliably
+	// RECALLS well-known ones — so we explicitly invite reusing a classic, which the
+	// avoid-list below then steers toward FRESH ones the player hasn't seen.)
+	b.WriteString("- THE MOST IMPORTANT RULE: the FIRST line must be a PANGRAM — one sentence that contains EVERY letter a b c d e f g h i j k l m n o p q r s t u v w x y z at least once, and still reads naturally.\n")
+	b.WriteString("- You MAY reuse any famous classic pangram you know as that first line, or write your own — it just MUST use all 26 letters.\n")
+	b.WriteString("- Then write 3 or 4 more short, simple sentences that continue the story, one sentence per line.\n")
+	b.WriteString("- Put NO blank lines inside a story. Put ONE blank line between stories.\n")
+	b.WriteString("Rules: only lowercase and capital letters, spaces, and these marks . , ' - (no other symbols, no numbers). ")
+	b.WriteString("Keep every word short (no word longer than 17 letters). Keep it happy, kind, and gentle — nothing scary, sad, or rude. ")
+	b.WriteString("Use small early-reader words a young child can read.\n")
+	// One-shot format example — a pangram base then continuation sentences, one per
+	// line, no blank lines between them. Deliberately NOT any static-bank story (so a
+	// copied example is at least not the classic-fox repeat) and the model is told not
+	// to copy it.
+	b.WriteString("Here is the exact format to follow (do NOT copy this example, write your own):\n")
+	b.WriteString("How quickly daft jumping zebras vex.\n")
+	b.WriteString("The zebras race around the sunny field.\n")
+	b.WriteString("Then they rest by the cool blue pond.\n")
+	b.WriteString("Soon the moon comes up and all is calm.\n")
+	if len(avoid) > 0 {
+		// The player has already seen these pangrams (static bank + cached generations).
+		// Steer to a DIFFERENT classic (or a fresh one) — this is what turns the model's
+		// habit of reproducing the memorized fox into genuine accumulating variety.
+		b.WriteString("You have already used these first lines — pick a DIFFERENT pangram than any of these:\n")
+		for _, a := range avoid {
+			b.WriteString("- " + a + "\n")
+		}
+	}
+	b.WriteString("Reply with ONLY the stories in that format — no titles, no numbering, no extra text.")
+	return b.String()
+}
+
+// generateKeyboardStories calls Ollama /api/generate, parses the reply into story
+// blocks (blank-line separated; first line = base, rest = extras), and validates
+// each. Returns only the stories that pass the whole chain (possibly none).
+func generateKeyboardStories(ctx context.Context, count int, avoid []string) []storyOut {
+	prompt := buildStoryPrompt(count, avoid)
+	body, err := json.Marshal(ollamaGenRequest{
+		Model: ollamaModel(), Prompt: prompt, Stream: false, KeepAlive: modelKeepAlive,
+	})
+	if err != nil {
+		return nil
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ollamaEndpoint()+"/api/generate", bytes.NewReader(body))
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		modelReachable.Store(false)
+		return nil
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		modelReachable.Store(false)
+		return nil
+	}
+	modelReachable.Store(true)
+
+	var gen ollamaGenResponse
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxStoryResponseSize*2+1024)).Decode(&gen); err != nil {
+		return nil
+	}
+	if len(gen.Response) > maxStoryResponseSize || strings.TrimSpace(gen.Response) == "" {
+		return nil
+	}
+	return parseAndValidateStories(gen.Response)
+}
+
+// parseAndValidateStories reconstructs stories from a generated reply WITHOUT relying
+// on blank lines as the story separator (small models — llama3.2 — routinely insert a
+// stray blank line between a valid pangram opener and its continuation sentences, which
+// the old "\n\n" block split fragmented into a 1-line block + a headless block, dropping
+// BOTH and collapsing yield to ~7%). Instead it scans EVERY line in order, ignoring
+// blank lines entirely: a valid pangram line STARTS a new story (as its base); each
+// subsequent valid, non-pangram line accumulates as an extra until the next pangram (or
+// end). More than one valid pangram therefore seeds more than one story.
+//
+// The ONLY behavior change from the old parser is block-splitting robustness — every
+// per-sentence safety check (validateStorySentenceGo: charset allowlist, length caps,
+// safety blocklist, word-width) and the base-must-be-a-pangram / min-extras gates are
+// UNCHANGED, so what content is deemed safe is identical. A junk/empty/unsafe reply
+// still yields no stories. (Behavior mirrored client-side in validateGeneratedStory.)
+func parseAndValidateStories(text string) []storyOut {
+	out := []storyOut{}
+	var base string
+	var extra []string
+	flush := func() {
+		if base != "" && len(extra) >= minStoryExtra {
+			out = append(out, storyOut{Base: base, Extra: extra})
+		}
+		base = ""
+		extra = nil
+	}
+	for _, ln := range strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n") {
+		ln = strings.TrimSpace(ln)
+		// Strip common list decorations a model may add despite instructions.
+		ln = strings.TrimLeft(ln, "-*•0123456789. \t")
+		ln = strings.TrimSpace(ln)
+		if ln == "" {
+			continue // ignore blank lines entirely — the drift fix
+		}
+		v := validateStorySentenceGo(ln)
+		if v == "" {
+			continue // an unsafe/invalid line is skipped, never ends a story block
+		}
+		if storyCoversAllLetters(v) {
+			// A new pangram base begins a new story; flush the previous one first.
+			flush()
+			base = v
+			continue
+		}
+		// A valid non-pangram line is an extra of the current story (if any, and only
+		// up to the per-story cap).
+		if base != "" && len(extra) < maxStoryExtra {
+			extra = append(extra, v)
+		}
+	}
+	flush()
+	if len(out) > maxStoriesPerBatch {
+		out = out[:maxStoriesPerBatch]
+	}
+	return out
+}
+
+// validateStorySentenceGo returns the trimmed sentence if it passes the chain, or ""
+// on any failure: length cap, charset allowlist, safety word blocklist (exact-word,
+// reusing chatOutputOK), and no word wider than a sub-line.
+func validateStorySentenceGo(s string) string {
+	t := strings.TrimSpace(s)
+	if t == "" || len(t) > maxStorySentenceLen {
+		return ""
+	}
+	for _, r := range t {
+		if !storySentenceCharset[r] {
+			return ""
+		}
+	}
+	if !chatOutputOK(t) { // exact-word safety blocklist (same as chat replies)
+		return ""
+	}
+	for _, word := range strings.Fields(t) {
+		letters := 0
+		for _, r := range word {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+				letters++
+			}
+		}
+		if letters > maxStoryWordLen {
+			return ""
+		}
+	}
+	return t
+}
+
+// storyCoversAllLetters is true when s contains all 26 letters (case-insensitive) —
+// the pangram floor a generated base must clear (mirrors client coversAllLetters).
+func storyCoversAllLetters(s string) bool {
+	var seen [26]bool
+	n := 0
+	for _, r := range strings.ToLower(s) {
+		if r >= 'a' && r <= 'z' {
+			i := r - 'a'
+			if !seen[i] {
+				seen[i] = true
+				n++
+			}
+		}
+	}
+	return n == 26
 }
 
 // ─── Dev-server plumbing (unchanged) ─────────────────────────────────────

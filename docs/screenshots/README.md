@@ -64,17 +64,18 @@ no longer exists — `js/slots.js` replaced the single `kk-progress`/`kk-cards` 
 an unlimited list of independent per-family-member saved games, and the returning-player
 front door is now the "CHOOSE YOUR GAME" slot picker (`state.screen === 'slots'`; see
 `docs/features/save-slots.md` + `docs/features/onboarding-continue.md`). Both retired
-PNGs are deleted; regenerating `capture-screens.js` today will NOT reproduce them (its
-old "continue" section seeds legacy `kk-progress`, which now auto-migrates into the slot
-picker on load rather than showing a continue screen — that section is stale and needs
-a rewrite by whoever owns the capture scripts).
+PNGs are deleted, and `capture-screens.js`'s old `kk-progress` "continue" section is gone.
 
-New captures, taken ad-hoc (not yet wired into `capture-screens.js` — tooling debt, see
-above): `slots-picker.png` (5 seeded saved games + the trailing "+ NEW GAME" row,
-demonstrating the picker has no fixed cap), `slots-erase-confirm.png` (the picker's
-per-game `X` → Y/N erase confirmation), `collection-gallery.png` (the `C`-key card
-gallery — `★ found / total` header, owned cards revealed, unfound cards `???`, the
-secret WarGames card shown in green). Seed shape for reproducing these:
+`capture-screens.js` now captures these three via built-in, filter-selectable blocks
+(**FIXED 2026-07-28** — no longer ad-hoc): `node capture-screens.js slots,collection`
+(the `slots` filter shoots the first two, `collection` the third). It seeds `kk-slots`
+from the live `js/slots.js` shape with card ids pulled live from `js/history-cards.js`
+(so `★ found / total` counts never drift against a literal). The three:
+`slots-picker.png` (seeded saved games + the trailing "+ NEW GAME" row, demonstrating the
+picker has no fixed cap), `slots-erase-confirm.png` (the picker's per-game `X` → Y/N erase
+confirmation), `collection-gallery.png` (the `C`-key card gallery — `★ found / total`
+header, owned cards revealed, unfound cards `???`, the secret WarGames card shown in
+green). Seed shape for reproducing these:
 ```js
 localStorage.setItem('kk-slots', JSON.stringify({
   v: 1, active: null,

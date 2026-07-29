@@ -4,7 +4,7 @@ code: [js/themes/]
 rules: [.claude/rules/theme-authoring.md, .claude/rules/levels.md, .claude/rules/levels/act5.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-07-13
+verified: 2026-07-28
 ---
 
 # Level Themes
@@ -192,6 +192,59 @@ pre-EXPERIENCE Q\*bert (pyramid flip only, no extra-words requirement). Higher t
 add a rounded multiple of 5 extra completed words on top of the pyramid — same
 "more play, never a penalty" law as Tetris's scaling above.
 
+## Word Processor (Level 25) — the "MY STORY" coda + the `hello world` egg (REDESIGNED 2026-07-28)
+
+`js/themes/wordprocessor.js` renders the "MY STORY" document players accumulate at
+Level 25. As of the 2026-07-28 redesign, the level plays its normal pool to the
+traditional win target first (unchanged UI), then EXTENDS past it into an earned
+**coda** — see [[engine-flow]] "Level 25 finale — the 'MY STORY' coda" for the full
+engine-side flow (`js/keyboard-story.js`, `js/keyboard-story-gen.js`,
+`js/main.js` `startCoda`/`maybeSignalCoda`). This theme's own responsibilities:
+
+- **`beginFinale(subLens)`.** Called once by `maybeSignalCoda()` the moment the coda's
+  first line becomes the active prompt. Breaks the accumulated document to a fresh
+  paragraph and switches the theme's render mode to a top-band clamp (above the prompt
+  panel) so the coda — a pangram "walk the keyboard" story, a scripted typo-\>Backspace-\>
+  correct beat, and the EXPERIENCE-tier manifesto capstone, which can run to 53 lines
+  at WIZARD — reads as its own clean scrolling block instead of wrapping behind the
+  prompt. `subLens` (the per-line non-Backspace token count for the WHOLE assembled
+  coda — story sub-lines, typo beats, and the manifesto lines together) is passed in
+  fresh by `js/main.js` on every play, since the coda is now a dynamic, rotating,
+  tier-scaled sequence the theme can no longer derive from `js/finale-quote.js` alone
+  (a legacy/defensive fallback still exists for a missing `subLens`). This is a
+  render-side newline, NOT a typed Enter — themes never gate input
+  (theme-authoring.md). `victory()` clears the coda render state for the normal
+  centered "THE END." beat.
+- **Sub-line join spacing.** Coda lines arrive with no trailing space (so the
+  player-typed prompt and its win-gate stay exact-match); the theme inserts exactly
+  one space into the accumulated DISPLAY text at each sub-line boundary (tracked via
+  `finaleSubLens`/`finaleSubIdx`/`finaleCharsInSub`) so the story and manifesto both
+  read as natural prose (`"outsmarting you"`, not `"outsmartingyou"`). Purely
+  display-side: the prompt and the win-gate (`progressCount`) are untouched.
+- **`hello world` easter egg** (`.claude/rules/easter-eggs.md`, former proposal #6,
+  Implemented — see [[easter-eggs]]). The guaranteed Level 25 history-card word
+  `hello world` (see [[history-cards]]) gets typed into the document during NORMAL
+  play (before the coda begins). The first time the accumulated text contains it
+  (case-insensitive), the theme fades in a one-time warm-gold line in the desk's
+  bottom strip: `★ EVERY PROGRAMMER'S FIRST WORDS. WELCOME TO THE CLUB. ★` (~5s fade
+  in/hold/out, `HELLO_EGG_FRAMES`). Latched (fires at most once per play), a fixed
+  literal drawn via `fillText` only (never a DOM sink — security.md rule 1), and never
+  gates, pauses, or interrupts flow — independent of the card's own gold-glint and the
+  coda.
+
+Screenshot: `docs/screenshots/levels/act5-full-circle/25-word-processor.png`
+(regenerated 2026-07-28 by the content-librarian on an ad-hoc Playwright script that
+drives L25 through normal play into the coda on the STATIC-fallback story bank — no
+Ollama on a plain static server, the shipping offline default — rather than
+`capture-all.js 25`, which only captures the level's pre-game initial screen chrome
+and cannot drive gameplay into the coda. The reference frame shows the accumulated
+document — the pangram base sentence plus the resolved `we cna`→`we can do it` typo
+beat — flowing into the manifesto capstone ("This is our...") in the prompt panel, at
+the default winRatio 1x tier. This is a deliberate one-off exception to this page's
+usual "regenerate via the listed `capture:` command" convention, flagged here so a
+future full-library rebuild via `capture-all.js 25` doesn't unknowingly revert it to
+the plain initial-screen shot; see the Roadmap/report for the tooling-debt note).
+
 ## Roster (level → game → developer/year)
 
 | L | Theme file | Game | Year |
@@ -289,4 +342,6 @@ the parallel `minPatterns` EXPERIENCE scaling) · [[settings-survival]] (`getWin
 source, tier table) · [[hud-keyboard-guide]] (shared glyph-boost handling) ·
 [[select-screen]] (parallel cabinet-art recreation of the same 25 games) ·
 [[visual-styling]] (the CSS-level era-accent layer themes' canvas art complements) ·
-[[cinematics]] (the four non-theme-contract transition modules between acts)
+[[cinematics]] (the four non-theme-contract transition modules between acts) ·
+[[history-cards]] (the guaranteed `hello world` word the Word Processor egg detects) ·
+[[easter-eggs]] (the `hello world` egg's catalog entry)

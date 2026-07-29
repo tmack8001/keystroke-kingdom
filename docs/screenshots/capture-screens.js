@@ -2,14 +2,21 @@
 // (levels/), the act pages (acts/), history cards (history-cards/), the
 // cinematics (cinematics/), the hidden layer (easter-eggs/), or Free Play
 // (freeplay/). This is the "furniture of the game" set: title/attract, name
-// entry, the READY reveal, keyboard-preview, the returning-player continue
-// screen (+ its erase-confirm), settings (default + Survival-active), and
-// the two level-ending overlays (win / survival game-over).
+// entry, the READY reveal, keyboard-preview, the returning-player slot picker
+// ("CHOOSE YOUR GAME" — slots-picker + its X erase-confirm), the card
+// collection gallery (C from the picker), settings (default + Survival-active),
+// and the two level-ending overlays (win / survival game-over).
+//
+// The slot picker + collection replaced the RETIRED single-save "continue"
+// screen (kk-progress) when save slots landed (2026-07-19); those three
+// screens are seeded straight into kk-slots (js/slots.js shape) and reached by
+// reloading — boot() auto-shows the picker whenever any slot exists.
 //
 // Usage:
 //   python3 -m http.server 8190 --directory /Users/trevormack/dev/keystroke-kingdom
 //   DEV_URL=http://127.0.0.1:8190 node docs/screenshots/capture-screens.js
 //   DEV_URL=http://127.0.0.1:8190 node docs/screenshots/capture-screens.js title,settings-survival
+//   DEV_URL=http://127.0.0.1:8190 node docs/screenshots/capture-screens.js slots,collection
 //
 // Writes docs/screenshots/screens/*.png
 //
@@ -57,6 +64,32 @@ async function isOverlayVisible(page, id) {
     const el = document.getElementById(elId);
     return !!el && !el.classList.contains('hidden');
   }, id);
+}
+
+// Pull the live history-card ids + total straight from js/history-cards.js so
+// the slot/collection seeds never go stale against a literal in this file
+// (same technique capture-cards.js uses). Requires the app already loaded.
+async function fetchCardIds(page, baseUrl) {
+  await page.goto(baseUrl);
+  return page.evaluate(async () => {
+    const mod = await import('/js/history-cards.js');
+    return { total: mod.TOTAL_CARDS, ids: mod.HISTORY_CARDS.map(c => c.id) };
+  });
+}
+
+// Write a kk-slots store (js/slots.js shape: { v, active, slots:[…] }) into
+// localStorage on a clean load, then reload — boot() auto-shows the slot picker
+// whenever any slot exists (js/main.js boot()). Same "seed into localStorage,
+// reload, read from it" pattern as capture-cards.js.
+async function seedSlotsAndReload(page, baseUrl, slotsStore) {
+  await page.goto(baseUrl);
+  await page.evaluate((store) => {
+    localStorage.clear();
+    localStorage.setItem('kk-slots', JSON.stringify(store));
+  }, slotsStore);
+  await page.reload();
+  await page.waitForTimeout(700);
+  await page.click('body');
 }
 
 // Types whatever the DOM's active prompt letter is until the given overlay
@@ -175,29 +208,73 @@ async function playUntilOverlay(page, overlayId, maxKeys = 400, stallMs = 8000) 
     } catch (e) { fail('keyboard-preview-level16-numbers', e.message); }
   }
 
-  // ── 5. Continue screen + erase-confirm (seed kk-progress first) ─────────
-  if (shouldRun('continue')) {
+  // ── 5. Slot picker ("CHOOSE YOUR GAME") + its X erase-confirm, and the
+  //      collection gallery (C from the picker). These replaced the retired
+  //      single-save "continue"/kk-progress flow (save slots, 2026-07-19). All
+  //      three are seeded straight into kk-slots (js/slots.js shape) and reached
+  //      by reloading — boot() auto-shows the picker whenever any slot exists.
+  //      Card ids are pulled live from js/history-cards.js so ★ counts and the
+  //      found/??? split never go stale.
+
+  // ── 5a. Slot picker + erase-confirm (filter name: "slots") ──────────────
+  if (shouldRun('slots')) {
     try {
-      await page.goto(baseUrl);
-      await page.evaluate(() => {
-        localStorage.setItem('kk-progress', JSON.stringify({
-          furthestLevel: 3,
-          completed: { '1': true, '2': true },
-        }));
+      const { ids } = await fetchCardIds(page, baseUrl);
+      // A few games with varied names / levels / ★ card counts, matching the
+      // onboarding doc's example picker (OONA LV12 ★14, DAD LV20 ★9, GRAM LV4 ★1).
+      const mkSlot = (name, furthestLevel, cardCount) => ({
+        name, furthestLevel, completed: {}, nameMoment: null, textWorlds: {},
+        cards: ids.slice(0, Math.min(cardCount, ids.length)), cardRotation: {},
       });
-      await page.reload();
-      await page.waitForTimeout(600);
-      await page.click('body');
-      await shot('continue-screen');
+      const store = {
+        v: 1,
+        active: 0, // ▶ cursor lands on the first game (state.slotsSelected == 0)
+        slots: [
+          mkSlot('OONA', 12, 14),
+          mkSlot('DAD', 20, 9),
+          mkSlot('GRAM', 4, 1),
+        ],
+      };
+      await seedSlotsAndReload(page, baseUrl, store);
+      await page.waitForSelector('.slot-row', { timeout: 5000 });
+      await shot('slots-picker');
 
-      await page.keyboard.press('r'); // -> erase-confirm
-      await page.waitForTimeout(250);
-      await shot('continue-erase-confirm');
-
-      // Return to a clean state (N — never trap, matches the game's own rule)
-      await page.keyboard.press('n');
+      // X on the highlighted game brings up the Y/N erase confirmation.
+      await page.keyboard.press('x');
+      await page.waitForSelector('#slots-erase:not(.hidden)', { timeout: 3000 });
       await page.waitForTimeout(150);
-    } catch (e) { fail('continue-screen', e.message); }
+      await shot('slots-erase-confirm');
+    } catch (e) { fail('slots-picker', e.message); }
+  }
+
+  // ── 5b. Collection gallery (filter name: "collection") ──────────────────
+  if (shouldRun('collection')) {
+    try {
+      const { ids } = await fetchCardIds(page, baseUrl);
+      // A MIX of collected ids so found cards render AND some ??? locked cells
+      // show. Every other id + rubber-duck/hello-world (their now-wrapping
+      // labels are worth exercising).
+      const mix = ids.filter((_, i) => i % 2 === 0);
+      for (const must of ['rubber-duck', 'hello-world']) {
+        if (ids.includes(must) && !mix.includes(must)) mix.push(must);
+      }
+      const store = {
+        v: 1,
+        active: 0,
+        slots: [{
+          name: 'OONA', furthestLevel: 25, completed: {}, nameMoment: null,
+          textWorlds: {}, cards: mix, cardRotation: {},
+        }],
+      };
+      await seedSlotsAndReload(page, baseUrl, store);
+      await page.waitForSelector('.slot-row', { timeout: 5000 });
+
+      // C on the highlighted game opens its card collection gallery.
+      await page.keyboard.press('c');
+      await page.waitForSelector('.collection-cell.owned', { timeout: 3000 });
+      await page.waitForTimeout(200);
+      await shot('collection-gallery');
+    } catch (e) { fail('collection-gallery', e.message); }
   }
 
   // ── 6. Settings: ADVENTURE default + SURVIVAL active ─────────────────────

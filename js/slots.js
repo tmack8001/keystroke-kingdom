@@ -58,7 +58,12 @@ function normalizeSlot(raw) {
   // each replay" (mirrors the Act-6 riddle `_ri` pattern). Tolerate garbage.
   const cardRotation = (raw.cardRotation && typeof raw.cardRotation === 'object')
     ? raw.cardRotation : {};
-  return { name, furthestLevel, completed, nameMoment, textWorlds, cards, cardRotation };
+  // Per-level rotation counter for the Level 25 "MY STORY" coda — drives "a
+  // different walk-the-keyboard story each replay" (mirrors cardRotation exactly;
+  // keyed by level for symmetry though only level 25 uses it). Tolerate garbage.
+  const storyRotation = (raw.storyRotation && typeof raw.storyRotation === 'object')
+    ? raw.storyRotation : {};
+  return { name, furthestLevel, completed, nameMoment, textWorlds, cards, cardRotation, storyRotation };
 }
 
 // ── Low-level persistence ───────────────────────────────────────────────────
@@ -173,7 +178,7 @@ export function setActive(i) {
 export function createSlot(name) {
   const st = state();
   const clean = (typeof name === 'string' && name.trim()) ? name.slice(0, NAME_MAX) : 'PLAYER ONE';
-  st.slots.push({ name: clean, ...freshProgress(), cards: [], cardRotation: {} });
+  st.slots.push({ name: clean, ...freshProgress(), cards: [], cardRotation: {}, storyRotation: {} });
   st.active = st.slots.length - 1;
   writeState(st);
   return st.active;
@@ -289,5 +294,24 @@ export function bumpCardRotation(level) {
   const s = st.slots[st.active];
   const cur = Number.isFinite(s.cardRotation[String(level)]) ? s.cardRotation[String(level)] : 0;
   s.cardRotation[String(level)] = cur + 1;
+  writeState(st);
+}
+
+// ── Per-level story rotation (drives "a different L25 coda story each replay") ──
+// Mirrors the card rotation above exactly. Only level 25 uses it today.
+export function getStoryRotation(level) {
+  const st = state();
+  const s = st.active !== null ? st.slots[st.active] : null;
+  const r = s && s.storyRotation ? s.storyRotation[String(level)] : 0;
+  return Number.isFinite(r) ? r : 0;
+}
+
+export function bumpStoryRotation(level) {
+  const st = state();
+  if (st.active === null || !st.slots[st.active]) return;
+  const s = st.slots[st.active];
+  if (!s.storyRotation || typeof s.storyRotation !== 'object') s.storyRotation = {};
+  const cur = Number.isFinite(s.storyRotation[String(level)]) ? s.storyRotation[String(level)] : 0;
+  s.storyRotation[String(level)] = cur + 1;
   writeState(st);
 }

@@ -93,6 +93,15 @@ async function startStaticServer(root = REPO_ROOT) {
           .end(JSON.stringify({ words: [] }));
         return;
       }
+      if (urlPath === '/api/keyboard-story') {
+        // L25 coda story generator with no Ollama → an empty batch (main.go
+        // handleKeyboardStory), the client's fallback to the STATIC story bank.
+        // A clean 200 (not a 404) keeps consoleErrors empty, just like the real
+        // Go server behaves on a static host.
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+          .end(JSON.stringify({ stories: [] }));
+        return;
+      }
 
       if (urlPath === '/' || urlPath === '') urlPath = '/index.html';
       const filePath = normalize(join(root, urlPath));

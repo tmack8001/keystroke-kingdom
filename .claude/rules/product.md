@@ -230,8 +230,13 @@ Typing one mid-play earns only a gold glint (flow is never interrupted); at leve
 a little business card is "picked up off the arcade floor" with the story. A card is always
 guaranteed — a level won't end until a moment word has appeared.
 
-**The collect-them-all loop (2026-07-19):** the bank grew from 17 to **41 cards** (+1
-SECRET card), **every level carded**, now **several cards per level** as a rotating POOL.
+**The collect-them-all loop (2026-07-19; hacker-culture batch 2026-07-27):** the bank grew
+from 17 to **54 cards** (+1 SECRET card = 55 total), **every level carded**, now **several
+cards per level** as a rotating POOL. *(The 2026-07-27 batch adds a 1970s–90s hacker/phreak/
+underground layer — war dialing, trashing, Legion of Doom/Masters of Deception, phone
+phreaking, the Hacker Ethic, spam's origin, the first BBS, the Hacker Manifesto, Phrack,
+cyberpunk, the acoustic coupler, 2600 magazine — all "curiosity, not crime";
+research/hacker-culture.md.)*
 Each play surfaces exactly ONE guaranteed card — preferring one not yet collected in this
 save, rotating for variety — so a level with N cards takes ~N visits to fully collect. This
 is a deliberate Skulltula-style completionist hook (Trevor: the kids love the cards, so

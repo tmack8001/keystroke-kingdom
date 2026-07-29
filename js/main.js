@@ -11,10 +11,14 @@ import * as CommandCenter from './commandcenter.js';
 import * as FullCircle from './fullcircle.js';
 import { FREEPLAY_KEYS, buildFreePlayPatterns } from './freeplay.js';
 import { TOTAL_CARDS, wordToTokens, patternMatchesCard, cardsForLevel, cardById, allCards, pickGuaranteedCard } from './history-cards.js';
+import { assembleCoda, pickKeyboardStory, buildStoryPool } from './keyboard-story.js';
+import { prefetchKeyboardStories, takeKeyboardStories } from './keyboard-story-gen.js';
+import { addGeneratedStories } from './keyboard-story-cache.js';
 import * as Slots from './slots.js';
 import { getSettings, saveSettings, getRows, applyRowChange, DIFFICULTY_MULTIPLIER, getWinRatio, getWordLengthRange } from './settings.js';
 import { initWordgen, prefetch as wordgenPrefetch, takeWords as wordgenTakeWords } from './wordgen.js';
 import * as TextWorldHub from './textworld/hub.js';
+import { isBlockedWord } from './word-blocklist.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -152,6 +156,26 @@ const state = {
   nameMomentWord: null,
   nameMomentDone: false,
 
+  // Level 25 "MY STORY" coda (js/keyboard-story.js). The manifesto is no longer
+  // spliced up front — instead, once the level's TRADITIONAL win target is first
+  // met, the level rolls PAST it into an earned coda: a readable walk-the-keyboard
+  // STORY (covering every letter a–z) whose FINAL line(s) are the EXPERIENCE-tier
+  // manifesto excerpt as its capstone, plus ≥1 choreographed typo→Backspace→correct
+  // beat. codaLines holds the ordered token-array tail (built once at startCoda);
+  // codaSubLens is its per-line non-Backspace token counts (handed to the theme for
+  // the display-only sub-line boundary spaces). codaActive flips true the moment the
+  // target is reached; codaTyped counts coda lines completed; the level ends only
+  // once codaTyped reaches the whole coda (codaPending in handleGameKey) — the coda
+  // is guaranteed, never missable, and always winnable at EVERY tier. Empty/false on
+  // every non-25 / free-play run (a no-op).
+  codaLines: [],
+  codaSubLens: [],
+  codaActive: false,
+  codaTyped: 0,
+  // One-shot: fires the wordprocessor theme's beginFinale(subLens) render signal the
+  // moment the first coda line becomes the active prompt (see maybeSignalCoda).
+  codaSignaled: false,
+
   // Slot picker ("CHOOSE YOUR GAME") — the returning-player front door. Games
   // are an unlimited, growable list; the picker shows one row per game plus a
   // trailing "＋ NEW GAME" row, so slotsSelected ranges over [0 .. count].
@@ -173,6 +197,8 @@ const state = {
   settingsReturn: 'title',   // 'title' | 'pause'
   settingsSelectedRow: 0,
   settingsEraseConfirm: false,
+  // Blocked-words editor: which parent-added chip is highlighted for removal.
+  blockWordsSelected: 0,
 
   // SURVIVAL wrapper state — always additive on top of the base engine.
   // Never read/written unless settings.playStyle === 'survival'.
@@ -319,6 +345,58 @@ function drawRandomPattern() {
   const pool = state.freePlay ? level.pool : drawablePool(level);
   if (!pool || pool.length === 0) return level.intro[level.intro.length - 1] || [];
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// Level 25 only: begin the "MY STORY" coda the moment the level's TRADITIONAL win
+// target is first reached. The manifesto/story is NOT spliced up front (that made
+// it the whole level); instead the coda is built HERE, once, as the deterministic
+// tail from the current position onward: we build the ordered token lines, TRUNCATE
+// the remaining (un-reached) normal patterns, and APPEND the coda so the very next
+// prompt is the coda's first line. The engine then serves them in order via its
+// existing index mechanism (getNextPattern). Winnability holds at every tier: the
+// coda is finite, fully typeable at L25, and sits ahead of any pool draw.
+//
+// The story POOL = validated-generated stories (if the local-LLM prefetch landed) +
+// the static bank (the offline floor). pickKeyboardStory rotates deterministically
+// by this slot's per-level story counter (a different story each replay, mirroring
+// the history-card rotation); assembleCoda appends the EXPERIENCE-tier manifesto as
+// the capstone and includes ≥1 typo→Backspace→correct beat. Static-only guarantees a
+// non-empty, all-26-letter coda even with no server — so the coda is never empty.
+function startCoda() {
+  const rotation = Slots.getStoryRotation(25);
+  // Fold any fresh generated batch into the accumulating quality-cache (dedup against
+  // static + existing cache, capped, defensive) and build the rotation pool from the
+  // MERGED cache. If generation never landed, the cache is empty, or everything deduped
+  // away, buildStoryPool still appends the static bank — the coda is never empty and
+  // winnability never depends on the cache (security.md rule 4; static floor intact).
+  const merged = addGeneratedStories(takeKeyboardStories());
+  const pool = buildStoryPool(merged);
+  const story = pickKeyboardStory(pool, rotation);
+  const coda = assembleCoda(story, getWinRatio(), rotation);
+  Slots.bumpStoryRotation(25);
+  state.codaLines = coda;
+  // Non-Backspace token count per line — a Backspace never adds a character to the
+  // document, and the theme's boundary-space counter only counts forward keystrokes.
+  state.codaSubLens = coda.map(line => line.filter(t => t !== 'Backspace').length);
+  state.codaActive = true;
+  state.codaTyped = 0;
+  state.codaSignaled = false;
+  // Make the coda the tail from the current (next-to-serve) position onward: drop any
+  // un-reached normal patterns, then append the coda lines in order.
+  if (state.currentPattern < state.patterns.length) {
+    state.patterns.length = state.currentPattern;
+  }
+  state.patterns.push(...coda.map(l => l.slice()));
+}
+
+// Fire the wordprocessor theme's beginFinale(subLens) render signal the first time a
+// coda line becomes the active prompt (fresh paragraph + top-band clamp; the theme
+// only responds to the hook — themes never gate input, theme-authoring.md).
+function maybeSignalCoda() {
+  if (state.codaSignaled || state.freePlay || state.level !== 25 || !state.codaActive) return;
+  state.codaSignaled = true;
+  const theme = activeTheme(state.level);
+  if (theme && theme.beginFinale) theme.beginFinale(state.codaSubLens);
 }
 
 function getNextPattern() {
@@ -571,6 +649,10 @@ function handleGameKey(e) {
       state.patternsCompleted++;
       state.currentIndex = 0;
 
+      // Level 25 coda: once active, every completed pattern is a coda line served as
+      // the tail (startCoda) — count them toward the coda's completion gate.
+      if (state.codaActive) state.codaTyped++;
+
       // SURVIVAL: timer stops between patterns — no clock runs during the
       // brief transition, exactly like the base engine has no penalty here.
       stopSurvivalTimer();
@@ -606,13 +688,36 @@ function handleGameKey(e) {
       const namePending = !state.freePlay
         && state.nameMomentWord
         && !state.nameMomentDone;
-      if (themeComplete && state.patternsCompleted >= minPatterns && !cardPending && !namePending) {
+      // The traditional win target: theme game won AND enough patterns typed AND
+      // the guaranteed card + name moment done. On a normal level, this ENDS the
+      // level. On Level 25 it does NOT — it rolls into the "MY STORY" coda instead.
+      const normalTargetMet = themeComplete
+        && state.patternsCompleted >= minPatterns
+        && !cardPending && !namePending;
+
+      // Level 25 coda (js/keyboard-story.js): the manifesto + walk-the-keyboard
+      // story is a post-target TAIL, not an up-front block. When the traditional
+      // target is FIRST met, begin the coda (startCoda) instead of ending; the level
+      // ends only once the WHOLE coda has been typed — guaranteed, never missable,
+      // and winnable at every tier (the coda is finite and fully typeable at L25).
+      if (state.level === 25 && !state.freePlay) {
+        if (normalTargetMet && !state.codaActive) {
+          startCoda(); // static fallback guarantees a non-empty, all-26-letter coda
+        }
+        if (state.codaActive && state.codaTyped >= state.codaLines.length) {
+          setTimeout(showLevelComplete, 400);
+          return;
+        }
+        // else: still in normal play, or mid-coda — fall through to the next prompt
+        // (getNextPattern serves the next coda line once the coda is active).
+      } else if (normalTargetMet) {
         setTimeout(showLevelComplete, 400);
         return;
       }
 
       setTimeout(() => {
         const nextPattern = getNextPattern();
+        maybeSignalCoda();
         renderPrompt(state, level, nextPattern);
         if (settings.hintStyle === 'obvious') showFingerHint(nextPattern[0]);
         startSurvivalPatternTimer(nextPattern);
@@ -1058,6 +1163,24 @@ function startGame() {
     state.patterns.splice(insertAt, 0, state.nameMomentWord.split(''));
   }
 
+  // ── Level 25 "MY STORY" coda (js/keyboard-story.js) ──
+  // NOT spliced up front anymore (that made the manifesto the whole level). The
+  // coda is the game's last typed moment, built LATER (startCoda) the instant the
+  // traditional win target is reached, and served as the tail from there. Here we
+  // only (a) reset the coda state and (b) fire a fire-and-forget local-LLM prefetch
+  // for a fresh walk-the-keyboard story, so a validated batch can be READY by the
+  // time the coda is assembled a few seconds later. The prefetch never blocks and
+  // never gates play; if it hasn't landed (the common static-host case), the coda
+  // falls back to the built-in static story bank immediately (the offline floor).
+  state.codaLines = [];
+  state.codaSubLens = [];
+  state.codaActive = false;
+  state.codaTyped = 0;
+  state.codaSignaled = false;
+  if (state.level === 25 && !state.freePlay) {
+    prefetchKeyboardStories(getWinRatio());
+  }
+
   state.totalCorrect = 0;
   state.totalAttempts = 0;
   state.streak = 0;
@@ -1171,14 +1294,22 @@ function renderSettingsScreen() {
   container.innerHTML = rows.map((row, i) => {
     const active = row.active(settings);
     const selected = i === state.settingsSelectedRow;
-    const value = row.action ? '' : row.display(settings[row.key]);
     const descriptor = row.action ? row.descriptor() : row.descriptor(settings[row.key]);
+    // Value cell: rows with a `summary` (e.g. BLOCKED WORDS) always show their
+    // summary text; other action rows show PRESS RETURN when selected; ordinary
+    // rows show their cycled value. Everything here is fixed-code text or a
+    // count derived from sanitized settings — never a user-typed word (those
+    // are rendered only in the editor via textContent).
+    let valueCell;
+    if (typeof row.summary === 'function') valueCell = row.summary(settings);
+    else if (row.action) valueCell = selected ? 'PRESS RETURN' : '';
+    else valueCell = row.display(settings[row.key]);
     const cls = ['settings-row', selected ? 'selected' : '', active ? '' : 'inactive'].filter(Boolean).join(' ');
     return `
       <div class="${cls}">
         <span class="settings-row-cursor">&gt;</span>
         <span class="settings-row-label">${row.label}</span>
-        <span class="settings-row-value">${row.action ? (selected ? 'PRESS RETURN' : '') : value}</span>
+        <span class="settings-row-value">${valueCell}</span>
         ${descriptor ? `<span class="settings-row-descriptor">${descriptor}</span>` : ''}
       </div>`;
   }).join('');
@@ -1244,11 +1375,169 @@ function handleSettingsKey(e) {
     if (row.action && row.key === 'erase') {
       state.settingsEraseConfirm = true;
       $('settings-erase-confirm').classList.remove('hidden');
+    } else if (row.action && row.editor === 'blockwords') {
+      // Save the current settings first (cheap, keeps kk-settings consistent),
+      // then open the dedicated free-text editor. Escape there returns here.
+      saveSettings(settings);
+      openBlockWords();
     }
   } else if (e.key === 'Escape' || e.key === 'Tab') {
     saveSettings(settings);
     closeSettings();
   }
+}
+
+// ─── Blocked-words editor (parent-facing free-text safety control) ──────────
+// A parent can ADD words the game must never show (additive to the built-in
+// kid-safety FLOOR in word-blocklist.js) and REMOVE their own additions. The
+// floor is NEVER shown here and NEVER removable — the only list this screen
+// touches is settings.blockedWords (the additive parent layer). Typed words are
+// UNTRUSTED free text (security.md rule 7): every add is sanitized at the
+// boundary (lowercased, stripped to [a-z], length 2–20, deduped, capped at 40 —
+// via saveSettings → sanitizeBlockedWords) and every word is rendered with
+// textContent only (rule 1), never innerHTML. One Rule: this can only make play
+// SAFER; Escape always exits cleanly to Settings.
+
+function setBlockStatus(msg) {
+  const el = $('blockword-status');
+  if (el) el.textContent = msg || '';   // textContent — never a DOM sink
+}
+
+function renderBlockWordsList() {
+  const list = $('blockword-list');
+  if (!list) return;
+  list.textContent = '';   // clear without innerHTML
+  const words = Array.isArray(settings.blockedWords) ? settings.blockedWords : [];
+  if (words.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'blockwords-empty';
+    empty.textContent = 'NO EXTRA WORDS YET';
+    list.appendChild(empty);
+    return;
+  }
+  if (state.blockWordsSelected >= words.length) state.blockWordsSelected = words.length - 1;
+  if (state.blockWordsSelected < 0) state.blockWordsSelected = 0;
+  words.forEach((w, i) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'blockword-chip' + (i === state.blockWordsSelected ? ' selected' : '');
+    const label = document.createElement('span');
+    label.className = 'blockword-chip-text';
+    label.textContent = w;             // parent-typed word — textContent ONLY
+    const x = document.createElement('span');
+    x.className = 'blockword-chip-x';
+    x.textContent = 'X';
+    chip.appendChild(label);
+    chip.appendChild(x);
+    // Mouse path for a parent: click a chip to remove that (parent-added) word.
+    chip.addEventListener('click', () => { removeBlockWord(i); });
+    list.appendChild(chip);
+  });
+}
+
+function addBlockWord() {
+  const inputEl = $('blockword-input');
+  if (!inputEl) return;
+  // Sanitize at the boundary — allowlist [a-z], length 2–20.
+  const clean = String(inputEl.value || '').toLowerCase().replace(/[^a-z]/g, '');
+  inputEl.value = '';
+  if (clean.length < 2 || clean.length > 20) {
+    setBlockStatus(clean.length ? 'USE 2-20 LETTERS' : '');
+    return;
+  }
+  // Already covered by the built-in floor OR already added → don't add a
+  // duplicate/floor chip. (This is how the floor stays invisible + immutable
+  // here: a floor word is "already blocked", never a removable parent chip.)
+  if (isBlockedWord(clean)) {
+    setBlockStatus('ALREADY BLOCKED');
+    const idx = (settings.blockedWords || []).indexOf(clean);
+    if (idx >= 0) { state.blockWordsSelected = idx; renderBlockWordsList(); }
+    return;
+  }
+  if ((settings.blockedWords || []).length >= 40) {
+    setBlockStatus('LIST FULL (40)');
+    return;
+  }
+  const nextList = [...(settings.blockedWords || []), clean];
+  // saveSettings sanitizes + persists + re-installs the live filter
+  // (setUserBlockedWords), so the new word takes effect immediately.
+  Object.assign(settings, saveSettings({ ...settings, blockedWords: nextList }));
+  const idx = settings.blockedWords.indexOf(clean);
+  state.blockWordsSelected = idx >= 0 ? idx : Math.max(0, settings.blockedWords.length - 1);
+  setBlockStatus(`ADDED "${clean.toUpperCase()}"`);
+  renderBlockWordsList();
+}
+
+function removeBlockWord(i) {
+  // Removes ONLY from the additive parent layer (settings.blockedWords). There
+  // is no path here to a floor word — floor words are never in this list, and
+  // isBlockedWord() keeps them blocked regardless. Additive-only guaranteed.
+  const words = (settings.blockedWords || []).slice();
+  if (i < 0 || i >= words.length) return;
+  const removed = words.splice(i, 1)[0];
+  Object.assign(settings, saveSettings({ ...settings, blockedWords: words }));
+  if (state.blockWordsSelected >= words.length) {
+    state.blockWordsSelected = Math.max(0, words.length - 1);
+  }
+  setBlockStatus(removed ? `REMOVED "${removed.toUpperCase()}"` : '');
+  renderBlockWordsList();
+  const inputEl = $('blockword-input');
+  if (inputEl) inputEl.focus();
+}
+
+function openBlockWords() {
+  state.blockWordsSelected = 0;
+  showScreen('blockwords', state);      // sets state.screen = 'blockwords'
+  const inputEl = $('blockword-input');
+  if (inputEl) inputEl.value = '';
+  setBlockStatus('');
+  renderBlockWordsList();
+  // Focus after the screen is visible so the caret lands in the add box.
+  requestAnimationFrame(() => { if (inputEl) inputEl.focus(); });
+}
+
+function closeBlockWords() {
+  const inputEl = $('blockword-input');
+  if (inputEl) inputEl.blur();
+  // Persist (belt-and-suspenders; every op already saved) and refresh the
+  // Settings screen so the BLOCKED WORDS count summary is current.
+  saveSettings(settings);
+  renderSettingsScreen();
+  showScreen('settings', state);
+}
+
+function handleBlockWordsKey(e) {
+  const inputEl = $('blockword-input');
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeBlockWords();
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addBlockWord();
+    return;
+  }
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    const words = settings.blockedWords || [];
+    if (words.length === 0) return;
+    const dir = e.key === 'ArrowDown' ? 1 : -1;
+    state.blockWordsSelected = (state.blockWordsSelected + dir + words.length) % words.length;
+    renderBlockWordsList();
+    return;
+  }
+  if (e.key === 'Backspace' && inputEl && inputEl.value === '') {
+    // Empty box + Backspace removes the highlighted parent word (tag-input
+    // idiom). Never touches the floor (those words aren't in this list).
+    e.preventDefault();
+    const words = settings.blockedWords || [];
+    if (words.length > 0) removeBlockWord(state.blockWordsSelected);
+    return;
+  }
+  // All other keys (letters, and Backspace while the box has text) flow to the
+  // native input untouched — this is a parent-facing text field, not the kid's
+  // typing mechanic (mirrors the name-entry field).
 }
 
 // ─── Act 6 — Text Worlds: the back-wall door entry/exit ─────────────────────
@@ -1552,6 +1841,10 @@ document.addEventListener('keydown', (e) => {
 
     case 'settings':
       handleSettingsKey(e);
+      break;
+
+    case 'blockwords':
+      handleBlockWordsKey(e);
       break;
 
     case 'victory':

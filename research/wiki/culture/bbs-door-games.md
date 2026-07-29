@@ -73,6 +73,8 @@ commercial dial-up MMORPG (Kesmai/Neverwinter Nights/Meridian 59 lineage) rather
 a BBS door game or MUD; that page's "Timing relative to LORD" confirm-cue is grounded
 in this page's BBS-to-telnet transition note.
 [[ascii-overhead-world-conventions]] — cross-family movement comparison (2026-07-17).
+[[cbbs-first-bbs-1978]] — the dedicated fact node for CBBS itself (date, founders,
+the blizzard story), the origin point this whole genre grew from.
 
 ## Downstream design flags — kid-safety and the One Rule
 

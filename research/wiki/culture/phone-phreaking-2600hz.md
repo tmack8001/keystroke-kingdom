@@ -17,7 +17,10 @@ documents an intentional connection between this tone and Atari's naming of the 
 
 The Level 20 terminal whispers `> 2600 HZ`. See [[hacker-culture]] for the full list of
 terminal whispers, and [[eliza]] / [[mark-ii-moth-1947]] / [[forty-two]] for the
-sibling whispers on that same terminal.
+sibling whispers on that same terminal. See [[john-draper]] for the fuller,
+citation-checked biography of "Captain Crunch" behind this tone, and
+[[2600-magazine]] for the magazine this tone gave its name to (2026-07-27 research
+batch, `research/hacker-culture.md`).
 
 ## The facts
 

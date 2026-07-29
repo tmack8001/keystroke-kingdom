@@ -377,10 +377,14 @@
   letter-spacing: 1px;
   color: var(--crt-amber);
   text-shadow: 0 0 6px var(--crt-amber);
-  white-space: nowrap;
-  overflow: hidden;
   max-width: 96px;
-  text-overflow: ellipsis;
+  /* Single-word labels stay on one line (no space to break); multi-word
+     labels ("RUBBER DUCK", "HELLO WORLD") wrap to a second line instead of
+     being ellipsis-clipped. Cells stay the same fixed size. */
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
+  line-height: 1.3;
 }
 
 .collection-cell.locked .collection-cell-label {
@@ -1330,4 +1334,70 @@
   font-size: 6px;
   color: var(--atari-dim);
   letter-spacing: 1px;
+}
+
+/* ─── Blocked-words editor (parent-facing free-text safety control) ─────── */
+.blockwords-intro {
+  font-size: 7px;
+  color: #999;
+  letter-spacing: 1px;
+  line-height: 1.9;
+  margin-bottom: 26px;
+  max-width: 560px;
+}
+
+.blockwords-input {
+  margin-bottom: 10px;
+}
+
+.blockwords-status {
+  min-height: 10px;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 6px rgba(255, 176, 0, 0.4);
+  margin-bottom: 18px;
+}
+
+.blockwords-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: 620px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.blockwords-empty {
+  font-size: 7px;
+  color: #555;
+  letter-spacing: 1px;
+}
+
+.blockword-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--crt-green-dim);
+  color: var(--crt-green);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  padding: 8px 10px;
+  cursor: pointer;
+  outline: none;
+}
+
+.blockword-chip.selected {
+  border-color: var(--crt-green);
+  box-shadow: 0 0 10px rgba(0, 255, 102, 0.35);
+  text-shadow: 0 0 6px var(--crt-green);
+}
+
+.blockword-chip-x {
+  color: var(--nudge-red);
+  font-size: 8px;
 }

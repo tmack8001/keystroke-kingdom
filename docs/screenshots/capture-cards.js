@@ -4,38 +4,57 @@
 //
 // Why full playthrough and not a state-injection shortcut: js/main.js is
 // loaded as an ES module with zero `window` exposure (no globals for
-// `state`, `showLevelComplete`, `applyLevelTheme`, `activeTheme`, etc. —
-// confirmed by reading the file directly, 2026-07-12). The only way to reach
-// the ACTUAL showLevelComplete() render (not a hand-rolled DOM reconstruction)
-// is to drive the real keydown listener the same way a player's keyboard
-// does. This also matches the project's QA philosophy (journal L4/F20:
-// guaranteed beats probabilistic, silent absence ships) — every card is
-// captured via the exact code path a real session takes.
+// `state`, `showLevelComplete`, `applyLevelTheme`, `activeTheme`, etc.). The
+// only way to reach the ACTUAL showLevelComplete() render (not a hand-rolled
+// DOM reconstruction) is to drive the real keydown listener the same way a
+// player's keyboard does. This also matches the project's QA philosophy
+// (journal L4/F20: guaranteed beats probabilistic, silent absence ships) —
+// every card is captured via the exact code path a real session takes.
 //
-// Approach per level:
-//   1. Navigate select -> ready -> keyboard-preview -> game (shared helper).
-//   2. Loop: read the DOM's currently-`active` `.prompt-letter`, translate
-//      its *display* glyph back to the real token the engine expects
-//      (';' displays as '?', ' ' as '␣', 'Backspace' as '⌫' — see
-//      js/ui/hud.js promptDisplay()), and press it with page.keyboard.press()
-//      (named keys 'Backspace'/'Space' for those two, the literal character
-//      otherwise — Playwright synthesizes correct e.key/shift state for both
-//      letters and symbols, matching the engine's keydown-based input
-//      contract in CLAUDE.md; .type() was tried first but silently mistypes
-//      'Backspace' as eight literal letter keys instead of one keydown).
-//      Repeat until '#complete-overlay' loses the 'hidden' class (the true
-//      "fully rendered, real player-visible" signal).
-//   3. Verify '#history-card' is present + unhidden + populated, screenshot
-//      it, and log any legibility red flags (clipping, overflow, empty
-//      fields) for the report — never touch game files.
+// ── THE MODEL THIS SCRIPT NOW TARGETS (rebuilt 2026-07-19) ────────────────
+// history-cards.js is no longer a one-card-per-level OBJECT. It is a FLAT
+// ARRAY (js/history-cards.js `HISTORY_CARDS`): 55 entries = 54 POOLED cards
+// (each carrying its EARLIEST-typeable `level`) + 1 SECRET card (`joshua`,
+// `level: null`, `secret: true`). A single level now hides a POOL of several
+// cards, and each play surfaces exactly ONE guaranteed card, chosen by the
+// DETERMINISTIC picker:
 //
-// Every one of the 17 HISTORY_CARDS entries (js/history-cards.js) MUST
-// produce a screenshot or the script exits non-zero — guaranteed, not
-// probabilistic (journal L4).
+//   pickGuaranteedCard(level, collectedIds, rotation)
+//     pool       = cardsForLevel(level)
+//     uncollected= pool.filter(c => !collectedIds.includes(c.id))
+//     candidates = uncollected.length ? uncollected : pool
+//     return candidates[rotation % candidates.length]
+//
+// To surface a SPECIFIC target card at its level, we seed the active save
+// slot (kk-slots, js/slots.js) so that EVERY other card in that level's pool
+// is already collected and ONLY the target is uncollected. Then
+// `uncollected === [target]`, `candidates === [target]`, and the picker
+// returns the target regardless of rotation. buildPatterns() (js/main.js)
+// reads `Slots.collectedIds()` / `Slots.getCardRotation()` fresh from
+// localStorage at game start, so writing kk-slots just before the final
+// "start the game" keypress is sufficient — no game code is touched.
+//
+// GUARANTEED, NOT PROBABILISTIC (journal L4): every one of the 54 POOLED
+// cards MUST produce a screenshot of ITS OWN card, or the script exits
+// non-zero. The expected set is derived from the live data
+// (`HISTORY_CARDS.filter(c => !c.secret)`), never a stale literal — that
+// stale literal (the old `CARD_LEVELS` list + `Object.keys()`) is exactly
+// what broke this script at the 2026-07-19 model rebuild.
+//
+// THE SECRET CARD (`joshua`, level: null) is NOT reachable via any
+// level-complete overlay — it is collected by typing a magic word (wopr /
+// joshua / ...) and only ever appears in the collection gallery. It is
+// therefore EXCLUDED from the guaranteed per-level loop and captured
+// separately, best-effort, from its collection-gallery cell; a failure there
+// is logged but NEVER causes a non-zero exit (it is not part of the
+// per-level-overlay contract).
 //
 // Usage:
-//   python3 -m http.server 8151 --directory /Users/trevormack/dev/keystroke-kingdom
-//   DEV_URL=http://127.0.0.1:8151 node docs/screenshots/capture-cards.js
+//   python3 -m http.server 8801 --directory /Users/trevormack/dev/keystroke-kingdom
+//   DEV_URL=http://127.0.0.1:8801 node docs/screenshots/capture-cards.js
+//   # optional filter — capture only specific card ids or levels:
+//   DEV_URL=http://127.0.0.1:8801 node docs/screenshots/capture-cards.js ada-lovelace,pixel
+//   DEV_URL=http://127.0.0.1:8801 node docs/screenshots/capture-cards.js L13
 
 const fs = require('fs');
 const path = require('path');
@@ -49,29 +68,20 @@ const {
 const OUT_DIR = path.join(__dirname, 'history-cards');
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-// Source of truth for which levels carry a card — mirrors js/history-cards.js
-// HISTORY_CARDS keys exactly (verified 1:1 against that file, 17 entries).
-// Kept as a literal list here (not imported) because this is a Node/CJS
-// script and history-cards.js is an ES module meant for the browser: the
-// live in-page `import()` inside page.evaluate (see verifyCardCount below)
-// is the actual cross-check that guarantees this list hasn't drifted.
-const CARD_LEVELS = [4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 22, 24, 25];
-
-// Generous per-level safety cap: the largest theme win-condition pool we
-// found (Pac-Man, 20 dots; Breakout, 18 bricks) still completes well under
-// this. getNextPattern() falls back to drawRandomPattern() forever once the
-// intro/pool list is exhausted, so the loop is otherwise unbounded.
+// Generous per-level safety cap. getNextPattern() falls back to
+// drawRandomPattern() forever once the intro/pool list is exhausted, so the
+// play loop is otherwise unbounded.
 const MAX_PATTERNS_PER_LEVEL = 120;
 const MAX_KEYS_PER_PATTERN = 40;
-// Themes whose patternComplete() gate is a real physics/placement simulation
-// rather than "one enemy per pattern" (Tetris needs LINES_TO_WIN=3 actual
-// line clears, which can take many piece-locks and therefore many keystrokes
-// to accumulate, and the RNG on piece shape + column targeting makes the
-// keystroke count needed genuinely variable run to run — observed anywhere
-// from ~200 to 800+ keystrokes across repeated captures) legitimately need
-// much longer than the ~15-20s other levels finish in. 240s gives generous
-// headroom above the worst observed run.
+// Tetris (L8) is the one theme whose patternComplete() gate is a real
+// placement simulation (LINES_TO_WIN actual line clears), taking anywhere
+// from ~200 to 800+ keystrokes run to run — legitimately much longer than the
+// ~15-20s other levels finish in. 240s gives generous headroom.
 const PER_LEVEL_TIMEOUT_MS = 240_000;
+const STALL_TIMEOUT_MS = 8000;
+
+// ── DOM helpers (unchanged from the pre-rebuild script — this logic is the
+// correct real-player-visible signal path and is deliberately preserved) ────
 
 // Reverse of js/ui/hud.js promptDisplay(): the DOM shows a friendlier glyph
 // for a few tokens than the literal character the engine's keydown handler
@@ -98,20 +108,11 @@ async function isOverlayVisible(page) {
 }
 
 // Types whatever the DOM currently shows as the active/expected prompt
-// letter, over and over, until the real level-complete overlay unhides
-// (or the safety caps trip). This is deliberately dumb: it never consults
-// js/levels.js pattern data — it only ever acts on what a human player
-// would see on screen, which is the whole point (real overlay, not a
-// reconstruction).
-//
-// Failure is judged on a GLOBAL wall-clock stall (no .active element AND no
-// visible overlay for STALL_TIMEOUT_MS straight), not a per-pattern
-// iteration budget — some patterns legitimately take longer to transition
-// (e.g. the card-word pattern's card-glint flourish, or a theme's own
-// win-condition animation), and a per-pattern cap treated that normal
-// variance as failure even though the run would have recovered fine.
-const STALL_TIMEOUT_MS = 8000;
-
+// letter, over and over, until the real level-complete overlay unhides (or
+// the safety caps trip). Deliberately dumb: it only ever acts on what a human
+// player would see on screen (real overlay, not a reconstruction). Failure is
+// judged on a GLOBAL wall-clock stall, not a per-pattern budget — some
+// patterns legitimately take longer to transition.
 async function playLevelToCompletion(page, levelNum) {
   const deadline = Date.now() + PER_LEVEL_TIMEOUT_MS;
   let keysTyped = 0;
@@ -125,9 +126,6 @@ async function playLevelToCompletion(page, levelNum) {
 
     const display = await readActiveToken(page);
     if (display === null) {
-      // Between-pattern transition window (150-300ms per main.js) or a
-      // longer theme-driven animation — no .active element exists right
-      // now. Wait and retry; only a sustained stall is a real failure.
       if (Date.now() - lastProgressAt > STALL_TIMEOUT_MS) {
         return { ok: false, reason: `no .prompt-letter.active or overlay for ${STALL_TIMEOUT_MS}ms straight (level ${levelNum}, ${keysTyped} keys typed)` };
       }
@@ -137,22 +135,15 @@ async function playLevelToCompletion(page, levelNum) {
 
     lastProgressAt = Date.now();
     const token = displayGlyphToToken(display);
-    // page.keyboard.press() (not .type()) for every token: .type() treats
-    // its argument as literal text to be typed character-by-character, so
-    // the string 'Backspace' would be typed as eight separate letter
-    // keydowns (B,a,c,k,...) instead of firing one real Backspace keydown —
-    // this silently stalled Level 25 (word-processor intro pattern
-    // ['j','Backspace']) during the first capture run. press() accepts
-    // Playwright's named keys ('Backspace', ' '/'Space') and single
-    // characters (letters, digits, symbols, exact-case letters for the
-    // Shift-token contract) uniformly and fires the correct e.key either way.
+    // press() (not type()) so 'Backspace'/'Space' fire one named keydown each,
+    // and single characters (letters, digits, symbols, exact-case Shift-token
+    // letters) fire the correct e.key uniformly.
     const pressKey = token === ' ' ? 'Space' : token;
     await page.keyboard.press(pressKey, { delay: 5 });
     keysTyped++;
     if (keysTyped > MAX_KEYS_PER_PATTERN * MAX_PATTERNS_PER_LEVEL) {
       return { ok: false, reason: `exceeded overall key budget (${keysTyped} keys, level ${levelNum}) without completing` };
     }
-    // Small settle so the DOM's .active class has updated before the next read.
     await page.waitForTimeout(40);
   }
 }
@@ -175,38 +166,68 @@ async function readCardOverlayState(page) {
     const count = $('history-card-count') ? $('history-card-count').textContent : null;
     const isNew = $('history-card-new') && !$('history-card-new').classList.contains('hidden');
 
-    // Legibility checks a screenshot alone won't flag reliably: does the
-    // fact text's rendered scrollHeight exceed its box (overflow/clipping)?
     const factEl = $('history-card-fact');
     let overflow = false;
-    if (factEl) {
-      overflow = factEl.scrollHeight > factEl.clientHeight + 2;
-    }
+    if (factEl) overflow = factEl.scrollHeight > factEl.clientHeight + 2;
 
     return {
-      overlayVisible: true,
-      cardVisible: true,
+      overlayVisible: true, cardVisible: true,
       word, title, year, fact, count, isNew, overflow,
       bodyClass: document.body.className,
     };
   });
 }
 
-// Cross-check CARD_LEVELS against the live HISTORY_CARDS export via a real
-// in-page module import, so a drift between this script's literal list and
-// js/history-cards.js is caught loudly rather than silently under-capturing.
-async function verifyCardLevelsMatch(page, baseUrl) {
-  const liveKeys = await page.evaluate(async () => {
+// ── Live data pull: the flat array is the single source of truth ────────────
+// Imports js/history-cards.js in-page and returns the whole card list. Every
+// downstream decision (which cards to capture, the expected count, the total
+// for the "CARD n OF N" check) derives from THIS, never a literal in this
+// file — which is the whole point of the fix.
+async function fetchLiveCards(page) {
+  return page.evaluate(async () => {
     const mod = await import('/js/history-cards.js');
-    return Object.keys(mod.HISTORY_CARDS).map(Number).sort((a, b) => a - b);
+    if (!Array.isArray(mod.HISTORY_CARDS)) {
+      return { isArray: false };
+    }
+    return {
+      isArray: true,
+      total: mod.TOTAL_CARDS,
+      cards: mod.HISTORY_CARDS.map(c => ({
+        id: c.id,
+        level: c.level,
+        secret: !!c.secret,
+        word: c.word,
+        title: c.title,
+        year: c.year,
+      })),
+    };
   });
-  const expected = [...CARD_LEVELS].sort((a, b) => a - b);
-  const same = liveKeys.length === expected.length && liveKeys.every((v, i) => v === expected[i]);
-  return { same, liveKeys, expected };
 }
 
-async function navigateToLevelViaSelect(page, baseUrl, levelEntry) {
-  await goToSelect(page, baseUrl);
+// Write the active slot's collected-card set (and reset that level's rotation)
+// directly into kk-slots so the deterministic picker will surface `targetId`.
+// Called AFTER an active slot exists (goToSelect's name-confirm creates slot 0)
+// and BEFORE the game starts (buildPatterns reads kk-slots fresh at start).
+async function seedCollectedForTarget(page, level, collectedIds) {
+  return page.evaluate(({ level, collectedIds }) => {
+    let st = null;
+    try { st = JSON.parse(localStorage.getItem('kk-slots')); } catch (e) { st = null; }
+    if (!st || !Array.isArray(st.slots) || !Number.isInteger(st.active) || !st.slots[st.active]) {
+      return { ok: false, reason: 'no active slot to seed' };
+    }
+    const s = st.slots[st.active];
+    s.cards = Array.isArray(collectedIds) ? collectedIds.slice() : [];
+    s.cardRotation = s.cardRotation && typeof s.cardRotation === 'object' ? s.cardRotation : {};
+    s.cardRotation[String(level)] = 0; // rotation irrelevant once only the target is uncollected
+    localStorage.setItem('kk-slots', JSON.stringify(st));
+    return { ok: true, active: st.active, collectedCount: s.cards.length };
+  }, { level, collectedIds });
+}
+
+// Navigate select -> ready -> keyboard-preview, seed the target card into the
+// active slot, then Space into the game (which runs buildPatterns -> picker).
+async function navigateToLevelAndSeed(page, baseUrl, levelEntry, level, collectedIds) {
+  await goToSelect(page, baseUrl);            // creates + activates slot 0, WOPR select
   for (let i = 0; i < levelEntry.actIdx; i++) {
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(180);
@@ -217,12 +238,45 @@ async function navigateToLevelViaSelect(page, baseUrl, levelEntry) {
   }
   await page.keyboard.press('Enter');   // select level -> title/name entry
   await page.waitForTimeout(350);
-  await page.keyboard.press('Enter');   // confirm name -> ready-screen
+  await page.keyboard.press('Enter');   // confirm name -> ready (setActiveName on slot 0)
   await page.waitForTimeout(350);
-  await page.keyboard.press('Space');   // ready -> keyboard-preview-screen
+  await page.keyboard.press('Space');   // ready -> keyboard-preview
   await page.waitForTimeout(350);
-  await page.keyboard.press('Space');   // keyboard-preview -> game-screen
+
+  const seed = await seedCollectedForTarget(page, level, collectedIds);   // just-in-time
+  if (!seed.ok) throw new Error(`seed failed: ${seed.reason}`);
+
+  await page.keyboard.press('Space');   // keyboard-preview -> game (buildPatterns picks target)
   await page.waitForTimeout(600);
+  return seed;
+}
+
+// ── Best-effort secret-card capture (collection gallery) ────────────────────
+// The secret card is not reachable via a level-complete overlay. Typing a WOPR
+// phrase collects it; the slot picker's "C" opens the collection gallery where
+// its cell renders. Screenshot that single cell. NEVER affects the exit code.
+async function captureSecretCard(page, baseUrl, secretCard) {
+  try {
+    // goToSelect creates+activates slot 0 and types 'wopr', which calls
+    // collectCardId(WARGAMES_CARD_ID) on the active slot — the secret card is
+    // now owned and persisted in kk-slots.
+    await goToSelect(page, baseUrl);
+    await page.reload();                       // a slot now exists -> boots to the slot picker
+    await page.waitForTimeout(700);
+    await page.keyboard.press('c');            // picker: open the highlighted game's collection
+    await page.waitForTimeout(500);
+
+    const cell = page.locator('.collection-cell.secret');
+    const n = await cell.count();
+    if (n === 0) return { ok: false, reason: 'no .collection-cell.secret found in gallery' };
+
+    const owned = await cell.first().evaluate(el => el.classList.contains('owned'));
+    const outPath = path.join(OUT_DIR, 'secret-' + secretCard.id + '.png');
+    await cell.first().screenshot({ path: outPath });
+    return { ok: true, file: outPath, owned };
+  } catch (err) {
+    return { ok: false, reason: 'exception: ' + err.message };
+  }
 }
 
 (async () => {
@@ -230,116 +284,151 @@ async function navigateToLevelViaSelect(page, baseUrl, levelEntry) {
   console.log('Base URL:', baseUrl);
   const { browser, page, consoleErrors } = await launchPage();
 
-  // ── Wire-check: confirm our level list matches the live game data ──────
+  // ── Load the live card data (flat array) ────────────────────────────────
   await page.goto(baseUrl);
-  const check = await verifyCardLevelsMatch(page, baseUrl);
-  if (!check.same) {
-    console.error('FATAL: CARD_LEVELS in this script does not match HISTORY_CARDS in js/history-cards.js');
-    console.error('  script :', check.expected.join(','));
-    console.error('  live   :', check.liveKeys.join(','));
+  const live = await fetchLiveCards(page);
+  if (!live.isArray) {
+    console.error('FATAL: HISTORY_CARDS is not an array — model changed again; update this script.');
     await browser.close();
     process.exit(1);
   }
-  console.log(`Wire-check OK: ${check.liveKeys.length} cards match js/history-cards.js exactly.\n`);
+  const pooled = live.cards.filter(c => !c.secret);
+  const secrets = live.cards.filter(c => c.secret);
+  const TOTAL_CARDS = live.total;
+  console.log(`Live data: ${live.cards.length} cards total = ${pooled.length} pooled + ${secrets.length} secret (TOTAL_CARDS=${TOTAL_CARDS}).`);
 
-  // Optional CLI filter for re-running just a subset after a partial failure
-  // (e.g. `node capture-cards.js 8,10,25`) — the wire-check above still runs
-  // against the full HISTORY_CARDS set regardless, so a typo'd filter can
-  // never silently narrow what's being validated for completeness.
-  const filterArg = process.argv[2];
-  const levelsToRun = filterArg
-    ? filterArg.split(',').map(s => Number(s.trim())).filter(n => CARD_LEVELS.includes(n))
-    : CARD_LEVELS;
-  if (filterArg) {
-    console.log(`Filtered run: ${levelsToRun.join(', ')} (of ${CARD_LEVELS.length} total cards)\n`);
+  // Map level -> the full pool of card ids at that level (for the seeding math).
+  const poolIdsByLevel = new Map();
+  for (const c of pooled) {
+    if (!poolIdsByLevel.has(c.level)) poolIdsByLevel.set(c.level, []);
+    poolIdsByLevel.get(c.level).push(c.id);
   }
 
-  const results = [];   // { level, ok, file, issues[] }
+  // Sanity: every pooled card must map to a real, navigable level (1-25).
+  const orphans = pooled.filter(c => !ALL_LEVELS.find(l => l.levelNum === c.level));
+  if (orphans.length) {
+    console.error('FATAL: pooled cards reference levels with no ALL_LEVELS entry:');
+    orphans.forEach(c => console.error(`  ${c.id} -> level ${c.level}`));
+    await browser.close();
+    process.exit(1);
+  }
+
+  // Optional CLI filter: comma-separated card ids and/or Lnn level tags. The
+  // full pooled set still defines the completeness contract for a full run.
+  const filterArg = process.argv[2];
+  let targets = pooled;
+  if (filterArg) {
+    const tokens = filterArg.split(',').map(s => s.trim()).filter(Boolean);
+    const idSet = new Set(tokens.filter(t => !/^L\d+$/i.test(t)));
+    const levelSet = new Set(tokens.filter(t => /^L\d+$/i.test(t)).map(t => Number(t.slice(1))));
+    targets = pooled.filter(c => idSet.has(c.id) || levelSet.has(c.level));
+    console.log(`Filtered run: ${targets.length} card(s) [${targets.map(c => c.id).join(', ')}]\n`);
+  }
+
+  // Fresh output dir for a full run so stale (old-model) PNGs never linger.
+  if (!filterArg) {
+    for (const f of fs.readdirSync(OUT_DIR)) {
+      if (f.endsWith('.png')) fs.rmSync(path.join(OUT_DIR, f));
+    }
+  }
+
+  const results = [];   // { id, level, ok, file, ... }
   const issues = [];    // flat list of legibility/content concerns for the report
 
-  for (const levelNum of levelsToRun) {
-    const levelEntry = ALL_LEVELS.find(l => l.levelNum === levelNum);
-    if (!levelEntry) {
-      results.push({ level: levelNum, ok: false, reason: 'no ALL_LEVELS entry' });
-      continue;
-    }
+  for (const card of targets) {
+    const levelEntry = ALL_LEVELS.find(l => l.levelNum === card.level);
+    const poolIds = poolIdsByLevel.get(card.level) || [card.id];
+    const collectedIds = poolIds.filter(id => id !== card.id); // everything BUT the target
 
-    console.log(`Level ${levelNum} (${levelEntry.filename}) — navigating + playing to completion...`);
+    console.log(`[${card.id}] L${card.level} (${levelEntry.levelSlug}) — pool ${poolIds.length}, seeding ${collectedIds.length} collected...`);
     const errorsBefore = consoleErrors.length;
 
     try {
-      await navigateToLevelViaSelect(page, baseUrl, levelEntry);
+      await navigateToLevelAndSeed(page, baseUrl, levelEntry, card.level, collectedIds);
 
-      const playResult = await playLevelToCompletion(page, levelNum);
+      const playResult = await playLevelToCompletion(page, card.level);
       if (!playResult.ok) {
-        results.push({ level: levelNum, ok: false, reason: playResult.reason });
+        results.push({ id: card.id, level: card.level, ok: false, reason: playResult.reason });
         console.error(`  FAILED: ${playResult.reason}`);
         continue;
       }
 
-      // showLevelComplete() populates all fields synchronously before
-      // unhiding #complete-overlay (confirmed by reading main.js directly),
-      // so no further wait is needed once isOverlayVisible() is true — but
-      // give the cardDrop CSS animation (0.4s) a moment to settle for a
-      // clean screenshot.
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(500); // let cardDrop settle for a clean shot
 
       const cardState = await readCardOverlayState(page);
       if (!cardState.overlayVisible) {
-        results.push({ level: levelNum, ok: false, reason: 'complete-overlay never became visible' });
+        results.push({ id: card.id, level: card.level, ok: false, reason: 'complete-overlay never became visible' });
         console.error('  FAILED: complete-overlay never became visible');
         continue;
       }
       if (!cardState.cardVisible) {
-        results.push({ level: levelNum, ok: false, reason: 'history-card stayed hidden (cardWordTyped likely never set)' });
+        results.push({ id: card.id, level: card.level, ok: false, reason: 'history-card stayed hidden (cardWordTyped likely never set)' });
         console.error('  FAILED: history-card stayed hidden');
         continue;
       }
 
-      // Content sanity checks (report-only, never auto-fixed).
-      if (!cardState.word || !cardState.word.trim()) issues.push(`L${levelNum}: empty card word`);
-      if (!cardState.title || !cardState.title.trim()) issues.push(`L${levelNum}: empty card title`);
-      if (!cardState.fact || !cardState.fact.trim()) issues.push(`L${levelNum}: empty card fact`);
-      if (cardState.overflow) issues.push(`L${levelNum} (${cardState.title}): fact text overflows its box (scrollHeight > clientHeight) — likely clipped for the player`);
-      if (cardState.count && !new RegExp(`OF ${check.liveKeys.length}$`).test(cardState.count)) {
-        issues.push(`L${levelNum}: card count "${cardState.count}" doesn't end in "OF ${check.liveKeys.length}" — TOTAL_CARDS mismatch?`);
+      // Correctness gate: the overlay MUST show the card we forced. If not, the
+      // seeding didn't steer the deterministic picker and the capture is wrong.
+      const wantWord = card.word.toUpperCase();
+      if (cardState.title !== card.title || cardState.word !== wantWord) {
+        results.push({
+          id: card.id, level: card.level, ok: false,
+          reason: `wrong card surfaced: got "${cardState.title}" / "${cardState.word}", wanted "${card.title}" / "${wantWord}"`,
+        });
+        console.error(`  FAILED: wrong card surfaced (got ${cardState.title}, wanted ${card.title})`);
+        continue;
       }
 
-      const filename = String(levelNum).padStart(2, '0') + '-' + levelEntry.levelSlug + '.png';
+      // Content sanity checks (report-only, never auto-fixed).
+      if (!cardState.fact || !cardState.fact.trim()) issues.push(`${card.id}: empty card fact`);
+      if (cardState.overflow) issues.push(`${card.id} (${cardState.title}): fact text overflows its box — likely clipped for the player`);
+      if (cardState.count && !new RegExp(`OF ${TOTAL_CARDS}$`).test(cardState.count)) {
+        issues.push(`${card.id}: card count "${cardState.count}" doesn't end in "OF ${TOTAL_CARDS}" — TOTAL_CARDS mismatch?`);
+      }
+
+      const filename = String(card.level).padStart(2, '0') + '-' + card.id + '.png';
       const outPath = path.join(OUT_DIR, filename);
       await page.screenshot({ path: outPath });
 
       const newErrors = consoleErrors.slice(errorsBefore);
-      if (newErrors.length) {
-        issues.push(`L${levelNum}: console errors during capture: ${newErrors.join(' | ')}`);
-      }
+      if (newErrors.length) issues.push(`${card.id}: console errors during capture: ${newErrors.join(' | ')}`);
 
       results.push({
-        level: levelNum,
-        ok: true,
-        file: outPath,
-        word: cardState.word,
-        title: cardState.title,
-        year: cardState.year,
-        count: cardState.count,
-        isNew: cardState.isNew,
-        bodyClass: cardState.bodyClass,
+        id: card.id, level: card.level, ok: true, file: outPath,
+        word: cardState.word, title: cardState.title, year: cardState.year,
+        count: cardState.count, isNew: cardState.isNew, bodyClass: cardState.bodyClass,
         keysTyped: playResult.keysTyped,
       });
       console.log(`  OK -> ${filename}  [${cardState.title} / ${cardState.year}]  ${cardState.count}  theme=${cardState.bodyClass}`);
     } catch (err) {
-      results.push({ level: levelNum, ok: false, reason: `exception: ${err.message}` });
+      results.push({ id: card.id, level: card.level, ok: false, reason: `exception: ${err.message}` });
       console.error(`  EXCEPTION: ${err.message}`);
+    }
+  }
+
+  // ── Secret card — best-effort, never gates the exit code ──────────────────
+  let secretResult = null;
+  if (!filterArg && secrets.length) {
+    const secretCard = secrets[0];
+    console.log(`\n[secret] ${secretCard.id} (level:null) — not overlay-reachable; capturing from collection gallery...`);
+    secretResult = await captureSecretCard(page, baseUrl, secretCard);
+    if (secretResult.ok) {
+      console.log(`  OK -> ${path.basename(secretResult.file)} (owned=${secretResult.owned}) — informational, not part of the per-level contract.`);
+    } else {
+      console.log(`  NOTE: secret card not captured (${secretResult.reason}). This does NOT fail the run — the secret card has no level-complete overlay.`);
     }
   }
 
   await browser.close();
 
-  // ── Final report ────────────────────────────────────────────────────────
+  // ── Final report ──────────────────────────────────────────────────────────
   console.log('\n=== SUMMARY ===');
   const failed = results.filter(r => !r.ok);
   const succeeded = results.filter(r => r.ok);
-  console.log(`${succeeded.length}/${levelsToRun.length} cards captured${filterArg ? ' (filtered run — ' + CARD_LEVELS.length + ' total exist)' : ''}.`);
+  console.log(`${succeeded.length}/${targets.length} pooled cards captured${filterArg ? ' (filtered run — ' + pooled.length + ' pooled cards exist)' : ' (of ' + pooled.length + ' pooled cards)'}.`);
+  if (secretResult) {
+    console.log(`Secret card: ${secretResult.ok ? 'captured (informational)' : 'not captured (' + secretResult.reason + ')'}.`);
+  }
 
   if (issues.length) {
     console.log('\nCONTENT/LEGIBILITY ISSUES FOUND:');
@@ -356,13 +445,13 @@ async function navigateToLevelViaSelect(page, baseUrl, levelEntry) {
   }
 
   if (failed.length) {
-    console.error('\nFAILED LEVELS (guaranteed-capture contract violated — journal L4/F20):');
-    failed.forEach(f => console.error(`  Level ${f.level}: ${f.reason}`));
+    console.error('\nFAILED CARDS (guaranteed-capture contract violated — journal L4/F20):');
+    failed.forEach(f => console.error(`  ${f.id} (L${f.level}): ${f.reason}`));
     process.exit(1);
   }
 
   console.log(filterArg
-    ? `\nAll ${levelsToRun.length} requested cards captured successfully.`
-    : '\nAll 17 history cards captured successfully.');
+    ? `\nAll ${targets.length} requested cards captured successfully.`
+    : `\nAll ${pooled.length} pooled history cards captured successfully.`);
   process.exit(0);
 })();

@@ -12,13 +12,45 @@
 // strip. Backspace lifts the last character off the page with a soft eraser
 // shimmer — "making it right", warm and calm, never corrective.
 
+import { finaleLinesForRatio } from '../finale-quote.js';
+import { getWinRatio } from '../settings.js';
+
 let canvas, ctx, animId;
 let active = false, victoryMode = false;
 let text = '';
+// Level 25 finale (js/finale-quote.js): when the guaranteed manifesto block
+// begins, main.js calls beginFinale(). It starts the manifesto as its OWN clean
+// paragraph on a fresh line (so it never crams against the warm-up text) and
+// clamps the visible document to the TOP BAND above the prompt panel, so the
+// passage scrolls cleanly there and old text never wraps behind the prompt
+// (Trevor 2026-07-27; layout contract in .claude/rules/visual-validation.md).
+let finaleActive = false;
 let progressCount = 0;   // counts keystrokes toward the win gate (Backspace too)
 let flashTimer = 0;
 let pageGlow = 0;
 let frame = 0;
+
+// Finale sub-line boundaries (Task 3 — display-only word separation). The manifesto
+// arrives as ≤17-char PROMPT sub-lines typed with NO trailing space (finale-quote.js
+// keeps them apostrophe/space-exact for the player-typed prompt + its join test), so
+// adjacent sub-lines would concatenate in the decorative document ("outsmartingyou").
+// The theme reconstructs the sub-line lengths for the active EXPERIENCE tier and
+// inserts ONE space in the ACCUMULATED document text at each sub-line boundary — the
+// prompt the player types and the win-gate are untouched (theme-authoring: themes
+// respond to hooks, never gate input). winRatio is captured in start() so it matches
+// the value main.js used to build the finale block (no mid-level desync).
+let finaleWinRatio = 1;
+let finaleSubLens = [];  // char length of each finale sub-line, in type order
+let finaleSubIdx = 0;    // which sub-line we're currently accumulating
+let finaleCharsInSub = 0;// chars typed into the current sub-line
+
+// "hello world" easter egg (Task 4 — easter-eggs.md #6). The guaranteed L25 history
+// card word 'hello world' gets typed in real play; when the accumulated document
+// first contains it, print a one-time gentle homage. A latch → fires at most once;
+// canvas fillText of a FIXED literal only (security.md rule 1 — never a DOM sink).
+let helloEggFired = false;
+let helloEggTimer = 0;   // frames the homage stays on screen (fades in/out)
+const HELLO_EGG_FRAMES = 320; // ~5s at 60fps, then gone — never gates flow
 
 let inkParticles = [];   // tiny settling ink motes per character
 let eraserPuffs = [];    // dust puffs on Backspace
@@ -40,6 +72,13 @@ function init() {
   pageGlow = 0;
   frame = 0;
   victoryMode = false;
+  finaleActive = false;
+  finaleWinRatio = 1;
+  finaleSubLens = [];
+  finaleSubIdx = 0;
+  finaleCharsInSub = 0;
+  helloEggFired = false;
+  helloEggTimer = 0;
   inkParticles = [];
   eraserPuffs = [];
   cursorEase = 1;
@@ -178,51 +217,78 @@ function drawRuler(px, py, pw, ph) {
   }
 }
 
+// Word-wrap, honoring explicit '\n' as HARD line breaks (so beginFinale can start
+// the manifesto on its own fresh line/paragraph). Each newline-delimited segment
+// is wrapped independently; an empty segment (from '\n\n') yields a blank line,
+// giving a clean paragraph gap.
 function wrapText(str, maxCharsPerLine) {
-  const words = str.split(' ');
-  const lines = [];
-  let cur = '';
-  words.forEach((w) => {
-    const candidate = cur.length ? cur + ' ' + w : w;
-    if (candidate.length > maxCharsPerLine && cur.length) {
-      lines.push(cur);
-      cur = w;
-    } else {
-      cur = candidate;
-    }
+  const out = [];
+  str.split('\n').forEach((segment) => {
+    if (segment === '') { out.push(''); return; }
+    const words = segment.split(' ');
+    let cur = '';
+    words.forEach((w) => {
+      const candidate = cur.length ? cur + ' ' + w : w;
+      if (candidate.length > maxCharsPerLine && cur.length) {
+        out.push(cur);
+        cur = w;
+      } else {
+        cur = candidate;
+      }
+    });
+    out.push(cur);
   });
-  lines.push(cur);
-  return lines;
+  return out;
 }
 
 let lastCursorPos = null; // {x, y, fontSize}
 
 function drawText(W, H, px, py, pw, ph) {
-  const fontSize = Math.max(13, Math.floor(pw * 0.020));
+  // During the finale, a slightly smaller font lets ~2 lines fit in the thin top
+  // band above the prompt panel (see the region clamp below).
+  const fontSize = finaleActive
+    ? Math.max(11, Math.floor(pw * 0.014))
+    : Math.max(13, Math.floor(pw * 0.020));
   const lineH = Math.round(fontSize * 1.7);
   const marginX = Math.round(pw * 0.05);
-  // Start just below the ruler so the first lines sit in the fully-visible top
-  // band above the prompt panel; later lines carry down the page.
-  const startY = Math.round(py + ph * 0.22);
   const maxCharsPerLine = Math.max(20, Math.floor((pw - marginX * 2) / (fontSize * 0.62)));
 
   ctx.font = `${fontSize}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'left';        // explicit — canvas 2D state leaks between draws (journal L28)
   ctx.textBaseline = 'top';
   ctx.fillStyle = '#242a33';
 
   const lines = wrapText(text, maxCharsPerLine);
-  // Only as many lines as fit above the keyboard within the page body.
-  const bodyH = (py + ph) - startY - lineH;
-  const maxLines = Math.max(1, Math.floor(bodyH / lineH));
+
+  // The text region (all canvas-space fractions — never DOM measurement, L16):
+  //  • normal play → the page body below the ruler, down to just above the
+  //    keyboard guide (unchanged look, top-anchored);
+  //  • finale → clamp to the TOP BAND above the prompt panel (~0.17H) and
+  //    BOTTOM-anchor, so the manifesto scrolls cleanly there and old text never
+  //    wraps behind the prompt (Trevor 2026-07-27).
+  let regionTop, regionBottom;
+  if (finaleActive) {
+    regionTop = Math.round(py + ph * 0.14);
+    regionBottom = Math.round(H * 0.155);
+  } else {
+    regionTop = Math.round(py + ph * 0.22);
+    regionBottom = (py + ph) - lineH;
+  }
+  const maxLines = Math.max(1, Math.floor((regionBottom - regionTop) / lineH));
   const visible = lines.slice(-maxLines);
+  // Bottom-anchor during the finale (newest line hugs just above the prompt);
+  // top-anchor otherwise. Clamped so a single wrapped line still lands coherently.
+  const baseY = finaleActive
+    ? regionBottom - visible.length * lineH
+    : regionTop;
   visible.forEach((line, i) => {
-    ctx.fillText(line, px + marginX, startY + i * lineH);
+    ctx.fillText(line, px + marginX, baseY + i * lineH);
   });
 
   // Blinking cursor at end of last line with a small eased "just typed" pulse.
   const lastLine = visible[visible.length - 1] || '';
   const cursorX = px + marginX + ctx.measureText(lastLine).width + 2;
-  const cursorY = startY + (visible.length - 1) * lineH;
+  const cursorY = baseY + (visible.length - 1) * lineH;
   lastCursorPos = { x: cursorX, y: cursorY, fontSize };
 
   const blinkOn = Math.floor(performance.now() / 500) % 2 === 0;
@@ -366,6 +432,38 @@ function drawProgress(W, H) {
   ctx.strokeRect(bx + 0.5, by + 5.5, barW - 1, 7);
 }
 
+// The "hello world" homage — a fixed literal (never a user string), drawn warm and
+// gold in the desk's bottom strip (below the keyboard guide, clear of the progress
+// badge), fading in and out. Parent-winking, kid-safe, and it never blocks anything.
+const HELLO_EGG_LINE = "EVERY PROGRAMMER'S FIRST WORDS. WELCOME TO THE CLUB.";
+function drawHelloEgg(W, H) {
+  const t = 1 - helloEggTimer / HELLO_EGG_FRAMES; // 0 → 1 over its life
+  // Gentle fade in over the first ~12%, hold, fade out over the last ~30%.
+  let alpha;
+  if (t < 0.12) alpha = t / 0.12;
+  else if (t > 0.70) alpha = Math.max(0, (1 - t) / 0.30);
+  else alpha = 1;
+  alpha = Math.min(1, alpha) * 0.92;
+
+  const fs = Math.max(9, Math.floor(W * 0.0092)); // small, fits ~52 chars well inside W
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.font = `${fs}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#ffd766';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#ffe9a6';
+  const gy = Math.round(H * 0.885); // bottom strip, below the keyboard guide (~0.82H)
+  // A tiny star flourish either side, era-arcade and warm — not alarming.
+  ctx.fillText('★  ' + HELLO_EGG_LINE + '  ★', W * 0.5, gy);
+  ctx.restore();
+  // reset shared 2D text state (canvas state leaks between screens — journal L28)
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.shadowBlur = 0;
+}
+
 function render() {
   if (!active) return;
   frame++;
@@ -380,6 +478,7 @@ function render() {
   updateEraserPuffs();
   drawEraserPuffs();
   drawProgress(W, H);
+  if (helloEggTimer > 0) { drawHelloEgg(W, H); helloEggTimer--; }
 
   if (flashTimer > 0) flashTimer--;
   if (pageGlow > 0) pageGlow--;
@@ -392,6 +491,10 @@ function render() {
 
 export function start() {
   init();
+  // Resolve the EXPERIENCE win-ratio ONCE at level start (theme-authoring.md), so the
+  // finale sub-line lengths we reconstruct in beginFinale() match the block main.js
+  // built at the same level-load moment — no mid-session desync of the boundary spaces.
+  finaleWinRatio = getWinRatio();
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   active = true;
@@ -416,17 +519,80 @@ export function keystroke(key) {
     flashTimer = 8;
     // Eraser shimmer lifts off where the character was — warm, "making it right".
     if (anchor) spawnEraserPuff(anchor.x, anchor.y + anchor.fontSize * 0.5);
-  } else if (key === ' ') {
-    text += ' ';
-    flashTimer = 4;
-  } else if (key && key.length === 1) {
-    text += key;
-    flashTimer = 6;
-    if (anchor) spawnInk(anchor.x, anchor.y, anchor.fontSize);
+  } else if ((key === ' ') || (key && key.length === 1)) {
+    // Task 3 (display only): during the finale, sub-lines are typed with no trailing
+    // space, so before the FIRST char of a new sub-line we insert one space in the
+    // document — the manifesto then reads as natural prose ("outsmarting you", never
+    // "outsmartingyou"). Only the decorative document text changes; the prompt the
+    // player types and the win-gate (progressCount, above) are untouched.
+    if (finaleActive
+        && finaleSubIdx < finaleSubLens.length
+        && finaleCharsInSub >= finaleSubLens[finaleSubIdx]) {
+      text += ' ';
+      finaleSubIdx++;
+      finaleCharsInSub = 0;
+    }
+    if (key === ' ') {
+      text += ' ';
+      flashTimer = 4;
+    } else {
+      text += key;
+      flashTimer = 6;
+      if (anchor) spawnInk(anchor.x, anchor.y, anchor.fontSize);
+    }
+    if (finaleActive) finaleCharsInSub++;
+
+    // Task 4 — "hello world" easter egg (easter-eggs.md #6): the guaranteed L25
+    // history card word 'hello world' (lowercase, real space) lands contiguously in
+    // the document. First time the accumulated text contains it, print the one-time
+    // homage. Latched → fires at most once per play; a canvas draw only, so it never
+    // gates flow, never touches the win-gate, and is independent of the card's own
+    // gold-glint and the manifesto finale.
+    if (!helloEggFired && text.toLowerCase().includes('hello world')) {
+      helloEggFired = true;
+      helloEggTimer = HELLO_EGG_FRAMES;
+    }
   }
 }
 
 export function miss() {}
+
+// Called by main.js (Level 25 only) the moment the "MY STORY" coda begins — the
+// first coda line becomes the active prompt. A theme-side RENDER signal only (never
+// engine gating — themes respond to hooks, theme-authoring.md): start the coda as
+// its OWN clean paragraph on a fresh line, and switch drawText to the top-band clamp
+// so the passage no longer wraps behind the prompt. Idempotent; a no-op if already
+// active or after victory.
+//
+// `subLens` is the ordered per-line count of NON-Backspace tokens for every coda
+// line (main.js computes it from the assembled coda: story sub-lines, typo beats,
+// AND the manifesto capstone — a dynamic, rotating, tier-scaled sequence, so the
+// theme can no longer reconstruct it from finale-quote.js alone). It drives the
+// display-only boundary space between sub-lines in keystroke(). Backspace tokens are
+// excluded because a Backspace never adds a character to the document, and
+// finaleCharsInSub (the counter these lengths gate) only counts forward keystrokes.
+export function beginFinale(subLens) {
+  if (!active || victoryMode || finaleActive) return;
+  finaleActive = true;
+  if (Array.isArray(subLens) && subLens.length) {
+    finaleSubLens = subLens.map(n => (Number.isFinite(n) ? n : 0));
+  } else {
+    // Legacy/defensive fallback (main.js always passes subLens now): derive the
+    // manifesto-only lengths for the active tier. Any bad value → empty list → no
+    // boundary spaces, never a crash.
+    try {
+      finaleSubLens = finaleLinesForRatio(finaleWinRatio).map(l => (Array.isArray(l) ? l.length : 0));
+    } catch (_) {
+      finaleSubLens = [];
+    }
+  }
+  finaleSubIdx = 0;
+  finaleCharsInSub = 0;
+  // Break to a fresh paragraph so the manifesto never crams against the warm-up
+  // text (the newline is a document-render choice — NOT an Enter keystroke, which
+  // is the universal confirm key). A blank line gives a clean paragraph gap.
+  if (text.length && !text.endsWith('\n')) text += '\n\n';
+}
 
 export function patternComplete() {
   return progressCount >= WIN_KEYSTROKES;
@@ -434,6 +600,9 @@ export function patternComplete() {
 
 export function victory() {
   victoryMode = true;
+  // Restore the normal centered page render for the big "THE END." beat (the
+  // top-band finale clamp is for the scrolling manifesto, not the celebration).
+  finaleActive = false;
   text = 'THE END.';
   pageGlow = 60;
 }

@@ -110,6 +110,39 @@ export const HISTORY_CARDS = [
   { id: 'rubber-duck', level: 25, word: 'rubber duck', title: 'THE RUBBER DUCK METHOD', year: '1999',
     fact: "Programmers sometimes explain their stuck code out loud to a rubber duck on their desk — and the answer often appears before they finish talking. Try it. It really works." },
 
+  // ── Expansion 2026-07-27: 1970s–90s hacker / phreak / underground culture
+  //    (research/hacker-culture.md + research/wiki/culture/*, all
+  //    citation-verified by the arcade-historian). Same "curiosity, not crime"
+  //    editorial move throughout — the game's own ethos ("poke at the machine and
+  //    see what it says back"). Each word attaches to its EARLIEST-typeable level
+  //    (INV-56). ──
+  { id: 'war-dialing', level: 6, word: 'dial', title: 'WAR DIALING', year: '1983',
+    fact: "In a famous old movie, a kid's computer called number after number — not to reach people, but to find OTHER computers to say hello to. Ever since, that trick has been called war dialing." },
+  { id: 'trashing', level: 8, word: 'trash', title: 'TRASHING', year: '1970s',
+    fact: "Long ago, curious tinkerers figured out how the giant telephone machines worked by reading the manuals a company had thrown away — real detective work, one dusty page at a time." },
+  { id: 'legion-of-doom', level: 9, word: 'lod', title: 'LEGION OF DOOM', year: '1984',
+    fact: "A club of super-curious teenagers named themselves after a comic-book villain team — then raced to understand the telephone system better than anyone alive, even writing their own how-it-works journals." },
+  { id: 'phone-phreaking', level: 9, word: 'whistle', title: 'PHONE PHREAKING', year: '1971',
+    fact: "A tiny toy whistle from a cereal box happened to make the exact musical note the phone network listened for. The fellow who noticed later met a young Steve Jobs and helped write one of the first word processors." },
+  { id: 'masters-of-deception', level: 11, word: 'mod', title: 'MASTERS OF DECEPTION', year: '1989',
+    fact: "A rival club of clever kids picked a name just one letter past their competitors' — M for the group after the L. For years the two teams competed to learn the most about how phones and computers worked." },
+  { id: 'hacker-ethic', level: 11, word: 'levy', title: 'THE HACKER ETHIC', year: '1984',
+    fact: "A writer named Steven Levy spent time with the very first computer tinkerers and wrote down their big idea: being curious and sharing what you learn makes everything better. He called it the Hacker Ethic." },
+  { id: 'spam-origin', level: 11, word: 'spam', title: 'WHERE "SPAM" CAME FROM', year: '1970',
+    fact: "Junk messages got their name from a silly TV skit where singing Vikings chanted 'Spam! Spam! Spam!' until nobody could hear anything else. The goofy name stuck for messages that just won't stop." },
+  { id: 'first-bbs', level: 12, word: 'bbs', title: 'THE FIRST MESSAGE BOARD', year: '1978',
+    fact: "A giant snowstorm trapped two friends indoors in Chicago, so they built the very first computer 'bulletin board' — a place to leave messages for each other over the phone line. Snow days can invent the future." },
+  { id: 'hacker-manifesto', level: 12, word: 'mentor', title: 'THE HACKER MANIFESTO', year: '1986',
+    fact: "A young computer explorer nicknamed The Mentor wrote a famous little essay saying kids like him weren't bad — just endlessly curious, in love with learning how everything works. People still share it today." },
+  { id: 'phrack', level: 13, word: 'phrack', title: 'PHRACK', year: '1985',
+    fact: "Two teenagers started a homemade computer newsletter and passed it around over phone lines. Forty years later, people are STILL writing new issues of it." },
+  { id: 'cyberpunk', level: 13, word: 'cyberpunk', title: 'THE WORD "CYBERPUNK"', year: '1983',
+    fact: "A writer glued two words together — 'cyber' from computers and 'punk' from rebels — just to title a short story. His made-up word grew into a whole style of books, movies, and games." },
+  { id: 'acoustic-coupler', level: 13, word: 'coupler', title: 'THE ACOUSTIC COUPLER', year: '1966',
+    fact: "Before computers plugged straight into the wall, they talked to each other by whispering musical tones into a telephone handset, cradled snugly in two rubber cups. You could actually hear the computers chatting." },
+  { id: '2600-magazine', level: 20, word: '2600', title: '2600: THE HACKER QUARTERLY', year: '1984',
+    fact: "Remember 2600 — the secret musical note that could talk to old phones? Someone named a whole magazine after it, and it's still printed today. Now you know what that number means." },
+
   // ── SECRET cards (level: null) — never injected into any level's pool. Found
   //    ONLY by the curious who type a magic word (see main.js SECRET_PHRASES).
   //    They still count toward the collection total, so "all cards" needs them

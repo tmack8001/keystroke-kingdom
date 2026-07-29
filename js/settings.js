@@ -6,6 +6,8 @@
 // wrong keypresses NEVER cost anything, in any mode. Settings only ever
 // adjusts pacing/cosmetics on top of the untouched base engine.
 
+import { setUserBlockedWords } from './word-blocklist.js';
+
 const STORAGE_KEY = 'kk-settings';
 
 const DEFAULTS = {
@@ -21,7 +23,35 @@ const DEFAULTS = {
   minWordLen: 0,                 // 0 (ANY / no floor) | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
   maxWordLen: 0,                 // 0 (ANY / no cap) | 4 | 5 | 6 | 7 | 8 | 10 | 12 | 16 | 24
   playerName: 'PLAYER ONE',
+  blockedWords: [],              // parent-added extra blocked words (ADDITIVE to the
+                                 // built-in kid-safety floor in js/word-blocklist.js;
+                                 // a parent can only ADD, never remove the floor)
 };
+
+// Bounds for a parent-added blocked word (letters only, a real word). Mirrors the
+// enforcement in js/word-blocklist.js setUserBlockedWords (that module is the safety
+// authority; this is the storage-side sanitize so kk-settings never holds garbage).
+const BLOCKED_WORD_MIN = 2;
+const BLOCKED_WORD_MAX = 20;
+const BLOCKED_WORDS_MAX = 40;
+
+// Sanitize the parent-added blocked-word list (untrusted free text — security.md rule
+// 7): lowercase, strip each to [a-z] only, length-bound, dedup, cap the count. Returns
+// a clean array (never throws). Additive-only by construction — it only ever produces a
+// list of literal words the filter will ADD; it can't touch the built-in floor.
+function sanitizeBlockedWords(raw) {
+  const out = [];
+  const seen = new Set();
+  for (const w of Array.isArray(raw) ? raw : []) {
+    const t = String(w == null ? '' : w).toLowerCase().replace(/[^a-z]/g, '');
+    if (t.length < BLOCKED_WORD_MIN || t.length > BLOCKED_WORD_MAX) continue;
+    if (seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+    if (out.length >= BLOCKED_WORDS_MAX) break;
+  }
+  return out;
+}
 
 // Word-length range — a player-set DIFFICULTY lever on which real words the game
 // draws. Shorter words = easier (younger/newer); longer words = harder
@@ -116,6 +146,7 @@ function sanitize(raw) {
     const t = s.minWordLen; s.minWordLen = s.maxWordLen; s.maxWordLen = t;
   }
   s.playerName = (typeof s.playerName === 'string' && s.playerName.trim()) ? s.playerName.slice(0, 16) : DEFAULTS.playerName;
+  s.blockedWords = sanitizeBlockedWords(s.blockedWords);
   return s;
 }
 
@@ -127,6 +158,9 @@ export function loadSettings() {
     raw = null;
   }
   cached = sanitize(raw);
+  // Install the parent's additive blocked words into the live safety filter (the
+  // built-in floor always applies regardless). One wiring point for boot + reload.
+  setUserBlockedWords(cached.blockedWords);
   return cached;
 }
 
@@ -138,7 +172,16 @@ export function saveSettings(s) {
     // localStorage unavailable (private mode etc) — settings stay in-memory
     // for this session only. Never throw; never block play.
   }
+  // Re-install on every change so a preferences edit takes effect immediately.
+  setUserBlockedWords(cached.blockedWords);
   return cached;
+}
+
+// The parent-added blocked words (additive to the built-in floor). Exposed for a
+// future preferences-screen control and for tests; the SAFETY authority is
+// js/word-blocklist.js — this is just the persisted list.
+export function getUserBlockedWords() {
+  return getSettings().blockedWords.slice();
 }
 
 export function getSettings() {
@@ -266,6 +309,27 @@ const ROWS = [
     display: (v) => v ? 'ON' : 'OFF',
     descriptor: () => '',
     active: () => true,
+  },
+  {
+    // Parent-facing free-text safety control. Not a cycle-through-values row —
+    // activating it (Enter/Space) opens the dedicated BLOCKED WORDS editor
+    // (main.js openBlockWords). ADDITIVE ONLY: a parent can add words to never
+    // see; the built-in kid-safety FLOOR (word-blocklist.js BASE_WORDS) is
+    // always on and can never be removed here. `summary` shows the current
+    // count in the value cell (never the words themselves — those live only in
+    // the editor, rendered via textContent).
+    key: 'blockedWords',
+    label: 'BLOCKED WORDS',
+    values: [null],
+    display: () => '',
+    descriptor: () => 'ADD WORDS TO NEVER SEE — MAKES PLAY SAFER',
+    active: () => true,
+    action: true,
+    editor: 'blockwords',
+    summary: (s) => {
+      const n = Array.isArray(s.blockedWords) ? s.blockedWords.length : 0;
+      return n === 0 ? 'NONE' : `${n} WORD${n === 1 ? '' : 'S'}`;
+    },
   },
   {
     key: 'erase',

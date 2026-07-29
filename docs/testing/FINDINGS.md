@@ -46,8 +46,9 @@ strings. Orchestrator triage notes added; final call is Trevor's.*
   largest word limit") — game untouched; transitions.md/onboarding.md/STRATEGY.md
   INV-24 updated to 16 first, then the test became a real passing assertion
   (20 typed → exactly 16 kept and confirmed).
-- **Repro:** `tests/integration/persistence-onboarding.test.mjs` →
-  `t.todo('TF-H2: ...')` under INV-24 — type 20 characters into the name field.
+- **Repro (now a passing regression test):** `tests/integration/persistence-onboarding.test.mjs`
+  → `test('TF-H2 by-design: name input caps at 16 characters …')` under INV-24 — type 20
+  characters into the name field, assert exactly the first 16 are kept.
 - **Evidence:** `index.html` `maxlength="16"` and `js/settings.js` `sanitize()`
   `slice(0, 16)` agree with each other at 16, but disagree with the doc's explicit 12.
 - **Orchestrator note:** plausibly BY-DESIGN drift (16 was chosen at build time);
@@ -63,8 +64,9 @@ strings. Orchestrator triage notes added; final call is Trevor's.*
   name entry is the single exception because Space is content there, not command.
   Docs updated first, then the test asserts the new intent (typing 'PLAYER TWO' with
   a real Space press works; Space does not confirm).
-- **Repro:** `tests/integration/persistence-onboarding.test.mjs` →
-  `t.todo('TF-H3: ...')` under INV-24 — type a name, press Space.
+- **Repro (now a passing regression test):** `tests/integration/persistence-onboarding.test.mjs`
+  → `test('TF-H3 by-design: Space types a literal space in the name field and does not confirm …')`
+  under INV-24 — type a name, press Space, assert a space is inserted and the screen stays on name entry.
 - **Evidence:** the name-entry keydown branch in `js/main.js` confirms only on
   `e.key === 'Enter'`; Space types a literal space into the field and the screen
   stays on `title-screen`. Every OTHER screen (title/ready/continue) accepts both —

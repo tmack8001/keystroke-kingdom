@@ -157,6 +157,36 @@
   <div class="settings-hint-bottom">&uarr; &darr; SELECT &nbsp;&middot;&nbsp; &larr; &rarr; CHANGE &nbsp;&middot;&nbsp; ESC SAVE &amp; EXIT</div>
 </div>
 
+<!-- BLOCKED WORDS EDITOR — parent-facing free-text safety control (additive only) -->
+<div class="screen hidden" id="blockwords-screen">
+  <div class="settings-title">BLOCKED WORDS</div>
+  <div class="blockwords-intro">
+    WORDS YOU ADD HERE NEVER APPEAR IN THE GAME.<br>
+    THIS ONLY MAKES PLAY SAFER — THE BUILT-IN LIST IS ALWAYS ON.
+  </div>
+  <input
+    type="text"
+    class="name-input blockwords-input"
+    id="blockword-input"
+    placeholder="TYPE A WORD"
+    maxlength="20"
+    autocomplete="off"
+    data-1p-ignore
+    data-lpignore="true"
+    data-form-type="other"
+    spellcheck="false"
+    aria-label="add a blocked word"
+  >
+  <div class="blockwords-status" id="blockword-status"></div>
+  <div class="blockwords-list" id="blockword-list"></div>
+  <div class="settings-hint-bottom">
+    TYPE + <kbd data-enter-key>ENTER</kbd> ADDS
+    &nbsp;&middot;&nbsp; &uarr; &darr; PICK
+    &nbsp;&middot;&nbsp; BACKSPACE (EMPTY BOX) REMOVES
+    &nbsp;&middot;&nbsp; ESC BACK
+  </div>
+</div>
+
 <!-- LEVEL SELECT (WarGames) -->
 <div class="screen hidden" id="select-screen">
   <div class="select-title">GREETINGS PROFESSOR FALKEN</div>

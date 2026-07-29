@@ -62,6 +62,18 @@ The scrolling terminal occasionally prints: `> XYZZY`, `> 2600 HZ` (the phone
 phreaks' tone), `> ELIZA: HI`, `> MOTH: 1947` (Grace Hopper's first actual bug),
 `> 42` (Deep Thought's answer).
 
+### `hello world` in the Word Processor *(Level 25, js/themes/wordprocessor.js — built 2026-07-28)*
+When the Level 25 "MY STORY" document ever accumulates the words **hello world**
+(case-insensitive, real space), the theme prints once — gently, in warm gold in the
+desk's bottom strip, fading in and out over ~5s:
+`★  EVERY PROGRAMMER'S FIRST WORDS. WELCOME TO THE CLUB.  ★`
+*(The origin of "hello world" — every coder's first program. Every kid who reaches
+Level 25 gets there, because the guaranteed `hello world` history card (`hello-world`,
+js/history-cards.js) types the phrase in real play.)* A latch fires it at most once per
+play; it's a fixed-literal `fillText` (never a DOM sink — security.md rule 1), and it
+never pauses, gates, or interrupts flow (the One Rule) — the player keeps typing right
+through it. Independent of the card's own gold-glint and the manifesto finale.
+
 ---
 
 ## Proposed (unbuilt — the menu)
@@ -82,19 +94,20 @@ Ordered roughly by bang-for-effort. Each stays within the design rules.
    TELL THE DUCK." *(Rubber duck debugging.)*
 5. **Dial-up handshake** — entering the Computer Wing for the first time, a
    half-second of modem chirp under the door-opening sound. *(BBS era.)*
-6. **`hello world` in Level 25** — if the player's free-typed word-processor
-   text ever equals "hello world", the page prints: "EVERY PROGRAMMER'S FIRST
-   WORDS. WELCOME TO THE CLUB." (Requires L25 free-type mode.)
-7. **Y2K clock** — one monitor in the Command Center background always reads
+6. **Y2K clock** — one monitor in the Command Center background always reads
    `12/31/99 11:59 PM`. Never explained. *(For the parents who remember.)*
-8. **Themed 404** — the Go server's 404 page: a CRT screen reading
+7. **Themed 404** — the Go server's 404 page: a CRT screen reading
    "LEVEL NOT FOUND. INSERT COIN TO CONTINUE." *(Web culture meets arcade.)*
-9. **The eighth key confession** — after Level 20 (the terminal), a one-time
+8. **The eighth key confession** — after Level 20 (the terminal), a one-time
    line: "THE EIGHTH KEY HAS A NAME. PROGRAMMERS END EVERY LINE WITH IT;"
    — the semicolon secret, revealed only after the computer is earned.
-10. **`all your base`** — Basement-era (1991) title egg: typing
+9. **`all your base`** — Basement-era (1991) title egg: typing
     `allyourbase` → "ALL YOUR KEYS ARE BELONG TO YOU." *(Zero Wing, inverted
     into the game's promise.)*
+
+*(Former proposal #6, `hello world` in Level 25, is now built — see Implemented above.
+It landed as a document-content trigger (the guaranteed `hello world` history card),
+not the originally-imagined free-type mode.)*
 
 ### Deliberately rejected
 - Anything requiring a URL, login, or real network reference (kids retype things)

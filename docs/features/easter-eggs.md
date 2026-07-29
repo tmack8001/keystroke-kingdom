@@ -4,7 +4,7 @@ code: [js/themes/terminal.js]
 rules: [.claude/rules/easter-eggs.md]
 screenshots: docs/screenshots/easter-eggs/
 capture: node docs/screenshots/capture-eggs.js
-verified: 2026-07-19
+verified: 2026-07-28
 ---
 
 # Easter Eggs (The Hidden Layer)
@@ -77,9 +77,23 @@ No separate probability system — these are plain entries mixed into the existi
 (`chars % 3 === 0`) pushes `POOL_FRAGMENTS[chars % POOL_FRAGMENTS.length]` — cycling
 through all 20 fragments in a fixed order every 60 keystrokes.
 
+## `hello world` in the Word Processor (Level 25, `js/themes/wordprocessor.js` — built 2026-07-28)
+
+Former proposal #6 in `.claude/rules/easter-eggs.md`, now Implemented. Owned in the
+source graph by [[level-themes]] (this page's `code:` is `js/themes/terminal.js`
+only) — documented there in full ("Word Processor (Level 25) — finale sub-line
+spacing + the `hello world` egg"); cross-referenced here for the catalog. Summary:
+when the Level 25 "MY STORY" document's accumulated text first contains **hello
+world** (case-insensitive — typed in real play via the guaranteed `hello-world`
+history card, see [[history-cards]]), the theme fades in a one-time warm-gold line,
+`★ EVERY PROGRAMMER'S FIRST WORDS. WELCOME TO THE CLUB. ★`, in the desk's bottom
+strip (~5s, latched to once per play). Fixed literal `fillText` only (security.md
+rule 1); never gates, pauses, or interrupts flow.
+
 ## Related
 
 [[select-screen]] (WOPR bypass consumer) · [[level-themes]] (terminal.js is Level 20's
-theme) · [[visual-styling]] (console banner styling) · [[history-cards]] (the secret
-`wargames-joshua` card the WOPR bypass now also awards) · [[save-slots]] (the slot the
-secret card is written into)
+theme; also owns the `hello world` Word Processor egg above) · [[visual-styling]]
+(console banner styling) · [[history-cards]] (the secret `wargames-joshua` card the
+WOPR bypass now also awards; the guaranteed `hello-world` card word the Word
+Processor egg detects) · [[save-slots]] (the slot the secret card is written into)

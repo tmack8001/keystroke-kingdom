@@ -82,7 +82,10 @@ function isExpectedWordgenProbe404(msg) {
     if (msg.type() !== 'error') return false;
     if (!/status of 404/i.test(msg.text())) return false;
     const url = (msg.location && msg.location().url) || '';
-    return /\/api\/wordgen(\/health)?(\?|$)/.test(url);
+    // Both optional local-LLM backends 404 BY DESIGN on a static host: /api/wordgen
+    // (word augmentation) and /api/keyboard-story (the L25 coda story generator).
+    // Both fall back silently to static content, so their probe 404s are expected.
+    return /\/api\/(wordgen(\/health)?|keyboard-story)(\?|$)/.test(url);
   } catch (_) {
     return false;
   }
