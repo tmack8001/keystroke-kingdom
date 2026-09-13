@@ -1,11 +1,17 @@
 const $ = (id) => document.getElementById(id);
 
+// NOTE (2026-09-13): era strings use the word NOW, never the ∞ character.
+// Press Start 2P has NO infinity glyph — measured, not assumed: at 16px every real
+// glyph in this font advances exactly 16px, and '∞' advances 11.41px because the
+// browser silently falls back. On screen it rendered as a period, so Acts 4 and 5
+// and the Level 20 cabinet had been shipping "1993–." and "1980–." for months.
+// Journal O11 is precisely this trap: screenshot any symbol you render.
 const ACTS = [
   { num: 1, name: 'THE ARCADE',          era: '1976–1982', levels: [1, 2, 3, 4, 5]      },
   { num: 2, name: 'THE COMPUTER WING',   era: '1981–1986', levels: [6, 7, 8, 9, 10]     },
   { num: 3, name: 'THE BASEMENT',        era: '1991–1996', levels: [11, 12, 13, 14, 15] },
-  { num: 4, name: 'THE COMMAND CENTER',  era: '1993–∞',    levels: [16, 17, 18, 19, 20] },
-  { num: 5, name: 'FULL CIRCLE',         era: '1980–∞',    levels: [21, 22, 23, 24, 25] },
+  { num: 4, name: 'THE COMMAND CENTER',  era: '1993–NOW',    levels: [16, 17, 18, 19, 20] },
+  { num: 5, name: 'FULL CIRCLE',         era: '1980–NOW',    levels: [21, 22, 23, 24, 25] },
 ];
 
 function getActForLevel(level) {
@@ -31,60 +37,140 @@ function firstUnlockedAtOrBelow(state, levels, levelNum) {
   return levels[0];
 }
 
-// ─── The back wall: the doors to the bonus wings ────────────────────────────
-// Past the last act, the select cursor steps DOWN into the back of the arcade,
-// where diegetic doors lead to the bonus wings (Act 6 Text Worlds, Act 7 The
-// Speedway). They appear once the full keyboard is earned — or the WOPR dev
+// ─── The back room: the bonus ACTS behind the arcade ────────────────────────
+// Past the last act, the select cursor keeps walking DOWN — through a door in
+// the back wall and into the bonus acts (Act 6 The Text Worlds, Act 7 The
+// Speedway). They appear once the full keyboard is earned, or the WOPR dev
 // bypass lights them.
 //
-// The back wall is a REGISTRY, never a boolean: `state.doorIndex`
-// (null | 0..N-1) is a sub-state of the 'select' screen. Adding a third wing is
-// ONE DATA ROW in BACK_WALL_DOORS plus its entry function in main.js's
-// DOOR_ENTRY map — never another edit to renderDoorView() or navigateAct().
+// SHAPE (revised 2026-09-13, Trevor: "act 6 → backdoor → 7 doesn't show right on
+// the wopr select screen as they render as a single act 'the back of the arcade'
+// and then show up as cabinets next to each other… the speedway levels aren't
+// like the back of the arcade and I was thinking they would be a separate act
+// with different arcade cabinets like we had before"):
+// each row below is ONE ACT, not one door. A bonus act is a page in exactly the
+// same walk as Acts 1–5 — it has an act number, a name, an era, ↑/↓ to the acts
+// either side of it, and a row of machines you walk along with ←/→. The door is
+// still there, because the door is how the back room is entered narratively
+// (levels/onboarding.md: "the arcade is never explained" — the doorway art does
+// the explaining): it is drawn standing at the head of the wing's own wall.
 //
-// Navigation can never strand the cursor (the One Rule): ↑ always walks back up
-// and out of the back wall into the acts, ←/→ walk between doors standing side
-// by side, and Escape leaves the select screen entirely from anywhere.
+// This is still a REGISTRY, never a boolean and never a branch: `state.wingIndex`
+// (null | 0..N-1) is a sub-state of the 'select' screen naming which bonus act
+// the cursor is in, and `state.wingEntry` names the machine within it. Adding a
+// fourth wing is ONE DATA ROW here plus its entry function in main.js's
+// DOOR_ENTRY map — never another edit to renderWingAct() or navigateAct().
+//
+// Navigation can never strand the cursor (the One Rule): ↑ from the first bonus
+// act always walks back up into Act 5, ↓ stops at the last act, ←/→ walk the
+// wall, and Escape leaves the select screen entirely from anywhere.
 const DOOR_UNLOCK_LEVEL = 25;
 function doorUnlocked(state) {
   return !!state.selectBypass || (state.maxUnlockedLevel || 1) >= DOOR_UNLOCK_LEVEL;
 }
 
+// One row per bonus act. `cabinets` lists the machines standing on that act's
+// wall, in era order, by their id in WING_CABINETS below (the same id the wing's
+// own hub knows a track by, so main.js can hand the choice through). A wing with
+// NO cabinet list is entered through its door alone — see Act 6's note.
 const BACK_WALL_DOORS = [
   { id: 'textworld',
-    label: 'THE GREEN DRAGON · a text world',
-    hint: 'TYPE TO ENTER',
-    art: drawTextWorldDoor,
+    num: 6,
+    name: 'THE TEXT WORLDS',
+    // Colossal Cave (1976) at one end, a machine you can still talk to at the
+    // other (research/wiki/games/colossal-cave-adventure.md).
+    // 'NOW' for the present, matching every other act (see the header note: Press Start 2P has no infinity
+    // glyph and silently draws a dot (journal O11), and 'NOW' is already this
+    // screen's own word for the present (Levels 24–25).
+    era: '1976–NOW',
+    door: { art: drawTextWorldDoor, label: 'THE GREEN DRAGON', hint: 'A TEXT WORLD' },
+    // Act 6 is a DOOR, not a wall of cabinets, and that is the faithful choice:
+    // its five worlds are prose, tiles and a friend to talk to — a BBS "door
+    // game" is literally named after the door you drop out through — and not one
+    // of them was ever a coin-op cabinet. Its own hub (js/textworld/hub.js, "THE
+    // TEXT WORLDS") is the room beyond, and that is where the five are chosen.
+    cabinets: [],
     unlock: doorUnlocked },
   { id: 'speedway',
-    label: 'THE SPEEDWAY · race yourself',
-    hint: 'TYPE TO ENTER',
-    art: drawSpeedwayDoor,
+    num: 7,
+    name: 'THE SPEEDWAY',
+    // null = derived from the cabinets actually standing on the wall, so the
+    // act's era stays true as the remaining nine tracks arrive
+    // (docs/specs/act7-speed-racing.md §5.6b).
+    era: null,
+    door: { art: drawSpeedwayDoor, label: 'THE BACK ROOM', hint: '' },
+    cabinets: ['monaco-gp', 'f-zero'],
     unlock: doorUnlocked },
 ];
 
-// The doors standing open to this player, in back-wall order.
+// The bonus acts standing open to this player, in back-wall order.
 function availableDoors(state) {
   return BACK_WALL_DOORS.filter(d => d.unlock(state));
 }
 
-// The door the cursor is standing at, or null if it's still among the cabinets.
-// Tolerates a stale/out-of-range index — it simply reads as "no door".
+// The bonus act the cursor is standing in, or null if it's still among the 25
+// cabinets. Tolerates a stale/out-of-range index — it simply reads as "no wing".
 export function focusedDoor(state) {
   const doors = availableDoors(state);
-  const i = state.doorIndex;
+  const i = state.wingIndex;
   return (typeof i === 'number' && i >= 0 && i < doors.length) ? doors[i] : null;
 }
 
-// Park the cursor on a named door — a wing hands control back through the door
-// the player walked in by. An unknown or still-locked id clears the focus
-// instead, so the cursor lands among the cabinets rather than nowhere.
-export function focusDoor(state, id) {
-  const i = availableDoors(state).findIndex(d => d.id === id);
-  state.doorIndex = i >= 0 ? i : null;
+// The machines standing on a bonus act's wall, in the order the player walks
+// them. A wing with no cabinets offers its doorway itself — so every bonus act
+// has at least one thing to select and Space is never a dead key.
+function wingEntries(wing) {
+  if (!wing) return [];
+  const cabs = (wing.cabinets || [])
+    .map(id => ({ id, cab: WING_CABINETS[id] }))
+    .filter(e => e.cab);
+  if (cabs.length) {
+    return cabs.map(({ id, cab }) => ({
+      id,
+      label: `${cab.label} · ${cab.era}`,
+      hint: cab.maker,
+      draw: (canvas) => drawCabinetArt(canvas, cab, 2),
+    }));
+  }
+  return [{
+    id: null,                    // no specific machine — the wing's hub chooses
+    label: wing.door.label,
+    hint: wing.door.hint,
+    draw: (canvas) => wing.door.art(canvas, 3),   // you are standing AT the door
+    isDoor: true,
+  }];
 }
 
-export function clearDoorFocus(state) { state.doorIndex = null; }
+// WHERE on a bonus act's wall the cursor is standing, as an INDEX into
+// wingEntries(wing). An index, not the entry object: wingEntries() builds fresh
+// rows each call, so identity comparison would silently never match and nothing
+// would ever render as selected. Falls back to 0, so a stale id can never leave
+// the player pointing at nothing.
+function focusedEntryIndex(state, wing) {
+  const entries = wingEntries(wing);
+  if (!entries.length) return -1;
+  const i = entries.findIndex(e => e.id === state.wingEntry);
+  return i >= 0 ? i : 0;
+}
+
+// What main.js needs at Space time: which wing, and which machine on its wall.
+export function focusedWingEntry(state) {
+  const wing = focusedDoor(state);
+  if (!wing) return null;
+  return { wing, entry: wingEntries(wing)[focusedEntryIndex(state, wing)] || null };
+}
+
+// Park the cursor in a named bonus act (optionally on a named machine) — a wing
+// hands control back through the act it was entered from. An unknown or
+// still-locked id clears the focus instead, so the cursor lands among the
+// cabinets rather than nowhere.
+export function focusDoor(state, id, entryId) {
+  const i = availableDoors(state).findIndex(d => d.id === id);
+  state.wingIndex = i >= 0 ? i : null;
+  state.wingEntry = i >= 0 ? (entryId !== undefined ? entryId : state.wingEntry) : null;
+}
+
+export function clearDoorFocus(state) { state.wingIndex = null; state.wingEntry = null; }
 
 // Pixel-art doors matching drawCabinet's 56×80 footprint. Shared shell first:
 // the dark back wall, the stone frame, and the light spilling on the floor.
@@ -160,6 +246,148 @@ function drawSpeedwayDoor(canvas, scale = 2) {
   ctx.fillStyle = '#c9ccd6';        // chrome pull handle
   ctx.fillRect(34, 42, 3, 4);
 }
+
+// ─── The bonus acts' cabinets ───────────────────────────────────────────────
+// Same shape as CABINET_DATA below and drawn by the same cabinet shell, because
+// these ARE cabinets in the same arcade — they just stand in the back room. Keyed
+// by the wing's own id for the machine (Act 7: the track id in
+// js/speedway/tracks/*), so picking one on this wall can be handed straight to
+// the wing's hub.
+//
+// GROUND TRUTH: every screen below recreates what the real machine actually put
+// on its CRT, taken from research/wiki/games/*.md — never model memory, never a
+// pun on the keys it teaches (project rule: cabinet art is faithful, not gimmicky).
+//
+// Adding a track = one row here + its id in the wing's `cabinets` list above.
+const WING_CABINETS = {
+  // MONACO GP — Sega, November 1979 (research/wiki/games/monaco-gp.md):
+  // "one of the last arcade games made by Sega to use transistor–transistor logic
+  // (TTL) based discrete logic circuits instead of a microprocessor" — over 100
+  // chips, no CPU. Overhead perspective, scrolling road, FIVE areas, and the
+  // difficulty escalation the wiki names: "the road narrows" and "the surface
+  // changes to ice and gravel". So: ONE INK on black (a machine with no CPU had
+  // no colour RAM either), a straight overhead road that steps NARROWER through
+  // the areas, a stipple of ice and gravel in the far one, and two open-wheelers.
+  'monaco-gp': {
+    label: 'MONACO GP',
+    maker: 'SEGA',
+    era: '1979',
+    colors: { body: '#140407', screen: '#000', accent: '#e02030', trim: '#3a1018' },
+    drawScreen(ctx, x, y, w, h) {
+      const INK = '#f4f4f4';
+      ctx.fillStyle = '#000';
+      ctx.fillRect(x, y, w, h);
+
+      // OVERHEAD, not perspective (monaco-gp.md: "overhead perspective, scrolling
+      // road") — so the road is a straight vertical band. What changes is the
+      // AREA: the wiki's five areas, in which "the road narrows" and "the surface
+      // changes to ice and gravel". Two visible steps fit this screen; the far
+      // (upper) areas are the narrow, gravelled ones.
+      const cx = x + Math.round(w / 2);
+      const AREAS = [
+        { top: 0,               height: Math.round(h * 0.34), half: 9,  gravel: true  },
+        { top: Math.round(h * 0.34), height: Math.round(h * 0.28), half: 12, gravel: false },
+        { top: Math.round(h * 0.62), height: h - Math.round(h * 0.62), half: 15, gravel: false },
+      ];
+
+      ctx.fillStyle = INK;
+      for (const a of AREAS) {
+        ctx.fillRect(cx - a.half - 1, y + a.top, 1, a.height);   // left verge
+        ctx.fillRect(cx + a.half, y + a.top, 1, a.height);       // right verge
+      }
+      for (let i = 0; i < AREAS.length - 1; i++) {               // the step between areas
+        const a = AREAS[i], b = AREAS[i + 1];
+        const yy = y + b.top;
+        ctx.fillRect(cx - b.half - 1, yy, b.half - a.half + 1, 1);
+        ctx.fillRect(cx + a.half, yy, b.half - a.half + 1, 1);
+      }
+      for (let r = 2; r < h - 2; r += 6) {                       // the dashed centre line
+        ctx.fillRect(cx, y + r, 1, 3);
+      }
+      const ice = AREAS[0];                                      // ice and gravel, far area
+      for (let r = 1; r < ice.height - 1; r += 3) {
+        ctx.fillRect(cx - ice.half + 2, y + r, 1, 1);
+        ctx.fillRect(cx + ice.half - 3, y + r + 1, 1, 1);
+        ctx.fillRect(cx + 3, y + r + 2, 1, 1);
+      }
+
+      // A 1979 open-wheeler seen from above: nose, four exposed wheels, tail.
+      const CAR = ['.###.', '##.##', '.###.', '.###.', '##.##', '.###.'];
+      const car = (ox, oy) => {
+        for (let r = 0; r < CAR.length; r++)
+          for (let c = 0; c < 5; c++)
+            if (CAR[r][c] === '#') ctx.fillRect(ox + c, oy + r, 1, 1);
+      };
+      car(cx - 8, y + AREAS[1].top + 2);     // a rival, an area ahead
+      car(cx - 2, y + h - 8);                // the player, near the bottom
+    }
+  },
+
+  // F-ZERO — Nintendo EAD, November 21 1990 (research/wiki/games/f-zero.md): a
+  // Super Famicom launch title whose whole identity is MODE 7, "a raster
+  // graphical plane… rotated and scaled freely, simulating the appearance of 3D
+  // environments" WITHOUT polygon processing — everything that is not the ground
+  // plane is a sprite. So: a banded raster sky (no gradient — the hardware drew
+  // bands), one ground plane running to a vanishing point, and the anti-gravity
+  // craft as a sprite riding on it.
+  'f-zero': {
+    label: 'F-ZERO',
+    maker: 'NINTENDO',
+    era: '1990',
+    colors: { body: '#0b0a24', screen: '#000', accent: '#ff2f6d', trim: '#2a1046' },
+    drawScreen(ctx, x, y, w, h) {
+      const horizon = y + 10;
+
+      // The sky as RASTER BANDS — a Mode 7 machine had no gradient, it had
+      // scanlines with different colours in them.
+      const SKY = ['#180540', '#3a0c58', '#74185f', '#bc3468', '#ff7a4a'];
+      for (let i = 0; i < SKY.length; i++) {
+        ctx.fillStyle = SKY[i];
+        ctx.fillRect(x, y + i * 2, w, 2);
+      }
+
+      const vx = x + w * 0.44;              // vanishing point, off horizontal centre
+      const rows = h - (horizon - y);
+      for (let r = 0; r < rows; r++) {
+        const t = r / Math.max(1, rows - 1);
+        // The ground plane, scaled by row — alternating raster bands are how the
+        // scrolling ground of a Mode 7 plane reads at this size.
+        ctx.fillStyle = (Math.floor(r / 2 + r * r / 26) % 2 === 0) ? '#2a1f4e' : '#1d1540';
+        ctx.fillRect(x, horizon + r, w, 1);
+
+        const half = 3 + t * 15;
+        const cxr = vx + (x + w / 2 - vx) * t;
+        ctx.fillStyle = '#6f6a96';           // the track surface, pale on the plane
+        ctx.fillRect(Math.round(cxr - half), horizon + r, Math.round(half * 2), 1);
+        const stripe = (Math.floor(r / 3) % 2 === 0) ? '#f4f4ff' : '#ff2f6d';
+        ctx.fillStyle = stripe;              // the rails, widening toward the player
+        ctx.fillRect(Math.round(cxr - half) - 2, horizon + r, 2, 1);
+        ctx.fillRect(Math.round(cxr + half), horizon + r, 2, 1);
+      }
+
+      // Everything that is not the ground plane is a SPRITE (f-zero.md): a rival
+      // far up the plane, then the player's anti-gravity craft.
+      ctx.fillStyle = '#7fe8ff';
+      ctx.fillRect(Math.round(vx) - 1, horizon + 3, 3, 2);
+
+      const CRAFT = ['..#####..', '.#######.', '#########', '##.###.##'];
+      const px = x + Math.round(w / 2) - 4;
+      const py = y + h - 9;
+      ctx.fillStyle = '#2f7fff';
+      for (let r = 0; r < CRAFT.length; r++)
+        for (let c = 0; c < 9; c++)
+          if (CRAFT[r][c] === '#') ctx.fillRect(px + c, py + r, 1, 1);
+      ctx.fillStyle = '#7fe8ff';             // canopy
+      ctx.fillRect(px + 3, py + 1, 3, 1);
+      ctx.fillStyle = '#ffd23f';             // thruster wash, two jets
+      ctx.fillRect(px + 1, py + 4, 2, 2);
+      ctx.fillRect(px + 6, py + 4, 2, 2);
+      ctx.fillStyle = '#ff7a4a';
+      ctx.fillRect(px + 2, py + 6, 1, 1);
+      ctx.fillRect(px + 6, py + 6, 1, 1);
+    }
+  },
+};
 
 const CABINET_DATA = {
   1: {
@@ -815,7 +1043,7 @@ const CABINET_DATA = {
   20: {
     label: 'LEVEL 20',
     keys: '1 0',
-    era: '1960s–∞',
+    era: '1960s–NOW',
     colors: { body: '#000400', screen: '#000', accent: '#39ff14', trim: '#1a4a0a' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#000400';
@@ -1070,8 +1298,11 @@ function drawRubberDuck(ctx, x, y) {
   ctx.fillRect(x + 3, y + 1, 1, 1);      // eye
 }
 
-function drawCabinet(canvas, levelNum, scale = 2) {
-  const data = CABINET_DATA[levelNum];
+// The cabinet shell every machine in this arcade is drawn in — the 25 curriculum
+// cabinets AND the bonus acts' cabinets, because they are the same arcade. Only
+// the marquee colours and the SCREEN differ, which is what "a different cabinet"
+// has always meant here.
+function drawCabinetArt(canvas, data, scale = 2) {
   const w = 56;
   const h = 80;
   canvas.width = w;
@@ -1124,11 +1355,60 @@ function drawCabinet(canvas, levelNum, scale = 2) {
   if (data.drawExtras) data.drawExtras(ctx, w, h);
 }
 
+function drawCabinet(canvas, levelNum, scale = 2) {
+  drawCabinetArt(canvas, CABINET_DATA[levelNum], scale);
+}
+
+// One row of machines, built the same way for every act in the game: a curriculum
+// act passes its five cabinets, a bonus act passes its wall. `spec` rows are
+// { key, className, label, keys, draw, locked, onPick }.
+function renderMachineRow(container, specs) {
+  container.innerHTML = '';
+  for (const spec of specs) {
+    const div = document.createElement('div');
+    div.className = spec.className;
+    if (spec.dataset) for (const [k, v] of Object.entries(spec.dataset)) div.dataset[k] = v;
+
+    const canvas = document.createElement('canvas');
+    spec.draw(canvas);
+
+    const label = document.createElement('div');
+    label.className = 'cabinet-label';
+    label.textContent = spec.label;          // textContent only (security.md rule 1)
+
+    const keys = document.createElement('div');
+    keys.className = 'select-keys';
+    keys.textContent = spec.keys || '';
+
+    div.appendChild(canvas);
+    div.appendChild(label);
+    div.appendChild(keys);
+    container.appendChild(div);
+
+    if (spec.onPick) div.addEventListener('click', spec.onPick);
+  }
+}
+
+// A bonus act's wall can hold far more machines than an act of five (Act 7 grows
+// to eleven tracks, docs/specs/act7-speed-racing.md §5.6b), so the row is a
+// CAMERA: one row along the wall, always centred on the machine the player is
+// standing at, with the rest of the wall running off both edges. Programmatic
+// scrollLeft only — the container is overflow:hidden, so there is no scrollbar to
+// find and nothing for a child to have to discover.
+function centreOnSelected(container) {
+  const sel = container.querySelector('.select-cabinet.selected');
+  const panning = container.scrollWidth > container.clientWidth + 1;
+  container.classList.toggle('wing-wall-panning', panning);
+  if (!sel || !panning) { container.scrollLeft = 0; return; }
+  const target = sel.offsetLeft + sel.offsetWidth / 2 - container.clientWidth / 2;
+  container.scrollLeft = Math.max(0, Math.min(target, container.scrollWidth - container.clientWidth));
+}
+
 export function renderSelectScreen(state) {
   mothNoteActivity();   // a render means the player is doing something
   mothStart();
-  const focused = focusedDoor(state);
-  if (focused) { renderDoorView(state, focused); return; }
+  const wing = focusedDoor(state);
+  if (wing) { renderWingAct(state, wing); return; }
   const act = getActForLevel(state.selectedLevel);
   const actIdx = ACTS.indexOf(act);
 
@@ -1147,112 +1427,123 @@ export function renderSelectScreen(state) {
     ? `▲  ACT ${prevAct.num}  —  ${prevAct.name}`
     : '';
 
-  const nextAct = ACTS[actIdx + 1];
+  // Past the last curriculum act the walk continues into the bonus acts — but
+  // only the ones this player has earned. A locked wing is named nowhere and
+  // drawn nowhere: it does not exist yet.
+  const nextAct = ACTS[actIdx + 1] || availableDoors(state)[0];
   $('select-act-next').textContent = nextAct
     ? `▼  ACT ${nextAct.num}  —  ${nextAct.name}`
     : '';
 
   const container = $('select-cabinets');
-  container.innerHTML = '';
+  container.classList.remove('wing-wall', 'wing-wall-panning');
 
-  for (const levelNum of act.levels) {
+  renderMachineRow(container, act.levels.filter(n => CABINET_DATA[n]).map(levelNum => {
     const data = CABINET_DATA[levelNum];
-    if (!data) continue;
-
     const locked = isLevelLocked(state, levelNum);
-
-    const div = document.createElement('div');
-    div.className = 'select-cabinet'
-      + (levelNum === state.selectedLevel ? ' selected' : '')
-      + (locked ? ' locked' : '');
-    div.dataset.level = levelNum;
-
-    const canvas = document.createElement('canvas');
-    drawCabinet(canvas, levelNum);
-
-    const label = document.createElement('div');
-    label.className = 'cabinet-label';
-    // Locked cabinets are dark silhouettes with no game revealed yet.
-    label.textContent = locked ? '???' : (data.label + ' · ' + data.era);
-
-    const keys = document.createElement('div');
-    keys.className = 'select-keys';
-    keys.textContent = locked ? '' : data.keys;
-
-    div.appendChild(canvas);
-    div.appendChild(label);
-    div.appendChild(keys);
-    container.appendChild(div);
-
-    // Locked cabinets can't be selected ahead of progress.
-    if (!locked) {
-      div.addEventListener('click', () => {
+    return {
+      className: 'select-cabinet'
+        + (levelNum === state.selectedLevel ? ' selected' : '')
+        + (locked ? ' locked' : ''),
+      dataset: { level: String(levelNum) },
+      draw: (canvas) => drawCabinet(canvas, levelNum),
+      // Locked cabinets are dark silhouettes with no game revealed yet.
+      label: locked ? '???' : (data.label + ' · ' + data.era),
+      keys: locked ? '' : data.keys,
+      // Locked cabinets can't be selected ahead of progress.
+      onPick: locked ? null : () => {
         state.selectedLevel = levelNum;
         updateSelectHighlight(state);
-      });
-    }
-  }
+      },
+    };
+  }));
 }
 
-// The back-wall sub-view of the select screen (state.doorIndex is set). Every
-// unlocked door is drawn side by side, exactly where the cabinet grid was, with
-// the focused one highlighted — the back wall reads as a room with doors in it,
-// not as one door at a time. Labels come from BACK_WALL_DOORS, so a new wing
-// needs no edit here.
-function renderDoorView(state, door) {
-  const doors = availableDoors(state);
-  const idx = doors.indexOf(door);
+// A BONUS ACT's page (state.wingIndex is set) — the same page shape as Acts 1–5:
+// act number, name and era up top, the acts either side on the ▲/▼ lines, and a
+// row of machines walked with ◀ ▶. Act 7 stands its real cabinets here; Act 6
+// stands its door, which is the honest object (see BACK_WALL_DOORS).
+//
+// Everything comes from the registry row, so a new wing needs no edit here.
+function renderWingAct(state, wing) {
+  const wings = availableDoors(state);
+  const idx = wings.indexOf(wing);
+  const entries = wingEntries(wing);
+  const currentIdx = focusedEntryIndex(state, wing);
 
-  $('select-act-label').textContent = '◈   THE BACK OF THE ARCADE   ◈';
+  $('select-act-label').textContent =
+    `ACT ${wing.num}  ·  ${wing.name}  ·  ${wingEra(wing)}`;
 
   const promptEl = $('select-prompt');
   if (promptEl.dataset.base === undefined) promptEl.dataset.base = promptEl.textContent;
-  promptEl.textContent = doors.length > 1
-    ? 'Doors hum softly.   ◀ ▶: CHOOSE   ·   SPACE: ENTER   ·   ↑: BACK'
-    : 'A door hums softly.   SPACE: ENTER   ·   ↑: BACK';
+  promptEl.textContent = promptEl.dataset.base;
 
+  const prevWing = wings[idx - 1];
   const lastAct = ACTS[ACTS.length - 1];
-  $('select-act-prev').textContent = idx > 0
-    ? `▲  ${doors[idx - 1].label}`
+  $('select-act-prev').textContent = prevWing
+    ? `▲  ACT ${prevWing.num}  —  ${prevWing.name}`
     : `▲  ACT ${lastAct.num}  —  ${lastAct.name}`;
-  $('select-act-next').textContent = idx >= 0 && idx < doors.length - 1
-    ? `▼  ${doors[idx + 1].label}`
+
+  const nextWing = wings[idx + 1];
+  $('select-act-next').textContent = nextWing
+    ? `▼  ACT ${nextWing.num}  —  ${nextWing.name}`
     : '';
 
   const container = $('select-cabinets');
-  container.innerHTML = '';
+  container.classList.add('wing-wall');
 
-  for (const d of doors) {
-    const div = document.createElement('div');
-    div.className = 'select-cabinet select-door' + (d === door ? ' selected' : '');
-    div.dataset.door = d.id;   // NOT data-level — the moth only visits cabinets
-
-    const canvas = document.createElement('canvas');
-    d.art(canvas);
-
-    const label = document.createElement('div');
-    label.className = 'cabinet-label';
-    label.textContent = d.label;
-
-    const keys = document.createElement('div');
-    keys.className = 'select-keys';
-    keys.textContent = d.hint;
-
-    div.appendChild(canvas);
-    div.appendChild(label);
-    div.appendChild(keys);
-    container.appendChild(div);
-
-    div.addEventListener('click', () => {
-      focusDoor(state, d.id);
-      renderSelectScreen(state);
+  const specs = [];
+  // The doorway you came through, standing at the head of this act's wall — the
+  // back room made visible instead of announced (Trevor, 2026-09-13). It is set
+  // dressing, never a target: the cursor walks cabinets only. A wing WITHOUT
+  // cabinets IS its door, so it isn't drawn twice.
+  if (entries.length && !entries[0].isDoor) {
+    specs.push({
+      className: 'select-cabinet select-wall-door',
+      draw: (canvas) => wing.door.art(canvas, 2),
+      label: wing.door.label,
+      keys: wing.door.hint,
     });
   }
+
+  entries.forEach((entry, i) => {
+    specs.push({
+      className: 'select-cabinet select-door' + (i === currentIdx ? ' selected' : ''),
+      // NOT data-level — the moth only visits the curriculum's lit cabinets.
+      // data-door names the WING this machine is a way into (the contract
+      // tests/integration/speedway.test.mjs and docs/screenshots/capture-speedway.js
+      // read); data-entry names the machine itself.
+      dataset: entry.id ? { door: wing.id, entry: entry.id } : { door: wing.id },
+      draw: entry.draw,
+      label: entry.label,
+      keys: entry.hint,
+      onPick: () => {
+        state.wingEntry = entry.id;
+        renderSelectScreen(state);
+      },
+    });
+  });
+
+  renderMachineRow(container, specs);
+  centreOnSelected(container);
+}
+
+// A bonus act's era: whatever the registry declares, or — for a wing whose wall
+// grows — derived from the cabinets actually standing on it, so it can never
+// claim an era it isn't showing.
+function wingEra(wing) {
+  if (wing.era) return wing.era;
+  const years = (wing.cabinets || [])
+    .map(id => WING_CABINETS[id] && parseInt(WING_CABINETS[id].era, 10))
+    .filter(y => Number.isFinite(y));
+  if (!years.length) return '';
+  const lo = Math.min(...years), hi = Math.max(...years);
+  return lo === hi ? String(lo) : `${lo}–${hi}`;
 }
 
 export function updateSelectHighlight(state) {
   mothNoteActivity();
-  // At the back wall there are no levels to highlight — renderDoorView owns it.
+  // In a bonus act there are no levels to highlight — renderWingAct owns it.
   if (focusedDoor(state)) return;
   document.querySelectorAll('.select-cabinet').forEach(el => {
     el.classList.toggle('selected', parseInt(el.dataset.level) === state.selectedLevel);
@@ -1260,15 +1551,17 @@ export function updateSelectHighlight(state) {
 }
 
 export function navigateAct(state, delta) {
-  // The back wall's doors sit one step BELOW the last act, and ↑/↓ walk through
-  // them in registry order. ↑ from the first door always returns to the acts —
-  // the back wall can never trap the cursor.
-  const doors = availableDoors(state);
+  // The bonus acts sit one step BELOW the last curriculum act, and ↑/↓ walk
+  // through them in registry order exactly like any other act change. ↑ from the
+  // first bonus act always returns to the arcade — the back room can never trap
+  // the cursor.
+  const wings = availableDoors(state);
   if (focusedDoor(state)) {
-    const next = state.doorIndex + delta;
+    const next = state.wingIndex + delta;
     if (next < 0) { clearDoorFocus(state); renderSelectScreen(state); return; }
-    if (next >= doors.length) return; // the back wall is the last thing here
-    state.doorIndex = next;
+    if (next >= wings.length) return; // the last bonus act is the last thing here
+    state.wingIndex = next;
+    state.wingEntry = null;           // land at the head of the new act's wall
     renderSelectScreen(state);
     return;
   }
@@ -1277,8 +1570,12 @@ export function navigateAct(state, delta) {
   const newActIdx = actIdx + delta;
   if (newActIdx < 0) return;
   if (newActIdx >= ACTS.length) {
-    // Past the final act → step into the back wall, if any door is earned.
-    if (delta > 0 && doors.length > 0) { state.doorIndex = 0; renderSelectScreen(state); }
+    // Past the final curriculum act → into the first bonus act, if it's earned.
+    if (delta > 0 && wings.length > 0) {
+      state.wingIndex = 0;
+      state.wingEntry = null;
+      renderSelectScreen(state);
+    }
     return;
   }
   const newLevels = ACTS[newActIdx].levels;
@@ -1292,12 +1589,14 @@ export function navigateAct(state, delta) {
 }
 
 export function navigateWithinAct(state, delta) {
-  // The back wall's doors stand side by side, so ◀ ▶ walks between them too.
-  if (focusedDoor(state)) {
-    const doors = availableDoors(state);
-    const next = state.doorIndex + delta;
-    if (next < 0 || next >= doors.length) return;
-    state.doorIndex = next;
+  // In a bonus act, ◀ ▶ walk that act's wall — the same motion as walking the
+  // five cabinets of any other act.
+  const wing = focusedDoor(state);
+  if (wing) {
+    const entries = wingEntries(wing);
+    const newPos = focusedEntryIndex(state, wing) + delta;
+    if (newPos < 0 || newPos >= entries.length) return;
+    state.wingEntry = entries[newPos].id;
     renderSelectScreen(state);
     return;
   }
@@ -1312,7 +1611,16 @@ export function navigateWithinAct(state, delta) {
 }
 
 export function selectByPosition(state, pos) {
-  if (focusedDoor(state)) return; // number keys don't apply at the back wall
+  const wing = focusedDoor(state);
+  if (wing) {
+    // Number keys pick along a bonus act's wall too, same as any other act.
+    const entries = wingEntries(wing);
+    const entry = entries[pos - 1];
+    if (!entry) return;
+    state.wingEntry = entry.id;
+    renderSelectScreen(state);
+    return;
+  }
   const act = getActForLevel(state.selectedLevel);
   const levelNum = act.levels[pos - 1];
   if (!levelNum) return;

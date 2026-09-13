@@ -1191,15 +1191,58 @@
   margin-top: 2px;
 }
 
-/* The back wall's doors to the bonus wings (BACK_WALL_DOORS in
-   js/ui/cabinet-art.js). They stand in the cabinet row, but carry longer,
-   sentence-style labels, so each keeps a column of its own instead of
-   stretching the row when two or more doors are open. */
+/* The machines on a BONUS ACT's wall (BACK_WALL_DOORS in js/ui/cabinet-art.js —
+   Act 6's doorway, Act 7's cabinets). They stand in the cabinet row like any
+   other act's, but carry longer, sentence-style labels, so each keeps a column
+   of its own instead of stretching the row. */
 .select-door .cabinet-label {
   max-width: 130px;
   line-height: 1.6;
   text-align: center;
 }
+
+/* A bonus act's wall is the back room behind the arcade — drawn as a room you
+   walk, not announced as a label (Trevor, 2026-09-13). Act 7 grows from two
+   cabinets to eleven (docs/specs/act7-speed-racing.md §5.6b), so the row is a
+   CAMERA: one wall, panned by scrollLeft (js/ui/cabinet-art.js centreOnSelected)
+   to keep the machine the player is standing at in the middle. Overflow is
+   HIDDEN, never auto: there is no scrollbar for a child to have to find, and the
+   wall simply continues past both edges. */
+.select-cabinets.wing-wall {
+  justify-content: flex-start;
+  overflow: hidden;
+  max-width: min(94vw, 1120px);
+  margin-left: auto;
+  margin-right: auto;
+  /* Vertical: room for the selected cabinet's scale and its glow. Horizontal:
+     room for the end fade below, so the first and last cabinets on a long wall
+     can still be walked fully into view. */
+  padding: 14px 120px;
+}
+
+.select-cabinets.wing-wall > :first-child { margin-left: auto; }
+.select-cabinets.wing-wall > :last-child { margin-right: auto; }
+
+/* Only once the wall actually runs off both edges does it fade at the ends — a
+   wall of two is never dimmed. */
+.select-cabinets.wing-wall-panning {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 64px, #000 calc(100% - 64px), transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 64px, #000 calc(100% - 64px), transparent 100%);
+}
+
+/* The doorway standing at the head of a bonus act's wall: the way the player
+   came in, part of the room rather than a thing to pick. Set dressing only —
+   never selectable, never a cursor target. */
+.select-wall-door {
+  cursor: default;
+  pointer-events: none;
+  margin-right: 20px;
+}
+
+/* It recedes by being dimmer ART, not dimmer TEXT — its label keeps the same
+   readable --atari-dim every cabinet label uses (css/base.css: #555 failed WCAG
+   across a dozen classes and was raised for exactly this reason). */
+.select-wall-door canvas { filter: brightness(0.72); }
 
 .select-prompt {
   font-size: 8px;

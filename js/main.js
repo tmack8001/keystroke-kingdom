@@ -2,7 +2,7 @@ import * as Audio from './audio.js';
 import { LEVELS, FINGER_MAP } from './levels.js';
 import { updateHUD, showFingerHint, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter } from './ui/hud.js';
 import { showScreen, applyLevelTheme, renderReadyScreen, renderSlotsScreen, renderCollectionScreen, createStars } from './ui/screens.js';
-import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked, focusedDoor, focusDoor, clearDoorFocus } from './ui/cabinet-art.js';
+import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked, focusedDoor, focusedWingEntry, focusDoor, clearDoorFocus } from './ui/cabinet-art.js';
 import { Themes, activeTheme, stopAll } from './themes/index.js';
 import * as KeyboardPreview from './ui/keyboard-preview.js';
 import * as Mystery from './mystery.js';
@@ -254,11 +254,14 @@ const state = {
   // bypass sets selectBypass=true, unlocking every cabinet for dev/parents.
   maxUnlockedLevel: 1,
   selectBypass: false,
-  // Sub-state of the 'select' screen: which of the back wall's doors to the
-  // bonus wings the cursor is standing at (null = none, still among the
-  // cabinets). Indexes cabinet-art.js's BACK_WALL_DOORS registry — read it
-  // through focusedDoor(state), never directly. Any Escape clears it.
-  doorIndex: null,
+  // Sub-state of the 'select' screen: which BONUS ACT the cursor is walking
+  // (null = none, still among the 25 cabinets), and which machine on that act's
+  // wall it is standing at. wingIndex indexes cabinet-art.js's BACK_WALL_DOORS
+  // registry (one row per bonus act) and wingEntry names a machine inside it —
+  // read both through focusedDoor(state)/focusedWingEntry(state), never
+  // directly. Any Escape clears them.
+  wingIndex: null,
+  wingEntry: null,
 
   // Settings screen navigation
   settingsReturn: 'title',   // 'title' | 'pause'
@@ -1823,8 +1826,8 @@ function handleBlockWordsKey(e) {
   // typing mechanic (mirrors the name-entry field).
 }
 
-// ─── Act 6 — Text Worlds: the back-wall door entry/exit ─────────────────────
-// Entered from the select screen's back-wall sub-state (state.doorIndex). Runs as a
+// ─── Act 6 — Text Worlds: the bonus act's entry/exit ────────────────────────
+// Entered from the select screen's bonus-act sub-state (state.wingIndex). Runs as a
 // parallel screen ('textworld') on the shared canvas, like the act cinematics —
 // the pattern engine (handleGameKey) is never involved. No survival timer is ever
 // started here, so the wing inherits zero time pressure (One Rule).
@@ -1840,15 +1843,15 @@ function enterTextWorld() {
 
 function returnToArcadeFromTextWorld() {
   TextWorldHub.stop();
-  focusDoor(state, 'textworld');   // land back on the door we came through
+  focusDoor(state, 'textworld');   // land back on the act page we came through
   showScreen('select', state);
   renderSelectScreen(state);
 }
 
-// ─── Act 7 — The Speedway: the second back-wall door ────────────────────────
+// ─── Act 7 — The Speedway: the second bonus act ─────────────────────────────
 // The exact analogue of enterTextWorld above: a parallel screen ('speedway') on
-// the shared canvas with its own hub, entered from the back wall. The 25-level
-// pattern engine (handleGameKey/buildPatterns) is never involved, and no
+// the shared canvas with its own hub, entered from that act's wall of cabinets.
+// The 25-level pattern engine (handleGameKey/buildPatterns) is never involved, and no
 // survival timer is ever started here — the wing inherits zero time pressure.
 //
 // The hub is imported LAZILY rather than statically, for one reason: this wing
@@ -1861,8 +1864,16 @@ function returnToArcadeFromTextWorld() {
 let Speedway = null;          // the js/speedway/hub.js namespace, once loaded
 let speedwayLoading = false;  // a second Space while it loads must not re-enter
 
-function enterSpeedway() {
+// `trackId` is the cabinet the player walked up to on Act 7's wall (a track id
+// from js/speedway/tracks/*, or null when the act was entered through its door).
+// The hub is the wing's own chooser — this asks it, best-effort, to open standing
+// at the same machine; a hub build without that courtesy simply opens on its own
+// cursor, which is never a failure (feature-detected, silent fallback).
+let pendingTrackId = null;
+
+function enterSpeedway(trackId) {
   if (speedwayLoading) return;
+  pendingTrackId = trackId || null;
   stopAll();
   if (Speedway) { startSpeedwayHub(); return; }
   speedwayLoading = true;
@@ -1896,8 +1907,11 @@ function startSpeedwayHub() {
   try {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     state.screen = 'speedway';
+    if (typeof Speedway.focusTrack === 'function' && pendingTrackId) {
+      try { Speedway.focusTrack(pendingTrackId); } catch { /* never a trap */ }
+    }
     Speedway.start($('invaders-canvas'), {
-      onExit: returnToArcadeFromSpeedway,   // ESC from the hub → back to the door
+      onExit: returnToArcadeFromSpeedway,   // ESC from the hub → back to its cabinet
     });
   } catch (err) {
     // A wing that can't start is a disappointment, never a trap (the One Rule).
@@ -1916,13 +1930,15 @@ function showSpeedwayCard(id) {
 
 function returnToArcadeFromSpeedway() {
   if (Speedway) Speedway.stop();
-  focusDoor(state, 'speedway');   // land back on the door we came through
+  focusDoor(state, 'speedway', pendingTrackId);   // land back at the cabinet we came through
   showScreen('select', state);
   renderSelectScreen(state);
 }
 
-// The back wall's doors → their wings. A third wing is a data row in
-// cabinet-art.js's BACK_WALL_DOORS plus one entry here.
+// The bonus acts → their wings, keyed by the registry row's id and called with
+// the id of the machine the player picked on that act's wall (null when the act
+// is entered through its door). A third wing is a data row in cabinet-art.js's
+// BACK_WALL_DOORS plus one entry here.
 const DOOR_ENTRY = {
   textworld: enterTextWorld,
   speedway: enterSpeedway,
@@ -1972,6 +1988,25 @@ function initKeyboardNotice() {
   // A real physical keypress is the proof we want; capture so it fires before any
   // screen handler can stopPropagation, and once so it costs nothing afterwards.
   document.addEventListener('keydown', dismissKeyboardNotice, { capture: true, once: true });
+}
+
+// The WOPR/joshua bypass is no longer only a dev shortcut — it is the ONLY way to
+// reach Act 6 and Act 7 before Level 25, so real play happens behind it. But typing it
+// on the TITLE screen skips name entry, so no saved game exists, and everything that
+// persists then commits to nothing: the secret WarGames card never lands, and Act 7's
+// ghost, odometer and lap count all evaporate (the wing said "never driven" after three
+// laps). docs/ROADMAP.md had filed this as "fine as a dev path, revisit only if it
+// becomes a real player path" — it became one.
+//
+// So: entering the bypass guarantees a game to write into. If one already exists we use
+// it untouched; otherwise we create one under the default name, exactly as a first-time
+// player's first name-confirm would. Nothing is overwritten, and a player who later
+// names themselves renames this game rather than getting a second one.
+function ensureGameForBypass() {
+  try {
+    if (Slots.getActive()) return;
+    Slots.createSlot(settings.playerName || 'Player One');
+  } catch { /* storage refused — the bypass still works, it just won't persist */ }
 }
 
 document.addEventListener('keydown', (e) => {
@@ -2101,8 +2136,7 @@ document.addEventListener('keydown', (e) => {
             secretBuffer = '';
             $('wopr-text').textContent = '';
             Audio.start();
-            // Secret WarGames card into the active game's collection (no-op if
-            // no game is active yet — the dev bypass before a slot is chosen).
+            ensureGameForBypass();   // so the card — and Act 7's ghosts — have somewhere to land
             Slots.collectCardId(WARGAMES_CARD_ID);
             // WOPR is the dev/parent bypass: every cabinet is selectable,
             // regardless of saved progress.
@@ -2179,6 +2213,7 @@ document.addEventListener('keydown', (e) => {
           e.preventDefault();
           secretBuffer = '';
           Audio.start();
+          ensureGameForBypass();   // so the card — and Act 7's ghosts — have somewhere to land
           Slots.collectCardId(WARGAMES_CARD_ID); // secret WarGames card
           state.selectBypass = true; // WOPR dev/parent bypass — unlock all cabinets
           state.selectedLevel = 1;
@@ -2401,7 +2436,7 @@ document.addEventListener('keydown', (e) => {
     case 'select':
       e.preventDefault();
       if (e.key === 'f' || e.key === 'F') {
-        if (focusedDoor(state)) break; // free play doesn't apply at the back wall
+        if (focusedDoor(state)) break; // free play doesn't apply in a bonus act
         state.freePlay = !state.freePlay;
         renderSelectScreen(state);
       } else if (e.key >= '1' && e.key <= '5') {
@@ -2415,8 +2450,12 @@ document.addEventListener('keydown', (e) => {
       } else if (e.key === 'ArrowDown') {
         navigateAct(state, 1);
       } else if (e.key === 'Enter' || e.key === ' ') {
-        const door = focusedDoor(state);
-        if (door) { const enterWing = DOOR_ENTRY[door.id]; if (enterWing) enterWing(); break; }
+        const picked = focusedWingEntry(state);
+        if (picked) {
+          const enterWing = DOOR_ENTRY[picked.wing.id];
+          if (enterWing) enterWing(picked.entry && picked.entry.id);
+          break;
+        }
         // Guard: never enter a locked cabinet (belt-and-suspenders — the
         // cursor can't normally land on one, but the WOPR bypass or a stale
         // selection shouldn't slip a locked level through).
@@ -2433,7 +2472,7 @@ document.addEventListener('keydown', (e) => {
         }, 0);
       } else if (e.key === 'Escape') {
         state.freePlay = false;
-        clearDoorFocus(state);       // leaving the select screen clears the back-wall sub-state
+        clearDoorFocus(state);       // leaving the select screen clears the bonus-act sub-state
         showScreen('title', state);
       }
       break;
