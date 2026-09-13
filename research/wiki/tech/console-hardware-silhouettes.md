@@ -2,7 +2,7 @@
 title: Console hardware silhouettes — drawing the machine instead of a cabinet
 type: concept
 tags: [video-game-history, hardware, cabinet, act7, act2, theme-authoring]
-sources: 8
+sources: 9
 verified: 2026-09-13
 ---
 
@@ -166,6 +166,17 @@ Reference photographs, stored in the vault so the drawing claims above stay audi
 - **Licence:** CC BY-SA 4.0
 - **Retrieved:** 2026-09-13
 
+### `nes-console-and-controller.jpg`
+![A Nintendo Entertainment System: a light-grey two-tone box with a flat front-loading cartridge door, a dark stripe on the right, red Nintendo lettering on the lower band, beside its grey controller with a black cross D-pad and two red buttons](../media/console-hardware-silhouettes/nes-console-and-controller.jpg)
+- **Shows:** the details that survive at 56×80 and that the Level 9 station is drawn from —
+  two-tone grey, the flat cartridge door, the dark right stripe, the red wordmark run, and the
+  controller's black cross plus two red buttons. Drawn from this frame, not from the text
+  notes above, per journal F29.
+- **Source:** [File:NES-Console-Set.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NES-Console-Set.jpg)
+- **Author:** Evan-Amos
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-13
+
 ### `beige-desktop-pc-monitor-on-top.jpg`
 ![A beige horizontal desktop PC with the CRT monitor sitting on top of the case and the keyboard in front, drive slots on the case's front face](../media/console-hardware-silhouettes/beige-desktop-pc-monitor-on-top.jpg)
 - **Shows:** the form this section describes — horizontal case, monitor on top, keyboard in
@@ -220,3 +231,4 @@ as a historical term of art — treat it as an authoring shorthand, not a fact.*
   wiki carries **no sourced physical description** of it.
 7. [Apple IIe — Wikipedia (raw wikitext)](https://en.wikipedia.org/w/index.php?title=Apple_IIe&action=raw) — the 1984 case revision as "dyed plastic mold in a slightly darker beige" with "darker keycaps (small black lettering, versus large white print)"; the January 1987 "Platinum IIe" colour change to light grey; the recessed metal ID badges showing the Apple logo with "//e". **[fetched]**
 8. [File:Iie-system.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Iie-system.jpg) and [File:Old packard bell pc.jpg](https://commons.wikimedia.org/wiki/File:Old_packard_bell_pc.jpg) — the two reference photographs, stored in this vault under `wiki/media/console-hardware-silhouettes/` with their licences. Every silhouette detail above was read off these frames. **[images viewed]**
+9. [File:NES-Console-Set.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NES-Console-Set.jpg) — Evan-Amos's public-domain hardware photography; the reference for the Level 9 console station. **[image viewed]**

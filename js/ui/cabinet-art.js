@@ -801,6 +801,8 @@ const CABINET_DATA = {
 
   9: {
     label: 'LEVEL 9',
+    // act2.md: "The NES in the center of the room" — a console, not a coin-op.
+    shell: 'console',
     keys: 'W O',
     era: '1985',
     colors: { body: '#000820', screen: '#000', accent: '#5c94fc', trim: '#1a3060' },
@@ -1651,8 +1653,78 @@ function drawCabinetArt(canvas, data, scale = 2) {
   if (data.drawExtras) data.drawExtras(ctx, w, h);
 }
 
+// ─── Console stations — the levels that were never coin-ops ─────────────────
+// Acts 2-4 have been drawn as upright arcade cabinets since Act 2 shipped, while
+// the design bible names the actual object for every one of them: L9 "the NES in
+// the center of the room", L10 "a gold-cartridge NES beside a wooden TV", L11 "a
+// Genesis console", L15 "a Game Boy Pocket on a backlit stand"
+// (.claude/rules/levels/act2.md, act3.md). That is the DRAW A REAL THING rule
+// (theme-authoring.md) being violated by roughly twelve of the twenty-five, and
+// it is why the Apple IIe looked out of place beside them: it was the only
+// machine in the row drawn as a machine.
+//
+// The SCREEN is unchanged — `data.drawScreen` still paints the game, era-faithful
+// as before. Only the box around it changes, from a cabinet to the machine the
+// act file names.
+//
+// Per journal F29, each machine is drawn from a PHOTOGRAPH, not from the text
+// silhouette notes alone. NES reference and licence:
+// research/wiki/tech/console-hardware-silhouettes.md §Media.
+function drawConsoleStation(canvas, data, scale = 2) {
+  const w = 56, h = 80;
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width  = Math.round(w * scale) + 'px';
+  canvas.style.height = Math.round(h * scale) + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  ctx.fillStyle = '#0a0a12';  ctx.fillRect(0, 0, w, h);      // the room
+  ctx.fillStyle = '#2b2016';  ctx.fillRect(0, 62, w, 18);     // the floor/shelf
+  ctx.fillStyle = '#171009';  ctx.fillRect(0, 68, w, 12);
+
+  // A wooden television — act2.md L10 says "a wooden TV" in so many words.
+  ctx.fillStyle = '#6b4a2a';  ctx.fillRect(4, 3, 48, 44);     // veneer cabinet
+  ctx.fillStyle = '#4a3320';
+  ctx.fillRect(4, 43, 48, 4);                                 // shadowed underside
+  ctx.fillStyle = '#1a1a20';  ctx.fillRect(7, 6, 42, 34);     // the bezel well
+  data.drawScreen(ctx, 9, 8, 38, 30);                         // the game itself
+  ctx.fillStyle = '#c8a26a';                                  // two tuning knobs
+  ctx.fillRect(50, 12, 3, 4);
+  ctx.fillRect(50, 20, 3, 4);
+  ctx.fillStyle = '#3a2816';                                  // legs
+  ctx.fillRect(9, 47, 4, 5);
+  ctx.fillRect(43, 47, 4, 5);
+
+  // The NES, front-loading, two-tone grey with the red wordmark.
+  ctx.fillStyle = '#d3d3d3';  ctx.fillRect(8, 53, 28, 9);     // light upper body
+  ctx.fillStyle = '#9a9a9a';  ctx.fillRect(8, 59, 28, 3);     // darker lower band
+  ctx.fillStyle = '#c2c2c2';  ctx.fillRect(11, 54, 17, 4);    // the cartridge door
+  ctx.fillStyle = '#2a2a2e';  ctx.fillRect(30, 53, 4, 6);     // the dark right stripe
+  ctx.fillStyle = '#c8202a';  ctx.fillRect(11, 60, 9, 1);     // "Nintendo" in red
+  ctx.fillStyle = '#7a7a7a';                                  // POWER / RESET
+  ctx.fillRect(22, 60, 3, 1);
+  ctx.fillRect(26, 60, 3, 1);
+
+  // The controller: black cross left, two red buttons right.
+  ctx.fillStyle = '#cfcfcf';  ctx.fillRect(39, 55, 13, 7);
+  ctx.fillStyle = '#26262a';                                  // D-pad
+  ctx.fillRect(41, 57, 4, 2);
+  ctx.fillRect(42, 56, 2, 4);
+  ctx.fillStyle = '#8a8a8a';  ctx.fillRect(45, 58, 3, 1);     // select/start
+  ctx.fillStyle = '#c8202a';                                  // A and B
+  ctx.fillRect(47, 57, 2, 2);
+  ctx.fillRect(50, 57, 2, 2);
+  ctx.fillStyle = '#0a0a12';  ctx.fillRect(37, 58, 2, 1);     // the cable
+}
+
 function drawCabinet(canvas, levelNum, scale = 2) {
-  drawCabinetArt(canvas, CABINET_DATA[levelNum], scale);
+  const data = CABINET_DATA[levelNum];
+  // `shell` names what this level's machine actually IS. Absent = an upright
+  // arcade cabinet, which is correct for Acts 1 and 5 and is the still-unfixed
+  // default for the rest (docs/ROADMAP.md §3).
+  if (data.shell === 'console') drawConsoleStation(canvas, data, scale);
+  else drawCabinetArt(canvas, data, scale);
 }
 
 // One row of machines, built the same way for every act in the game: a curriculum
