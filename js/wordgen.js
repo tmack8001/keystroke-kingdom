@@ -61,9 +61,16 @@
 //    cycles → re-run the health probe and follow its verdict.
 
 import { getWordLengthRange } from './settings.js';
+import { hasBlockedWord } from './word-blocklist.js';
 
-const HEALTH_URL = '/api/wordgen/health';
-const WORDGEN_URL = '/api/wordgen';
+// Endpoint paths are RELATIVE, not root-absolute. A root-absolute '/api/...' leaves a
+// GitHub Pages project-page prefix entirely and hits the DOMAIN root — on a shared
+// user.github.io that is a path this game does not own, so a sibling project serving
+// /api/* would be talked to by mistake. Relative keeps the request inside our own
+// prefix, where it 404s and the static-pool fallback engages exactly as designed.
+// Resolves identically on the Go server and in Docker, which serve from '/'.
+const HEALTH_URL = 'api/wordgen/health';
+const WORDGEN_URL = 'api/wordgen';
 
 const HEALTH_PROBE_TIMEOUT_MS = 800;
 const FETCH_TIMEOUT_MS = 4000;
@@ -372,8 +379,23 @@ export function takeWords(level, opts = {}) {
   const out = [];
   for (const word of words) {
     const chars = String(word).split('');
-    // Defense-in-depth charset re-check against the level's own keys.
+    // Defense-in-depth charset re-check against the level's own keys. Case is NOT
+    // normalized here: the engine's token contract makes case meaningful (an
+    // uppercase token means Shift), so a word that isn't already lowercase must
+    // fail this check exactly as it always has, not be quietly folded.
     if (allowed && !chars.every((c) => allowed.has(c))) continue;
+    // Defense-in-depth KID-SAFETY re-check (security.md rule 7: "we never trust
+    // even our own server"). The server's isBlocked is the primary gate; this is
+    // the same floor enforced a second time at the last moment before the word
+    // enters the pattern stream, so a server bug or a drifted gate can never put
+    // an unsafe word in front of a child. It reads the SINGLE source of truth
+    // (js/word-blocklist.json via js/word-blocklist.js BASE_WORDS) plus any
+    // additive parent words — never a second hand-rolled list, which is the very
+    // class of bug this check exists to backstop. Same idiom the L25 coda uses
+    // (js/keyboard-story.js). hasBlockedWord tokenizes on non-letters and then
+    // exact-word matches, so a compound like "zig-vodka" can't smuggle a blocked
+    // word through as one wordgen "word".
+    if (hasBlockedWord(String(word))) continue;
     out.push([...prefix, ...chars, ...suffix]);
   }
   return out;

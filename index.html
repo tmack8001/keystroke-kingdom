@@ -10,10 +10,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Keystroke Kingdom</title>
 <!-- Favicon: crowned arcade keycap (favicon.svg crisp; favicon.ico for the bare
-     /favicon.ico probe & legacy; apple-touch-icon for iOS home-screen/bookmarks). -->
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+     favicon.ico probe & legacy; apple-touch-icon for iOS home-screen/bookmarks).
+     These hrefs are RELATIVE (no leading slash) on purpose: the game is served
+     from the site ROOT by the Go binary/docker, but from the /keystroke-kingdom/
+     sub-path on GitHub Pages (a project page). A leading slash would resolve to
+     the Pages domain root and 404 there; a relative path is correct in BOTH.
+     Same rule as the css/ + js/ references below. -->
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#0b0e1a">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/base.css">
@@ -32,6 +37,18 @@
     <h1>KEYSTROKE<span class="kingdom">KINGDOM</span></h1>
   </div>
   <div class="insert-coin" id="insert-coin">INSERT COIN<br><span class="coin-hint">PRESS SPACE OR <span data-enter-key>ENTER</span></span></div>
+  <!-- Shown only on a touch-primary device (no physical keyboard detected). It never
+       blocks: the player can still start, and it self-dismisses on the first real keydown,
+       because a keypress PROVES a keyboard exists (tablet + keyboard case, Chromebook...). -->
+  <div class="keyboard-notice hidden" id="keyboard-notice">
+    <div class="keyboard-notice-title">THIS CABINET NEEDS A KEYBOARD</div>
+    <div class="keyboard-notice-body">
+      KEYSTROKE KINGDOM IS A TYPING GAME.<br>
+      IT WANTS REAL KEYS UNDER REAL FINGERS.<br>
+      COME BACK ON A COMPUTER!
+    </div>
+    <div class="keyboard-notice-hint">GOT A KEYBOARD? JUST START TYPING.</div>
+  </div>
   <div class="reboot-hint" id="reboot-hint">PRESS R TO REBOOT CABINET</div>
   <div class="settings-hint" id="settings-hint">PRESS TAB FOR SETTINGS</div>
   <div class="wopr-text" id="wopr-text"></div>

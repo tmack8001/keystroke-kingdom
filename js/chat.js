@@ -15,8 +15,14 @@
 // strip the safety rules. Messages are rendered as data (canvas text in
 // imfriend.js), never markup — no DOM sink here or downstream.
 
-const HEALTH_URL = '/api/wordgen/health';
-const CHAT_URL = '/api/chat';
+// Endpoint paths are RELATIVE, not root-absolute. A root-absolute '/api/...' leaves a
+// GitHub Pages project-page prefix entirely and hits the DOMAIN root — on a shared
+// user.github.io that is a path this game does not own, so a sibling project serving
+// /api/* would be talked to by mistake. Relative keeps the request inside our own
+// prefix, where it 404s and the static-pool fallback engages exactly as designed.
+// Resolves identically on the Go server and in Docker, which serve from '/'.
+const HEALTH_URL = 'api/wordgen/health';
+const CHAT_URL = 'api/chat';
 
 const HEALTH_TIMEOUT_MS = 800;
 const CHAT_TIMEOUT_MS = 25000; // a friend's reply is worth a short wait; still bounded

@@ -25,7 +25,13 @@
 import { recentStoryBases } from './keyboard-story-cache.js';
 import { STATIC_STORIES } from './keyboard-story.js';
 
-const STORY_URL = '/api/keyboard-story';
+// Endpoint paths are RELATIVE, not root-absolute. A root-absolute '/api/...' leaves a
+// GitHub Pages project-page prefix entirely and hits the DOMAIN root — on a shared
+// user.github.io that is a path this game does not own, so a sibling project serving
+// /api/* would be talked to by mistake. Relative keeps the request inside our own
+// prefix, where it 404s and the static-pool fallback engages exactly as designed.
+// Resolves identically on the Go server and in Docker, which serve from '/'.
+const STORY_URL = 'api/keyboard-story';
 const FETCH_TIMEOUT_MS = 8000; // a story is worth a short wait; bounded so nothing hangs
 
 // Session status, mirroring wordgen's minimal state machine:

@@ -1,0 +1,78 @@
+# Keystroke Kingdom — static-host validation gate
+#
+# The game runs in THREE environments: the Go binary, docker-compose, and a
+# plain STATIC host (GitHub Pages serves this repo's root on every push to
+# main — there is no build step and no /api/* backend there).
+#
+# This workflow protects the third one. It serves the repo exactly the way
+# Pages does — under the /keystroke-kingdom/ project-page sub-path — and asserts
+# that every asset and every ES module index.html needs comes back 200. That
+# catches the two static-host-only regressions:
+#   * an absolute asset path ("/favicon.ico") that 404s off the site root
+#   * a new js/ module added to the import graph but unreachable
+#
+# There is deliberately NO deploy job here: Pages already publishes from main
+# (build_type: legacy, source branch main, path /). Adding a deploy would
+# double-deploy the same commit.
+name: static-host-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  static-host-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Serve the repo under the Pages project-page sub-path
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pagesroot"
+          ln -s "$GITHUB_WORKSPACE" "$RUNNER_TEMP/pagesroot/keystroke-kingdom"
+          nohup python3 -m http.server 8801 --directory "$RUNNER_TEMP/pagesroot" \
+            > "$RUNNER_TEMP/http-server.log" 2>&1 &
+          disown || true
+          for _ in $(seq 1 30); do
+            if curl -sfo /dev/null http://127.0.0.1:8801/keystroke-kingdom/index.html; then
+              echo "static host up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "static host never came up"; cat "$RUNNER_TEMP/http-server.log"; exit 1
+
+      - name: Check the sub-path (GitHub Pages project-page shape)
+        run: node scripts/static-host-check.mjs --url=http://127.0.0.1:8801/keystroke-kingdom/
+
+      - name: Serve the repo at the site ROOT too (Go binary / docker shape)
+        run: |
+          set -euo pipefail
+          nohup python3 -m http.server 8802 --directory "$GITHUB_WORKSPACE" \
+            > "$RUNNER_TEMP/http-server-root.log" 2>&1 &
+          disown || true
+          for _ in $(seq 1 30); do
+            if curl -sfo /dev/null http://127.0.0.1:8802/index.html; then
+              echo "root host up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "root host never came up"; cat "$RUNNER_TEMP/http-server-root.log"; exit 1
+
+      - name: Check the site root (relative paths must work there too)
+        run: node scripts/static-host-check.mjs --url=http://127.0.0.1:8802/
+
+      - name: Assert .nojekyll is present
+        run: |
+          test -f .nojekyll || {
+            echo "FAIL: .nojekyll missing — Pages' legacy Jekyll pipeline will drop _/. paths";
+            exit 1;
+          }
+          echo "ok: .nojekyll present"

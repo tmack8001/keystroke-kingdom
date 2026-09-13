@@ -76,10 +76,10 @@ test(
   'healthy path: health OK + well-formed batch → takeWords yields only words passing the chain',
   withRejectionGuard(async () => {
     const calls = installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) {
+      if (url.includes('api/wordgen/health')) {
         return respondJson({ available: true, model: 'llama3.2' });
       }
-      if (url.includes('/api/wordgen')) {
+      if (url.includes('api/wordgen')) {
         // Both the prefetch=1 kick and the follow-up consume GET land here;
         // words are only meaningfully returned on the non-prefetch GET.
         if (url.includes('prefetch=1')) {
@@ -113,7 +113,7 @@ test(
     }
     // Calls carry only declared params, never the player name (privacy check
     // lives fully in its own test below, but a quick smoke check here too).
-    const wordgenCalls = calls.filter((c) => c.url.includes('/api/wordgen'));
+    const wordgenCalls = calls.filter((c) => c.url.includes('api/wordgen'));
     assert.ok(wordgenCalls.length > 0);
   })
 );
@@ -124,11 +124,11 @@ test(
   'failure class A: batch with wrong-charset words drops only those words, keeps the valid remainder',
   withRejectionGuard(async () => {
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) {
+      if (url.includes('api/wordgen/health')) {
         return respondJson({ available: true });
       }
       if (url.includes('prefetch=1')) return respondJson({ words: [] });
-      if (url.includes('/api/wordgen')) {
+      if (url.includes('api/wordgen')) {
         // 'dog' and 'cat' use letters (o,g,c,t) outside Level 4's key set.
         return respondJson({ words: ['dad', 'dog', 'sad', 'cat', 'lass'] });
       }
@@ -158,9 +158,9 @@ test(
   'failure class B: non-JSON response → batch ignored whole (empty), no throw',
   withRejectionGuard(async () => {
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
       if (url.includes('prefetch=1')) return respondJson({ words: [] });
-      if (url.includes('/api/wordgen')) {
+      if (url.includes('api/wordgen')) {
         return {
           ok: true,
           status: 200,
@@ -187,9 +187,9 @@ test(
   'failure class B: wrong shape (words not an array) → batch ignored whole',
   withRejectionGuard(async () => {
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
       if (url.includes('prefetch=1')) return respondJson({ words: [] });
-      if (url.includes('/api/wordgen')) {
+      if (url.includes('api/wordgen')) {
         // words is a string, not an array — structurally wrong.
         return respondJson({ words: 'dad,sad,lad' });
       }
@@ -210,9 +210,9 @@ test(
   'failure class B: wrong field types inside the words array → those entries dropped, structure not trusted blindly',
   withRejectionGuard(async () => {
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
       if (url.includes('prefetch=1')) return respondJson({ words: [] });
-      if (url.includes('/api/wordgen')) {
+      if (url.includes('api/wordgen')) {
         // Mixed types: numbers, null, an object, and one valid string.
         return respondJson({ words: [42, null, { evil: true }, 'sad'] });
       }
@@ -235,9 +235,9 @@ test(
   withRejectionGuard(async () => {
     const overLong = 'a'.repeat(25); // 25 > the play-logic ceiling (24); default ANY-cap declares 24
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
       if (url.includes('prefetch=1')) return respondJson({ words: [] });
-      if (url.includes('/api/wordgen')) {
+      if (url.includes('api/wordgen')) {
         return respondJson({ words: [overLong, 'sad'] });
       }
       throw new Error(`unexpected fetch: ${url}`);
@@ -278,7 +278,7 @@ test(
   'health endpoint 404 (static hosting, no API route) → permanently disabled + ONE clear console.info fallback line',
   withRejectionGuard(async () => {
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) {
+      if (url.includes('api/wordgen/health')) {
         return respondJson({ error: 'not found' }, { status: 404 });
       }
       throw new Error(`should not reach wordgen endpoint when disabled: ${url}`);
@@ -315,7 +315,7 @@ test(
   'HTTP 500 on health → dormant (not a throw), isActive() reports dormant as active-ish per contract',
   withRejectionGuard(async () => {
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) {
+      if (url.includes('api/wordgen/health')) {
         return respondJson({ error: 'boom' }, { status: 500 });
       }
       throw new Error(`unexpected fetch: ${url}`);
@@ -357,8 +357,8 @@ test(
   withRejectionGuard(async () => {
     let wordgenCallCount = 0;
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
-      if (url.includes('/api/wordgen')) {
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen')) {
         wordgenCallCount += 1;
         return respondJson({ error: 'server error' }, { status: 500 });
       }
@@ -383,8 +383,8 @@ test(
   'privacy: requests carry only act/level/characters params, same-origin relative paths, never the player name',
   withRejectionGuard(async () => {
     const calls = installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
-      if (url.includes('/api/wordgen')) return respondJson({ words: [] });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen')) return respondJson({ words: [] });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -397,12 +397,12 @@ test(
     wg.prefetch(4, ['a', 's', 'd', 'f', 'j', 'k', 'l', ';']);
     await new Promise((r) => setTimeout(r, 20));
 
-    const wordgenCalls = calls.filter((c) => c.url.includes('/api/wordgen'));
+    const wordgenCalls = calls.filter((c) => c.url.includes('api/wordgen'));
     assert.ok(wordgenCalls.length > 0, 'expected at least one /api/wordgen request');
 
     for (const call of wordgenCalls) {
       assert.ok(
-        call.url.startsWith('/api/wordgen'),
+        call.url.startsWith('api/wordgen') && !call.url.startsWith('/'),
         `must be a same-origin relative path, got: ${call.url}`
       );
       assert.ok(
@@ -460,8 +460,8 @@ test(
   'contract: every /api/wordgen request DECLARES both minWordLength and maxWordLength, clamped to [2,24]',
   withRejectionGuard(async () => {
     const calls = installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
-      if (url.includes('/api/wordgen')) return respondJson({ words: [] });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen')) return respondJson({ words: [] });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -471,7 +471,7 @@ test(
     await new Promise((r) => setTimeout(r, 20));
 
     const wordgenCalls = calls.filter(
-      (c) => c.url.includes('/api/wordgen') && !c.url.includes('/health')
+      (c) => c.url.includes('api/wordgen') && !c.url.includes('/health')
     );
     assert.ok(wordgenCalls.length > 0, 'expected at least one /api/wordgen request');
     for (const call of wordgenCalls) {
@@ -500,8 +500,8 @@ test(
   withRejectionGuard(async () => {
     // No kk-settings seeded ⇒ defaults (minWordLen:0/ANY, maxWordLen:0/ANY).
     const calls = installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
-      if (url.includes('/api/wordgen')) return respondJson({ words: [] });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen')) return respondJson({ words: [] });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -511,7 +511,7 @@ test(
     await new Promise((r) => setTimeout(r, 20));
 
     const call = calls.find(
-      (c) => c.url.includes('/api/wordgen') && !c.url.includes('/health')
+      (c) => c.url.includes('api/wordgen') && !c.url.includes('/health')
     );
     assert.ok(call, 'expected a /api/wordgen request');
     const query = new URLSearchParams(call.url.split('?')[1] || '');
@@ -525,8 +525,8 @@ test(
   withRejectionGuard(async () => {
     seedSettings({ minWordLen: 4, maxWordLen: 10 });
     const calls = installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
-      if (url.includes('/api/wordgen')) return respondJson({ words: [] });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen')) return respondJson({ words: [] });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -536,7 +536,7 @@ test(
     await new Promise((r) => setTimeout(r, 20));
 
     const call = calls.find(
-      (c) => c.url.includes('/api/wordgen') && !c.url.includes('/health')
+      (c) => c.url.includes('api/wordgen') && !c.url.includes('/health')
     );
     assert.ok(call, 'expected a /api/wordgen request');
     const query = new URLSearchParams(call.url.split('?')[1] || '');
@@ -552,9 +552,9 @@ test(
     const atCap = 'a'.repeat(24); // at the raised ceiling
     const overCap = 'a'.repeat(25); // one past it
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
       if (url.includes('prefetch=1')) return respondJson({ words: [] });
-      if (url.includes('/api/wordgen')) return respondJson({ words: [atCap, overCap, 'sad'] });
+      if (url.includes('api/wordgen')) return respondJson({ words: [atCap, overCap, 'sad'] });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -574,10 +574,10 @@ test(
   withRejectionGuard(async () => {
     seedSettings({ minWordLen: 5 }); // floor 5, ANY cap → window [5,12]
     installFetchStub((url) => {
-      if (url.includes('/api/wordgen/health')) return respondJson({ available: true });
+      if (url.includes('api/wordgen/health')) return respondJson({ available: true });
       if (url.includes('prefetch=1')) return respondJson({ words: [] });
       // 'sad' (3) is below the floor; 'flask' (5) at the floor; 'salad' (5) too.
-      if (url.includes('/api/wordgen')) return respondJson({ words: ['sad', 'flask', 'salad'] });
+      if (url.includes('api/wordgen')) return respondJson({ words: ['sad', 'flask', 'salad'] });
       throw new Error(`unexpected fetch: ${url}`);
     });
 
@@ -606,7 +606,7 @@ test(
     const healthCalls = calls.filter((c) => c.url.includes('health'));
     assert.ok(healthCalls.length > 0);
     for (const call of healthCalls) {
-      assert.ok(call.url.startsWith('/api/wordgen/health'));
+      assert.ok(call.url.startsWith('api/wordgen/health'));
       assert.ok(!/^https?:\/\//i.test(call.url));
     }
   })

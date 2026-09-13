@@ -4,6 +4,7 @@
 OLLAMA_MODEL ?= llama3.2
 BINARY       := keystroke-kingdom
 SMOKE_PORT   := 8137
+STATIC_HOST_PORT ?= 8809
 SMOKE_URL    := http://127.0.0.1:$(SMOKE_PORT)
 
 # Keep the machine awake for the duration of long browser/recorder runs. macOS
@@ -69,6 +70,29 @@ test-integration:
 	@echo "→ node --test tests/integration (L2 behavior, serial — see comment)"
 	@$(CAFFEINATE) node --test --test-concurrency=1 "tests/integration/*.test.mjs"
 
+## static-host-check: verify the PUBLISHED static build (GitHub Pages shape)
+##   The game is live at https://tmack8001.github.io/keystroke-kingdom/ — a project page,
+##   so it is served under a /keystroke-kingdom/ PREFIX with NO /api/* backend. Those are
+##   the two dimensions in which it differs from the Go binary and Docker, and every
+##   static-host-only bug lives in one of them (see .claude/rules/visual-validation.md).
+##   This simulates that shape locally: root-absolute paths fail, and /api/* 404s are
+##   reported as expected INFO. Override the target with URL=… to check the live site.
+static-host-check:
+	@echo "→ static-host gate (project-page prefix shape)"
+	@if [ -n "$(URL)" ]; then \
+		node scripts/static-host-check.mjs --url=$(URL); \
+	else \
+		PFX=$$(mktemp -d); \
+		ln -sfn "$$PWD" "$$PFX/keystroke-kingdom"; \
+		python3 -m http.server $(STATIC_HOST_PORT) --directory "$$PFX" >/dev/null 2>&1 & \
+		SRV=$$!; \
+		sleep 1; \
+		node scripts/static-host-check.mjs --url=http://127.0.0.1:$(STATIC_HOST_PORT)/keystroke-kingdom/; \
+		RC=$$?; \
+		{ kill $$SRV; wait $$SRV; } >/dev/null 2>&1 || true; rm -rf "$$PFX"; \
+		exit $$RC; \
+	fi
+
 ## test-fast: the quick gate — lint + static + unit + go (no browser)
 test-fast: lint test-unit test-go
 
@@ -128,5 +152,6 @@ docker-compose-up:
 	docker compose --profile $(or $(PROFILE),game) up --build
 
 .PHONY: help gen build run lint test test-static test-unit test-go test-integration test-fast \
+	static-host-check \
 	screenshots film wordgen-check wordgen-static-check setup \
 	docker-build docker-run docker-compose-up
