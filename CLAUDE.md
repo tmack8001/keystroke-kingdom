@@ -15,7 +15,8 @@ Also load when relevant (not auto-included): `.claude/rules/levels.md` (summary 
 `.claude/rules/testing.md` (**required before writing tests or changing behavior a test covers** — doctrine: docs/testing/STRATEGY.md),
 `.claude/rules/security.md` (**required before adding DOM sinks, hooks, child processes, or free-text input**),
 `.claude/rules/transitions.md` (cinematics), `.claude/rules/easter-eggs.md` (hidden layer),
-`docs/ROADMAP.md` (living backlog — **check this at session start**), `research/*.md`
+`docs/ROADMAP.md` (living backlog — **check this at session start**), `docs/specs/*.md`
+(product specs / ADRs for proposed work), `research/*.md`
 (pedagogy, hacker culture, game history background).
 
 ## Quick Reference
@@ -41,6 +42,13 @@ This is intentional pedagogical design based on watching Oona learn. Do not "fix
 - Pixel/retro arcade aesthetic — Press Start 2P font, CRT scanline effects
 - Google Lyria for music (one original track per level)
 - Godot only if we ever ship beyond the browser
+
+### Where It Runs — three environments, and only two have a backend
+1. **Go binary** — `go build -o keystroke-kingdom . && ./keystroke-kingdom`; serves from `/`, has `/api/*`
+2. **Docker** — `docker compose --profile game up` (`--profile game-ollama` adds the LLM sidecar); serves from `/`
+3. **Static host — the PUBLISHED game**: <https://tmack8001.github.io/keystroke-kingdom/>. Pages serves the repo ROOT of `main` directly (`build_type: legacy`, no build step) — **every push to `main` is a deploy.** It serves from the sub-path `/keystroke-kingdom/` and has **no backend at all**, so (a) any root-absolute path (`/favicon.ico`, `/api/x`) escapes the site and 404s, and (b) `/api/wordgen|chat|keyboard-story` simply do not exist and MUST degrade silently to their static fallbacks.
+
+The static host is a required validation target, not a nice-to-have: `node scripts/static-host-check.mjs [--url=…]` gates the asset + ES-module graph and runs in CI on every push/PR (`.github/workflows/static-host-check.yml`). Full rule: `.claude/rules/visual-validation.md` §The Three Environments.
 
 ### Levels
 | Level | Keys | Game | Era |

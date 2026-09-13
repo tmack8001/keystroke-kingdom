@@ -4,7 +4,7 @@ code: [js/textworld/hub.js, js/textworld/engine.js, js/textworld/greendragon.js,
 rules: [.claude/rules/product.md, .claude/rules/security.md, docs/handoffs/im-friend-build.md]
 screenshots: docs/screenshots/textworlds/
 capture: node docs/screenshots/capture-textworlds.js
-verified: 2026-07-18
+verified: 2026-09-11
 ---
 
 # Act 6 — The Text Worlds
@@ -417,8 +417,25 @@ data.
 ### `js/chat.js` — the browser's Ollama client
 
 Mirrors `js/wordgen.js`'s security posture exactly: talks **only** to the
-game's own same-origin server (`/api/wordgen/health` for availability,
-`/api/chat` for the actual message), never an external host.
+game's own same-origin server (`api/wordgen/health` for availability,
+`api/chat` for the actual message), never an external host.
+
+**Both constants are RELATIVE, not root-absolute (changed 2026-09-11).** They were
+`/api/...`; on the published GitHub Pages build the game lives under a
+`/keystroke-kingdom/` prefix, and a leading slash would leave that prefix for the
+shared `user.github.io` **domain root** — a path this game does not own. Relative keeps
+the request inside our own prefix, where it 404s and the offline path engages exactly
+as designed; it resolves identically on the Go binary and in Docker, which serve from
+`/`. `js/wordgen.js` and `js/keyboard-story-gen.js` got the same change. See
+`.claude/rules/visual-validation.md` §The Three Environments and [[wordgen]].
+
+**On the published static build there is no backend at all**, so the IM-friend is
+*always* in its scripted-nap state there: `chatHealthy()` sees a 404, `sendChat` never
+runs, and the child gets a warm in-character line instead of a live reply. That is the
+designed behavior, not a degradation to fix — verified this session by a read-only
+static-build lane. Every other Act 6 world (Green Dragon, the two tile worlds, the
+maker) is fully offline by construction and behaves identically in all three
+environments.
 `chatHealthy()` resolves `true` only on a real `200 {available:true}` body —
 any transport error, non-200, or bad shape is `false` (the offline path).
 `sendChat(persona, messages)` posts `{persona, messages}` and returns
@@ -478,6 +495,16 @@ free-text/choice fields — and (b) the recent transcript window. `handleChat`:
    which is safe there only because its inputs are short single words, not
    prose). A blocked reply is swapped for one fixed safe line
    ("Ooh — let's talk about something fun! What do you like to play?").
+
+   **Fail-closed (added 2026-09-11):** `chatOutputOK` now returns `false`
+   outright when `safetyFloorReady()` is false — i.e. when
+   `js/word-blocklist.json` failed to load or came back implausibly small
+   (`minSafetyFloorWords = 10`). No model text reaches a child without a sane
+   floor loaded; the chat path substitutes the safe scripted line above and the
+   L25 coda path drops the sentence. That JSON is the single source of truth both
+   languages read, and the same session's `/security-review` found wordgen had
+   drifted from it — the full story, and the new `blocklist_sync_test.go` that
+   pins both gates against every floor word, is documented at [[wordgen]].
 
 ### PII-floor exception (security.md, added 2026-07-14)
 

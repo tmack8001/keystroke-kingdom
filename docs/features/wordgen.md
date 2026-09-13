@@ -4,7 +4,7 @@ code: [main.go, js/wordgen.js]
 rules: [.claude/rules/security.md]
 screenshots: null
 capture: null
-verified: 2026-07-13
+verified: 2026-09-11
 ---
 
 # Local-LLM Word Generation
@@ -102,6 +102,23 @@ A malformed request gets a 400 with an error tag (the client's retry policy trea
 any 4xx as structural — no retry — which is the correct response to a bad URL); a
 *well-formed* request the server simply has nothing for returns `{"words": []}`.
 
+### Other `main.go` surfaces (this page owns the file; the features live elsewhere)
+
+`main.go` is routed to this page by `scripts/feature-map.json`, but it now hosts four
+distinct surfaces. A change to it should prompt checking all of these docs:
+
+| Surface | Documented at |
+|---|---|
+| `/api/wordgen*` (this page) | here |
+| `/api/chat` — the Act 6 IM-friend | [[text-worlds]] |
+| `/api/keyboard-story` — the L25 coda generator | [[engine-flow]] |
+| The themed 404 (`themedNotFound`/`notFoundWriter`/`notFoundPage`, added 2026-09-11) | [[easter-eggs]] |
+
+The themed 404 matters to *this* feature for one reason: it deliberately leaves
+`/api/*` alone (bare `text/plain`), because the health probe's 404 is the
+feature-detect signal this client branches on. `chatOutputOK`'s fail-closed behavior
+(above) is likewise shared by the chat and coda paths, not wordgen-only.
+
 ### The level manifest — the bridge from curriculum data to the Go binary
 
 The Go binary can't parse `js/levels.js` (a JS/ESM file) at compile time, so
@@ -150,15 +167,63 @@ drops that word, never the whole batch:
    wrong field type, empty — is the other class (B): `parseGenResponse` rejects it
    WHOLE (nil, capped at 100 raw lines) and the retry/refill path handles it.
 3. **Lowercase normalization.**
-4. **Blocklist** (`isBlocked`) — a small, deliberately over-inclusive list of
-   profanity/scary/adult words, checked both as exact match and substring
-   (`strings.Contains`) so a blocked word can't sneak through inside a longer
-   string. Kid-facing, so the blocklist errs toward over-blocking; the charset
-   allowlist already eliminates most problems structurally, this catches the
-   remainder that happen to be spellable from an innocent letter set.
+4. **Blocklist** (`isBlocked`) — the UNION of two layers; either hit blocks the word.
+   **Rewritten 2026-09-11 after a `/security-review` finding — see "The kid-safety
+   floor" below.** Layer 1 is the shared exact-word floor (`js/word-blocklist.json`,
+   the single source of truth both languages read), matched on the lowercased whole
+   word AND on each of its letter-tokens, so a compound like `zig-vodka` cannot smuggle
+   a floor word through as one wordgen "word". Layer 2 is `wordgenSubstringExtras`, an
+   additive substring layer kept deliberately: for a single generated WORD (never
+   prose) substring matching catches inflections the exact-word floor cannot
+   (`killing`, `guns`). Substring matching is correct *here* and wrong for prose —
+   `chatOutputOK` stays exact-word, because "hello" contains "hell".
 5. **Dedup** — within the batch, and seeded against the static pool's sample words
    (never echoes a word the child has already seen from the curated list).
 6. **Cap** at 20 words per batch (`maxWordsPerBatch`).
+
+### The kid-safety floor — single source, fail-closed (rewritten 2026-09-11)
+
+A `/security-review` this session found that `isBlocked` consulted a **second,
+hard-coded Go list** that had DRIFTED from the shared floor introduced with the L25
+coda / chat work. Seven floor words were therefore spellable, generatable, and
+servable to a child as typing prompts — `whiskey` (from Level 9's keys onward),
+`liquor` (L10), `murder` and `vodka` (L11), `bitch` and `suicide` (L13), `booze`
+(L15). This is a real finding, not a hypothetical: it is the exact failure class
+security.md rule 7 and journal L41 exist to prevent, and it is why the floor lives in
+ONE file.
+
+- **One source of truth.** `js/word-blocklist.json` (31 words) is read by BOTH
+  languages: Go embeds and unmarshals it (`loadChatWordBlocklist` →
+  `chatWordBlocklist`), and the client imports it via `js/word-blocklist.js`
+  (`BASE_WORDS`). Neither language carries a hard-coded copy. `wordgenSubstringExtras`
+  is the one permitted ADDITION on the Go side, and its own comment states the
+  invariant: never add a word there that belongs in the floor — put it in the JSON so
+  both languages and both paths (wordgen + chat/coda) get it.
+- **Fail closed, never open.** A gutted or malformed blocklist used to leave the floor
+  silently tiny — which for a kid-facing filter means "everything is safe", exactly
+  backwards. Now `loadChatWordBlocklist` refuses to install a list smaller than
+  `minSafetyFloorWords` (**10**; the shipped file carries 31, ample headroom for a
+  legitimate edit) and leaves `safetyFloorLoaded` false. `safetyFloorReady()` gates
+  every path that would serve model-generated text to a child:
+  - `validateWords` returns `nil` → `/api/wordgen` serves an empty batch → the client
+    treats that as a normal no-op and plays the static pools;
+  - `chatOutputOK` returns `false` → the chat path substitutes its safe scripted line
+    and the coda path drops the sentence (see [[text-worlds]] and [[engine-flow]]).
+  Every generated-content feature degrades to its offline behavior, which is always
+  winnable and always safe — never to unfiltered output.
+- **Pinned by tests.** `blocklist_sync_test.go` (new, 2026-09-11):
+  `TestIsBlockedCoversEntireSharedFloor` and `TestChatOutputOKRejectsEntireSharedFloor`
+  assert BOTH gates cover every word in the JSON (the regression that shipped);
+  `TestIsBlockedCatchesFloorWordInsideCompound` pins the letter-token match;
+  `TestIsBlockedKeepsSubstringExtras` pins that the additive layer was not lost in the
+  rewrite; `TestSafetyFloorFailsClosedWhenBlocklistIsGutted` and
+  `TestSafetyFloorReloadsCleanly` pin the fail-closed behavior. These sit alongside the
+  pre-existing `TestChatWordBlocklistLoaded` and the client-side
+  `word-blocklist-sync.test.mjs`.
+- **A parent may only ever ADD.** `settings.blockedWords` (`setUserBlockedWords`) is an
+  additive layer on top of `BASE_WORDS`; no consumer can remove a floor word, matching
+  the house law that a setting only ever makes play safer. Those words stay 100% local
+  and are never sent to any endpoint. See `.claude/rules/security.md` rule 7.
 
 ### Structure-layer size caps (TF-E1, added 2026-07-13)
 
@@ -336,9 +401,20 @@ declaring a different one), and the fallback reservoir + warmup surface
 
 ### Security posture (see `.claude/rules/security.md` rules 6–7)
 
-- Talks **only** to the game's own same-origin Go server (`/api/wordgen*`) — never
-  an external host, matching the game's "nothing on screen should be a live address"
-  rule extended to network calls.
+- Talks **only** to the game's own same-origin Go server — never an external host,
+  matching the game's "nothing on screen should be a live address" rule extended to
+  network calls.
+- **The endpoint constants are RELATIVE, not root-absolute** (changed 2026-09-11):
+  `HEALTH_URL = 'api/wordgen/health'`, `WORDGEN_URL = 'api/wordgen'` (and the same
+  change in `js/chat.js` and `js/keyboard-story-gen.js`). On the Go binary and in
+  Docker, which serve from `/`, this resolves identically to before. On the published
+  GitHub Pages build the game lives under a `/keystroke-kingdom/` prefix, and a
+  root-absolute `/api/...` would leave that prefix and hit the shared `user.github.io`
+  **domain root** — a path this game does not own, where a sibling project serving
+  `/api/*` could be talked to by mistake. Relative keeps the request inside our own
+  prefix, where it 404s and the static-pool fallback engages exactly as designed. See
+  `.claude/rules/visual-validation.md` §The Three Environments — root-absolute paths
+  are forbidden in `index.html` and in js endpoint constants and import specifiers.
 - **The player name never reaches the server.** Every request carries the declared
   constraints only (`?act=<a>&level=<n>&characters=<unlocked keys>`); there is no
   code path anywhere in `js/wordgen.js` that
@@ -348,17 +424,34 @@ declaring a different one), and the fallback reservoir + warmup surface
   reason to ever see the player's name in the first place.
 - Every returned word is re-validated client-side against the level's own key set
   before use (`takeWords`'s `opts.keys` allowlist) — defense-in-depth; the client
-  never fully trusts even its own server's validation chain.
+  never fully trusts even its own server's validation chain. Case is deliberately NOT
+  normalized in that re-check: the engine's token contract makes case meaningful (an
+  uppercase token means Shift), so a word that isn't already lowercase must fail the
+  charset check rather than be quietly folded.
+- **Client-side kid-safety backstop** (added 2026-09-11): `takeWords()` also runs
+  `hasBlockedWord(word)` from `js/word-blocklist.js` — the SAME single-source floor the
+  server enforces (plus any additive parent words) — at the last moment before a word
+  enters the pattern stream. The server's `isBlocked` remains the primary gate; this
+  exists so a server bug or a drifted gate can never put an unsafe word in front of a
+  child, which is precisely what happened before the 2026-09-11 fix. It reads the
+  shared list, never a second hand-rolled copy — a second copy is the bug class this
+  check backstops. `hasBlockedWord` tokenizes on non-letters then exact-word matches,
+  so a compound can't smuggle a blocked word through. Same idiom the L25 coda uses
+  (`js/keyboard-story.js`).
 - Generated words are always rendered as data (canvas fill-text or engine pattern
   tokens), never as markup — same rule as every other piece of text in the game.
 
 ### Availability / retry policy — two failure classes, never conflated
 
 **1. Structural absence** (deduced from the health endpoint, never retried hot):
-- Network error or 404 on `/health` → no Go server, or no API at all (e.g. static
-  hosting via plain `python3 -m http.server`). Wordgen is **permanently disabled**
-  for the session — zero retries, zero noise, matching what
-  `wordgen-static-check.mjs` asserts.
+- Network error or 404 on `health` → no Go server, or no API at all (plain
+  `python3 -m http.server`, **and the published GitHub Pages build**). Wordgen is
+  **permanently disabled** for the session — zero retries, zero noise, matching what
+  `wordgen-static-check.mjs` asserts. This 404 is the designed signal, which is why
+  the Go server's themed 404 page (added 2026-09-11 — see [[easter-eggs]]) explicitly
+  **excludes `/api/*`**: those responses keep their bare `text/plain` body so they
+  stay machine-readable, and `status === 404` keeps meaning exactly what this branch
+  assumes it means.
 - `200 {available:false, reason:"ollama-unreachable"|"no-model"}` → server is up but
   Ollama is absent or unmodeled. Disabled for now, but a **light recheck** is
   allowed — at most once per 5 minutes (`RECHECK_INTERVAL_MS`), and callers (e.g.
@@ -439,6 +532,16 @@ prefetch without a page reload.
 
 ### Static-fallback guarantee
 
+**This is the published game's normal state.** The free public build at
+<https://tmack8001.github.io/keystroke-kingdom/> is GitHub Pages serving the repo root
+of `main` with no build step and **no `/api/*` backend at all**, so wordgen is disabled
+there on every visit and the static pools are what every player actually gets. A 404
+from `/api/*` on a static host is EXPECTED and must degrade silently — verified
+end-to-end this session by a read-only static-build lane (11 levels won across all five
+acts, all 25 smoke-loaded, zero console errors) and gated in CI by
+`scripts/static-host-check.mjs` against both the `/keystroke-kingdom/` sub-path and the
+site root (`.claude/rules/visual-validation.md` §The Three Environments).
+
 On any hosting setup without the Go server (plain static file server, a CDN, `file://`),
 the health probe's network error / 404 sets `status = 'disabled'` permanently on the
 very first check, and every subsequent call in this module becomes a no-op returning
@@ -459,8 +562,10 @@ static words, history-card injection, and Name Moment injection.
 
 ## Related
 
-[[engine-flow]] (the three call sites, and how generated words compose with the
-history-card and Name Moment guaranteed injections; `drawablePool`'s
+[[easter-eggs]] (the themed 404 in `main.go`, and why `/api/*` is excluded from it) ·
+[[text-worlds]] (`/api/chat`, the other consumer of `chatOutputOK` and the shared
+safety floor) · [[engine-flow]] (the three call sites, and how generated words compose
+with the history-card and Name Moment guaranteed injections; `drawablePool`'s
 settings-driven length filter on the STATIC pool is the sibling mechanism to this
 feature's own length window on GENERATED words) · [[settings-survival]] (MIN/MAX
 WORD LENGTH rows, `getWordLengthRange()` source both this feature and the engine

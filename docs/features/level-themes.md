@@ -4,7 +4,7 @@ code: [js/themes/]
 rules: [.claude/rules/theme-authoring.md, .claude/rules/levels.md, .claude/rules/levels/act5.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-07-28
+verified: 2026-09-11
 ---
 
 # Level Themes
@@ -137,7 +137,11 @@ unattended tab never spawns, stacks, or wipes further on its own. `RELEASE_DELAY
 ### Victory: the Game Boy Tetris rocket launch
 
 `victory()` returns `VICTORY_MS` (3500ms, clamped by the engine to 1200-6000 —
-[[engine-flow]]'s `showLevelComplete` timing contract). Two phases, both driven by
+[[engine-flow]]'s `showLevelComplete` timing contract). *(2026-09-11: comment-only
+correction in `tetris.js` — its header still claimed the engine "currently ignores the
+return value; a follow-up will consume it." The engine has consumed it since
+2026-07-12; the code was always correct, only the comment had rotted. No behavior
+change, and the Level 8 reference frame was NOT regenerated.)* Two phases, both driven by
 clamped elapsed-time math (never raw frame counters — the F1 sentinel-frame crash
 class this file's comments explicitly guard against): Phase 1 (~900ms,
 `VICTORY_CLEAR_MS`) flashes and erases the board bottom-up; Phase 2 (remaining
@@ -192,6 +196,42 @@ pre-EXPERIENCE Q\*bert (pyramid flip only, no extra-words requirement). Higher t
 add a rounded multiple of 5 extra completed words on top of the pyramid — same
 "more play, never a penalty" law as Tetris's scaling above.
 
+## Act 4 (Levels 16-20) — the shared white rabbit + the Y2K clock (added 2026-09-11)
+
+The five Command Center themes gained two easter eggs; the catalog and design rules
+live at [[easter-eggs]] and `.claude/rules/easter-eggs.md`. What matters at the theme
+layer is the **sharing pattern**, which is the first of its kind in `js/themes/`:
+
+- `js/themes/terminal.js` exports `resetWhiteRabbit()` / `maybeWhiteRabbit(won)` /
+  `drawWhiteRabbit(c, W, H)`, and `simcity.js`, `goldeneye.js`, `ageofempires.js`, and
+  `ff7.js` **import them from it** — one rabbit for the whole act rather than five
+  copies. This is a theme-to-theme import (not a shared util module) because
+  `terminal.js` is already the act's hidden-history host, and it is safe because only
+  one theme is ever active at a time, so the single module-level rabbit state cannot be
+  contended.
+- Wiring is identical in all five: `resetWhiteRabbit()` in `start()`,
+  `maybeWhiteRabbit(won)` in `patternComplete()` with the theme's own win boolean (the
+  return value discarded — it never gates or delays the win, and each theme's
+  `patternComplete()` still returns exactly what it did before), and
+  `drawWhiteRabbit(ctx, W, H)` late in `render()`.
+- Placement respects each theme's own transforms: `ff7.js` draws it outside the
+  battle-camera push-in and `simcity.js` outside the camera bob (so the rabbit crosses
+  the real screen, not the moving stage); `goldeneye.js` draws it over the split-screen
+  grid; `terminal.js` draws it under the barrel-glass pass.
+- It lives at `0.89-0.95H` — the bottom strip, below the keyboard guide's measured
+  `0.823H` edge — obeying the layout contract, and its frame-driven position is clamped
+  (journal F1).
+- `terminal.js` additionally draws the frozen **Y2K clock** (`12/31/99 11:59 PM`) in
+  the bottom-right stage corner every frame — a fixed literal via `fillText`, with
+  explicit `textAlign`/`textBaseline` (journal L28). Visible in that level's reference
+  frame.
+
+Neither egg changes any win gate, any `victory()` duration, or any theme's exported
+contract. Only `levels/act4-command-center/20-terminal.png` was regenerated for this
+change (the Y2K clock is always on screen); levels 16-19 were **not** re-shot — the
+rabbit rolls 1-in-150 at a pattern boundary and is never present in an opening-chrome
+frame, so re-capturing them would produce churn with no documented difference.
+
 ## Word Processor (Level 25) — the "MY STORY" coda + the `hello world` egg (REDESIGNED 2026-07-28)
 
 `js/themes/wordprocessor.js` renders the "MY STORY" document players accumulate at
@@ -215,6 +255,17 @@ engine-side flow (`js/keyboard-story.js`, `js/keyboard-story-gen.js`,
   render-side newline, NOT a typed Enter — themes never gate input
   (theme-authoring.md). `victory()` clears the coda render state for the normal
   centered "THE END." beat.
+- **Measured wrap width (fixed 2026-09-11).** `maxCharsPerLine` is derived from
+  `ctx.measureText('M').width` (falling back to `fontSize` if measurement returns 0),
+  not from a hard-coded `fontSize * 0.62`. Press Start 2P's advance is exactly 1.0x
+  fontSize, so the old constant overestimated line length by ~61%: invisible at the
+  default EXPERIENCE tier (the coda's visible text never needs to wrap there), but at
+  1.5x and above the document ran past the paper's right edge, under the reserved
+  top-right HUD stats region and off-canvas — a theme layout contract violation
+  (`.claude/rules/visual-validation.md`). `measureText` also covers the `monospace`
+  fallback font (whose advance is NOT 1.0), so the wrap stays correct on the first
+  frames before the webfont loads. Journal O20 is the general lesson: a magic constant
+  standing in for a measurement.
 - **Sub-line join spacing.** Coda lines arrive with no trailing space (so the
   player-typed prompt and its win-gate stay exact-match); the theme inserts exactly
   one space into the accumulated DISPLAY text at each sub-line boundary (tracked via
@@ -232,18 +283,34 @@ engine-side flow (`js/keyboard-story.js`, `js/keyboard-story-gen.js`,
   gates, pauses, or interrupts flow — independent of the card's own gold-glint and the
   coda.
 
-Screenshot: `docs/screenshots/levels/act5-full-circle/25-word-processor.png`
-(regenerated 2026-07-28 by the content-librarian on an ad-hoc Playwright script that
-drives L25 through normal play into the coda on the STATIC-fallback story bank — no
-Ollama on a plain static server, the shipping offline default — rather than
-`capture-all.js 25`, which only captures the level's pre-game initial screen chrome
-and cannot drive gameplay into the coda. The reference frame shows the accumulated
-document — the pangram base sentence plus the resolved `we cna`→`we can do it` typo
-beat — flowing into the manifesto capstone ("This is our...") in the prompt panel, at
-the default winRatio 1x tier. This is a deliberate one-off exception to this page's
-usual "regenerate via the listed `capture:` command" convention, flagged here so a
-future full-library rebuild via `capture-all.js 25` doesn't unknowingly revert it to
-the plain initial-screen shot; see the Roadmap/report for the tooling-debt note).
+Screenshot: `docs/screenshots/levels/act5-full-circle/25-word-processor.png` —
+**captured by `node docs/screenshots/capture-all.js 25`, like every other level**
+(regenerated 2026-09-11). The 2026-07-28 "ad-hoc script, don't let a full rebuild
+revert this" exception is **RETIRED**: `capture-all.js` now carries a real coda-driving
+path for Level 25 (`lvl.coda`), so the listed `capture:` command is authoritative again
+and a LIBRARY-scope rebuild can no longer silently replace this frame with pre-game
+chrome. How that path works, since L25 is the one level whose reference frame is not a
+chrome shot:
+
+- It **plays the level for real** — a typist reads the expected token out of the live
+  prompt DOM and presses it, following the prompt rather than any dictionary (which is
+  what lets it sail through the scripted `we cna` → ⌫⌫⌫ → `can do it` beat instead of
+  fighting it). Nothing pokes game state into the coda (journal L36).
+- It is **deterministic**: it pins the active slot's `storyRotation['25']` to
+  `CODA_ROTATION = 0` and clears the `kk-stories` generated cache, so the pool is the
+  STATIC bank — `STATIC_STORIES[0]` (the "quick brown fox" pangram) + `TYPO_BEATS[0]`.
+  That is also the shipping offline default on a plain static server.
+- It **predicts and verifies**: it imports `js/keyboard-story.js` in-page (pure data +
+  pure helpers) to compute the exact coda the engine must serve, then matches each
+  served pattern against that prediction in order — a mismatch fails loudly rather than
+  screenshotting the wrong story.
+- The **capture point** is the first manifesto-capstone line, so the frame shows the
+  accumulated document (pangram + the RESOLVED typo beat) flowing into the manifesto in
+  the prompt panel. It then keeps typing to the real LEVEL COMPLETE overlay — "the
+  capture succeeded" and "the coda is winnable" are the same check.
+- `CODA_WIN_RATIO=3.5 node docs/screenshots/capture-all.js 25` captures the coda at
+  another EXPERIENCE tier for verification; **the committed reference PNG is the 1x
+  tier**.
 
 ## Roster (level → game → developer/year)
 
@@ -287,6 +354,11 @@ sync. Each theme file resolves to its ONE level screenshot (regenerate with
 single-theme change) and the `research/wiki/games/*.md` page that grounds its signature
 mechanic. Theme-authoring's wiki-fidelity rule judges a theme's scene against its
 research page, never model memory; when a theme changes, re-check it against that page.
+
+Every entry below, **Level 25 included**, is regenerated with `capture-all.js <L>`;
+L25 alone runs the coda-playing path described above rather than a chrome shot. Two
+flags narrow the blast radius further when a filter token would over-capture:
+`--acts-only` / `--levels-only` (added 2026-09-11) — see [[select-screen]].
 
 | L | Theme file | Level screenshot | Research grounding |
 |---|---|---|---|

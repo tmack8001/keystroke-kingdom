@@ -52,6 +52,17 @@ HTML, shell, or JavaScript.
    never a request-derived address. Nothing user-identifying ever leaves
    the page — the request carries act/level/characters context only, NEVER
    the player name.
+   *Path-prefix rule (added 2026-09-11):* same-origin `/api/*` paths must be written
+   **RELATIVE** (`api/wordgen/health`), never root-absolute. The game is published as a
+   GitHub Pages PROJECT page under a `/keystroke-kingdom/` prefix; a root-absolute path
+   escapes that prefix and resolves to the DOMAIN root, which on a shared `user.github.io`
+   is a path this game does not own — so a sibling project serving `/api/*` there would be
+   talked to by mistake. Relative keeps every request inside our own prefix, where it 404s
+   and the static fallback engages as designed. This is the same-origin rule taken
+   literally: "same origin" is not sufficient when the origin is shared. Enforced by
+   `scripts/static-host-check.mjs` (`make static-host-check`) and by
+   `tests/unit/wordgen-client.test.mjs`, which asserts the DESIGN CLAUSE (no scheme, no
+   host, no leading slash) rather than a literal spelling.
 7. **LLM-generated words are untrusted input on the content axis.** Anything generated
    for a child to read passes a mandatory validation chain before display: charset
    allowlist (only the level's unlocked keys — structurally enforced), length caps,
@@ -103,10 +114,33 @@ HTML, shell, or JavaScript.
    kid-safety word blocklist is defined in ONE file, `js/word-blocklist.json`, read by
    BOTH languages — the Go server embeds+unmarshals it (`loadChatWordBlocklist` →
    `chatWordBlocklist`) and the client imports it (`js/word-blocklist.js` `BASE_WORDS`).
-   No hard-coded copy exists in either language; editing the JSON changes both at once
-   (journal L41; `TestChatWordBlocklistLoaded` + `word-blocklist-sync.test.mjs` gate that
-   a good file loaded on each side). `BASE_WORDS` is the immovable FLOOR every consumer (coda + chat)
-   enforces. A parent MAY extend it via `settings.blockedWords` (an ADDITIVE layer,
+   The FLOOR has exactly ONE definition and every consumer reads it; editing the JSON
+   changes them all at once (journal L41; `TestChatWordBlocklistLoaded` +
+   `word-blocklist-sync.test.mjs` gate that a good file loaded on each side).
+   *Amended 2026-09-11 after a `/security-review` finding:* this rule previously read
+   "no hard-coded copy exists in either language," which was **not true** — `main.go`
+   carried a second literal list that was the ONLY gate on the `/api/wordgen` path, and it
+   had DRIFTED from the floor (7 floor words — `whiskey`, `liquor`, `murder`, `vodka`,
+   `bitch`, `suicide`, `booze` — passed it, all spellable from L9 onward, and the client
+   applied no blocklist at all). The precise rule is: **the floor has one definition, and a
+   path may ADD to it but may never REPLACE it.** `isBlocked` is now the UNION of the floor
+   (exact-match, on the whole word and on each letter-token so `zig-vodka` cannot smuggle one
+   through) and `wordgenSubstringExtras`, a deliberately-kept ADDITIVE substring layer.
+   The two match differently on purpose: **substring matching is only safe on a single
+   generated word, never on prose** ("hello" contains "hell") — which is why wordgen can
+   afford substrings and the coda/chat path uses exact words. `js/wordgen.js` `takeWords()`
+   now applies `hasBlockedWord` from the same single source as a client backstop.
+   `blocklist_sync_test.go` pins floor-coverage for BOTH consumers, compound smuggling, and
+   extras retention — the ABSENCE of that test is why the drift survived undetected, so any
+   new consumer of the floor must arrive with its coverage test.
+   **Fail closed, never open** *(added 2026-09-11)*: a parseable-but-gutted blocklist
+   (`{"words":[]}`, a renamed key, a one-word list) used to leave the loaded set empty, which
+   silently made every word pass on both sides. `loadChatWordBlocklist` now REFUSES a set
+   below `minSafetyFloorWords`; with no sane floor, `validateWords` serves nothing and
+   `chatOutputOK` rejects everything, so every path lands on the always-available static
+   content. **The safety floor and the One Rule floor never fight:** refusing an unsafe
+   blocklist can never make a level unwinnable.
+   `BASE_WORDS` is the immovable FLOOR every consumer (coda + chat + wordgen) enforces. A parent MAY extend it via `settings.blockedWords` (an ADDITIVE layer,
    `setUserBlockedWords`) but can NEVER remove a floor word — matching the house law that
    a setting only ever makes play safer (Survival opt-in, additive difficulty, the
    unremovable server safety prompt). Those user words are untrusted free text (rule 7):

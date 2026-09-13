@@ -15,6 +15,7 @@
 | [[F17-street-fighter-ii-originally-assigned-to-level-4\|F17]] | Street Fighter II was originally assigned to Level 4 (home row) | addressed | high | game-design | 2026-06-25 | 2026-06-25 |
 | [[F24-recorder-synthesized-success-while-stalled\|F24]] | The playthrough recorder synthesized success while stalled for two hours | addressed | high | tooling | 2026-07-12 | 2026-07-12 |
 | [[F25-early-reader-prompt-suppressed-the-models-long-word-ability\|F25]] | I claimed the LLM couldn't make long words — it was the prompt suppressing it | addressed | high | research-integrity | 2026-07-13 | 2026-07-13 |
+| [[F26-local-suite-green-published-site-broken\|F26]] | Every gate was green and the published game was 404ing — nothing validated the environment players use | addressed | high | tooling | 2026-09-11 | 2026-09-11 |
 | [[F5-keyboard-preview-had-no-number-row\|F5]] | The keyboard preview had no number row at all | addressed | medium | a11y | 2026-07-11 | 2026-07-11 |
 | [[F8-eniac-six-programmers-list-named-five\|F8]] | The ENIAC "six programmers" list named five people | addressed | medium | research-integrity | 2026-07-11 | 2026-07-11 |
 | [[F10-settings-survival-build-agent-died-twice\|F10]] | The settings/survival build agent died twice | addressed | medium | agent-process | 2026-07-11 | 2026-07-11 |

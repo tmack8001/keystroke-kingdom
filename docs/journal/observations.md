@@ -23,3 +23,4 @@
 | [[O14-tightly-scoped-multi-part-instructions-land-in-one-clean-pass\|O14]] | Tightly-scoped multi-part instructions land in one clean pass | adopted | medium | agent-process | 2026-06-25 |  |
 | [[O15-proactive-self-audit-against-design-rules-happened-before-being-asked\|O15]] | Proactive self-audit against design rules happened before being asked | adopted | medium | game-design | 2026-06-25 |  |
 | [[O16-enforcement-hooks-dogfood-instantly-and-impartially\|O16]] | Enforcement hooks dogfood instantly and impartially | adopted | medium | agent-process | 2026-07-11 |  |
+| [[O20-magic-constant-standing-in-for-a-measurement\|O20]] | A magic constant standing in for a measurement is a bug waiting for its first long input | adopted | medium | graphics | 2026-09-11 |  |

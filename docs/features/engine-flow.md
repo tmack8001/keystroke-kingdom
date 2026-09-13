@@ -4,19 +4,33 @@ code: [js/main.js, js/finale-quote.js, js/keyboard-story.js, js/keyboard-story-g
 rules: [.claude/rules/tech.md, .claude/rules/security.md, .claude/rules/easter-eggs.md, research/wiki/culture/hacker-manifesto.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js
-verified: 2026-07-28
+verified: 2026-09-11
 ---
 
-**Graph gap note:** the Name Moment's golden flourish (below) has no screenshot set —
-it's a transient CSS animation over the existing game screen, not a distinct screen
-state. It could someday join `docs/screenshots/screens/` if a still-frame capture
-technique is worked out; flagging here rather than silently leaving it unvalidated.
+**Graph gap note:** three surfaces documented here have no reference frame, flagged
+rather than silently left unvalidated. (1) The Name Moment's golden flourish — a
+transient CSS animation over the existing game screen, not a distinct screen state.
+(2) The eighth-key confession on the level-complete card — `capture-screens.js` shoots
+`level-complete-overlay.png` at Level 1, and no script drives a first-ever Level 20
+completion. (3) The duck hint line — needs a wrong keypress at Level 22+. All three
+could join `docs/screenshots/screens/` if `capture-screens.js` grows the capture paths.
+Adaptive pacing needs none: it is observable as `data-pace`, never visual.
 
 # Engine Flow
 
-`js/main.js` (1598 lines) is the single state machine: screen routing, the input
-contract, the Survival wrapper, returning-player persistence, the Name Moment, and
-the EXPERIENCE gate. `index.html` is the one markup file for every screen.
+`js/main.js` (2334 lines) is the single state machine: screen routing, the input
+contract, adaptive pacing, the Survival wrapper, returning-player persistence, the
+Name Moment, and the EXPERIENCE gate. `index.html` is the one markup file for every
+screen.
+
+**`index.html` asset references are relative, never root-absolute** (fixed
+2026-09-11): the favicon / apple-touch-icon `href`s were `/favicon.ico` etc., which
+resolve to the *domain root* on the published GitHub Pages project page — they 404'd
+on the live site while passing every local check. They now match the `css/`/`js/`
+references' relative form. Root-absolute paths are forbidden in `index.html` and in js
+endpoint constants and import specifiers; the rule, the three-environment table, and
+the `scripts/static-host-check.mjs` gate that enforces it live in
+`.claude/rules/visual-validation.md` §The Three Environments.
 
 ## Screens (`state.screen`)
 
@@ -73,8 +87,10 @@ lowercase, so CapsLock never affects levels 1-23.
 glint against `state.currentCard` (see [[history-cards]]), advance
 `currentPattern`/`patternsCompleted`, ask the active theme's `patternComplete()`
 ([[level-themes]]); level ends only when `themeComplete && patternsCompleted >=
-minPatterns && !cardPending && !namePending` — the "normal target" (see `normalTargetMet`
-below). **Except on Level 25**, where reaching this normal target launches the "MY STORY"
+minPatterns && !cardPending && !namePending && !l24NamePending` — the "normal target"
+(see `normalTargetMet` below; `l24NamePending` is Level 24's own guaranteed-name gate,
+added 2026-09-11 — see "Level 24" below — and is always false on every other level).
+**Except on Level 25**, where reaching this normal target launches the "MY STORY"
 coda instead of ending the level; the level then ends only once the whole coda has been
 typed. `cardPending` is
 `!freePlay && state.currentCard && !state.cardWordTyped` — the "exactly one guaranteed
@@ -92,6 +108,64 @@ the One Rule, unconditional, matching CLAUDE.md exactly.
 (`state.patterns[state.currentPattern]`) so repeated reads (render vs. validate) never
 diverge — the fix for the Level 8/Tetris "unwinnable because a fresh random draw each
 call disagreed with the rendered word" class of bug.
+
+## Adaptive pacing (built 2026-09-11 — `tech.md`'s designed-but-unbuilt feature)
+
+`tech.md` §Adaptive Pacing has specified this since the first design pass ("track
+average time between correct keypresses … player slows down → game slows down with
+them … no hard timer — pace is always derived from the player"); until now nothing
+implemented it. It is now the engine's only time-derived behavior outside Survival.
+
+**What "prompt display speed" means in this engine.** There are exactly two places the
+base engine decides how fast the game moves on, both in `handleGameKey`: the beat
+before the NEXT PATTERN renders (historically a flat `300`ms) and the beat before the
+next letter inside a pattern lights up (historically `150`ms). Nothing else in the base
+engine is time-driven at all — so those two pauses ARE the prompt display speed, and
+they are what adapts, via `paced(baseMs)` → `Math.round(baseMs * state.paceScale)`.
+
+**State + constants** (all in `js/main.js`):
+
+| Name | Role |
+|---|---|
+| `state.paceSamples` | rolling window of recent inter-keystroke intervals |
+| `state.paceScale` | the derived multiplier, `1` at baseline |
+| `state.lastCorrectAt` | timestamp of the previous correct keypress |
+| `PACE_BASELINE_MS` = 400 | the cadence the 300/150ms pauses were hand-tuned for |
+| `PACE_SAMPLE_CAP_MS` = 4000 | one long think can't dominate the average |
+| `PACE_WINDOW` = 8 | how many recent intervals the average covers |
+| `PACE_MAX_SCALE` = 2 | the gentlest the game will ever get — pauses at most double |
+
+`recordPaceSample(now, sampleable)` runs at the top of the correct-key branch;
+`resetPace()` runs in `startGame()`, so a level played months later never inherits a
+stale rhythm. `publishPace()` writes `state.paceScale.toFixed(2)` to **`data-pace` on
+`#game-screen`** — observable state for tests, never rendered to the player (a visible
+"speed" readout would be exactly the pressure the game refuses; product.md §6).
+
+**Why this can never become pressure** — the four properties that make it One-Rule-safe,
+and the ones to preserve if it is ever touched:
+
+1. **Clamped to `[1, PACE_MAX_SCALE]`** — it can only ever make a pause LONGER, never
+   shorter than the hand-tuned baseline. A player at or above baseline cadence gets
+   byte-identical behavior (`data-pace` stays `1.00`). `tech.md`'s "player speeds up →
+   game can *optionally* increase pace" is the half deliberately declined: speeding up
+   for a fast child is the one direction that could feel like being chased.
+2. **It gates nothing.** No prompt is withdrawn, no input window closes, no state
+   advances on a clock. The letter still stays and waits forever.
+3. **Intervals spanning a MISTAKE are never sampled.** `recordPaceSample` is called
+   *before* `wrongOnCurrent` is cleared and passes
+   `sampleable = state.currentIndex > 0 && !state.wrongOnCurrent`, so neither the miss
+   nor a slow self-correction moves the pace in either direction — the wrong-keypress
+   contract stays entirely outside this system. The first key of a pattern is skipped
+   too (that interval is render-pause + reading, not typing).
+4. **Bounded memory** — an 8-sample window with each sample capped at 4s, so walking
+   away and coming back can't distort the feel of the next word.
+
+**Survival**, the one mode with a clock, adapts in the same single direction:
+`survivalPatternDuration()` multiplies its allowance by `state.paceScale`, so a slower
+typist gets MORE time, never less — "if they're slow, the game slows with them"
+(product.md §1) is most load-bearing where a clock exists at all. At baseline this is
+byte-identical to the historical formula. Invariants: **INV-70**, **INV-71**; tests in
+`tests/integration/adaptive-pacing.test.mjs`.
 
 ## Survival wrapper
 
@@ -121,14 +195,60 @@ slot's progress AND its collected cards together, deliberately preserves
 `kk-settings` and every OTHER slot) — called identically by Settings' "ERASE ALL
 PROGRESS" row and the slot picker's own per-slot `X→Y/N` erase. See [[save-slots]].
 
-## Level 24 — Shift capitals
+## Level 24 — Shift capitals (reworked 2026-09-11)
 
 `buildPlayerNamePattern(playerName)` title-cases each space-separated word (first
-letter upper, rest lower), strips non-letters, joins with no separator (space isn't
-taught until Level 25), and splices the result into `state.patterns` **twice** — once
-right after the intro drills, once again at the pattern-list midpoint — alongside the
-level's own history-card word injection (`'Eniac'`), which lands later so neither
-displaces the other.
+letter upper, rest lower), strips non-letters (security.md rule 3), and joins with no
+separator (space isn't taught until Level 25). Level 24 is *"the player types their own
+name"* (act5.md) — so that pattern is now **guaranteed content with its own win gate**,
+not an arithmetic accident.
+
+**The problem it replaced** (ROADMAP §3, "Level 24 pattern crowding"). The name used to
+be spliced **twice**: once right after the intro drills and once at the pattern list's
+midpoint. Four things were wrong, all of ordering and proportion, none of removal:
+
+1. The midpoint slot (~index 17 of ~35) sits **past where the level actually ends at
+   three of the four EXPERIENCE tiers** — Level 24's win is driven by the high-score
+   theme's character gate, reached around pattern 11 — so the second copy was
+   unreachable dead weight at the default settings.
+2. The surviving copy landed at the index immediately after the history-card word, so
+   the level's marquee moment was sandwiched between `Eniac` and the first word the
+   level teaches.
+3. `buildPatterns`'s low-frequency lowercase "familiar visitor" name draw could also
+   fire here — a lowercase copy of the name on the **capitals** level, undercutting its
+   one lesson.
+4. **Nothing win-gated the name at all.** It was reached only because the arithmetic
+   happened to work out; a longer history-card word would have silently let the name
+   level be won without the name ever appearing.
+
+**What it does now**, in `startGame()`:
+
+- `state.l24NameWord` / `state.l24NameTyped` are reset every play, and set only when
+  `state.level === 24 && !state.freePlay` and the sanitized pattern is non-empty.
+- The name joins the level's own shuffled pool as **one more capitalized word** — a
+  familiar face competing on equal terms with Sun/Moon/Star — spliced at a random index
+  at or after `level.intro.length + 3`. This is done FIRST (higher index) so the
+  guaranteed splice below can't shift it out from under the calculation.
+- The **guaranteed** copy is then spliced at `level.intro.length` — the first pattern
+  after the warm-up drills. Both splices use `namePattern.slice()` (independent copies).
+- The history-card word's splice index becomes
+  `level.intro.length + (state.l24NameWord ? 2 : 0)`, so at Level 24 the card lands two
+  slots later with one of the level's own words between them — the player never meets
+  two guaranteed injections back to back. Safe by construction: `cardPending` holds the
+  level open until the moment word is typed, wherever it sits.
+- `buildPatterns` now skips the lowercase familiar-visitor draw entirely when
+  `state.level === 24`.
+
+**The win gate.** `patternsEqual(a, b)` (exact token-array equality — needed because
+the Level 24 pattern contains uppercase/Shift tokens that `patternMatchesName`'s
+lowercase comparison can't handle) sets `state.l24NameTyped` the moment the pattern is
+completed. `l24NamePending = !freePlay && state.l24NameWord && !state.l24NameTyped`
+joins `cardPending`/`namePending` in `normalTargetMet`, so **the level cannot end until
+the capitalized name has actually been typed** — the same never-missable guarantee a
+history card has. Always satisfiable: the name is served long before any win is
+possible. Completing it fires the theme's normal word celebration, not the golden
+flourish (that belongs to the pre-Shift Name Moment below, once ever). Invariant:
+**INV-74**; tests in `tests/integration/level24-name.test.mjs`.
 
 ## The Name Moment (personalization, pre-Shift)
 
@@ -154,6 +274,9 @@ displacing each other).
   by this level (first-spellable ≤ level, excluding the guaranteed-moment level
   itself). These are eligible as a **low-frequency "familiar visitor"** woven into
   `buildPatterns`'s pool at low odds on later levels — ambient, not guaranteed.
+  **Level 24 is excluded from this draw** (added 2026-09-11): it is the capitals
+  ceremony and already injects the name in title case, so a lowercase copy landing among
+  the drills both crowded the level and undercut its one lesson. See "Level 24" above.
 
 **Persistence** — `kk-progress.nameMoment: { name: "<sanitized words joined by space>" }`.
 `nameMomentFired(playerName)` compares the current sanitized name against the stored
@@ -264,10 +387,18 @@ still fire during normal play, before the coda even begins.
   missing/erroring Ollama yields an empty batch, never a 500. If nothing is ready by
   the time the coda starts, the coda plays entirely on `STATIC_STORIES` — the always-
   working offline floor. This is an enhancement-only layer; **static hosting (no Go
-  server) is fully supported with zero behavior loss.**
+  server) is fully supported with zero behavior loss.** That is not a hypothetical
+  fallback: the published GitHub Pages build has **no `/api/*` backend at all**, so the
+  coda plays entirely on `STATIC_STORIES` for every player of the free public game — a
+  read-only lane verified this session that the coda is winnable there from the static
+  bank. `STORY_URL` was changed to the RELATIVE `'api/keyboard-story'` on 2026-09-11
+  (same reason as `js/wordgen.js` and `js/chat.js`: a root-absolute path escapes the
+  `/keystroke-kingdom/` project-page prefix and hits the shared domain root). See
+  `.claude/rules/visual-validation.md` §The Three Environments.
 - **Wiring in `js/main.js` — `startCoda()`:** once the level's traditional win target
   is FIRST met (`normalTargetMet` — `themeComplete && patternsCompleted >= minPatterns
-  && !cardPending && !namePending`), the engine calls `startCoda()` instead of ending
+  && !cardPending && !namePending && !l24NamePending`, the last of which is always false
+  outside Level 24), the engine calls `startCoda()` instead of ending
   the level: it picks a story (`pickKeyboardStory` against `Slots.getStoryRotation(25)`),
   builds the coda via `assembleCoda`, bumps the slot's rotation
   (`Slots.bumpStoryRotation(25)`), TRUNCATES any un-reached normal patterns from
@@ -380,10 +511,33 @@ behavior difference, zero console noise, no loading pause anywhere.
 ## Easter eggs & WOPR bypass
 
 `EGGS`, `SECRET_PHRASES`, and the Konami handler all live in this file — full catalog
-at [[easter-eggs]]. The eighth key is never rendered as "semicolon" anywhere in this
-file (`;` → "THE EIGHTH KEY" wherever a label is built). `[data-enter-key]` elements
-are swapped to "RETURN" on Mac / "ENTER" elsewhere via `navigator.platform` detection
-at module load — the event handler itself stays `e.key === 'Enter'` on every platform.
+at [[easter-eggs]]. The 2026-09-11 hidden-layer wave added three more surfaces here,
+all deliberately small and all obeying "never interrupt flow":
+
+- **Two more magic words** in `EGGS` — `sudo` and `allyourbase`. Plain table entries;
+  no new mechanism, listener, or matching logic.
+- **`EIGHTH_KEY_CONFESSION`** — a two-line couplet rendered onto the level-complete
+  card by `renderEighthKeyConfession(show)`, the FIRST time a saved game finishes Level
+  20. The one-time latch is *derived*, not stored:
+  `!state.freePlay && state.level === 20 && !getProgress().completed['20']`, evaluated
+  in `showLevelComplete()` **before** `recordLevelComplete` writes that flag — so no new
+  persisted field exists and the latch is naturally per saved game. The couplet ends
+  with the eighth key's character without ever naming it, so the anonymity rule below
+  stays intact. `textContent` + inline styles, `white-space:pre-line`, full-opacity
+  muted green rather than element opacity (journal L2/F3). **INV-73**.
+- **`DUCK_HINT` / `maybeShowDuckHint()`** — from Level 22 on, the first finger hint
+  earned after a wrong keypress carries `STUCK? TELL THE DUCK.` appended beneath it,
+  once per page load (`duckHintShown`). It is called immediately after
+  `showFingerHint(expected)` in the wrong-key branch and **bails out if `#finger-hint`
+  has no `firstChild`**, so it can never replace a hint or appear unprompted — the
+  opening finger guide remains the game's single sanctioned unprompted hint. **INV-75**.
+
+Tests for all three: `tests/integration/hidden-layer.test.mjs`.
+
+The eighth key is never rendered as "semicolon" anywhere in this file (`;` → "THE
+EIGHTH KEY" wherever a label is built). `[data-enter-key]` elements are swapped to
+"RETURN" on Mac / "ENTER" elsewhere via `navigator.platform` detection at module load —
+the event handler itself stays `e.key === 'Enter'` on every platform.
 
 ## Victory-window timing (`showLevelComplete`)
 

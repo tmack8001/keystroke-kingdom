@@ -4,7 +4,7 @@ code: [js/mystery.js, js/basement.js, js/commandcenter.js, js/fullcircle.js]
 rules: [.claude/rules/transitions.md]
 screenshots: docs/screenshots/cinematics/
 capture: node docs/screenshots/capture-cinematics.js && node docs/screenshots/capture-fullcircle.js
-verified: 2026-07-12 (mystery redesign + basement/commandcenter milestone-hold fixes)
+verified: 2026-09-11 (dial-up handshake chirp in mystery.js phase 5)
 ---
 
 # Act-Transition Cinematics
@@ -128,6 +128,26 @@ plus a bright free-edge light catch sell the turn as physical light, not just ge
 Audio: `playHingeSlide()` — two low gliding oscillators, deliberately warm and
 non-percussive per the spec's "not triumphant, not a fanfare — just arrival."
 
+**The dial-up handshake (added 2026-09-11, `js/mystery.js` only).** In the same
+`!chordStarted` one-shot block that starts the chord, stops the CRT hum, and plays the
+hinge slide, `mystery.js` now also calls `Audio.modemChirp(0.45)` — half a second of
+modem riding *under* the opening door (synthesis detail: [[audio]]; catalog entry and
+its cited history: `.claude/rules/easter-eggs.md`). Three properties matter here:
+
+- **First entry to the Computer Wing only.** `isFirstEntryToComputerWing()` derives the
+  latch from progress the game already keeps — `Slots.getProgress().completed['6']`,
+  Level 6 being the first cabinet *inside* the wing. No new persisted field, and
+  nothing is written. (`furthestLevel`/`completed['5']` can't distinguish a first run
+  from a replay: `js/main.js` records Level 5 complete *before* this cinematic starts.)
+  This is the only reason `js/mystery.js` imports `js/slots.js` at all — see
+  [[save-slots]].
+- **Reads defensively** (security.md rule 4): a throw or a malformed shape falls
+  through to "not first time" — the quiet outcome. A missing slot (the WOPR bypass)
+  reads as first time.
+- **Purely decorative.** It is offset 0.45s so it sits inside the door's swell rather
+  than in front of it, it can never gate or delay the sequence, and with sound off (or
+  no WebAudio) Phase 5 plays byte-identically. The other three cinematics are untouched.
+
 ## Milestone hold fixes (2026-07-12) — basement.js and commandcenter.js
 
 Both files' `MILESTONE` phase (basement's key cascade, commandcenter's rolling wave) had
@@ -188,4 +208,6 @@ page's `screenshots:`/`capture:` frontmatter fields — it spans two features. C
 ## Related
 
 [[curriculum-data]] (the act-boundary levels these key off) · [[engine-flow]] (the
-trigger/dispatch site) · [[settings-survival]] (fullcircle.js's one dependency)
+trigger/dispatch site) · [[settings-survival]] (fullcircle.js's one dependency) ·
+[[audio]] (`modemChirp`'s synthesis) · [[save-slots]] (`Slots.getProgress()`, the
+dial-up chirp's first-time latch source) · [[easter-eggs]] (the chirp's catalog entry)

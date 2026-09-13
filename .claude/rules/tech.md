@@ -294,7 +294,20 @@ defaultSettings = {
 - Godot port if the game is worth shipping beyond the browser
 - Teacher/classroom mode (shared stats view)
 - Additional visual themes as user-selectable options
-- Mobile/tablet support (on-screen keyboard overlay?)
+- Mobile/tablet support — **NOT an on-screen QWERTY overlay.** That parenthetical stood here
+  for months and is the one option the evidence argues against hardest (see
+  `research/mobile-touch-typing.md`, 2026-09-12): a child-sized soft QWERTY wants ~2cm per key
+  (NN/g's recommendation for young children, 4x the adult figure), so a full row needs >=20cm of
+  width and does not fit an 11-inch iPad in portrait; glass has no home row and no F/J anchor;
+  and the largest mobile-typing study ever run (37,370 users, MobileHCI 2019) found **no benefit
+  from ten-finger touch-typing training when typing on glass** — the skill does not transfer.
+  Notably, **none of the six established children's literacy apps surveyed puts a QWERTY soft
+  keyboard in front of a young child**; all six are the Montessori movable alphabet in different
+  coats (select/drag letters, not type them).
+  The real options are: **(a)** a tablet + Bluetooth keyboard running the existing game unchanged
+  (zero compromise, and the only path that delivers the ACTUAL game on a tablet), or **(b)** a
+  separate letter-tile reading mode that makes a reading/spelling claim and **never** a typing
+  one. Spec: `docs/specs/mobile-touch-mode.md`.
 
 ---
 

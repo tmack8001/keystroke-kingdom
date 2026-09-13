@@ -45,18 +45,96 @@ elements visible around the UI, not peeking out from behind it.
 
 ---
 
+## The Three Environments — and why a locally-green suite can still ship a broken site
+
+*Added 2026-09-11, after the published site shipped 404ing favicons that passed every
+local gate. The game is live and free at <https://tmack8001.github.io/keystroke-kingdom/>;
+that build is what players actually get, so it is a required verification environment.*
+
+The game runs in three places, and everything above validates only the first two:
+
+| Environment | Serves from | `/api/*` backend |
+|---|---|---|
+| Go binary (`./keystroke-kingdom`) | site root `/` | yes |
+| Docker (`docker compose --profile game…`) | site root `/` | yes (with the sidecar) |
+| **Static host — GitHub Pages, the published game** | **sub-path `/keystroke-kingdom/`** | **none** |
+
+Pages is configured `build_type: legacy`, `source: {branch: main, path: /}` — it serves the
+repo root of `main` with no build step, so **every push to `main` is a deploy**. The static
+host differs from the other two in exactly two dimensions, and every static-host-only bug
+lives in one of them:
+
+- **(a) A path prefix.** The site lives under `/keystroke-kingdom/`. Any **root-absolute
+  path escapes it** — `/favicon.ico` resolves to the domain root, which on a shared
+  `user.github.io` is a path this game does not own. **Root-absolute paths are forbidden**
+  in `index.html` (`href`/`src`) and in js endpoint constants and import specifiers. Use
+  relative paths (`favicon.ico`, `api/wordgen`). This is the worked example: those absolute
+  favicon paths passed every local check and 404'd live.
+- **(b) No backend at all.** `/api/wordgen`, `/api/chat`, and `/api/keyboard-story` do not
+  exist there. **A 404 from `/api/*` on a static host is EXPECTED and must degrade
+  silently** to the static fallback (static word pools, the `js/keyboard-story.js` static
+  story bank, the IM-friend's scripted nap) — no error, no stall, no loading pause, and the
+  level stays winnable. A new feature that calls an endpoint **is not done until its
+  no-backend path has been verified.**
+
+### The gate
+
+```bash
+# against the live published site
+node scripts/static-host-check.mjs --url=https://tmack8001.github.io/keystroke-kingdom/
+
+# or against a locally prefix-simulated server (the shape CI uses):
+mkdir -p /tmp/pagesroot && ln -sfn "$PWD" /tmp/pagesroot/keystroke-kingdom
+python3 -m http.server 8809 --directory /tmp/pagesroot &
+node scripts/static-host-check.mjs --url=http://127.0.0.1:8809/keystroke-kingdom/
+```
+
+It crawls `index.html`'s asset references **and the whole ES-module import graph**,
+asserting every file returns 200; flags any root-absolute path as a failure; and reports
+`/api/*` 404s as INFO, never failure. A passing run looks like:
+
+```
+[2/4] index.html asset references
+  7 local asset reference(s) checked
+[3/4] ES module import graph
+  58 module file(s) reachable
+[4/4] /api/* absence (by design on a static host)
+  INFO  …/api/wordgen/health → 404 — EXPECTED, client falls back to static pools
+PASS  67 resource(s) all 200 (58 ES modules, 7 index.html assets).
+```
+
+CI runs it on push and PR against **both** shapes — the `/keystroke-kingdom/` project-page
+sub-path and the site root — in `.github/workflows/static-host-check.yml`.
+
+**Run it whenever you:** add or rename any file in the ES-module import graph; touch
+`index.html`'s asset references; add or change an `/api/*` call; or add a feature whose
+behavior depends on a backend response.
+
+**What the automated gate does NOT cover** (verify by hand on the live site before
+claiming the published build is good): **audio** — headless cannot hear, and Chrome's
+autoplay policy is origin-scoped, so a human should do a ~60-second sound check on the real
+URL; the **Act 2→3 and Act 3→4 cinematics**, which have not been driven on Pages; the
+**natural level-by-level unlock ladder**, since automated runs reach levels via the `wopr`
+shortcut; and **mobile / touch / small viewports**, which are out of scope entirely (all
+verification is at 1280×800).
+
+---
+
 ## How to Run It
 
-The Playwright module is installed at:
-```
-/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright
-```
-Chromium headless shell is at:
-```
-/Users/trevormack/Library/Caches/ms-playwright/chromium_headless_shell-1228/
-```
+**Playwright resolution is dynamic — never hard-code a path.** (This file used to pin
+`~/.npm/_npx/<hash>/node_modules/playwright`; that pin rotted to a Playwright whose browser
+revision was no longer installed and broke every browser lane in a session.) Use the shared
+helper `scripts/kk-playwright.js`, which resolves Playwright at call time: the
+`PLAYWRIGHT_DIR` env override first, then a plain `require('playwright')`, then npx cache
+entries newest-version-first — accepting only a candidate whose browser binary actually
+exists. If resolution ever fails it tells you to run `npx playwright install chromium` or
+set `PLAYWRIGHT_DIR=/path/to/node_modules/playwright`. Do that; do not re-hard-code a path
+anywhere.
 
-The dev server URL is in `.dev-url` at the repo root.
+The dev server URL is in `.dev-url` at the repo root — but prefer your own static server
+(`python3 -m http.server <port> --directory <repo>` + `DEV_URL=…`), since `.dev-url` may
+point at a binary with stale embedded assets.
 
 ### Shared navigation helper
 
@@ -127,6 +205,10 @@ Run the check **before reporting a level as complete** whenever you:
 - Modify `js/ui/hud.js`, `js/ui/keyboard-preview.js`, or `js/ui/screens.js`
 - Rebuild the Go binary (new embed files require a rebuild — verify the theme loads)
 
+And run the **static-host gate** (`node scripts/static-host-check.mjs`, above) whenever you
+add/rename a js module, change an `index.html` asset reference, or add an `/api/*` call —
+a push to `main` publishes straight to players.
+
 ---
 
 ## What a Passing Screenshot Looks Like
@@ -156,3 +238,8 @@ go build -o keystroke-kingdom . && ./keystroke-kingdom &
 ```
 
 Without a rebuild, the new theme files return 404 and the level silently falls back to no theme (or crashes).
+
+The static host has the mirror-image gotcha: there is **no build step at all** — Pages
+serves the files on `main` as they are. So a file that exists only locally (untracked,
+gitignored, or never added) is a live 404 for every player. `scripts/static-host-check.mjs`
+against the published URL is what catches that.
