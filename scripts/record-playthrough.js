@@ -820,8 +820,23 @@ function renderTimelineMarkdown(events, hdr) {
   metrics.started = Date.now();
 
   const fatalErrors = [];
+  // The /api/* probes 404 BY DESIGN on any static host (GitHub Pages, python
+  // http.server) — that 404 IS the "no backend, use the static pools" signal, and
+  // the client absorbs it silently. Counting it as fatal meant every recorder run
+  // on a static server reported 2 "fatalErrors" that were noise, which is worse
+  // than useless: a REAL error would have been indistinguishable from the two
+  // everyone had learned to ignore. Filter the expected probe, keep everything
+  // else. (Found by the 2026-09-13 play-test lane; the same filter already lives
+  // in scripts/kk-playwright.js as isExpectedWordgenProbe404.)
+  const isExpectedProbe404 = (text) =>
+    /Failed to load resource.*404/i.test(text) && /\/api\/(wordgen|chat|keyboard-story)/i.test(text);
   page.on('pageerror', (e) => fatalErrors.push(String(e.message || e)));
-  page.on('console', (m) => { if (m.type() === 'error') fatalErrors.push('[console] ' + m.text()); });
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    const text = m.text();
+    if (isExpectedProbe404(text)) return;
+    fatalErrors.push('[console] ' + text);
+  });
 
   // A retry wrapper: transient errors can come from concurrently-edited files.
   async function withRetry(fn, label) {

@@ -180,8 +180,15 @@ function wireConsoleCapture(page, sink, notify = console.log) {
   page.on('pageerror', e => sink.push('pageerror: ' + e.message));
 }
 
-async function launchPage(viewport = { width: 1280, height: 800 }) {
-  const browser = await chromium.launch({ headless: true });
+// `opts.headless` (default true) lets a caller open a VISIBLE browser and leave it
+// open for a human to look at — which is the whole point of `.claude/rules/playtest.md`
+// and of scripts/playtest.mjs. Added 2026-09-13: without it, playtest.mjs had to bridge
+// chromium.launch itself, and the risk there is subtle — it would also have had to
+// duplicate this function's wordgen-404 console filter, and a drifting copy of a filter
+// is how a screenshot gate starts reporting false failures. One knob here removes that
+// whole class of problem.
+async function launchPage(viewport = { width: 1280, height: 800 }, opts = {}) {
+  const browser = await chromium.launch({ headless: opts.headless !== false });
   const page = await browser.newPage();
   await page.setViewportSize(viewport);
 
