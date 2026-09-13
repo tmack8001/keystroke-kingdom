@@ -45,3 +45,6 @@ operating system's birth, that one is a specific design decision made within it.
 ## See also
 
 [[unix-epoch-1970]] — the January 1, 1970 time-counting convention this OS introduced (Level 20).
+[[apollo-11-moon-landing-1969]] — the card's "same summer astronauts walked on the moon" line, and
+the proposed flight/space act that pays it off ([[margaret-hamilton]], [[apollo-guidance-computer-dsky]]).
+[[arpa-ipto-funding]] — Bell Labs as the private-lab counterweight to the ARPA-funded era.

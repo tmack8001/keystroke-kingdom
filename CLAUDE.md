@@ -38,7 +38,11 @@ This is intentional pedagogical design based on watching Oona learn. Do not "fix
 
 ### Stack
 - Browser-first (HTML/CSS/JS) — **no longer a prototype**: this IS the game (declared 2026-07-12)
-- Bespoke engine, no framework — deliberate (low-level control, agent-friendly)
+- Bespoke engine, no framework — deliberate (low-level control, agent-friendly).
+  **Narrowed 2026-09-12 (Trevor): a VENDORED graphics renderer is permitted for modern-era
+  tiers only** — graphics rendering only, never the engine; vendored ESM under `js/vendor/`,
+  no build step, no CDN, licence recorded, always additive to a Canvas-2D fallback.
+  See `.claude/rules/tech.md` Stack table and `docs/specs/act7-speed-racing.md` §5.6d.
 - Pixel/retro arcade aesthetic — Press Start 2P font, CRT scanline effects
 - Google Lyria for music (one original track per level)
 - Godot only if we ever ship beyond the browser

@@ -10,7 +10,9 @@ verified: 2026-07-11
 Grace Hopper was a Harvard Mark II team member and career naval officer/computer
 scientist who spent decades popularizing the story of the 1947 "first computer bug" —
 though the historical record does not credit her with personally finding or logging the
-moth herself. See [[mark-ii-moth-1947]] for the event itself.
+moth herself. See [[mark-ii-moth-1947]] for the event itself, and [[margaret-hamilton]] — the
+Apollo software lead who, a generation later, coined the name for the profession Hopper helped
+invent — plus [[human-computers]], the women whose *job title* "computer" once was.
 
 ## In this game
 

@@ -64,3 +64,4 @@ was confined to internal research notes and has been corrected in this document.
 ## See also
 
 [[ibm-company]] — this game's other capitalized-acronym card, also at Level 24 (added 2026-07-19). [[ibm-ramac]] — an earlier IBM milestone, the 1956 first hard disk, Level 6 (added 2026-07-19).
+[[human-computers]] — before the machines took the name, "computer" was a job title held by people; the NACA/NASA women who held it, and the ones who became programmers (added 2026-09-12). [[margaret-hamilton]] — who later named the profession itself.

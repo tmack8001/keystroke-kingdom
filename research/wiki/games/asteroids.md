@@ -30,7 +30,8 @@ hardware period covered by Act 1.
   asteroids on-screen simultaneously (large asteroids at the cap split into one medium
   piece instead of two to enforce it). 13 hand-wired sound effects — no dedicated sound
   chip.
-- The vector hardware was adapted from Atari's earlier Lunar Lander.
+- The vector hardware was adapted from Atari's earlier [[lunar-lander-1979]] — and the first 300
+  Asteroids cabinets shipped in **Lunar Lander cases**.
 - The hardware credit for the vector generator/sound board is historically murky: older
   sources credit "Howard Delman," while arcade-museum.com's current people page credits
   "Wendi Allen" (her current name) — use "Wendi Allen" if a hardware credit is ever added.
