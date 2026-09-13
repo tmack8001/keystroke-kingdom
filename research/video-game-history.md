@@ -94,13 +94,22 @@ justified by gimmicks (e.g., key-glyph resemblance was explicitly rejected).
 - [Missile Command — Wikipedia](https://en.wikipedia.org/wiki/Missile_Command) — confirms June 1980 North American release; the player uses a trackball (chosen by Theurer for speed over a joystick) to defend six cities from ICBMs launched from three bases.
 - [Dave Theurer — Museum of the Game (arcade-museum.com)](https://www.arcade-museum.com/people/Dave-Theurer-16) — designer-credit corroboration (also credits Theurer on Tempest, 1981).
 
-## Parked: Act 6 "mastery wing"
+## Parked: Act 7 "speed / racing wing"
+*Retitled 2026-09-12: this paragraph described Act 6, but **Act 6 shipped as the Text
+Worlds wing** (prose + tile worlds + the maker + the IM-friend). The speed/racing idea it
+actually describes is **Act 7**. Full generational arc and the cabinet-collision analysis
+now live in [[racing-games-by-era]].*
+
 Post-graduation act discussed 2026-07-10: **Mario Kart** and **Tron** cabinets (Trevor's
 childhood list; the other four — Zelda, GoldenEye, DKC, FF7 — already own cabinets).
 No new keys remain, so it's a speed/sentence "greatest hits" wing at modern fidelity;
 historical-ordering rules deliberately loosened. See docs/ROADMAP.md §2.
 
-### References — Act 6 parked mentions
+**Note (2026-09-12):** Tron is still free (no assigned cabinet) but **Out Run is Level 21**,
+so the racing wing cannot reuse it — [[racing-games-by-era]] substitutes **Hang-On** (1985),
+which is better history anyway: it is the *first* Super Scaler game, not the famous one.
+
+### References — Act 7 parked mentions
 
 **[[mario-kart|Mario Kart]]** (likely candidate: the original *Super Mario Kart*, Nintendo, SNES, 1992):
 - [Super Mario Kart — Wikipedia](https://en.wikipedia.org/wiki/Super_Mario_Kart) — developed by Nintendo EAD (Shigeru Miyamoto as EAD general manager overseeing development), released in Japan August 27, 1992, for SNES; "credited with inventing the 'kart racing' subgenre of video games."

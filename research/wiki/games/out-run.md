@@ -13,11 +13,21 @@ scale, and zoom calculations back into 2D sprite rendering.
 
 ## In this game
 
-Out Run is the **Level 21 cabinet** in Keystroke Kingdom's parked Act 5/Corner Cabinets
-plan — chosen for its sprite-scaling pseudo-3D, radio-station soundtrack choice, and
-arcade-luxury fantasy, recreated as faithful pixel art (sunset gradient, palms, red
-convertible). See `research/video-game-history.md` "Cabinet assignments — history notes for
-the newer picks," and the [[super-scaler]] concept page for the underlying technology.
+Out Run is the **Level 21 cabinet** in Keystroke Kingdom's Act 5 "Corner Cabinets" — chosen for
+its sprite-scaling pseudo-3D, radio-station soundtrack choice, and arcade-luxury fantasy,
+recreated as faithful pixel art (sunset gradient, palms, red convertible). See
+`research/video-game-history.md` "Cabinet assignments — history notes for the newer picks," and
+the [[super-scaler]] concept page for the underlying technology. *(Act 5 has since shipped —
+`.claude/rules/levels/act5.md` — so the older "parked plan" wording on this page was stale;
+corrected 2026-09-12.)*
+
+**Act 7 note (2026-09-12):** because Out Run **already owns a cabinet**, the one-game-per-cabinet
+rule forbids reusing it in the proposed **Act 7 — Speed / Racing** wing. The recommended
+substitute for the Super Scaler era is [[hang-on]] (Sega, July 1985) — Out Run's direct
+technological parent and the *first* Super Scaler game, and a clearly distinct title rather than
+a reskin. Out Run also owns the ancestor of the one Grand Theft Auto feature worth teaching: its
+in-game radio selection is the documented first, "later adopted by Grand Theft Auto" — see
+`research/racing-games-by-era.md` §9 and [[grand-theft-auto]].
 
 ## The facts
 
