@@ -675,30 +675,39 @@ export function kitFor(tier) {
     frame(ctx, W, H, draw) {
       if (!ctx || !(W > 0) || !(H > 0) || typeof draw !== 'function') return;
       if (inFrame) throw new Error('[speedway/kit] frame() is not re-entrant');
+      // The re-entrancy latch must be released by the SAME try/finally that releases
+      // the guard. Setting it before the buffer/pen work (which sits outside the
+      // try) meant that if getBuffer or buildPen threw — a null 2D context is enough
+      // — the latch stuck true and every later frame threw "not re-entrant" forever.
+      // track.js swallows a render throw by design (a broken scene must never trap a
+      // player), so the visible symptom was a silently frozen track for the whole
+      // session. Found by /security-review 2026-09-13.
+      let entry;
+      let release = null;
       inFrame = true;
-      const entry = getBuffer(tier, spec, Math.round(W), Math.round(H));
-      const bctx = entry.ctx;
-      // Explicit state reset every frame — 2D state leaks between screens (L28).
-      bctx.setTransform(1, 0, 0, 1, 0, 0);
-      bctx.globalAlpha = 1;
-      bctx.globalCompositeOperation = 'source-over';
-      bctx.filter = 'none';
-      bctx.shadowBlur = 0;
-      bctx.shadowColor = 'rgba(0,0,0,0)';
-      bctx.textAlign = 'left';
-      bctx.textBaseline = 'top';
-      bctx.imageSmoothingEnabled = spec.smoothing;
-      bctx.lineWidth = 1;
-      if (!entry.pen) {
-        entry.pen = buildPen(tier, spec, entry);
-        applyGuard(bctx, tier, forbidden);   // permanent: the pen captured what it needs
-      }
-      entry.pen.clear();
-      const release = applyGuard(ctx, tier, forbidden);
       try {
+        entry = getBuffer(tier, spec, Math.round(W), Math.round(H));
+        const bctx = entry.ctx;
+        // Explicit state reset every frame — 2D state leaks between screens (L28).
+        bctx.setTransform(1, 0, 0, 1, 0, 0);
+        bctx.globalAlpha = 1;
+        bctx.globalCompositeOperation = 'source-over';
+        bctx.filter = 'none';
+        bctx.shadowBlur = 0;
+        bctx.shadowColor = 'rgba(0,0,0,0)';
+        bctx.textAlign = 'left';
+        bctx.textBaseline = 'top';
+        bctx.imageSmoothingEnabled = spec.smoothing;
+        bctx.lineWidth = 1;
+        if (!entry.pen) {
+          entry.pen = buildPen(tier, spec, entry);
+          applyGuard(bctx, tier, forbidden);   // permanent: the pen captured what it needs
+        }
+        entry.pen.clear();
+        release = applyGuard(ctx, tier, forbidden);
         draw(entry.pen);
       } finally {
-        release();
+        if (release) release();
         inFrame = false;
       }
       ctx.save();

@@ -136,6 +136,26 @@ HTML, shell, or JavaScript.
    single most on-theme word in the proposed flight act. A test had even written the defect
    down as a requirement (`main_test.go` asserted `shell` must be blocked, with the comment
    *"shell contains hell"*).
+   **⚠️ AMENDED AGAIN 2026-09-13 after a `/security-review` — the 09-12 fix was half a fix.**
+   Removing substring matching was right, but it reopened the **COMPOUND PROFANITY** class,
+   which `expandBlockedForms` structurally cannot reach because it only appends SUFFIXES. The
+   review reproduced the generator serving **`asshole shithead bullshit motherfucker dickhead
+   dumbass pornography nazism`** — and the client backstop (`hasBlockedWord`, exact-word over
+   the same floor) caught none of them either, so BOTH layers were open.
+   **The matcher is now TWO-TIER, and the principle is not "substrings are bad" but
+   "substring matching is safe ONLY for strings with no innocent English occurrence":**
+   - **`hardCoreSubstrings`** (main.go) — matched as SUBSTRINGS: `fuck`, `shit`, `cunt`,
+     `porn`, `nazi`, `slut`, `whore`, `piss`, `bitch`. Adding one is a safety decision with
+     real blast radius (it blocks every word containing it, forever) and
+     `TestHardCoreSubstringsHaveNoInnocentOccurrence` pins that each is genuinely never-innocent.
+     **`rape` and `cock` are deliberately NOT here** — `grape`/`drape`/`scrape` and
+     `cocktail`/`peacock`/`cockpit` are ordinary words a child should learn.
+   - **Everything else** — `ass`, `hell`, `tit`, `pee`, `war`, `die`, `gun`, `cock`, `dick` —
+     stays exact-word + inflections, with its compounds **enumerated in the floor**
+     (`asshole`, `dumbass`, `jackass`, `badass`, `smartass`, `dickhead`, `hellhole`, `warzone`,
+     `shotgun`, `bloodbath`, `sexual`). Floor: 41 → 53 words.
+   `TestBlocklistCompoundsAndFalsePositives` pins **both directions**, because either alone is
+   exactly how this bug happened twice.
    **The rule is now: a word is blocked if it IS a blocked word, or is a blocked word's
    generated INFLECTION** (`expandBlockedForms` — plural/-ed/-ing/-er/-y/-ly/-ful/-ness, the
    silent-e drop, CVC doubling, y→ies, and ie→y so `die`→`dying`). Compound smuggling is

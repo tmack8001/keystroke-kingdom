@@ -20,10 +20,20 @@
 //      hit (.claude/rules/levels/act5.md L23). Matched as a SUBSTRING, deliberately
 //      over-blocking, so `diesel` (contains "die") never sneaks in either.
 //
-// A note on `speed`, `chassis`, `passing`, `cockpit`, `warm`, `forward`: these are
-// blocked by main.go's `wordgenSubstringExtras` (`pee`, `ass`, `cock`, `war`), which
-// gates the LLM generation path only. Curated banks are not filtered by that layer, so
-// the act's most on-theme word lives here and only here. The blocklist does not move.
+// CORRECTED 2026-09-13. An earlier draft of this header claimed `speed`, `chassis`,
+// `passing`, `cockpit`, `warm` and `forward` were blocked by main.go's substring layer
+// and therefore had to live here. That was true when this file was written and is
+// FALSE now: substring matching was removed the same day (Trevor — "'altitude' isn't
+// 'tit' and it shouldn't be caught"), so all six generate fine and
+// blocklist_sync_test.go asserts exactly that. The stale note is left visible rather
+// than silently deleted because believing it would lead a future author to design
+// around a constraint that no longer exists — the L41 failure class.
+//
+// The CURRENT reasons this bank is static are both still good: the published build has
+// no backend at all (GitHub Pages — see .claude/rules/visual-validation.md "The Three
+// Environments"), so generation is unavailable to most players by construction; and a
+// curated, era-appropriate racing vocabulary is better content than anything a general
+// model returns. Every word here is still checked against the shared floor.
 
 import { isBlockedWord } from '../word-blocklist.js';
 import { getWordLengthRange } from '../settings.js';
@@ -131,11 +141,17 @@ export function allWords() {
 
 // ─── The pool a track actually draws from ───────────────────────────────────
 
+// Own-property lookups only. A track id of `constructor`/`toString`/`__proto__` would
+// otherwise resolve to an inherited Object.prototype member and be returned as a word
+// pool — `TRACK_POOLS['constructor']` is a function, and `.filter` on it throws, which
+// a renderer's swallowed catch would turn into a silently dead track. Not reachable
+// today (ids are authored), but a data-driven registry is exactly where it would be.
+// Found by /security-review 2026-09-13; the same guard js/slots.js readSpeedway uses.
 function basePool(track) {
   const id = track && track.id;
-  if (id && TRACK_POOLS[id]) return TRACK_POOLS[id];
+  if (id && Object.prototype.hasOwnProperty.call(TRACK_POOLS, id)) return TRACK_POOLS[id];
   const tier = track && track.tier;
-  if (tier && TIER_BAND[tier]) return TIER_BAND[tier];
+  if (tier && Object.prototype.hasOwnProperty.call(TIER_BAND, tier)) return TIER_BAND[tier];
   return DEFAULT_POOL;
 }
 

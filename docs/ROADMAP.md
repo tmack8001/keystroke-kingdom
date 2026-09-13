@@ -699,6 +699,52 @@ fetch sites are all relative same-origin `/api/*`; `playerName` appears in NO re
   stated; and **always additive to a Canvas-2D fallback**. `tech.md` Stack table + `CLAUDE.md` §Stack.
   **No vendored byte has landed and none should until Trevor confirms the backend choice (Q10).**
 
+### Act 7 `/security-review` — 2026-09-13 (the review the build owed)
+
+*Verdict: **2 confirmed, 2 plausible — all four FIXED same day.** **The Act 7 wing itself is
+clean**: no DOM sinks, no dynamic code, **zero network calls**, no PII, and the player name never
+enters `js/speedway/**` at all. The one high-severity finding was not in Act 7.*
+
+- **F1 — CONFIRMED, HIGH, kid-safety. ✅ FIXED.** The 2026-09-12 substring removal (Trevor's
+  correct call — *"'altitude' isn't 'tit'"*) **reopened the COMPOUND PROFANITY class**, which
+  `expandBlockedForms` structurally cannot reach because it only appends SUFFIXES. Reproduced
+  against the real `validateWords`: the generator served **`asshole shithead bullshit
+  motherfucker dickhead dumbass pornography nazism warzone`** — and the client backstop caught
+  none of them either, so **both layers were open**. **Fix: a two-tier matcher.** The principle is
+  not "substrings are bad" but **"substring matching is safe ONLY for strings with no innocent
+  English occurrence"** — `fuck`/`shit`/`cunt`/`porn`/`nazi`/`slut`/`whore`/`piss`/`bitch` match as
+  substrings; everything whose letters appear inside ordinary words stays exact+inflection with
+  compounds enumerated in the floor (41 → 53 words). **`rape` and `cock` are deliberately NOT
+  hard-core** — `grape`/`drape`/`scrape` and `cocktail`/`peacock`/`cockpit` are words a child
+  should learn. Verified both directions: 30 unsafe blocked, 42 innocent free.
+  **Two new pinning tests**, because the absence of one is why this gap survived the first fix.
+  *Scope honesty from the review: inert on the static host (no backend), and Act 7's curated bank
+  was verified clean — 173 words, 0 unsafe.*
+- **F2 — CONFIRMED, LOW. ✅ FIXED.** `kit.js` set the `inFrame` re-entrancy latch **before** the
+  buffer/pen work, which sat outside the try/finally — so if `getBuffer` threw (a null 2D context
+  suffices) the latch stuck `true` and every later frame threw "not re-entrant" forever. Because
+  `track.js` swallows render throws by design (a broken scene must never trap a player), the
+  visible symptom was a **silently frozen track for the whole session**. Latch now released by the
+  same `finally` as the guard.
+- **F3 — PLAUSIBLE, LOW. ✅ FIXED.** `words.js basePool()` used unguarded bracket lookups, so a
+  track id of `constructor`/`toString` would resolve to an inherited `Object.prototype` member and
+  return a function as a word pool. Not reachable today (ids are authored) but a data-driven
+  registry is exactly where it would be. Now `hasOwnProperty`-guarded, matching `slots.js`.
+- **F4 — doc drift in brand-new code. ✅ FIXED.** `words.js`'s header claimed `speed`/`cockpit`/
+  `warm`/`forward` were blocked by the substring layer — **false since the previous day**, and
+  `blocklist_sync_test.go` now asserts the opposite. The L41 failure class, 24 hours old. The stale
+  claim is left *visible* and struck rather than silently deleted, because believing it would lead
+  a future author to design around a constraint that no longer exists.
+- **✅ AFFIRMATIVELY CLEARED, with evidence:** the **canvas guard never leaves the shared 2D
+  context mutated** — nine adversarial scenarios (throwing renderer, tripwire fire, same-kit
+  re-entrancy, two interleaved kits, inner-kit throw, buffer-allocation failure) all leave the
+  own-property list empty and `__kkGuard` absent. **Storage passes rules 4 and 8**: ~30 malformed
+  inputs all degrade to "no ghost", nothing throws, **prototype pollution independently verified
+  absent** (`__proto__` regex-rejected; `constructor`/`prototype` land as inert own props), caps
+  hold (200 seeded tracks read back as exactly 14), worst case **9,867 B/slot** so the `MAX_MS`
+  raise stays inside budget. The themed 404 **reflects nothing** (verified empirically against the
+  built binary — the payload appeared 0 times). `ghost.js` genuinely has no second validator.
+
 - ~~**The wordgen blocklist over-blocked ordinary vocabulary via substring matching**~~
   **✅ FIXED 2026-09-12 (Trevor).** *"the substring layer catches 'tit' … but 'altitude' isn't 'tit'
   and it shouldn't be caught — only the word exactly 'tit' or the plural form … should."*

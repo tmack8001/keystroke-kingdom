@@ -162,3 +162,61 @@ func TestSafetyFloorReloadsCleanly(t *testing.T) {
 		t.Error("regression: 'whiskey' (a floor word) is not blocked on the wordgen path")
 	}
 }
+
+// Enforces: security.md rule 7 — the TWO-TIER matcher.
+//
+// History worth keeping, because this gap was created and closed in 24 hours.
+// 2026-09-12 removed substring matching (correctly: "altitude" contains "tit").
+// 2026-09-13's /security-review found that reopened the COMPOUND PROFANITY class,
+// which expandBlockedForms structurally cannot reach because it only appends
+// SUFFIXES — the generator would have served "asshole", "bullshit",
+// "motherfucker", "pornography" to a child. The fix is not "put substrings back":
+// it is that substring matching is safe ONLY for strings with no innocent English
+// occurrence (hardCoreSubstrings), while everything whose letters appear inside
+// ordinary words stays exact+inflection with its compounds enumerated in the floor.
+//
+// This test pins BOTH directions, because either alone is how the bug happened.
+func TestBlocklistCompoundsAndFalsePositives(t *testing.T) {
+	unsafe := []string{
+		"asshole", "shithead", "bullshit", "motherfucker", "dickhead", "dumbass",
+		"jackass", "badass", "hellhole", "pornography", "nazism", "warzone",
+		"sexual", "shotgun", "bullshitting", "shitty", "fucker", "whorehouse",
+	}
+	for _, w := range unsafe {
+		if !isBlocked(w) {
+			t.Errorf("compound profanity reaches a child: %q", w)
+		}
+	}
+	// The words Trevor's 2026-09-12 fix freed. If any of these is blocked again,
+	// someone has reinstated blanket substring matching and two acts' worth of
+	// on-theme vocabulary has silently vanished.
+	innocent := []string{
+		"altitude", "attitude", "latitude", "compass", "mass", "class", "assist",
+		"assembly", "passenger", "passing", "speed", "speedway", "speedometer",
+		"airspeed", "title", "titanium", "competition", "forward", "award", "warm",
+		"cockpit", "cocktail", "peacock", "chassis", "shell", "titan", "titanic",
+		"deadline", "warrior", "analysis", "grape", "drape", "scrape", "brass",
+		"glass", "assign", "assert", "diesel", "scrap", "steward",
+	}
+	for _, w := range innocent {
+		if isBlocked(w) {
+			t.Errorf("false positive returned — substring over-blocking is back: %q", w)
+		}
+	}
+}
+
+// Every hard-core substring must be genuinely never-innocent. If someone adds one
+// whose letters DO appear in an ordinary word, this catches it before children do.
+func TestHardCoreSubstringsHaveNoInnocentOccurrence(t *testing.T) {
+	// Ordinary English words that contain a near-miss of a hard-core string.
+	for _, w := range []string{
+		"grape", "drape", "scrape", "therapist", // "rape" is deliberately NOT hard-core
+		"cocktail", "peacock", "cockpit", // "cock" is deliberately NOT hard-core
+		"shell", "hello", "shelter", // "hell" is deliberately NOT hard-core
+		"altitude", "titan", "compass", "assist", // tit / ass
+	} {
+		if containsHardCore(w) {
+			t.Errorf("hardCoreSubstrings over-reaches: %q would be blocked as a substring", w)
+		}
+	}
+}

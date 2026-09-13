@@ -966,6 +966,38 @@ func isVowel(b byte) bool {
 	return false
 }
 
+// HARD_CORE — the small set of strings that have NO innocent occurrence inside an
+// ordinary English word, and are therefore safe to match as SUBSTRINGS.
+//
+// This is the missing half of the 2026-09-12 fix. Removing substring matching was
+// right — "altitude" contains "tit", "shell" contains "hell", "compass" contains
+// "ass", "cocktail" contains "cock" — but it reopened the COMPOUND PROFANITY class,
+// which expandBlockedForms structurally cannot reach because it only appends
+// SUFFIXES. A /security-review on 2026-09-13 reproduced it: the generator would
+// serve `asshole shithead bullshit motherfucker dickhead dumbass pornography`.
+//
+// The principled rule is not "substrings are bad" but "substring matching is only
+// safe for strings that never occur innocently." Those go here. Everything whose
+// letters DO appear inside ordinary words (ass, hell, tit, pee, war, die, gun, cock,
+// dick) stays exact-word + inflections, and its compounds are enumerated in
+// js/word-blocklist.json — the auditable floor.
+//
+// Adding to this list is a safety decision with blast radius: a string here blocks
+// EVERY word containing it, forever. The test suite pins both directions.
+var hardCoreSubstrings = []string{
+	"fuck", "shit", "cunt", "porn", "nazi", "slut", "whore", "piss", "bitch", "rimjob",
+}
+
+// containsHardCore reports whether a word contains one of the never-innocent strings.
+func containsHardCore(lw string) bool {
+	for _, bad := range hardCoreSubstrings {
+		if strings.Contains(lw, bad) {
+			return true
+		}
+	}
+	return false
+}
+
 // blockedForms is the expanded exact-match set, built once from the extras list.
 var blockedForms = func() map[string]bool {
 	m := map[string]bool{}
@@ -983,7 +1015,7 @@ func isBlocked(w string) bool {
 	// shared floor and the expanded extras. Token-splitting is what stops a
 	// compound like "zig-vodka" smuggling a floor word through; it is NOT
 	// substring matching, so "altitude" is untouched.
-	if chatWordBlocklist[lw] || blockedForms[lw] {
+	if chatWordBlocklist[lw] || blockedForms[lw] || containsHardCore(lw) {
 		return true
 	}
 	for _, tok := range strings.FieldsFunc(lw, func(r rune) bool {
