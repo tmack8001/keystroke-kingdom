@@ -21,7 +21,7 @@ shots — was retired for exactly this reason; see below.)
 | `cinematics/mystery/` | The Act 1→2 Mystery Cabinet reveal (after Level 5) — 7 pngs + `approach.gif`/`secret-door.gif` (revised 2026-07-12: Phase 4 is now a dolly-in "Approach" with distance-blurred terminal text, Phase 5 is the cabinet itself hinging aside as a "Secret Door" — see below) | `node docs/screenshots/capture-cinematics.js mystery` |
 | `cinematics/basement/` | The Act 2→3 Basement-opens transition (after Level 10) | `node docs/screenshots/capture-cinematics.js basement` |
 | `cinematics/commandcenter/` | The Act 3→4 Command Center transition (after Level 15) | `node docs/screenshots/capture-cinematics.js commandcenter` |
-| `easter-eggs/` | The hidden hacker-culture layer: title-screen magic words, Konami stars, WOPR select | `node docs/screenshots/capture-eggs.js` |
+| `easter-eggs/` | The hidden hacker-culture layer: title-screen magic words (7 as of 2026-09-11), Konami stars, WOPR select | `node docs/screenshots/capture-eggs.js` |
 | `freeplay/` | Free Play HUD (sentence + WPM), and Free Play layered under Survival | `node docs/screenshots/capture-freeplay.js` |
 | `screens/` | Game chrome: title, name entry, READY reveal, keyboard-preview, the slot picker + its erase-confirm, the card collection gallery, settings (default + Survival), level-complete, survival game-over | `node docs/screenshots/capture-screens.js` (slots/collection captured ad-hoc as of 2026-07-19 — see note below; not yet wired into the script) |
 | `textworlds/` | The Act 6 "Text Worlds" bonus wing (behind the select-screen door): the door, the hub chooser, and each of the 5 worlds — Green Dragon (prose), Glimmer Deep + Whisperwood (ASCII tile), Your Own World (the maker), and the IM-friend (local-LLM chat) — with reveal/standalone variants. Act 6 is its own surface here, NOT in `levels/`/`acts/` (which are the 25 curriculum levels + 5 curriculum act pages) | `node docs/screenshots/capture-textworlds.js` |
@@ -45,12 +45,37 @@ Every script:
   `DEV_URL=http://127.0.0.1:<port> node docs/screenshots/capture-X.js`
 - accepts an optional CLI filter to re-run a subset (e.g.
   `node docs/screenshots/capture-eggs.js xyzzy,konami`,
-  `node docs/screenshots/capture-cinematics.js basement`)
+  `node docs/screenshots/capture-cinematics.js basement`). `capture-all.js` also takes
+  `--acts-only` / `--levels-only` (added 2026-09-11) so an act slug doesn't drag its
+  five gameplay frames along: `capture-all.js act4-command-center --acts-only`
+  regenerates exactly `acts/act4-command-center.png`, which is what a
+  `js/ui/cabinet-art.js` change actually needs
 - fails loudly (non-zero exit + a FAILED list) if an expected capture is missing —
   silent partial success is not an option (journal L4/F20: guaranteed beats
   probabilistic)
 - overwrites cleanly on rerun (idempotent — safe to regenerate after any change)
 - reports console errors collected during the run
+
+## levels/25-word-processor.png — the one capture that plays the game (2026-09-11)
+
+Level 25's defining moment is the "MY STORY" coda, which only exists *after* the level's
+normal win target is met — so a chrome shot of L25 shows none of it, and this frame used
+to be captured by an ad-hoc script (with a note in `docs/features/level-themes.md`
+warning that a full rebuild would silently revert it). `capture-all.js` now carries the
+coda path itself, and that warning is retired:
+
+```bash
+node docs/screenshots/capture-all.js 25                      # the reference frame (1x tier)
+CODA_WIN_RATIO=3.5 node docs/screenshots/capture-all.js 25    # verification run at WIZARD
+```
+
+It plays the level **through the keyboard** (reading the expected token out of the live
+prompt DOM — never poking game state, journal L36), pins `storyRotation['25']` and
+clears `kk-stories` so the static story bank and typo beat are deterministic, predicts
+the coda by importing the shipping `js/keyboard-story.js` and verifies the engine served
+exactly that, screenshots at the first manifesto line, and then keeps typing to the real
+LEVEL COMPLETE overlay — so "the capture succeeded" and "the coda is winnable" are the
+same check. It fails loudly rather than falling back to a chrome shot.
 
 ## The rule
 

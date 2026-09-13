@@ -250,7 +250,9 @@ const path = require('path');
 const fs = require('fs');
 const { execFileSync, spawnSync } = require('child_process');
 
-const PLAYWRIGHT = '/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright';
+// Playwright comes from the shared resolver in kk-playwright.js — never a hard-coded
+// npx cache path, which rots as soon as the cache is rebuilt or the package upgrades.
+const { playwright: PLAYWRIGHT_MODULE } = require('./kk-playwright');
 const FFMPEG = '/usr/local/bin/ffmpeg';
 const REPO_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_OUT = path.join(REPO_ROOT, 'docs', 'keystroke_kingdoms.mov');
@@ -261,7 +263,7 @@ const DEFAULT_OUT = path.join(REPO_ROOT, 'docs', 'keystroke_kingdoms.mov');
 // under this.
 const WATCHDOG_MS = 90000;
 
-const { chromium } = require(PLAYWRIGHT);
+const { chromium } = PLAYWRIGHT_MODULE;
 
 // Curriculum newKeys per level — mirrors js/levels.js / CLAUDE.md level table.
 // Used only for PACING (slower on newly-introduced keys).

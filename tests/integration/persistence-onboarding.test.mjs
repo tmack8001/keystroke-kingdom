@@ -624,7 +624,10 @@ describe('INV-28 — platform key label (CLAUDE.md §Platform Key Label)', () =>
     baseUrl = `http://127.0.0.1:${port}`;
     closeServer = () => new Promise((resolve) => server.close(() => resolve()));
 
-    const { chromium } = require('/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright');
+    // Resolve Playwright through the shared helper, never a hard-coded path: this line
+    // used to pin an npx cache dir whose bundled browser revision was no longer installed,
+    // which cancelled this whole suite at launch() with an error naming a path, not a cause.
+    const { chromium } = require('../../scripts/kk-playwright').playwright;
     browser = await chromium.launch({ headless: true });
   });
 

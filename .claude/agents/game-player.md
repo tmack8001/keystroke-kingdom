@@ -15,7 +15,8 @@ game's gentle no-punishment nudge — the heart of the product — on camera).
 ## The tool you drive
 
 `scripts/record-playthrough.js` — deterministic, seeded, human-paced recorder.
-Playwright chromium (module at `/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright`)
+Playwright chromium (resolved dynamically by `scripts/kk-playwright.js` — never hard-code an
+npx cache path; set `PLAYWRIGHT_DIR` if resolution ever fails, or run `npx playwright install chromium`)
 records 1280x800 video; ffmpeg (`/usr/local/bin/ffmpeg`) remuxes to H.264 .mov.
 
 ```bash

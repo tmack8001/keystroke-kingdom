@@ -5,7 +5,9 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { chromium } = require('/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright');
+// Resolve Playwright via the shared helper so the install path lives in ONE place
+// (a hard-coded _npx pin rots when the cache is rebuilt — see kk-playwright.js).
+const { chromium } = require('./kk-playwright').playwright;
 
 const REPO = new URL('..', import.meta.url).pathname;
 const PORT = 8231;

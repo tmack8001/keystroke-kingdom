@@ -20,11 +20,79 @@
 // server (e.g. `DEV_URL=http://127.0.0.1:8105 node docs/screenshots/capture-all.js`)
 // without editing the script or colliding with the shared embedded build.
 
-const { chromium } = require('/Users/trevormack/.npm/_npx/705bc6b22212b352/node_modules/playwright');
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+
+// Playwright resolution — deliberately NOT a hard-coded absolute path.
+// A pinned `_npx/<hash>` path rots the moment the npx cache is re-created or the
+// package is upgraded: the pin kept resolving to playwright 1.61.1 (browser
+// revision 1228) long after only revision 1234 remained installed, so every
+// launchPage() caller died with "Executable doesn't exist at …-1228…".
+// Resolve dynamically instead, preferring an explicit override, then a normal
+// require, then whatever npx cache entries exist — newest version first — and
+// only accept a candidate whose bundled browser is actually installed.
+const { chromium } = requirePlaywright();
+
+function requirePlaywright() {
+  const tried = [];
+  for (const dir of playwrightCandidates()) {
+    try {
+      const pw = require(dir);
+      // Probe the resolved executable: a module that loads but whose browser
+      // revision was never downloaded fails only at launch() time, which is far
+      // from the cause and wastes an agent's whole run.
+      if (fs.existsSync(pw.chromium.executablePath())) return pw;
+      tried.push(`${dir} (browser binary missing)`);
+    } catch (err) {
+      tried.push(`${dir} (${err.code || err.message})`);
+    }
+  }
+  throw new Error(
+    'kk-playwright: no usable Playwright install found. Tried:\n  ' +
+      tried.join('\n  ') +
+      '\nFix: `npx playwright install chromium`, or set PLAYWRIGHT_DIR=/path/to/node_modules/playwright'
+  );
+}
+
+function playwrightCandidates() {
+  const out = [];
+  if (process.env.PLAYWRIGHT_DIR) out.push(process.env.PLAYWRIGHT_DIR);
+  out.push('playwright'); // node_modules / NODE_PATH, if the repo ever vendors it
+  const npxCache = path.join(os.homedir(), '.npm', '_npx');
+  let entries = [];
+  try {
+    entries = fs.readdirSync(npxCache);
+  } catch {
+    entries = [];
+  }
+  const versioned = [];
+  for (const entry of entries) {
+    const dir = path.join(npxCache, entry, 'node_modules', 'playwright');
+    let version = '0.0.0';
+    try {
+      version = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).version;
+    } catch {
+      continue; // not a playwright cache entry
+    }
+    versioned.push({ dir, version });
+  }
+  // Newest first, so a freshly-installed Playwright wins over a stale cache entry.
+  versioned.sort((a, b) => cmpSemver(b.version, a.version));
+  out.push(...versioned.map((v) => v.dir));
+  return out;
+}
+
+function cmpSemver(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i += 1) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d) return d;
+  }
+  return 0;
+}
 
 const REPO_ROOT = path.join(__dirname, '..');
 const FFMPEG_BIN = '/usr/local/bin/ffmpeg';
@@ -313,6 +381,9 @@ async function captureGif({ baseUrl, setup, durationMs = 5000, fps = 12, width =
 
 module.exports = {
   REPO_ROOT,
+  // The resolved Playwright module, so other scripts reuse this one resolution
+  // instead of re-pinning their own (rot-prone) absolute install path.
+  playwright: { chromium },
   ACTS_CONFIG,
   ALL_LEVELS,
   resolveBaseUrl,

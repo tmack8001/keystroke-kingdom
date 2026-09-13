@@ -14,6 +14,17 @@
 //   python3 -m http.server 8190 --directory /Users/trevormack/dev/keystroke-kingdom
 //   DEV_URL=http://127.0.0.1:8190 node docs/screenshots/capture-eggs.js
 //   DEV_URL=http://127.0.0.1:8190 node docs/screenshots/capture-eggs.js xyzzy,konami
+//   DEV_URL=http://127.0.0.1:8190 node docs/screenshots/capture-eggs.js sudo,allyourbase
+//
+// NOTE: the wire-check below is FATAL on drift by design — when js/main.js's EGGS
+// table gains a phrase, add it to EGG_PHRASES here and capture just the new one(s)
+// with the filter argument; the unchanged title shots never need re-shooting.
+// This script captures TITLE-screen eggs only. The 2026-09-11 batch added eggs that
+// live on other surfaces (the moth + rubber duck on the select screen, the white
+// rabbit + Y2K clock in Act 4, the eighth-key confession on the level-complete card,
+// the themed 404 served by the Go binary, the dial-up chirp in the mystery
+// cinematic) — none of those have a capture path here yet. See
+// docs/features/easter-eggs.md "Reference frames" for what is and isn't covered.
 //
 // Writes docs/screenshots/easter-eggs/*.png
 
@@ -27,7 +38,8 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
 // Mirrors js/main.js EGGS exactly (verified 1:1 against that file). Kept as a
 // literal list here (CJS script, EGGS lives inside an ES module meant for the
 // browser) — the live in-page check below cross-verifies it hasn't drifted.
-const EGG_PHRASES = ['xyzzy', 'iddqd', 'adventure', 'eliza', 'hello'];
+const EGG_PHRASES = ['xyzzy', 'iddqd', 'adventure', 'eliza', 'hello',
+                     'sudo', 'allyourbase'];   // sudo + allyourbase added 2026-09-11
 
 async function freshTitleLoad(page, baseUrl) {
   await page.goto(baseUrl);
