@@ -17,9 +17,26 @@ or *(search result only, not fetched)*. Roughly half of the URLs here were direc
 Atomic per-game pages live in `research/wiki/games/`; the technical definition of "sim" lives
 in [[sim-racing]]; the typing-as-racing precedent lives in [[typing-as-racing]].
 
+**Update 2026-09-13 — read §16 first if you are building a track.** Act 7 "THE SPEEDWAY"
+shipped with [[monaco-gp]] and [[f-zero]] playable. §1–§15 below are the *arc*; **§16 is the
+cabinet-build depth** for the nine remaining stations (rendering technique, road geometry,
+signature moment, completion state, punishment to strip, cabinet appearance, palette), plus the
+two open decisions settled with evidence — and **three ratings corrections to §8, §9, §11 and
+§15 of this document**, made after discovering that ESRB rates **per platform** and this
+document had been quoting Game Boy Advance ports' ratings as if they were the console games'.
+
+**Update 2026-09-13 (second) — §17 is new and corrects §16.** A cabinet-precedent pass found that
+this document (§16c item 6) and [[mario-kart]] both stated *"no arcade Super Mario Kart exists"*
+as an absolute with a "do not draw one" instruction attached. **Licensed Mario Kart arcade
+cabinets have existed since 2005 and are sold new today** ([[mario-kart-arcade-gp]]). §17 carries
+the correction, the documented precedent for building home games into cabinets
+([[home-games-in-cabinets]]), and a **per-station "what to draw" table** for Act 7's console/PC
+entries ([[console-hardware-silhouettes]]).
+
 **Related:** [[video-game-history]] · [[arcade-cabinets-by-era]] · [[super-scaler]] ·
-[[early-3d-era]] · [[discrete-logic-era]] · [[sixteen-bit-era]] · `.claude/rules/levels.md` ·
-`docs/ROADMAP.md` §2
+[[early-3d-era]] · [[discrete-logic-era]] · [[sixteen-bit-era]] · [[home-games-in-cabinets]] ·
+[[mario-kart-arcade-gp]] · [[nintendo-vs-system]] · [[console-hardware-silhouettes]] ·
+`.claude/rules/levels.md` · `docs/ROADMAP.md` §2
 
 ---
 
@@ -413,7 +430,7 @@ is *not* a drop-in kid-safe alternative to GTA, and it is exactly the kind of
 - [Need for Speed Underground — ESRB rating record](https://www.esrb.org/ratings/9569/need-for-speed-underground/) — institutional: **E**, Mild Lyrics. *(search result only, not fetched)*
 - [Burnout Paradise — ESRB rating record](https://www.esrb.org/ratings/23925/burnout-paradise/) — institutional: **E10+**, Language, Violence. *(search result only, not fetched)*
 - [Crazy Taxi — ESRB rating record](https://www.esrb.org/ratings/29583/crazy-taxi/) — institutional: **E10+**, Language, Mild Violence. *(search result only, not fetched)*
-- [Midnight Club Street Racing — ESRB rating record](https://www.esrb.org/ratings/6916/midnight-club-street-racing/) — institutional: **E**. *(search result only, not fetched)*
+- [Midnight Club Street Racing — ESRB rating record](https://www.esrb.org/ratings/6916/midnight-club-street-racing/) — institutional: **E — but this record is the GAME BOY ADVANCE port.** The PlayStation 2 game is **T (Animated Violence)**. Corrected 2026-09-13; see §16. *(search result only, not fetched)*
 - [Gran Turismo — ESRB rating record](https://www.esrb.org/ratings/3213/gran-turismo/) — institutional: **E**. *(search result only, not fetched)*
 - [Midnight Club: Street Racing — Wikipedia](https://en.wikipedia.org/wiki/Midnight_Club:_Street_Racing) — Angel Studios (later Rockstar San Diego), PS2 October 26 2000 NA. *(search result only, not fetched)*
 - [Burnout (series) — Wikipedia](https://en.wikipedia.org/wiki/Burnout_(series)) — Criterion Games; the 2001 original's near-miss/risk reward loop; Crash mode arriving in Burnout 2; Takedowns arriving in Burnout 3. *(search result only, not fetched)*
@@ -457,7 +474,7 @@ Act 7 can teach without it: the radio-station idea is documented as running from
 ancestor of the one GTA feature worth citing.*
 
 **What to put in that slot instead**, in order of recommendation:
-1. **Midnight Club: Street Racing** (2000, **ESRB E**) — the era-correct open-city night-racing
+1. ~~**Midnight Club: Street Racing** (2000, **ESRB E**)~~ **SUPERSEDED 2026-09-13 — the PS2 game is ESRB T (Animated Violence); the E record is the GBA port. Use NFS: Underground instead (§16).** The era-correct open-city night-racing
    game, and it is rating-clean.
 2. **Need for Speed: Underground** (2003, **ESRB E**) — the definitive 2000s street racer, and
    it keeps Trevor's "Need for Speed" anchor while landing on the series' kid-safe entry.
@@ -655,7 +672,7 @@ Checked against `.claude/rules/levels.md`'s full assignment table:
 | 6 | [[mario-kart]] | Aug 1992 | Mode 7 + split screen | Invented kart racing; **donates the coin mechanic** |
 | 7 | [[virtua-racing]] or [[daytona-usa]] | 1992 / 1994 | Flat-shaded → textured polygons | The polygon step; Daytona also carries the NASCAR beat |
 | 8 | [[gran-turismo]] | Dec 1997 | Early 3D, PS1 | The simulation turn; licence tests = a curriculum |
-| 9 | *Modern open-road* — Midnight Club (E) or NFS: Underground (E) | 2000 / 2003 | Early modern | Trevor's "Need for Speed" anchor, rating-clean. **Not GTA** |
+| 9 | *Modern open-road* — **NFS: Underground (2003, ESRB E)** — Midnight Club RULED OUT (PS2 is T; §16) | 2003 | Early modern | Trevor's "Need for Speed" anchor, rating-clean. **Not GTA** |
 | 10 | **Modern F1 sim** ([[sim-racing]] — Codemasters/EA F1, [[iracing]], [[assetto-corsa]]) | 2008–now | Photoreal, telemetry | Trevor's terminal point, and **ESRB E** |
 
 **Where this differs from Trevor's named anchors:**
@@ -669,6 +686,302 @@ Checked against `.claude/rules/levels.md`'s full assignment table:
   better story than a modern NASCAR game would be.
 - **Confirms the F1 ending**, and adds the happy finding that modern official F1 games are
   ESRB E.
+
+---
+
+## 16. Cabinet-build depth — the nine unbuilt tracks *(added 2026-09-13)*
+
+*Act 7 "THE SPEEDWAY" shipped 2026-09-13 with two stations playable: **[[monaco-gp]]** (`ttl`)
+and **[[f-zero]]** (`mode7`). The arc-level work in §1–§15 is done; what the build lane needed
+and did not have was **cabinet-build depth** — the level of specificity a renderer consumes.
+This section is the index to that depth. The detail itself lives on each game's wiki page under
+a heading called **"The cabinet build (Act 7 track spec)"**, because it belongs next to that
+game's own citations, not in a table that drifts away from them.*
+
+**What "build depth" means here**, per station: the exact rendering technique (what the hardware
+could and could not do), the road/track geometry the player actually saw, the signature visual
+moment, the completion/celebration state, the punishment mechanics to strip (§12's format), the
+cabinet's physical appearance where documented, and an era-appropriate palette concrete enough
+to author from.
+
+| # | Station | Date | Render tier | Page with the build spec |
+|---|---|---|---|---|
+| 1 | [[monaco-gp]] | Nov 1979 | `ttl` | **BUILT** — `js/speedway/tracks/monaco-gp.js` |
+| 2 | [[pole-position]] | Sep 1982 | `scaler` | [[pole-position]] |
+| 3 | [[excitebike]] | Nov 1984 | `8bit` | [[excitebike]] |
+| 4 | [[hang-on]] | Jul 1985 | `scaler` | [[hang-on]] |
+| 5 | [[f-zero]] | Nov 1990 | `mode7` | **BUILT** — `js/speedway/tracks/f-zero.js` |
+| 6 | [[mario-kart]] (Super Mario Kart) | Aug 1992 | `mode7` | [[mario-kart]] |
+| 7 | [[virtua-racing]] | Aug 1992 | `flatpoly` | [[virtua-racing]] |
+| 8 | [[daytona-usa]] | Mar 1994 | `texpoly` | [[daytona-usa]] |
+| 9 | [[gran-turismo]] | Dec 1997 | `ps1` | [[gran-turismo]] |
+| 10 | [[need-for-speed-underground]] | Nov 2003 | `modern` | [[need-for-speed-underground]] |
+| 11 | [[f1-25]] | May 2025 | `modern` | [[f1-25]] |
+
+### 16a. The flatpoly/texpoly pair is the render kit's whole proof
+
+`js/speedway/render/kit.js` was built so that a `flatpoly` renderer **cannot texture a polygon**
+(`texturedPoly` is simply not on its pen) and a `texpoly` renderer can, and additionally gets
+`bilinear`. [[virtua-racing]] and [[daytona-usa]] are the pair that makes that architectural
+rule *visible to a child*, and they are only twenty months apart in real history — which is the
+point. In one sentence:
+
+> **Virtua Racing is shapes. Daytona USA is shapes with photographs stretched over them, and
+> the photographs go soft as they come at you.**
+
+Five visible differences, sourced and detailed on [[virtua-racing]]: pictures on surfaces
+(texture mapping), softness (texture filtering / anti-aliasing / trilinear), edge hardness
+(flat vs smooth shading), density (~6,500 polys/frame on Model 1 vs **up to 300,000
+texture-mapped polygons per second** on Model 2, "nearly double"), and field size (a clean
+circuit vs starting last of forty).
+
+### 16b. The two open decisions, settled with evidence
+
+**The modern open-road track → [[need-for-speed-underground]] (2003), not Midnight Club.**
+The deciding evidence is a ratings correction this pass had to make against §8 and §9 of this
+very document:
+
+| Game | ESRB record | Platform on that record |
+|---|---|---|
+| Midnight Club **(the PS2 game)** | **T — Teen**, Animated Violence | PlayStation 2 |
+| "Midnight Club Street Racing" | E — Everyone, no descriptors | **Game Boy Advance** |
+| Need for Speed Underground | **E — Everyone**, Mild Language + Suggestive Themes | **GameCube, Online, PC, PlayStation 2, Xbox** |
+| Need for Speed Underground | E — Everyone, Mild Lyrics | **Game Boy Advance** |
+
+**§8's table, §9's substitute list and §15's spine row all state "Midnight Club: Street Racing
+(2000, ESRB E)". That is the GBA port's rating. The console game is T.** Full evidence,
+both records fetched, on [[midnight-club-street-racing]]. Underground also wins on design: its
+core loop is a **garage** (the car visibly becomes the player's own — an unlock structure that
+maps directly onto Keystroke Kingdom's per-slot collection), not **police pursuit**, which §12
+already says must be cut entirely.
+
+*The general lesson, now a rule for this wiki:* **ESRB rates per platform. Every ESRB citation
+must state the platform list shown on the record.** This pass found the same mistake twice in a
+row, on two different games, from two correctly-fetched institutional pages.
+
+**The modern F1 sim → [[f1-25]] (Codemasters / EA Sports, May 30 2025). ESRB E — verified.**
+Descriptors **Mild Language** *and* **Use of Alcohol** (podium champagne, per ESRB's own
+summary), interactive elements Users Interact and In-Game Purchases. So the earlier finding
+holds — **a genuine modern F1 simulation really is, by rating, the most age-appropriate
+terminal station in the whole arc** — with one refinement: §11's flat "F1 23 and F1 24 are both
+ESRB E (Mild Language)" is true of those two entries and **already out of date for F1 25**,
+which added the alcohol descriptor. State the year with the rating, always, and re-check each
+annual release. F1 25 also brings two genuinely useful build facts: **five LiDAR-scanned
+circuits** (Bahrain, Miami, Melbourne, Suzuka, Imola — scanned during real Grand Prix weekends)
+and **the series' first reverse layouts** (Silverstone, Zandvoort, Red Bull Ring — reworked, not
+mirrored), which makes an Act 7 "run it backwards" idea era-accurate rather than a liberty.
+
+### 16c. Findings the spec lane should read before anything else
+
+1. **[[excitebike]] is a time-trial game, not a pack race.** Even in Selection B the CPU riders
+   are *obstacles*; the real opponent is a posted time (first place written on the stadium wall,
+   third place in the corner). Its celebration is the printed line **"It's a new record!"** —
+   **a celebration for beating yourself.** That makes it the best possible fit for Act 7's
+   ghost-car design, and it is the only station in the act that already believed in it.
+2. **[[gran-turismo]]'s licence tests are a curriculum with one illegal word in it.** Graded
+   exercises that teach one skill each and unlock the next thing — take the whole structure,
+   **delete the FAIL grade**. Bronze is the floor. This is the single most valuable design
+   transplant in the corpus and it needs exactly one element removed.
+3. **[[daytona-usa]]'s victory lap is the most portable celebration in the genre.** Not a
+   placement, not a trophy, not a rank: *go round once more, slowly, with everyone watching.*
+   A lap you cannot fail. Real 1994 arcade behaviour, One-Rule-native as-is — **except** that
+   the original gates it on finishing third or better. Keep the lap, delete the gate.
+4. **[[mario-kart]]'s award ceremony contains a drawn picture of the player crying.** Finish
+   fourth or lower in a Grand Prix and your character stands beside the podium in tears while
+   the CPU racers celebrate. That is the most direct One Rule violation anywhere in this
+   research. Strip it completely — but the **balloon → cork → trophy** gag is placement-free
+   spectacle and is reusable once severed from the ranking. (It also involves champagne, the
+   same beat ESRB flags on [[f1-25]] — Act 7 should pop the balloon some other way.)
+5. **Two stations have no celebration documented at all.** [[virtua-racing]] and [[hang-on]]:
+   no fetched source this pass describes what either did at the finish. Marked **[unverified]**
+   on both pages. Do not invent one. The act's verified anchors are the **checkered flag from
+   [[pole-position]] (1982) onward** and [[daytona-usa]]'s Victory Lane (1994) — and the
+   victory-research lane separately established that **a checkered flag is NOT era-accurate for
+   1979 [[monaco-gp]]**, which had no win state at all.
+6. **Three of the nine are not arcade cabinets and must not be drawn as one.** [[excitebike]]
+   (the real cabinet is **VS. Excitebike** on the Nintendo VS. System, which omits two-player
+   *and* the track editor), ~~[[mario-kart]] (SNES only — no arcade Super Mario Kart exists)~~
+   **← SUPERSEDED 2026-09-13, see §17: the 1992 SNES *title* had no coin-op, but licensed
+   [[mario-kart-arcade-gp|Mario Kart arcade cabinets]] have existed since 2005 and are sold
+   today**, [[gran-turismo]] / [[need-for-speed-underground]] / [[f1-25]] (console and PC). Draw
+   the console, the television, the cartridge or the wheel rig. Inventing a coin-op for a home
+   game is exactly the gimmickry the cabinet rule forbids — **but so is refusing to draw the real
+   machine the game ran on.** The complete rule and a per-station table are in §17.
+7. **The act's best cabinet-art subject is [[hang-on]]** — a cabinet **shaped like a
+   motorcycle**, screen mounted in the windscreen, which the player **physically leans**. Second
+   best is [[virtua-racing]]'s **DX**, which Wikipedia calls **the first arcade game to use a
+   16:9 widescreen monitor**, with six airbags for haptics; or its **Virtua Formula**, a
+   hydraulic F1 replica cockpit with a 50-inch screen, linkable eight-wide over fibre optic.
+8. **Trademark hygiene.** [[pole-position]]'s billboards carried real Pepsi/Marlboro/Canon
+   advertising; [[need-for-speed-underground]] shipped 52 real aftermarket brands; [[f1-25]] is
+   an actively licensed property with real team liveries. Draw generic boards, generic parts and
+   *a* Formula car — the same judgement `research/automotive-vocabulary.md` reached about car
+   brands, and more important here.
+
+### 16d. Rendering-technique quick sheet for the nine
+
+| Station | Technique in one line | The artefact that proves the era |
+|---|---|---|
+| [[pole-position]] | Scaling sprites over a full-colour backdrop; 256×224 @ ~60.6 Hz | Vanishing point **swaying sideways** through corners; nothing rotates |
+| [[excitebike]] | NES tiles + sprites; 256×240 (224 safe), 56-colour system palette | Every **16×16 background block** shares one 4-colour palette; 8 sprites per scanline |
+| [[hang-on]] | Super Scaler — maths done in 3D, drawn back out as 2D sprites | Density and **frame rate**, not new primitives; the sky changes colour per stage |
+| [[mario-kart]] | Mode 7: one BG layer, 1024×1024 tilemap, affine matrix re-set **per scanline via HDMA** | The **horizontal split screen even in single player** — the two-player-first constraint made visible |
+| [[virtua-racing]] | Flat-shaded untextured facets, painter-sorted; ~6,500 polys/frame @ ~30 fps | **Hard colour steps** at every facet edge; no picture on any surface |
+| [[daytona-usa]] | Texture-mapped polygons with filtering; up to 300,000/sec on Model 2 | Textures that **soften as they scale toward you** |
+| [[gran-turismo]] | PS1: affine UVs, Ordering Table instead of a Z-buffer, fixed-point vertex snapping, hardware dithering | **Texture swim, polygon pop-through, and jitter** — sharper than Daytona and *less* stable |
+| [[need-for-speed-underground]] | Sixth-gen console lighting: wet specular, bloom, motion blur | **Night.** Every light source blooms; the road is a mirror |
+| [[f1-25]] | PBR + path tracing; geometry from **LiDAR-measured** circuits | Reality itself as the asset — and for canvas, a **telemetry-trace** aesthetic instead |
+
+### 16e. Corrections this build-depth pass made
+
+Detail and sources live in each page's own "Corrections from citation pass (2026-09-13)"
+section; summarised here so the hub carries the diff:
+
+1. **Midnight Club: Street Racing is ESRB E.** False for the PS2 game (**T**, Animated
+   Violence); the E is the **GBA** port. Corrects §8, §9 and §15 of this document.
+2. **NFS: Underground is "E (Mild Lyrics)".** That is the **GBA** record; the console/PC record
+   is **E (Mild Language, Suggestive Themes)**. Corrects §8 and §9.
+3. **"The official F1 games are E (Mild Language)."** True of F1 23/24; **F1 25 adds
+   `Use of Alcohol`**. Corrects §11.
+4. **"Virtua Racing rendered 6,500 polygons per second."** Per **frame**, at ~30 fps. 6,500 per
+   *second* is the Mega Drive port. Two real numbers that look identical.
+5. **"Virtua Racing was the first racing game fully rendered with filled polygons."** Still
+   false (Winning Run 1988, Hard Drivin' 1989) and still circulating in retrospectives fetched
+   this pass. Restates §6's existing correction because it keeps coming back.
+6. **Sega Model 1's 496×384 / 65,536-colour figures are community-compilation grade** —
+   demoted to **[unverified]**. Model 2's 496×384 is better corroborated (three independent
+   hardware records) but still not primary.
+7. **Hang-On's "five stages" are unnamed.** Wikipedia names none; the circulating
+   "Alps / Grand Canyon / City / Night / Seaside" list is plausibly bleeding in from
+   **Super Hang-On (1987)**, which does have named courses. Marked **[unverified]**.
+8. **Pole Position's upright cabinet had no brake pedal** — accelerator only. Separate
+   accelerator and brake pedals were a **cockpit-cabinet** feature. And the **"Prepare to
+   qualify" voice performer is undocumented** — never attribute a name.
+9. **Excitebike's races are against a time, not the field** (see 16c.1). Also: 256×240 is the
+   framebuffer, **256×224 is the NTSC safe area** — compose to 224.
+10. **Gran Turismo did not look smooth.** GT1 uses nearest-neighbour/minimal filtering (bilinear
+    is an *emulator enhancement*), plus affine warping, vertex jitter and hardware dithering.
+    A Gran Turismo scene drawn cleaner than [[daytona-usa]] is historically backwards — Model 2
+    had texture filtering in 1994 and the PlayStation did not.
+11. **Super Mario Kart's podium visuals rest on a single community wiki.** The mariowiki.com
+    page fetched this pass confirms **only the music cue**. Safe to design against; never state
+    as fact on a child-facing card.
+12. **Daytona USA's Victory Lane is community-sourced too** (TV Tropes, GameFAQs, Digital
+    Press) — consistent across them, no institutional confirmation. Same rule.
+
+**Sources that were unavailable all session and are cited nowhere as if read:**
+arcade-museum.com (KLOV) **403**, mobygames.com **403**, fandom.com **402**, segaretro.org
+**403**, system16.com **403**, strategywiki.org **403**. Where one of these is the only pointer
+to a record, it is retained **explicitly labelled unfetched**, and a fetchable source carries
+the claim instead (the MAME Arcade Database machine record replaced system16 for
+[[pole-position]]'s video specification, and is the better source anyway).
+
+---
+
+## 17. What to draw for a console game — the cabinet precedent *(added 2026-09-13)*
+
+*Added after Trevor pushed back on a claim this document and [[mario-kart]] both carried. The
+claim was narrow and defensible; the way it was written was not, and it would have steered Act 7's
+cabinet art wrong. This section corrects it and replaces it with a rule.*
+
+### 17a. The correction
+
+**§16c item 6 says: "[[mario-kart]] (SNES only — no arcade Super Mario Kart exists)."** The first
+half is right and the second half is misleading. The **1992 SNES title** was not released as a
+coin-op — nothing found contradicts that. But **Mario Kart arcade cabinets are real, licensed and
+currently in production**: Namco developed and Nintendo published *Mario Kart Arcade GP* in
+**2005** on the Triforce board (running a modified *Mario Kart: Double Dash!!* engine), followed
+by **GP 2** (March 2007), **GP DX** (late 2013) and **GP VR** (14 July 2017). **Mario Kart Arcade
+GP DX** is listed today on **Bandai Namco Amusement America's own commercial-products site** — a
+seated cabinet with steering wheel and pedals, a 42-inch HD monitor, rainbow LED trim, and linking
+for up to four cabinets. Full detail: [[mario-kart-arcade-gp]].
+
+Trevor's framing, which is the right one: *"as we move beyond the arcade we venture into a wider
+more digital era of video game culture which is deeply rooted in cabinet play."* Home games get
+built into cabinets constantly — it is a documented practice running from Nintendo's own
+[[nintendo-vs-system|VS. System]] (1984; **the highest-grossing arcade machine of 1985** in the
+US) and PlayChoice-10 (1986), through the Mario Kart arcade line, to today's Raw Thrills /
+Play Mechanix and Bandai Namco Amusement machines built from console and PC franchises — and back
+the other way, with Arcade1Up selling licensed cabinets *into homes* since 2018. Written up with
+citations on [[home-games-in-cabinets]].
+
+### 17b. The rule
+
+> **Draw a real thing.** A real cabinet where one exists; the real console, computer or handheld
+> where one does not. The only ruled-out option is inventing a coin-op that never existed and
+> implying it did.
+
+This is the project's existing faithful-not-gimmicky rule stated completely. That rule is about
+**fidelity to the game** — it was never a requirement that a game shipped as a coin-op. Both
+halves bite: fabricating a 1992 Super Mario Kart cabinet is gimmickry, *and* so is refusing to
+draw the SNES the game really ran on.
+
+**Trevor's design answer (2026-09-13), which the game already speaks:**
+
+> *"In the back of the arcade there can be computer terminals and game systems which wouldn't be
+> gimmicky at all and would stay on brand — having 8-bit or 16-bit or 24-bit renderings of the
+> different game consoles would be cool."*
+
+Compare `.claude/rules/levels/act2.md`, shipped long before this conversation: *"A long room
+behind the Mystery Cabinet. **Computers and consoles from different eras line the walls, each one
+running a classic game.**"* The act files already name the object per level — the NES at L9, *"a
+gold-cartridge NES beside a wooden TV"* at L10, a computer at L8 and L13, *"a Game Boy Pocket on a
+backlit stand"* at L15. **Act 7 never reached for a vocabulary the game invented five acts ago.**
+
+### 17c. Per-station recommendation for Act 7's console/PC entries
+
+Drawing detail (silhouettes, the two or three details that survive at 56×80 px, era palettes) is
+on [[console-hardware-silhouettes]].
+
+| Station | What it really is | **Draw this** | Render at | Tier |
+|---|---|---|---|---|
+| [[excitebike]] | NES 1984/85 — **VS. Excitebike is a real cabinet**, but per Nintendo's own listing it omits two-player *and* the track editor | **NES + period TV** (the honest object). A VS. UniSystem upright is a legitimate alternative if a cabinet is wanted — just don't imply it has the editor | 8-bit; two-tone grey, black stripe, VCR-style front-loading door | `8bit` |
+| [[mario-kart]] | SNES, 27 Aug 1992 | **SNES + TV**, or the cartridge. Boxy NA model: **purple sliding switches**, grey eject lever, lavender/purple diamond controller | 16-bit SNES warmth | `mode7` |
+| [[gran-turismo]] | PlayStation, Dec 1997 | **The original PlayStation — GREY, not black** — with its top-opening CD lid; controller's four coloured geometric buttons | Early-3D/PS1 | `ps1` |
+| [[need-for-speed-underground]] | PS2/Xbox/GC/PC, Nov 2003 | **PlayStation 2**: matte-black slab, blue-lit tray, two USB squares. (Or a period PC tower + CRT — but see the unsourced note below) | Sixth-gen; the game is night-set, let the screen glow carry it | `modern` |
+| [[f1-25]] | PS5/Xbox Series/PC, 2025 | **A wheel-and-pedal sim rig** in front of a monitor — a real object, and the one a modern F1 player actually uses. Not a coin-op | Present day | `modern` |
+| *(alternative)* | If a Mario Kart **cabinet** is wanted | **[[mario-kart-arcade-gp|Mario Kart Arcade GP DX]]** — seated, wheel + pedals, 42″ screen, rainbow LED trim | 2013–present | — |
+
+Stations that genuinely were coin-ops — [[monaco-gp]], [[pole-position]], [[hang-on]],
+[[virtua-racing]], [[daytona-usa]] — are unaffected; keep their cabinets.
+
+### 17d. Boundary: Vegas slots are precedent, not content
+
+Trevor named casino machines as evidence and fenced them off in the same breath: *"not that we are
+building slots or adding gambling into this — just precedent for cabinet builds of classic at home
+entertainment games."* Recorded as one sentence and no more: licensed video-game IP **is**
+routinely put into casino cabinets (Gamblit Gaming announced **PAC-MAN Battle Casino** with
+**Bandai Namco Entertainment** on **26 September 2017**; Scientific Games launched a skill-based
+Space Invaders game in Atlantic City) — evidence that the cabinet form outlived the arcade era.
+**No gambling mechanics were researched and none belong in a children's game.** Also:
+**this pass found no evidence of any Nintendo- or Mario Kart-licensed slot machine** — if that was
+the memory, it is **[unverified]**, and the precedent stands without it.
+
+### 17e. Left unsourced by this pass
+
+- **Period PC towers, monitors, and modern sim rigs** — no sourced physical description. Flagged
+  on [[console-hardware-silhouettes]]; needs a follow-up pass rather than invention.
+- **"Great Wolf Lodge has a Mario Kart machine"** — the resort's own arcade pages **name no
+  titles** (fetched and checked). True by observation; not sourceable this way. The sourced
+  version is *"Mario Kart Arcade GP DX is in production and sold to arcade and FEC operators."*
+- **The Triforce board's Nintendo/Sega/Namco joint origin** — widely repeated, unverified here
+  (web-search budget exhausted). Safe claim: "Triforce, an arcade board in the GameCube family."
+- **Halo: Fireteam Raven as a Raw Thrills / Play Mechanix title** — search-summary only.
+  Minecraft Dungeons Arcade carries the same point with a fetched source.
+- **Mario Kart Arcade GP's exact release month** — three sources give three different
+  region/month orderings. **Say "2005."**
+
+**References — §17** *(full annotation on the atomic pages)*
+- [Mario Kart Arcade GP — Wikipedia](https://en.wikipedia.org/wiki/Mario_Kart_Arcade_GP) — the series, dates, Triforce board, wheel/pedals, NamCam, four linked machines. **[fetched]**
+- [Mario Kart Arcade GP DX — Bandai Namco Amusement America](https://bandainamco-am.com/collections/mario-kart-arcade-gp-dx) — the manufacturer's own listing: a currently-sold seated arcade cabinet. **[fetched]**
+- [Mario Kart Arcade GP (2005) — Nintendo Life](https://www.nintendolife.com/games/triforce/mario_kart_arcade_gp) — 2-player dedicated cabinet linkable for four; 24 courses; NamCam 2; "the first" Namco/Nintendo team-up bringing "a proven consumer franchise for the arcade." **[fetched]**
+- [Nintendo VS. System — Wikipedia](https://en.wikipedia.org/wiki/Nintendo_VS._System) — 1984 Famicom-based arcade platform; UniSystem/DualSystem cabinets and conversion kits; console-conversion library; highest-grossing arcade machine of 1985. **[fetched]**
+- [PlayChoice-10 — Wikipedia](https://en.wikipedia.org/wiki/PlayChoice-10) — August 1986; ten NES games in one cabinet; the timed-session coin model. **[fetched]**
+- [Big Buck Hunter — Wikipedia](https://en.wikipedia.org/wiki/Big_Buck_Hunter) — Play Mechanix (George Petro) designs, Raw Thrills produces and distributes, from January 2006. **[fetched]**
+- [Raw Thrills Minecraft Dungeons Arcade — Game Room Shop](https://www.gameroomshop.com/products/raw-thrills-minecraft-dungeons-arcade) — "an adaptation of the popular console and computer game Minecraft Dungeons"; 42″ cabinet that vends a collectible card every play. **[fetched]**
+- [Super Nintendo Entertainment System — Wikipedia](https://en.wikipedia.org/wiki/Super_Nintendo_Entertainment_System) · [Nintendo Entertainment System — Wikipedia](https://en.wikipedia.org/wiki/Nintendo_Entertainment_System) · [PlayStation models — Wikipedia](https://en.wikipedia.org/wiki/PlayStation_models) · [PlayStation (console) — Wikipedia](https://en.wikipedia.org/wiki/PlayStation_(console)) · [PlayStation 2 — Wikipedia](https://en.wikipedia.org/wiki/PlayStation_2) — the hardware appearance detail behind §17c. All **[fetched]**.
+- [Pop Culture Phenomenon, PAC-MAN Battles its way into Casinos… — PR Newswire](https://www.prnewswire.com/news-releases/pop-culture-phenomenon-pac-man-battles-its-way-into-casinos-as-bandai-namco-entertainment-inc-joins-forces-with-gamblit-gaming-300525630.html) and [Las Vegas Sun](https://lasvegassun.com/news/2017/sep/26/pac-man-arcade-classic-being-adapted-as-a-slot-mac/) — the 26 September 2017 licensed-casino-game announcement, supporting §17d's single sentence. *(search results only, not fetched)*
+- [Northern Lights Arcade — Great Wolf Lodge (official)](https://www.greatwolf.com/southern-california/waterpark-attractions/attractions/northern-lights-arcade) — fetched **to establish that it names no titles**, marking the Great Wolf detail unsourced rather than supporting it. **[fetched]**
 
 ---
 
@@ -691,7 +1004,7 @@ Checked against `.claude/rules/levels.md`'s full assignment table:
    **Sega R&D1**. Safe phrasing: "Sega, conceived by Yu Suzuki."
 7. **"Forza Horizon is a kid-safe alternative to GTA."** It is **ESRB T**, for Drug Reference,
    Language and Suggestive Themes — ESRB's own summary quotes "drug-fueled jerks" and two
-   profanities. The rating-clean alternatives are Midnight Club: Street Racing (E) and Need for
+   profanities. The rating-clean alternative is Need for Speed: Underground (E on console/PC) — NOT Midnight Club, whose PS2 release is T; see §16. Superseded text: the rating-clean alternatives are Midnight Club: Street Racing (E) and Need for
    Speed: Underground (E).
 8. **"Crash mode and Takedowns are Burnout-original-game features."** Crash mode arrived in
    **Burnout 2**; Takedowns in **Burnout 3**. The 2001 original's loop was near-misses and risk.

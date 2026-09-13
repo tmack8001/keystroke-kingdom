@@ -64,6 +64,13 @@ completed February 2021**. The **F1 Esports Series launched in 2017** (109,000 e
 countries by the 2019 qualifiers). **F1 23 and F1 24 are both ESRB E for Everyone** (Mild
 Language; Users Interact; In-Game Purchases).
 
+*See also (added 2026-09-13):* **[[f1-25]]** — the current entry (Codemasters / EA Sports,
+May 30 2025), with its own ESRB record, LiDAR-scanned circuits, first-ever reverse layouts and
+PC path tracing, documented at Act 7 cabinet-build depth. **Note the ratings drift:** F1 25 is
+still **E**, but carries a **second** descriptor, **Use of Alcohol** (podium champagne),
+alongside Mild Language — so "the official F1 games are E (Mild Language)" is accurate for
+23 and 24 and **out of date for 25**. Always re-check per year.
+
 ## References
 
 1. [Assetto Corsa — Steam store page (Kunos Simulazioni's own product description)](https://store.steampowered.com/app/244210/Assetto_Corsa/) — primary developer text: December 19 2014 release; laser-scan track accuracy "to guarantee the highest level of accuracy possible"; tyre flat spots, heat cycles, graining and blistering; real-time active aerodynamics driven by telemetry input channels; KERS and energy-recovery simulation; advanced setup options and telemetry for data analysis; development at the Vallelunga R&D office with real drivers and teams. **[fetched]**

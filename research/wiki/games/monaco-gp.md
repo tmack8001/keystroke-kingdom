@@ -2,8 +2,8 @@
 title: Monaco GP
 type: entity
 tags: [video-game-history, game, arcade, racing, act7, history-card]
-sources: 3
-verified: 2026-09-12
+sources: 11
+verified: 2026-09-13
 ---
 
 Monaco GP (Sega, November 1979) is a scrolling overhead road racer that is doubly perfect for
@@ -21,6 +21,19 @@ the same [[discrete-logic-era]] fidelity bar Act 1 already uses for [[breakout]]
 narrows; the surface turns to ice and gravel) are an early ancestor of
 [[sega-rally-championship]]'s surface friction, and its overhead view contrasts cleanly with
 [[night-driver]]'s first-person pylons and [[pole-position]]'s rear-view road.
+
+**Act 7 celebration research (2026-09-13).** Trevor play-tested the Speedway wing
+(`js/speedway/tracks/monaco-gp.js`) and asked for a bigger win moment — *"some type of
+checkered flag, confetti or something… but research how this was handled in the actual 1979
+game."* The honest answer is below in "The win moment": **Monaco GP had no win state, no finish
+line and no checkered flag at all.** Its celebration grammar was real but is somewhere nobody
+looks for it — an **extra car awarded at 2,000 points**, and a **bank of LEDs bolted to the
+cabinet** showing your score, the top five high scores, and your rank among every player the
+machine had ever seen. The build lane should take that as licence, not as a prohibition: what
+Act 7 invents is an invention, and it should be invented from *this* vocabulary. The same
+question was asked of the act's 16-bit station in the matching block on [[f-zero]] — whose
+answer is nearly as deflating, and whose two salvageable beats (a per-lap speed boost, a camera
+that swings side-on onto your machine) pair well with the ones below.
 
 ## The facts
 
@@ -42,8 +55,149 @@ narrows; the surface turns to ice and gravel) are an early ancestor of
 - **Punishment mechanics:** race against a clock across the five areas; collisions destroy the
   car.
 
+---
+
+## The win moment — what Monaco GP actually did when you did well
+
+*Researched 2026-09-13 specifically to answer the Act 7 celebration question. Primary source
+for most of this block is the **Gremlin/Sega owner's manual 420-0358** (scanned on the Internet
+Archive), read this session.*
+
+**There is no win state. There is no finish line. There is no checkered flag.** Nothing in the
+operator's manual, Wikipedia's gameplay/technology sections, or the retrospective coverage
+describes a course being completed, a lap being counted, a race being won, or a flag of any kind.
+A keyword sweep of the manual's OCR text for *flag, finish, lap, win, winner, bonus* returned
+nothing. Monaco GP is a **score-attack endurance game**: you drive until you stop driving.
+
+**The three things that DID happen, in the order a player met them:**
+
+1. **The clock (the first 90 "count").** The manual: *"Game time is set to a count of 90."* Game
+   time is an **operator-adjustable trim pot** (VR1 on the main logic board), so the 90 isn't
+   sacred — the arcade owner tuned it. Points accrue by **speed**, not by distance or position:
+   roughly **8 points/second in low gear** at full throttle and **25 points/second in high gear**.
+   Going fast *is* the scoring mechanic.
+2. **EXTENDED PLAY at 2,000 points — this is the closest thing Monaco GP has to a victory.**
+   The manual: *"Player goes into extended play when he reaches a score of 2000 points. In
+   extended play, the player wins an extra car; and, one extra car is awarded after every
+   additional 2000 points."* Wikipedia describes the same threshold as a **change of regime**:
+   *"The timer continues counting down until 2000 points are scored; then, the system changes to
+   a limited number of lives."* In other words, at 2,000 points **the clock stops being the thing
+   that ends you** and the game hands you a car. Extra cars again at 4,000 / 6,000 / 8,000.
+   *(This is the beat a celebration belongs on — an earned threshold that converts pressure into
+   a gift. It is also, conveniently, exactly the shape the One Rule likes: the reward is MORE
+   PLAY, never a judgement.)*
+3. **Escalation, then a ceiling.** *"The game becomes more difficult after a score of 6000
+   points. The player's car speeds up and, at 8000 points, the computer cars speed up."* Beyond
+   that, community game databases report the run simply flattens out: **the score stops counting
+   at 9,999 and the scene locks on the normal road, never changing again.** *(Single-origin
+   community claim — see Corrections. It is at least internally consistent with a four-digit LED
+   score readout.)* The "end" of Monaco GP, such as it is, is an anticlimax by design.
+
+**Between the five areas: nothing ceremonial.** The five areas are **normal road, ice** (you
+slide; the road surface turns **blue**), **tunnel** (the screen darkens and you see only what
+your headlights reach), **gravel** (you slow down), and **the bridge** (narrow). No transition
+screen, no jingle, no bonus is documented at any area change. **The change of scenery IS the
+event** — a road that turns blue, a world that goes dark. That is the whole 1979 vocabulary for
+"something new is happening," and it's a good one.
+
+**Where the recognition actually lived: on the cabinet, not on the screen.** This is the
+finding most likely to be useful and is confirmed by two independent sources. Wikipedia:
+*"The scoring information appears on various LEDs located on the cabinet, including the player's
+score and the high score table."* The manual: *"The game's front panel displays your score and
+the top 5 high scores. Also, each player is given a ranking out of the total numbers of players
+to date."* Your score, the top five, **and your rank among every human who had ever put a coin
+in that machine** — glowing in seven-segment red on the furniture, beside the picture, not
+inside it. And the 1980 **Pro Monaco GP** upgrade added *"a battery backup system to save high
+scores if the cabinet loses power"* — the machine was built to **remember you overnight**.
+That is the 1979 celebration: not a flag, a *ledger*.
+
+**Sound.** Everything audible came out of analogue parts, not a sound chip: *"Sound effects,
+such as the cars' engines, a siren, and the sound of wheels slipping on the pavement, are
+generated by operational amplifiers and other analog circuitry."* A **fanfare at the start of
+the race** is described by community game databases (medium confidence — see Corrections). The
+deluxe cockpit had a large sound system and a working tachometer. There was no music track and
+no melodic victory jingle to imitate; a "flourish" here means a swept tone, a rising siren, or
+a burst of engine — the kind of thing an op-amp does.
+
+**Attract mode.** A developer rebuilding the cabinet from original footage describes **flashing
+LEDs** in attract, and the road beginning to scroll after about ten idle seconds to show a
+sequence of the tracks. *(Forum-tier source; treat as indicative, not canonical.)*
+
+## What a celebration could look like on this hardware
+
+The practical question for the theme author. Monaco GP has **no CPU** — over 100 TTL chips
+across two boards — and *"images are stored in small custom read-only memory (ROM) chips,
+including sprites, cars, and the 'game over' message."* So the machine's entire expressive
+vocabulary is:
+
+- **Blocks and sprites already in ROM** — cars, road edges, scenery. No new shapes at runtime,
+  no rotation, no scaling, no particles, no alpha. A "flag" would have to be built from the same
+  coarse blocks the road is built from.
+- **Solid colour fields** — the road going blue for ice, the screen going black for the tunnel.
+  Colour change across a large area is this hardware's loudest possible statement.
+- **One fixed bitmap message.** The ROM demonstrably held a rendered **"GAME OVER"** message —
+  proof that a stamped, pre-drawn word could appear. Notably, the only documented ROM message is
+  the *end* one; no victory message is recorded.
+- **Seven-segment LEDs on the cabinet furniture** — counting up, flashing, latching a new high
+  score. This is the only "animation" the machine had that lived outside the picture.
+- **Analogue sound** — engine, siren, tyre slip. Swept and pulsed, not composed.
+
+Everything in that list is cheap in canvas and reads instantly as 1979. Nothing in that list is
+a particle system.
+
+## Corrections & cautions — victory-research pass, 2026-09-13
+
+- **"Monaco GP had a checkered flag / a finish line / a course you completed" — FALSE.** No
+  source found supports any of the three. The page previously said only that it had five areas
+  and a clock, which was correct as far as it went; it now says explicitly that there is no
+  completion state, so nobody infers one. **The checkered flag is not a 1979 arcade convention
+  this game can be cited for.** The earliest on-screen checkered flag we could verify in a video
+  game belongs to [[pole-position]] (1982), where crossing the flag pays **200 points per unused
+  second**. The flag itself is much older than either — the earliest known photographic record of
+  one ending a motor race is the **1906 Vanderbilt Cup** on Long Island, starter Fred Wagner
+  waving it as Louis Wagner's Darracq came home. So: *the flag is real and gloriously old; putting
+  one in a 1979 arcade cabinet is a 1982 idea arriving three years early.*
+- **"Confetti" — no source, in any racing game of this era.** Nothing found for confetti,
+  crowd-cheer, fireworks or a podium in any arcade racer 1974–1990. The nearest era-adjacent
+  precedent is [[out-run]] (1986, already Level 21), which really does end: the track forks to
+  **five destinations, each with its own ending scene**, one of which is **being presented with a
+  trophy** and another of which is the Ferrari comically falling apart. That's 1986 and it's a
+  *scene*, not a particle effect. **[unverified]** for anything earlier.
+- **The 9,999 score ceiling and the "scene locks on the normal road"** come from community game
+  databases (LaunchBox and Codex Gamicus carry identical wording, so treat them as one source,
+  not two). Plausible and consistent with a four-digit LED, but **not independently corroborated**
+  — don't put it on a history card without a second source.
+- **The "fanfare to start the race"** is likewise community-database-sourced. Wikipedia documents
+  only engines, a siren and tyre slip from op-amps. Medium confidence; safe to build on, not safe
+  to state as fact to a child.
+- **Source availability note:** `arcade-museum.com` (KLOV) and `mobygames.com` both returned
+  **HTTP 403** on direct fetch throughout this session, and `gamicus.fandom.com` returned **402**.
+  Their URLs are cited below only as search results, explicitly unfetched.
+- **Distinguish the arcade original from the ports.** The **SG-1000 (1983)** home version is
+  described as having *no time limit at all*, four starting cars and an extra car every 10,000
+  points — different numbers, different structure. Don't let port trivia contaminate a claim
+  about the 1979 cabinet.
+
+**Downstream flag (research may not edit these):** `js/speedway/**` — the Act 7 celebration
+being built now. If any player-facing string or history card says Monaco GP had a finish line,
+a flag, or a "course complete," it is wrong and should be replaced with the extended-play /
+high-score-LED framing above. Suggested kid-safe card text (≤160 chars, unverified numbers
+avoided): *"1979's Monaco GP had no finish line — you just drove. Score 2,000 and the machine
+gave you another car. Its high scores glowed on the cabinet itself."*
+
 ## References
 
 1. [Monaco GP (video game) — Wikipedia](https://en.wikipedia.org/wiki/Monaco_GP_(video_game)) — Sega, November 1979 Japan/US and January 1980 worldwide; Pro Monaco GP and SG-1000 dates; "one of the last arcade games made by Sega to use transistor–transistor logic (TTL) based discrete logic circuits instead of a microprocessor-based central processing unit," over 100 chips across two boards; five areas with narrowing road and ice/gravel surfaces; three cabinet styles including the padded-wheel cockpit; the 1979/1980 Japanese grossing ranks and the 1981 US driving-game rank. **[fetched]**
 2. [Monaco GP (1979) — MobyGames](https://www.mobygames.com/game/82587/monaco-gp/) — corroborating release/platform metadata for the 1979 Sega arcade game. *(search result only, not fetched)*
 3. [1979 in video games — Wikipedia](https://en.wikipedia.org/wiki/1979_in_video_games) — corroborates Monaco GP's place among the notable 1979 arcade releases. *(search result only, not fetched)*
+
+**Added by the victory-research pass, 2026-09-13:**
+
+4. [Arcade Game Manual: Monaco GP by Gremlin/Sega — Internet Archive (owner's manual 420-0358, 1980)](https://archive.org/details/ArcadeGameManualMonacogp) — **primary source.** The OCR text was read directly at [ia800700.us.archive.org/4/items/ArcadeGameManualMonacogp/monacogp_djvu.txt](https://ia800700.us.archive.org/4/items/ArcadeGameManualMonacogp/monacogp_djvu.txt). Supports verbatim: the game-play description ("the player's red car appears in the lower right corner"), *"Game time is set to a count of 90,"* extended play at 2,000 points awarding an extra car and one more every additional 2,000, the 6,000/8,000 speed escalations, *"The game's front panel displays your score and the top 5 high scores. Also, each player is given a ranking out of the total numbers of players to date,"* and the operator adjustments (VR1 trim pot = game time; SW1 = plays per coin). A keyword sweep for *flag / finish / lap / win / winner / bonus* returned **nothing**. **[fetched]**
+5. [Monaco GP (video game) — Wikipedia, Technology & Gameplay sections](https://en.wikipedia.org/wiki/Monaco_GP_(video_game)) — supports the extended-play regime change (*"The timer continues counting down until 2000 points are scored; then, the system changes to a limited number of lives"*), the 6,000/8,000 rival-speed steps, the hazard list (puddles, narrow bridges, headlight-limited tunnels, ice and gravel), *"Images are stored in small custom read-only memory (ROM) chips, including sprites, cars, and the 'game over' message,"* *"Sound effects… are generated by operational amplifiers and other analog circuitry,"* *"The scoring information appears on various LEDs located on the cabinet, including the player's score and the high score table,"* and Pro Monaco GP's battery-backed high-score save. **[fetched]**
+6. [Sega Ages: Monaco GP — MoeGamer](https://moegamer.net/2018/08/24/sega-ages-monaco-gp/) — independent corroboration that score and time remaining were shown *"on LED displays around the screen rather than as part of the game view itself"*; that ice was signalled by a **blue road surface** and tunnels lit only by the car's headlights; and that this was a score-attack structure with no win state, the 2,000-point threshold switching the game to a lives system. **[fetched]**
+7. [Monaco GP — LaunchBox Games Database](https://gamesdb.launchbox-app.com/games/details/37673-monaco-gp) — community database; sole fetched origin for the enumerated five areas (normal road / ice / tunnel / gravel / bridge), the per-second scoring rates (≈8 low gear, 25 high gear), extended play at 2,000/4,000/6,000/8,000, and the **9,999 score ceiling with the scene locking on the normal road**. Codex Gamicus carries identical wording, so the two are one source. Used as corroboration only — the ceiling claim is flagged as uncorroborated in Corrections. **[fetched]**
+8. [Sega Monaco GP 1979/1980 — My Remake (arcadecontrols.com forum thread)](http://forum.arcadecontrols.com/index.php?topic=134445.0) — a developer rebuilding the cabinet from original footage: flashing LEDs in attract mode, the road beginning to scroll after ~10 idle seconds through a sequence of tracks, and — the useful negative — his note that he *added* an "ending score display" and a "goal," features **"not on the original machine."** Forum-tier; used only as indicative corroboration of the no-ending finding. **[fetched]**
+9. [Race Profile: The 1906 Vanderbilt Cup Race — The First Use of a Checkered Flag — VanderbiltCupRaces.com](https://www.vanderbiltcupraces.com/blog/article/race_profile_the_1906_vanderbilt_cup_race) — specialist motorsport-history archive: starter Fred Wagner waving *"what is believed to be the first checkered flag used to signify the finish of an auto race"* as Louis Wagner's Darracq #10 won, with the surviving photograph. Supports the "the flag is real and old, but it is not a 1979 video-game convention" framing. **[fetched]**
+10. [Monaco GP — Museum of the Game (KLOV)](https://www.arcade-museum.com/Videogame/monaco-gp) — the institutional arcade record; **returned HTTP 403 on every fetch attempt this session**, so it is listed for the future maintainer but nothing here is cited from it. *(unfetched — 403)*
+11. [Monaco GP (SG-1000, 1983) — Sega Does](https://segadoes.com/2014/06/04/monaco-gp/) — the **home port**, kept only to mark the contrast: no time limit, four starting cars, an extra car per 10,000 points, and explicitly no finish line or level progression. Do not use its numbers for the 1979 cabinet. **[fetched]**

@@ -19,6 +19,11 @@ The European half of the simulation branch documented for **Act 7 — Speed / Ra
 [[iracing]]). If Act 7 is to end on an F1 simulation as Trevor intends, this is where F1
 simulation actually starts. See [[sim-racing]] for what "simulation" means technically.
 
+*See also (added 2026-09-13):* **[[f1-25]]** — the other end of this exact line, and Act 7's
+recommended terminal station: the current official F1 title, **ESRB E**, with circuits measured
+by **LiDAR** rather than modelled by eye. 1991 → 2025 is one continuous idea about what an F1
+game is for; the act can draw it as a single arc.
+
 **Sourcing note — this page is one notch thinner than its neighbours.** It rests on Wikipedia
 plus games journalism; no primary or institutional source was fetched this pass. Its core facts
 are consistent across sources, but the **release month** is **[unverified]** (the series is
