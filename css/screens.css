@@ -42,6 +42,38 @@
   letter-spacing: 2px;
 }
 
+/* Touch-device notice — warm, never an error screen. It informs and steps aside;
+   it never gates play (the One Rule: stop the player only with joy, never punishment). */
+.keyboard-notice {
+  max-width: 460px;
+  margin: 0 auto 34px;
+  padding: 16px 18px;
+  border: 2px solid var(--crt-green-dim, #1f7a12);
+  background: rgba(0, 0, 0, 0.55);
+  line-height: 2.2;
+}
+
+.keyboard-notice-title {
+  font-size: 8px;
+  color: var(--crt-green);
+  text-shadow: 0 0 8px var(--crt-green);
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.keyboard-notice-body {
+  font-size: 6px;
+  color: #cfcfcf;
+  letter-spacing: 1px;
+}
+
+.keyboard-notice-hint {
+  font-size: 6px;
+  color: var(--atari-dim, #777);
+  letter-spacing: 1px;
+  margin-top: 12px;
+}
+
 .reboot-hint {
   position: fixed;
   bottom: 20px;
