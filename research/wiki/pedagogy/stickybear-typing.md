@@ -3,6 +3,7 @@ title: Stickybear Typing
 type: entity
 tags: [typing-pedagogy, educational-software, edutainment, product, history-card]
 sources: 7
+media: 2
 verified: 2026-09-13
 ---
 
@@ -124,6 +125,32 @@ drills. Thump is menu option 2 and is the only mode where the player controls St
 its screen, its colours, and critically **its wrong-key behaviour** remain unverified. The
 caution in §In this game stands: this page is still not a precedent for the One Rule.
 
+
+## Media
+
+**Rights note:** screenshots/derived frames of copyrighted software, held as low-resolution
+research references for identification and commentary — not freely licensed.
+
+### `stickybear-typing-1985-title-and-keyboard.jpg`
+![Stickybear Typing 1985: the title screen above, and below it a full ANSI keyboard drawn as white keys on a bright blue field](../media/stickybear-typing/stickybear-typing-1985-title-and-keyboard.jpg)
+- **Shows:** the blue on-screen keyboard filling the lower third — the ancestor of
+  `KEY_LAYOUT` in `js/ui/hud.js`, and the credit line "Richard Hefter / Susan Dubicki /
+  Optimum Resource, Inc. / Norfolk, Connecticut".
+- **Source:** [StickybearTyping4amCrack — Internet Archive](https://archive.org/details/StickybearTyping4amCrack) (`00playable_screenshot.png`)
+- **Rights:** screenshot of copyrighted software; research reference
+- **Licence:** none claimed
+- **Retrieved:** 2026-09-13
+
+### `next-key-highlight-2fps-contact-sheet.jpg`
+![A contact sheet of sixteen frames at 2fps: the highlight box moves to J while the pane is empty, then to the spacebar, then back to J, then to F — always one step AHEAD of the typing](../media/stickybear-typing/next-key-highlight-2fps-contact-sheet.jpg)
+- **Shows:** the evidence for the strongest claim on this page — that the highlight **leads**
+  the typing rather than echoing it, and that the spacebar is treated as a key worth showing.
+  Read left-to-right, top-to-bottom. Derived by extracting frames at 2 fps from the boot video
+  in reference 5.
+- **Source:** frames from [A2Video_Stickybear_Typing — Internet Archive](https://archive.org/details/A2Video_Stickybear_Typing)
+- **Rights:** derived from a recording of copyrighted software; research reference
+- **Licence:** none claimed
+- **Retrieved:** 2026-09-13
 
 ## References
 

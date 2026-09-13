@@ -244,6 +244,89 @@ function journalReport(corpus) {
   }
 }
 
+// ── media ────────────────────────────────────────────────────────────────────
+// The imagery layer (research/WIKI.md §Media). Reference images live at
+// research/wiki/media/<page-slug>/<file> and are embedded from the page of that
+// slug with a normal markdown image (which renders in BOTH Obsidian and GitHub).
+//
+// Why this is linted rather than trusted: an image is EVIDENCE. Several claims in
+// this wiki — the Apple IIe's Disk II front face, Stickybear's blue Apple II
+// palette, the next-key highlight on a 1985 typing tutor — were established by
+// LOOKING at a picture, and before this layer existed the picture was thrown away
+// and only the conclusion survived. That is unauditable: a later reader cannot
+// check the claim without redoing the search. Storing the frame beside the page
+// makes the evidence re-inspectable, and storing its licence makes it
+// redistributable on purpose rather than by accident.
+const MEDIA_DIR = join(ROOT, 'wiki', 'media');
+const MEDIA_EXT = /\.(png|jpe?g|gif|webp|svg)$/i;
+
+function mediaFiles(dir) {
+  let out = [];
+  let entries;
+  try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return out; }
+  for (const e of entries) {
+    const full = join(dir, e.name);
+    if (e.isDirectory()) out = out.concat(mediaFiles(full));
+    else if (MEDIA_EXT.test(e.name)) out.push(full);
+  }
+  return out;
+}
+
+// Every markdown image embed on a page whose target sits under wiki/media/.
+function mediaRefs(doc) {
+  return [...doc.body.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)]
+    .map(m => m[1])
+    .filter(u => u.includes('media/'))
+    .map(u => ({ url: u, file: basename(u), slug: basename(dirname(u)) }));
+}
+
+function lintMedia(corpus, problems) {
+  const onDisk = mediaFiles(MEDIA_DIR);
+  const referenced = new Set();
+
+  for (const d of corpus) {
+    for (const ref of mediaRefs(d)) {
+      const abs = resolve(dirname(d.path), ref.url);
+      if (!onDisk.includes(abs)) { problems.push(`BROKEN MEDIA ${d.name} → ${ref.url}`); continue; }
+      referenced.add(abs);
+      // Pinned to its page: a file under media/<slug>/ belongs to the page <slug>.
+      if (ref.slug !== d.name) {
+        problems.push(`MISPLACED MEDIA ${d.name} → ${ref.url} (lives under '${ref.slug}/')`);
+      }
+      // Credited: the page must carry Source + Licence for this exact file, so a
+      // reader can re-fetch the original and know what may be redistributed.
+      const block = creditBlock(d.body, ref.file);
+      if (!block) problems.push(`UNCREDITED MEDIA ${d.name} → ${ref.file} (no credit block)`);
+      else {
+        for (const field of ['Source', 'Licence', 'Retrieved']) {
+          if (!block.includes(`**${field}:**`)) {
+            problems.push(`UNCREDITED MEDIA ${d.name} → ${ref.file} (missing '${field}')`);
+          }
+        }
+      }
+    }
+  }
+  for (const f of onDisk) {
+    if (!referenced.has(f)) problems.push(`ORPHAN MEDIA ${f.slice(PROJ.length + 1)} (no page embeds it)`);
+  }
+  return onDisk.length;
+}
+
+// The credit block for one file: from the line naming it in backticks up to the
+// next heading (or 16 lines, whichever comes first). Bounded on purpose — credits
+// must sit with their own file and cannot drift onto a neighbour's.
+function creditBlock(body, file) {
+  const lines = body.split('\n');
+  const start = lines.findIndex(l => l.includes('`' + file + '`'));
+  if (start < 0) return null;
+  const out = [];
+  for (let i = start; i < lines.length && out.length < 16; i++) {
+    if (i > start && /^#{1,6}\s/.test(lines[i])) break;
+    out.push(lines[i]);
+  }
+  return out.join('\n');
+}
+
 // ── lint ─────────────────────────────────────────────────────────────────────
 function lint(corpus) {
   const names = new Set(corpus.map(d => d.name).concat(['WIKI', 'index', 'log']));
@@ -278,7 +361,8 @@ function lint(corpus) {
     if (!/## References/i.test(d.body)) problems.push(`UNCITED      ${d.name} (no References section)`);
     if (!d.fm.verified) problems.push(`UNVERIFIED   ${d.name} (frontmatter missing 'verified')`);
   }
-  if (!problems.length) console.log(`Lint clean: ${corpus.length} pages, no orphans, no broken links, all cited.`);
+  const mediaCount = lintMedia(corpus, problems);
+  if (!problems.length) console.log(`Lint clean: ${corpus.length} pages, ${mediaCount} media file(s), no orphans, no broken links, all cited, all media credited.`);
   else { for (const p of problems.sort()) console.log(p); process.exitCode = 1; }
 }
 

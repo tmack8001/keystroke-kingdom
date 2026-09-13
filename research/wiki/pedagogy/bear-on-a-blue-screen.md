@@ -3,6 +3,7 @@ title: The Bear on the Blue Screen — identifying a childhood memory
 type: concept
 tags: [educational-software, edutainment, floppy-era, project-note, memory]
 sources: 16
+media: 3
 verified: 2026-09-13
 ---
 
@@ -265,6 +266,41 @@ the one mode where the player controls the bear, and the one screen nobody has l
 - `https://archive.org/metadata/a2_Stickybear_Basketbounce_1983_Optimum_Resource` — **empty body**.
 - `https://dn790003.ca.archive.org/0/items/1986-09-computegazette/..._djvu.txt` — **404** (dead redirect target); refetched successfully from `ia802807.us.archive.org`.
 - **WebSearch was unavailable for this entire lane** (session budget exhausted at 200/200 before it began). All discovery ran through fetched search *endpoints* — Internet Archive advanced-search JSON, Internet Archive item metadata, and the MediaWiki raw/parse API.
+
+## Media
+
+The frames that settled §Half three, stored in the vault so the conclusion stays checkable
+(research/WIKI.md §Media). **Rights note:** these are emulator screenshots of copyrighted
+software, held as low-resolution research references for identification and commentary. They
+are not freely licensed, unlike the hardware photographs elsewhere in this wiki — flagged
+here rather than quietly shipped.
+
+### `stickybear-numbers-1982-apple-ii.jpg`
+![Stickybear Numbers, 1982: a sky-blue dithered field with the bear's face in the lower-left corner and a white speech cloud reading PRESS ANY NUMBER OR USE THE SPACE BAR](../media/bear-on-a-blue-screen/stickybear-numbers-1982-apple-ii.jpg)
+- **Shows:** the blue screen with the bear on it — the single image that answers the question
+  this page is named for.
+- **Source:** [a2_Stickybear_Numbers_1982_Optimum_Resource — Internet Archive](https://archive.org/details/a2_Stickybear_Numbers_1982_Optimum_Resource) (`screenshot_20.jpg`)
+- **Rights:** screenshot of copyrighted software; research reference, not freely licensed
+- **Licence:** none claimed
+- **Retrieved:** 2026-09-13
+
+### `stickybear-abc-1982-apple-ii.jpg`
+![Stickybear ABC, 1982: a dark navy dithered field, the bear in a blue jacket at right, PRESS ANY LETTER across the bottom](../media/bear-on-a-blue-screen/stickybear-abc-1982-apple-ii.jpg)
+- **Shows:** the second of the two 1982 titles, establishing blue as the line's house palette
+  rather than one screen's accident.
+- **Source:** [a2_Stickybear_ABC_The_1982_Optimum_Resource — Internet Archive](https://archive.org/details/a2_Stickybear_ABC_The_1982_Optimum_Resource) (`screenshot_10.jpg`)
+- **Rights:** screenshot of copyrighted software; research reference, not freely licensed
+- **Licence:** none claimed
+- **Retrieved:** 2026-09-13
+
+### `stickybear-town-builder-1992-msdos.jpg`
+![Stickybear Town Builder on MS-DOS, 1992: a full-colour VGA street scene with two bears and a pink convertible — not blue](../media/bear-on-a-blue-screen/stickybear-town-builder-1992-msdos.jpg)
+- **Shows:** the discriminator. The only Stickybear preserved for MS-DOS is the one that is
+  **not** blue, which is what points the memory at an Apple II rather than a dad's office PC.
+- **Source:** [msdos_Stickybear_Town_Builder_1992 — Internet Archive](https://archive.org/details/msdos_Stickybear_Town_Builder_1992) (`screenshot_03.jpg`)
+- **Rights:** screenshot of copyrighted software; research reference, not freely licensed
+- **Licence:** none claimed
+- **Retrieved:** 2026-09-13
 
 ## References
 
