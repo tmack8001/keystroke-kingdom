@@ -1,10 +1,10 @@
 ---
 feature: wordgen
-code: [main.go, js/wordgen.js]
+code: [main.go, js/wordgen.js, js/word-blocklist.json, js/word-blocklist.js]
 rules: [.claude/rules/security.md]
 screenshots: null
 capture: null
-verified: 2026-09-11
+verified: 2026-09-13 (two-tier blocklist matcher: exact-word + inflections, plus hardCoreSubstrings)
 ---
 
 # Local-LLM Word Generation
@@ -167,21 +167,21 @@ drops that word, never the whole batch:
    wrong field type, empty — is the other class (B): `parseGenResponse` rejects it
    WHOLE (nil, capped at 100 raw lines) and the retry/refill path handles it.
 3. **Lowercase normalization.**
-4. **Blocklist** (`isBlocked`) — the UNION of two layers; either hit blocks the word.
-   **Rewritten 2026-09-11 after a `/security-review` finding — see "The kid-safety
-   floor" below.** Layer 1 is the shared exact-word floor (`js/word-blocklist.json`,
-   the single source of truth both languages read), matched on the lowercased whole
-   word AND on each of its letter-tokens, so a compound like `zig-vodka` cannot smuggle
-   a floor word through as one wordgen "word". Layer 2 is `wordgenSubstringExtras`, an
-   additive substring layer kept deliberately: for a single generated WORD (never
-   prose) substring matching catches inflections the exact-word floor cannot
-   (`killing`, `guns`). Substring matching is correct *here* and wrong for prose —
-   `chatOutputOK` stays exact-word, because "hello" contains "hell".
+4. **Blocklist** (`isBlocked`) — the UNION of three layers; any hit blocks the word.
+   **Rewritten twice since — see "The kid-safety floor" below for the full story.**
+   Layer 1 is the shared exact-word floor (`js/word-blocklist.json`, the single source
+   of truth both languages read), matched on the lowercased whole word, on each of its
+   letter-tokens (so a compound like `zig-vodka` can't smuggle a floor word through as
+   one wordgen "word"), and on every floor word's `expandBlockedForms` inflections.
+   Layer 2 is `wordgenExtraBlocked` — words NOT in the shared floor that should still
+   never reach a child — matched **exact-word + inflections**, never as substrings.
+   Layer 3 is `hardCoreSubstrings`, the small set of strings with no innocent
+   occurrence in ordinary English, matched as substrings via `containsHardCore`.
 5. **Dedup** — within the batch, and seeded against the static pool's sample words
    (never echoes a word the child has already seen from the curated list).
 6. **Cap** at 20 words per batch (`maxWordsPerBatch`).
 
-### The kid-safety floor — single source, fail-closed (rewritten 2026-09-11)
+### The kid-safety floor — single source, fail-closed (2026-09-11, re-cut 2026-09-12/13)
 
 A `/security-review` this session found that `isBlocked` consulted a **second,
 hard-coded Go list** that had DRIFTED from the shared floor introduced with the L25
@@ -192,17 +192,65 @@ servable to a child as typing prompts — `whiskey` (from Level 9's keys onward)
 security.md rule 7 and journal L41 exist to prevent, and it is why the floor lives in
 ONE file.
 
-- **One source of truth.** `js/word-blocklist.json` (31 words) is read by BOTH
-  languages: Go embeds and unmarshals it (`loadChatWordBlocklist` →
-  `chatWordBlocklist`), and the client imports it via `js/word-blocklist.js`
-  (`BASE_WORDS`). Neither language carries a hard-coded copy. `wordgenSubstringExtras`
-  is the one permitted ADDITION on the Go side, and its own comment states the
-  invariant: never add a word there that belongs in the floor — put it in the JSON so
-  both languages and both paths (wordgen + chat/coda) get it.
+- **One source of truth.** `js/word-blocklist.json` (**53 words** as of 2026-09-13 —
+  31 → 41 when the substring removal forced compounds to be enumerated, 41 → 53 when
+  the compound-profanity gap was closed) is read by BOTH languages: Go embeds and
+  unmarshals it (`loadChatWordBlocklist` → `chatWordBlocklist`), and the client imports
+  it via `js/word-blocklist.js` (`BASE_WORDS`). Neither language carries a hard-coded
+  copy. `wordgenExtraBlocked` + `hardCoreSubstrings` are the permitted ADDITIONS on the
+  Go side, and the invariant stated in their own comments still holds: never add a word
+  there that belongs in the floor — put it in the JSON so both languages and both paths
+  (wordgen + chat/coda) get it.
+
+#### The two-tier matcher (2026-09-12 → 2026-09-13) — two corrections in two days
+
+**Correction 1 — substring matching removed (2026-09-12).** The additive Go layer was
+`strings.Contains`, so any word merely CONTAINING a bad string was rejected:
+`altitude` was blocked for containing `tit`, and with it `attitude`, `latitude`,
+`compass`, `mass`, `class`, `assist`, `passenger`, `speed`, `title`, `competition`,
+`forward`, `award`, `warm`. Trevor: *"'altitude' isn't 'tit' and it shouldn't be
+caught."* That is not a conservative safety trade, it is a defect — it silently removes
+ordinary vocabulary a child should be learning. The list was renamed
+`wordgenSubstringExtras` → **`wordgenExtraBlocked`** and the rule became: a word is
+blocked if it IS a bad word, or a bad word's inflected form. Nothing else.
+`expandBlockedForms(bad)` generates those forms (plural/`-ed`/`-ing`/`-er`/`-y`/`-ly`/
+`-ful`/`-ness`, silent-e drop, CVC doubling `gun→gunning`, `y→ies`, and `ie→ying` so
+`die→dying` instead of the wrong `diing` — caught by a real test, not anticipated).
+
+**Correction 2 — the compound gap that reopened (2026-09-13).** Removing substrings was
+right, but `expandBlockedForms` only appends SUFFIXES, so it structurally cannot reach
+**compound profanity**. A `/security-review` reproduced the generator serving
+`asshole shithead bullshit motherfucker dickhead dumbass pornography`. The fix is **not**
+"substrings are bad" but *"substring matching is only safe for strings that never occur
+innocently"*:
+
+```go
+var hardCoreSubstrings = []string{
+  "fuck", "shit", "cunt", "porn", "nazi", "slut", "whore", "piss", "bitch", "rimjob",
+}
+```
+
+Everything whose letters DO appear inside ordinary words — `ass`, `hell`, `tit`, `pee`,
+`war`, `die`, `gun`, **`cock`**, **`rape`**, `dick` — stays exact-word + inflections,
+and its compounds are **enumerated in the auditable floor** instead (which is what took
+the JSON from 41 to 53: `asshole`, `badass`, `dumbass`, `jackass`, `smartass`,
+`hellhole`, `dickhead`, `shotgun`, `warzone`, `warhead`, `warfare`, `bloodbath`…).
+**`rape` and `cock` are deliberately NOT hard-core**: `grape`, `drape`, `scrape`,
+`cocktail`, `peacock`, `cockpit` are words a child should learn. Adding to
+`hardCoreSubstrings` is a safety decision with blast radius — a string there blocks
+every word containing it, forever.
+
+Both directions are pinned by tests, which is the only reason this stays fixed:
+`TestBlocklistCompoundsAndFalsePositives` asserts 18 compounds are blocked AND that 38
+innocent words (`altitude`, `speed`, `speedway`, `chassis`, `shell`, `cockpit`,
+`grape`, `diesel`, `deadline`…) are **not** — if any of those is blocked again, someone
+has reinstated blanket substring matching and two acts' worth of on-theme vocabulary
+has silently vanished. `TestHardCoreSubstringsHaveNoInnocentOccurrence` catches an
+over-reaching addition to the hard-core list before children do.
 - **Fail closed, never open.** A gutted or malformed blocklist used to leave the floor
   silently tiny — which for a kid-facing filter means "everything is safe", exactly
   backwards. Now `loadChatWordBlocklist` refuses to install a list smaller than
-  `minSafetyFloorWords` (**10**; the shipped file carries 31, ample headroom for a
+  `minSafetyFloorWords` (**10**; the shipped file carries 53, ample headroom for a
   legitimate edit) and leaves `safetyFloorLoaded` false. `safetyFloorReady()` gates
   every path that would serve model-generated text to a child:
   - `validateWords` returns `nil` → `/api/wordgen` serves an empty batch → the client
@@ -215,8 +263,11 @@ ONE file.
   `TestIsBlockedCoversEntireSharedFloor` and `TestChatOutputOKRejectsEntireSharedFloor`
   assert BOTH gates cover every word in the JSON (the regression that shipped);
   `TestIsBlockedCatchesFloorWordInsideCompound` pins the letter-token match;
-  `TestIsBlockedKeepsSubstringExtras` pins that the additive layer was not lost in the
-  rewrite; `TestSafetyFloorFailsClosedWhenBlocklistIsGutted` and
+  `TestIsBlockedKeepsExtraBlockedWords` (renamed from `…KeepsSubstringExtras` with the
+  layer itself) pins that the additive layer was not lost in either rewrite;
+  `TestBlocklistCompoundsAndFalsePositives` + `TestHardCoreSubstringsHaveNoInnocentOccurrence`
+  (both 2026-09-13) pin the two-tier matcher in both directions;
+  `TestSafetyFloorFailsClosedWhenBlocklistIsGutted` and
   `TestSafetyFloorReloadsCleanly` pin the fail-closed behavior. These sit alongside the
   pre-existing `TestChatWordBlocklistLoaded` and the client-side
   `word-blocklist-sync.test.mjs`.

@@ -577,7 +577,7 @@ respected exactly as written; and (d) `consoleErrors`.
   `scaler` — so each must declare a distinct variant); the earliest track by year
   is `ttl` and the latest is `modern`; and where they are registered, **Virtua
   Racing declares `flatpoly` and Daytona USA declares `texpoly`** (the locked
-  pair). Each track's renderer is constructed with `kit.for(station)`, which
+  pair). Each track's renderer is constructed with `kitFor(tier)`, which
   exposes only that tier's primitives — a `ttl` renderer has no gradient
   available, a `flatpoly` renderer has no `texturedPoly`. **This is a PURE DATA
   assertion**: spec §5.6 explicitly rejected a canvas colour-histogram check

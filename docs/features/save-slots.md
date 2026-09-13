@@ -4,7 +4,7 @@ code: [js/slots.js]
 rules: [.claude/rules/security.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-07-19
+verified: 2026-09-13 (Act 7 `speedway` ghost store; storyRotation added to the schema block)
 ---
 
 # Save Slots — "CHOOSE YOUR GAME"
@@ -42,8 +42,13 @@ Each `<game>`:
   name, furthestLevel, completed, nameMoment, textWorlds, // == the old kk-progress shape
   cards,          // [<card id>, ...] — this game's collected history cards (js/history-cards.js)
   cardRotation,   // { "<level>": <int> } — per-level replay-variety counter
+  storyRotation,  // { "<level>": <int> } — the L25 "MY STORY" coda's rotation (added 2026-07-28)
+  speedway,       // { "<trackId>": <TrackRecord> } — Act 7 ghosts (added 2026-09-13)
 }
 ```
+*(`storyRotation` and `speedway` were both missing from this block until 2026-09-13 —
+corrected here. `normalizeSlot` is the authority: it returns exactly these nine
+fields.)*
 `readState()` parses inside try/catch and **drops** anything malformed
 (`normalizeSlot()` returns `null` for a bad entry, and the read path filters nulls out —
 a corrupted game is simply omitted from the list, never crashes the picker). An
@@ -104,7 +109,72 @@ persist).
 only the first time) operate on the active game; `slotCards(i)` reads any game's cards
 by index without switching which one is active (used by the read-only collection
 gallery, see [[history-cards]]). `getCardRotation(level)` / `bumpCardRotation(level)`
-drive the per-level "different card each replay" rotation.
+drive the per-level "different card each replay" rotation. `getStoryRotation(level)` /
+`bumpStoryRotation(level)` are the same pattern for the Level 25 coda's story pool
+(see [[engine-flow]]).
+
+## Act 7 ghosts — `kk-slots[i].speedway` (added 2026-09-13)
+
+The Speedway's per-track records live **inside the slot**, deliberately not in a new
+localStorage namespace — which is what makes both erase paths cover ghosts for free:
+`eraseSlot`/`eraseActiveSlot` remove the whole game object, `eraseAll` removes
+`kk-slots` entirely. A save written before Act 7 has no `speedway` field and reads as
+`{}`, exactly like `textWorlds`, so migration is invisible. Consumer side (the ghost
+format, the replay, why LAST and not BEST): [[speedway]].
+
+```js
+"<trackId>": {
+  v: 1,
+  last:  { ms, splits: [64 non-decreasing ints], keys, acc, at } | null,  // the lap you RACE
+  best:  { ms, at } | null,                                              // the keepsake, never raced
+  laps, chars, cleanBest                                                 // monotonic odometers
+}
+```
+
+**Every dimension is capped, on BOTH read and write** (INV-84):
+`SPEEDWAY_MAX_TRACKS` 14 · `SPLIT_COUNT` exactly 64 · `MAX_MS` 2,400,000 (40 min) ·
+`MAX_KEYS` 1,000,000 · `MAX_COUNTER` 1e9 · `MAX_AT` 2100-01-01 ·
+`TRACK_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$/` (its leading-alphanumeric rule also
+rules out `__proto__` as a key). `best` carries no split table by design — that is what
+keeps "two ghosts per track" inside the ~10 KB per-slot budget.
+
+**`MAX_MS` was raised from 999,999 (~16.7 min) to 2,400,000 on 2026-09-13**, and the
+reason is worth keeping: the old constant carried the comment "a lap can never plausibly
+exceed this" — an assumption about how fast a CHILD types, baked into a storage cap. At
+WIZARD (3.5×) a 120-character track is 420 characters, so the ceiling was breached at
+~2.4 s/character (~5 WPM) — squarely inside a five-year-old's range. A lap that cannot
+be stored is a ghost that silently never appears, so the slowest typist in the game
+would have been the only player who never got to race herself.
+
+**Two validation severities, chosen per field** (security.md rule 4):
+- `clampInt` for **display-only odometers** (`laps`, `chars`, `cleanBest`) — garbage is
+  clamped into range, because a wrong lap count is cosmetic and must never cost a
+  player her record.
+- `strictInt` for anything the **replay depends on** (`ms`, each split) — out of range
+  is REJECTED, not clamped, because a clamped nonsense lap time produces a nonsense
+  ghost (an instant or eternal lap). "No ghost" is the honest, playable degradation,
+  and it is indistinguishable from a genuine first lap.
+- `optInt` for fields that may legitimately be absent (`keys`, `acc`, `at`): missing
+  reads as 0, but a PRESENT-yet-invalid value still rejects — absence is not corruption.
+
+`normalizeGhost` rejects any split table whose length isn't exactly 64 and repairs
+non-monotonic splits with a running `Math.max`. `normalizeTrackRecord` drops an unknown
+schema `v` outright rather than half-trusting it. `normalizeSpeedway` drops ids failing
+`TRACK_ID_RE` and stops at the track cap.
+
+API (both scoped to the ACTIVE game, both total functions):
+- `readSpeedway(trackId)` → the validated record, or `null` for "no active game / no
+  record / malformed". Own-property lookup only. Never throws.
+- `writeSpeedway(trackId, rec)` — **merges** field-by-field (absent fields keep their
+  stored value; an explicit `null` clears that ghost), re-validates the caller's input
+  as untrusted, and evicts the **least recently raced OTHER** track when the map passes
+  the cap (never the one just written). Wrapped in try/catch: an invalid id, no active
+  game, or unavailable localStorage is a silent no-op — the race still runs, it just
+  doesn't persist. A ghost that can't be saved must never interrupt play.
+
+Gameplay data only — lap times, split times, keystroke counts, accuracy and a local
+timestamp. **No new PII class** (security.md rule 8) and nothing here ever leaves the
+machine (rule 6).
 
 ## The slot picker screen (`state.screen === 'slots'`)
 
@@ -155,4 +225,6 @@ cases applies, in order:
 collection gallery, and the retired continue-screen history) · [[engine-flow]]
 (`getProgress`/`saveProgress`/`eraseProgress` delegation, boot sequencing) ·
 [[select-screen]] (`maxUnlockedLevel` seeded from the active game) · [[settings-survival]]
-(ERASE ALL PROGRESS row → `eraseAll()` factory reset)
+(ERASE ALL PROGRESS row → `eraseAll()` factory reset) · [[speedway]] (Act 7, whose
+per-track ghost records this module validates and stores) · [[text-worlds]] (Act 6,
+whose completion flags ride in `textWorlds`)

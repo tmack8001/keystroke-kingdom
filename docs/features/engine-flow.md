@@ -4,7 +4,7 @@ code: [js/main.js, js/finale-quote.js, js/keyboard-story.js, js/keyboard-story-g
 rules: [.claude/rules/tech.md, .claude/rules/security.md, .claude/rules/easter-eggs.md, research/wiki/culture/hacker-manifesto.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js
-verified: 2026-09-11
+verified: 2026-09-13 (back-wall door registry + Act 7's lazy-imported `speedway` screen)
 ---
 
 **Graph gap note:** three surfaces documented here have no reference frame, flagged
@@ -18,7 +18,7 @@ Adaptive pacing needs none: it is observable as `data-pace`, never visual.
 
 # Engine Flow
 
-`js/main.js` (2334 lines) is the single state machine: screen routing, the input
+`js/main.js` (2480 lines) is the single state machine: screen routing, the input
 contract, adaptive pacing, the Survival wrapper, returning-player persistence, the
 Name Moment, and the EXPERIENCE gate. `index.html` is the one markup file for every
 screen.
@@ -38,9 +38,11 @@ the `scripts/static-host-check.mjs` gate that enforces it live in
 see [[save-slots]]) → ready → keyboard-preview → game → victory → complete → (next
 ready, or a cinematic, or back to title)`, plus `collection` (read-only card gallery,
 reached from `slots`), `settings`, `gameover` (Survival only), and the four cinematic
-screens (`mystery`/`basement`/`commandcenter`/`fullcircle` — see [[cinematics]]). One
-giant `document.addEventListener('keydown', ...)` switches on `state.screen`; there is
-no per-screen module owning its own listener.
+screens (`mystery`/`basement`/`commandcenter`/`fullcircle` — see [[cinematics]]) and
+the two **bonus-wing** screens `textworld` ([[text-worlds]]) and `speedway`
+([[speedway]], added 2026-09-13). One giant
+`document.addEventListener('keydown', ...)` switches on `state.screen`; there is no
+per-screen module owning its own listener.
 
 ## Name entry — the `#player-name-input` reveal sites
 
@@ -508,6 +510,59 @@ If wordgen is inactive (no server, no Ollama, or the batch isn't ready yet),
 `takeWords` returns `[]` and the static pool plays completely unchanged — zero
 behavior difference, zero console noise, no loading pause anywhere.
 
+## The back-wall doors → the bonus wings (registry, 2026-09-13)
+
+`state.doorIndex` (`null` | `0..N-1`) is a sub-state of the `select` screen and lives
+in `js/main.js`'s `state`. **It replaced the old `state.doorFocused` boolean when the
+second wing landed; the boolean no longer exists anywhere in the codebase.** `main.js`
+never reads the index directly — it goes through `focusedDoor(state)` /
+`focusDoor(state, id)` / `clearDoorFocus(state)`, imported from
+`js/ui/cabinet-art.js`, which owns the `BACK_WALL_DOORS` registry and the door view
+(see [[select-screen]]).
+
+Routing, in `case 'select':`
+- `F` and `1`-`5` short-circuit while `focusedDoor(state)` is truthy (Free Play and
+  cabinet-position jumps don't apply at the back wall).
+- `Enter`/`Space` on a focused door looks the wing up in the `DOOR_ENTRY` map and
+  calls it; otherwise the normal locked-cabinet guard and cabinet-entry path run.
+- `Escape` calls `clearDoorFocus(state)` on the way back to the title.
+
+```js
+const DOOR_ENTRY = { textworld: enterTextWorld, speedway: enterSpeedway };
+```
+
+Both wings are **parallel screens on the shared `#invaders-canvas`**, exactly like the
+act cinematics: the pattern engine (`handleGameKey`/`buildPatterns`) is never involved
+and **no survival timer is ever started**, so each wing structurally inherits zero time
+pressure. Each `returnToArcadeFrom…()` calls `focusDoor(state, '<id>')` so the player
+lands back on the door they walked in by.
+
+**Act 6 (`enterTextWorld`)** is a static import: `stopAll()`, hide every `.screen`,
+`state.screen = 'textworld'`, `TextWorldHub.start({ onExit, onComplete })` — the
+`onComplete` persists the finished world (`recordTextWorldComplete`).
+
+**Act 7 (`enterSpeedway`) is LAZILY imported**, and the difference is deliberate: a
+bonus room must never be able to take the whole game down. On a static host a
+missing/404'ing `js/speedway/*` behind a STATIC import would abort this module's graph
+at load and brick all 25 levels; loaded on demand it costs exactly one warm card.
+
+- `speedwayLoading` latches so a second Space during the load can't re-enter;
+  `Speedway` caches the namespace so a second visit skips the import.
+- `Promise.all([import('./speedway/hub.js'), import('./speedway/tracks/index.js')])`
+  — both specifiers are STATIC strings inside the dynamic import, so
+  `scripts/static-host-check.mjs` still crawls the subtree (journal F26). On resolve:
+  `mod.setTracks(tracksMod.TRACKS)` inside a try (a bad registry falls back to the
+  hub's own TEST OVAL placeholder, never a trap), then `startSpeedwayHub()` — unless
+  `state.screen !== 'speedway'`, i.e. the player already walked out.
+- On reject (or if `start()` throws): `showSpeedwayCard('speedway-unbuilt')`.
+- `#speedway-screen` (`index.html`) holds the only two states the hub can't draw
+  because it isn't up: `#speedway-loading` ("WARMING UP THE ENGINE...") and
+  `#speedway-unbuilt` ("THIS TRACK IS STILL BEING BUILT." / "PRESS ANY KEY TO GO
+  BACK"). Styling: [[visual-styling]].
+- `case 'speedway':` forwards every key to `Speedway.handleKey(e)` when the hub is
+  active; when it is not, **any** key walks out on the unbuilt card and Escape walks
+  out while still loading — never a dead end (the One Rule; INV-86).
+
 ## Easter eggs & WOPR bypass
 
 `EGGS`, `SECRET_PHRASES`, and the Konami handler all live in this file — full catalog
@@ -572,7 +627,9 @@ word-bank pools `drawablePool` filters) · [[hud-keyboard-guide]]
 `getWinRatio` source; MIN/MAX WORD LENGTH rows, `getWordLengthRange` source) ·
 [[wordgen]] (client integration points above; word-length range also travels to the
 wordgen request) · [[history-cards]] · [[free-play]] · [[easter-eggs]] ·
-[[select-screen]] · [[save-slots]] (progress/card persistence owner + the slot picker
+[[select-screen]] (the back-wall door registry this file's `DOOR_ENTRY` map pairs
+with) · [[text-worlds]] and [[speedway]] (the two wings those doors open on) ·
+[[save-slots]] (progress/card persistence owner + the slot picker
 that now precedes the returning-player flow, including the L25 `storyRotation` counter
 `startCoda` reads) · [[visual-styling]] (z-index/CRT contract this file's
 screen-hiding relies on) · `js/finale-quote.js` (Level 25 coda's manifesto-capstone

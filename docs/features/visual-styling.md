@@ -4,7 +4,7 @@ code: [css/base.css, css/screens.css, css/levels.css]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-07-28
+verified: 2026-09-13 (back-wall door labels, #speedway-screen cards, the touch keyboard notice)
 ---
 
 # Visual Styling
@@ -78,10 +78,40 @@ only the label's own wrap behavior changed. Verified via a regenerated
 `docs/screenshots/screens/collection-gallery.png` (synthetic fully-collected slot);
 see [[history-cards]] for the before/after detail.
 
+## Back-wall door labels + `#speedway-screen` cards (added 2026-09-13)
+
+Two small additions in `css/screens.css` came with Act 7 ([[speedway]]):
+
+- `.select-door .cabinet-label` — `max-width: 130px; line-height: 1.6; text-align:
+  center`. The back wall's doors stand in the cabinet row but carry longer,
+  sentence-style labels (`THE GREEN DRAGON · a text world`), so each keeps a column of
+  its own instead of stretching the row once two or more doors are open (see
+  [[select-screen]] for the registry that made "two or more" possible).
+- `.speedway-card` / `.speedway-title` / `.speedway-line` / `.speedway-prompt` — the
+  two DOM-only states of the Act 7 wing (`#speedway-loading`, `#speedway-unbuilt`),
+  the only parts of that wing that are NOT canvas. Pit-lane amber to match the door:
+  `background: rgba(10, 6, 4, 0.86)` + `border: 2px solid var(--crt-amber-dim)` — a
+  **scrim panel with full-opacity text over it, never element opacity** (journal
+  L2/F3), the same a11y pattern as the prompt/keyboard scrims above. `.speedway-prompt`
+  reuses the shared `blink` keyframes.
+
+## Touch-device keyboard notice (added 2026-09-11)
+
+`.keyboard-notice` + `-title`/`-body`/`-hint` style the title-screen card that tells a
+touch-primary visitor this cabinet needs a physical keyboard (detection, the
+self-dismiss-on-first-keydown behavior, and the "informs, never gates" rule live in
+[[engine-flow]]). Same scrim idiom: `rgba(0,0,0,0.55)` plate, `2px solid
+var(--crt-green-dim)` border, full-opacity text. It is plain flow content inside
+`#title-screen`, directly below `#insert-coin` (`max-width: 460px`, centred by
+`margin: 0 auto 34px`) — **not an overlay**: it never covers anything and never blocks
+input, which is what makes "informs, never gates" true at the CSS layer too.
+
 ## Related
 
 [[level-themes]] (canvas-side era fidelity, glyph coverage) · [[hud-keyboard-guide]]
 (scrim consumers) · [[settings-survival]] (CRT toggle owner) · [[easter-eggs]]
 (console banner styling, separate from this CSS layer) · [[history-cards]] (the
 collection gallery this CSS layer's card-label wrap fix serves) ·
-[[onboarding-continue]] (renders the collection gallery screen this CSS styles)
+[[onboarding-continue]] (renders the collection gallery screen this CSS styles) ·
+[[select-screen]] (the back wall whose door labels this layer sizes) · [[speedway]]
+(the wing behind `#speedway-screen`'s two cards)

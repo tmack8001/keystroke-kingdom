@@ -24,6 +24,7 @@ shots — was retired for exactly this reason; see below.)
 | `easter-eggs/` | The hidden hacker-culture layer: title-screen magic words (7 as of 2026-09-11), Konami stars, WOPR select | `node docs/screenshots/capture-eggs.js` |
 | `freeplay/` | Free Play HUD (sentence + WPM), and Free Play layered under Survival | `node docs/screenshots/capture-freeplay.js` |
 | `screens/` | Game chrome: title, name entry, READY reveal, keyboard-preview, the slot picker + its erase-confirm, the card collection gallery, settings (default + Survival), level-complete, survival game-over | `node docs/screenshots/capture-screens.js` (slots/collection captured ad-hoc as of 2026-07-19 — see note below; not yet wired into the script) |
+| `speedway/` | The Act 7 "THE SPEEDWAY" bonus wing (the SECOND back-wall door): the door, the track chooser, and each era track at its start line, mid-lap and pit board — including a second Monaco GP lap so the ghost ("YOU · LAST TIME") is actually on screen. Like `textworlds/`, Act 7 is its own surface here, NOT in `levels/`/`acts/` | `node docs/screenshots/capture-speedway.js` |
 | `textworlds/` | The Act 6 "Text Worlds" bonus wing (behind the select-screen door): the door, the hub chooser, and each of the 5 worlds — Green Dragon (prose), Glimmer Deep + Whisperwood (ASCII tile), Your Own World (the maker), and the IM-friend (local-LLM chat) — with reveal/standalone variants. Act 6 is its own surface here, NOT in `levels/`/`acts/` (which are the 25 curriculum levels + 5 curriculum act pages) | `node docs/screenshots/capture-textworlds.js` |
 
 Regenerate everything:
@@ -37,6 +38,7 @@ node docs/screenshots/capture-eggs.js       # easter-eggs/
 node docs/screenshots/capture-freeplay.js   # freeplay/
 node docs/screenshots/capture-screens.js    # screens/
 node docs/screenshots/capture-textworlds.js # textworlds/ (Act 6 wing)
+node docs/screenshots/capture-speedway.js   # speedway/   (Act 7 wing)
 ```
 
 Every script:
@@ -45,7 +47,8 @@ Every script:
   `DEV_URL=http://127.0.0.1:<port> node docs/screenshots/capture-X.js`
 - accepts an optional CLI filter to re-run a subset (e.g.
   `node docs/screenshots/capture-eggs.js xyzzy,konami`,
-  `node docs/screenshots/capture-cinematics.js basement`). `capture-all.js` also takes
+  `node docs/screenshots/capture-cinematics.js basement`,
+  `node docs/screenshots/capture-speedway.js monaco-racing`). `capture-all.js` also takes
   `--acts-only` / `--levels-only` (added 2026-09-11) so an act slug doesn't drag its
   five gameplay frames along: `capture-all.js act4-command-center --acts-only`
   regenerates exactly `acts/act4-command-center.png`, which is what a
@@ -204,3 +207,21 @@ feature-named set:
 - `cinematics/fullcircle/` was moved from four loose `fullcircle-phase*.png` files at
   the `docs/screenshots/` root (2026-07-12) into its own feature directory alongside
   the other three act transitions.
+
+## speedway/ — the second capture that plays the game (2026-09-13)
+
+Act 7 draws entirely on the shared canvas: there is no DOM prompt to read, so any
+frame that needs the game to be MID-LAP has to type the real word. `capture-speedway.js`
+reconstructs the prompt exactly the way `tests/integration/speedway.test.mjs` does — a
+`fillText`/`strokeText` recorder installed via `addInitScript`, then the longest
+contiguous run of single-character draws on one frame IS the word on screen. That is
+**text content only**, never a pixel/position/colour assertion (`.claude/rules/testing.md`
+rule 4). The `monaco-lap` subset drives a whole clean lap, shoots the pit board, then
+drives a SECOND lap — the only way to photograph the ghost actually on track.
+
+Two consequences worth knowing before reading those frames: Playwright types far faster
+than a child, so the pit-board frame shows a ~2.8 s lap and therefore **no WPM row**
+(`computeWPM` returns null under 10 s elapsed); and because a capture run of a
+canvas-only wing is also an error smoke test, the script exits non-zero on any console
+error — a renderer throwing inside `drawScene` is swallowed by the race engine (so the
+lap survives) but still surfaces here.

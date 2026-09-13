@@ -4,7 +4,7 @@ code: [js/ui/cabinet-art.js]
 rules: [.claude/rules/levels.md]
 screenshots: docs/screenshots/acts/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-09-11
+verified: 2026-09-13 (BACK_WALL_DOORS registry + state.doorIndex; act view unchanged)
 ---
 
 # Select Screen ("GREETINGS PROFESSOR FALKEN")
@@ -59,18 +59,70 @@ all) is unaffected: it still falls through to the untouched cold-open/title flow
 
 - `ArrowLeft`/`ArrowRight` → `navigateWithinAct(state, ±1)` — moves among the 5
   cabinets in the current act; refuses to land on a locked cabinet.
-- `ArrowUp`/`ArrowDown` → `navigateAct(state, ±1)` — moves between acts, clamped to
-  `[0, ACTS.length)`; walks backward via `firstUnlockedAtOrBelow` so the cursor never
-  strands on a locked cabinet.
+- `ArrowUp`/`ArrowDown` → `navigateAct(state, ±1)` — moves between acts; walks
+  backward via `firstUnlockedAtOrBelow` so the cursor never strands on a locked
+  cabinet. `ArrowDown` past the LAST act steps into the **back wall** (below).
 - `1`-`5` → `selectByPosition(state, pos)` — jump directly to the pos-th cabinet in
-  the current act (1-indexed); no-ops if locked.
-- `F` → toggles Free Play (see [[free-play]]).
-- `Enter`/`Space` → enters the selected cabinet (guarded again against locked levels).
-- `Escape` → clears Free Play, returns to title.
+  the current act (1-indexed); no-ops if locked. **No-op at the back wall.**
+- `F` → toggles Free Play (see [[free-play]]). **No-op at the back wall.**
+- `Enter`/`Space` → enters the selected cabinet (guarded again against locked
+  levels) — or, at the back wall, the focused door's wing.
+- `Escape` → clears Free Play, calls `clearDoorFocus(state)`, returns to title.
 
 All key bindings live in `js/main.js`'s `case 'select':` block, not in this file —
 `cabinet-art.js` is pure render/navigation-helper, operating on the shared `state`
 object (`maxUnlockedLevel`, `selectBypass`, `selectedLevel`, `freePlay`).
+
+## The back wall — the doors to the bonus wings (registry, 2026-09-13)
+
+Past the last act, the cursor steps DOWN into the back of the arcade, where
+diegetic doors lead to the bonus wings. **This was a single hard-coded door and a
+`state.doorFocused` boolean until 2026-09-13; both are gone.** It is now a
+registry, and the select-screen sub-state is **`state.doorIndex`**
+(`null` | `0..N-1`, declared in `js/main.js`'s `state`), read only through
+`focusedDoor(state)`.
+
+```js
+const BACK_WALL_DOORS = [
+  { id: 'textworld', label: 'THE GREEN DRAGON · a text world', hint: 'TYPE TO ENTER', art: drawTextWorldDoor, unlock: doorUnlocked },
+  { id: 'speedway',  label: 'THE SPEEDWAY · race yourself',    hint: 'TYPE TO ENTER', art: drawSpeedwayDoor,  unlock: doorUnlocked },
+];
+```
+
+- **Unlock.** `doorUnlocked(state)` = `state.selectBypass || state.maxUnlockedLevel
+  >= 25` (`DOOR_UNLOCK_LEVEL`). `availableDoors(state)` filters the registry by each
+  row's own `unlock`, so a future wing can carry a different gate.
+- **Exports** (all consumed by `js/main.js`): `focusedDoor(state)` — the focused row
+  or `null`, tolerating a stale/out-of-range index; `focusDoor(state, id)` — park the
+  cursor on a named door (an unknown or still-locked id CLEARS focus, so the cursor
+  lands among the cabinets rather than nowhere — this is how each wing hands control
+  back through the door it was entered by); `clearDoorFocus(state)`.
+- **Rendering** (`renderDoorView`, called from `renderSelectScreen` whenever
+  `focusedDoor` is truthy): every unlocked door is drawn **side by side**, in the
+  cabinet grid's place, focused one highlighted — the back wall reads as a room with
+  doors in it, not one door at a time. The act label becomes
+  `◈   THE BACK OF THE ARCADE   ◈`; the prompt is
+  `Doors hum softly.   ◀ ▶: CHOOSE   ·   SPACE: ENTER   ·   ↑: BACK` when more than
+  one door is open, and `A door hums softly.   SPACE: ENTER   ·   ↑: BACK` when only
+  one is. The prev/next lines show the neighbouring door's label (or, above door 0,
+  the last act). Door tiles carry `data-door` and **never `data-level`** — which is
+  what keeps the moth (below) off them. Each tile is clickable (`focusDoor` + re-render).
+- **Navigation can never strand the cursor** (the One Rule): `navigateAct` walks
+  `doorIndex` by ±1 and `ArrowUp` from door 0 calls `clearDoorFocus` back into the
+  acts; `navigateWithinAct` walks `◀ ▶` between doors and refuses to step off either
+  end; Escape leaves the select screen entirely from anywhere.
+- **Door art.** `drawDoorShell(canvas, scale, glowTop, glowBottom, spill)` is the
+  shared 56×80 shell (dark back wall, stone frame, glowing doorway, light spilling on
+  the floor) — the same footprint as `drawCabinet`. Act 6's `drawTextWorldDoor` is an
+  emerald doorway with a gold handle and two faint dragon-eyes; Act 7's
+  `drawSpeedwayDoor` is a pit-lane roll-up: chequered header board, sunset glow,
+  headlights idling in it.
+- **Adding a third wing is ONE data row here plus one entry in `js/main.js`'s
+  `DOOR_ENTRY` map** — never another edit to `renderDoorView` or `navigateAct`. CSS
+  for the longer, sentence-style door labels: `.select-door .cabinet-label` in
+  `css/screens.css` (see [[visual-styling]]).
+
+Where each door leads: [[text-worlds]] (Act 6) · [[speedway]] (Act 7).
 
 ## WOPR bypass
 
@@ -123,8 +175,10 @@ behavior, all in `js/ui/cabinet-art.js`:
 
 [[save-slots]] (the slot picker that now precedes this screen for returning players;
 `maxUnlockedLevel` is seeded from the active slot) · [[curriculum-data]] (the level/act
-data this screen visualizes) · [[engine-flow]] (key-routing owner; also owns the duck's
-Level-22 hint line) · [[easter-eggs]] (WOPR bypass, the moth, the rubber duck)
+data this screen visualizes) · [[engine-flow]] (key-routing owner + the `DOOR_ENTRY`
+map; also owns the duck's Level-22 hint line) · [[easter-eggs]] (WOPR bypass, the moth,
+the rubber duck) · [[text-worlds]] and [[speedway]] (the two wings behind the back
+wall's doors)
 
 ## Reference frames
 
@@ -135,3 +189,13 @@ shots along). `acts/act4-command-center.png` was regenerated 2026-09-11 and now 
 the rubber duck on the Level 20 cabinet. The moth has **no reference frame**: it
 appears only after 12s of stillness at a 3%/second roll, and no capture script drives
 it — flagged here rather than left silently unvalidated.
+
+**The back wall has no frame in `acts/`** — `capture-all.js` shoots the five act pages
+only, and the door view is a sub-state below them. The current reference frames for it
+live in the two wings' own sets, and both were regenerated 2026-09-13 when the registry
+landed: `docs/screenshots/textworlds/door-standalone.png` (GREEN DRAGON focused,
+`capture-textworlds.js door`) and `docs/screenshots/speedway/00-the-speedway-door.png`
+(SPEEDWAY focused, `capture-speedway.js door`). The five `acts/*.png` frames were **not**
+regenerated this pass: the 2026-09-13 `cabinet-art.js` change touched only the back-wall
+registry and the door art — `renderSelectScreen`'s act view, `drawCabinet` and
+`CABINET_DATA` are byte-identical, checked against the diff rather than assumed.

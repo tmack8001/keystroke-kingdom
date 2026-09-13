@@ -37,9 +37,21 @@
 // GUARANTEED, NOT PROBABILISTIC (journal L4): every one of the 54 POOLED
 // cards MUST produce a screenshot of ITS OWN card, or the script exits
 // non-zero. The expected set is derived from the live data
-// (`HISTORY_CARDS.filter(c => !c.secret)`), never a stale literal — that
-// stale literal (the old `CARD_LEVELS` list + `Object.keys()`) is exactly
-// what broke this script at the 2026-07-19 model rebuild.
+// (`HISTORY_CARDS.filter(c => !c.secret)`), never a stale literal.
+//
+// ⚠️ READ THIS BEFORE REPORTING THIS SCRIPT AS BROKEN. The sentence below
+// describes a bug that was FIXED on 2026-07-28. It is history, not a
+// description of the code you are looking at. Two separate doc-audit passes
+// (2026-09-11 and 2026-09-13) have now read it as a present-tense defect and
+// reported this script as broken; both times it was verified WORKING by
+// actually running it (`node docs/screenshots/capture-cards.js L13` →
+// exit 0, 6/6 cards, zero console errors). If you believe it is broken, RUN
+// IT FIRST — a comment describing a past failure is not evidence of a
+// current one.
+//
+//   HISTORICAL: before 2026-07-28 this script used a stale `CARD_LEVELS`
+//   literal and `Object.keys()` over what became an array at the 2026-07-19
+//   model rebuild, which is what broke it then. Neither is in the code now.
 //
 // THE SECRET CARD (`joshua`, level: null) is NOT reachable via any
 // level-complete overlay — it is collected by typing a magic word (wopr /

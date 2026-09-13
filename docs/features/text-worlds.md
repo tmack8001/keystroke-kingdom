@@ -1,10 +1,10 @@
 ---
 feature: text-worlds
-code: [js/textworld/hub.js, js/textworld/engine.js, js/textworld/greendragon.js, js/textworld/tileworld.js, js/textworld/tile-worlds.js, js/textworld/riddles.js, js/textworld/maker.js, js/textworld/imfriend.js, js/textworld/personas.js, js/chat.js, main.go]
+code: [js/textworld/hub.js, js/textworld/engine.js, js/textworld/greendragon.js, js/textworld/tileworld.js, js/textworld/tile-worlds.js, js/textworld/riddles.js, js/textworld/maker.js, js/textworld/imfriend.js, js/textworld/personas.js, js/textworld/, js/chat.js, main.go]
 rules: [.claude/rules/product.md, .claude/rules/security.md, docs/handoffs/im-friend-build.md]
 screenshots: docs/screenshots/textworlds/
 capture: node docs/screenshots/capture-textworlds.js
-verified: 2026-09-11
+verified: 2026-09-13 (back-wall door registry — state.doorIndex; Act 7 now the sibling wing)
 ---
 
 # Act 6 — The Text Worlds
@@ -17,8 +17,9 @@ patterns to complete against a clock, no `handleGameKey`/pattern-engine
 involvement at all. Design record: `docs/ROADMAP.md` §2 "Act 6 — Text Worlds"
 (the fullest account of how each world was scoped/grounded) and
 `docs/handoffs/im-friend-build.md` (world 5). Act 6 is the **no-speed** wing;
-its planned counterpart, **Act 7 — Speed/Racing** (typing fast, framed as
-racing), is design-only, unbuilt.
+its counterpart **Act 7 — THE SPEEDWAY** (typing fast, framed as racing) was
+**built 2026-09-13** and now stands beside it on the back wall — see
+[[speedway]].
 
 The One Rule (product.md) holds absolutely across every world: no timers, no
 death/loss, nothing punishing. A wrong key is always a gentle nudge — the input
@@ -28,21 +29,29 @@ directional letters, a fixed word palette, or free chat text).
 
 ## Entry point and screen routing (`js/main.js`)
 
-- **The door**: `js/ui/cabinet-art.js`'s `doorUnlocked(state)` lights a
-  pixel-art door one step below Act 5 on the select screen once
-  `state.maxUnlockedLevel >= 25` (`DOOR_UNLOCK_LEVEL`) or `state.selectBypass`
-  (WOPR) is set. `state.doorFocused` is a select-screen sub-state (`ArrowDown`
-  past Act 5 focuses it; `ArrowUp` un-focuses it back to Act 5; any Escape
-  clears it elsewhere in the app).
+- **The door**: `js/ui/cabinet-art.js`'s `doorUnlocked(state)` lights this
+  wing's pixel-art door on the back wall, one step below Act 5 on the select
+  screen, once `state.maxUnlockedLevel >= 25` (`DOOR_UNLOCK_LEVEL`) or
+  `state.selectBypass` (WOPR) is set. **Corrected 2026-09-13:** the back wall is
+  no longer a single door and `state.doorFocused` no longer exists. It is a
+  REGISTRY — `BACK_WALL_DOORS` — and the select-screen sub-state is
+  **`state.doorIndex`** (`null` | `0..N-1`), read only through
+  `focusedDoor(state)`. The Green Dragon is index **0**; [[speedway]] (Act 7) is
+  index **1**. `ArrowDown` past Act 5 focuses door 0 and each further `ArrowDown`
+  walks along the wall; `ArrowLeft`/`ArrowRight` walk between the doors standing
+  side by side; `ArrowUp` from door 0 returns to Act 5; any Escape clears it. The
+  registry and its rendering belong to [[select-screen]].
 - **Entering**: pressing Space/Enter at the door calls `enterTextWorld()`,
   which hides every `.screen` element, sets `state.screen = 'textworld'`, and
   hands the shared `#invaders-canvas` to `TextWorldHub.start({ onExit, onComplete })`
   — a parallel screen exactly like the act cinematics (`js/mystery.js` et al.),
   never touching the pattern engine. **No survival timer is ever started here**,
   so the wing structurally inherits zero time pressure.
-- **Leaving**: `returnToArcadeFromTextWorld()` stops the hub, sets
-  `state.doorFocused = true` (lands back on the door), and re-shows the select
-  screen.
+- **Leaving**: `returnToArcadeFromTextWorld()` stops the hub, calls
+  `focusDoor(state, 'textworld')` — which resolves the id to its index in
+  `BACK_WALL_DOORS`, so the player lands back on the door they came in by, even
+  with a sibling wing next to it — and re-shows the select screen. (It set
+  `state.doorFocused = true` before the registry landed; that boolean is gone.)
 - The global keydown switch routes every key while `state.screen === 'textworld'`
   straight to `TextWorldHub.handleKey(e)` — the hub is the only thing `main.js`
   talks to; it never reaches into an individual world.
@@ -491,9 +500,13 @@ free-text/choice fields — and (b) the recent transcript window. `handleChat`:
    the wholesome-by-construction prompt: tokenizes the reply on non-letter
    boundaries and rejects on an **exact** word match against
    `chatWordBlocklist` (deliberately whole-word, not substring, so "hello"
-   doesn't trip on containing "hell" — unlike wordgen's substring blocklist,
-   which is safe there only because its inputs are short single words, not
-   prose). A blocked reply is swapped for one fixed safe line
+   doesn't trip on containing "hell"). **Corrected 2026-09-13:** this used to
+   contrast itself with "wordgen's substring blocklist" — wordgen's additive layer
+   is no longer a substring layer either. `isBlocked` is now exact-word +
+   inflections, plus a small `hardCoreSubstrings` tier of strings that never occur
+   innocently; blanket substring matching was removed as a defect on 2026-09-12
+   (it blocked `altitude`, `speed`, `shell`). See [[wordgen]]. A blocked reply is
+   swapped for one fixed safe line
    ("Ooh — let's talk about something fun! What do you like to play?").
 
    **Fail-closed (added 2026-09-11):** `chatOutputOK` now returns `false`
@@ -585,6 +598,18 @@ checked against the day's diff and found visually unaffected, see below):
   (the reveal sequence and its south/east route are untouched by the riddle
   changes); `maker-*`/`friend-*` (out of this change's scope — `riddles.js`
   is not consumed by `maker.js` or `imfriend.js`).
+
+**2026-09-13 back-wall regeneration** (Act 7 landed beside this wing):
+`door-standalone` — **regenerated**. The back wall is now a ROW OF DOORS: the
+frame shows THE GREEN DRAGON focused (highlighted, green) with THE SPEEDWAY
+standing unlit beside it, the act label `◈ THE BACK OF THE ARCADE ◈`, and the
+two-door prompt `Doors hum softly.   ◀ ▶: CHOOSE · SPACE: ENTER · ↑: BACK`
+(the one-door wording is only used when a single door is open). Nothing else in
+this set was touched — no Act 6 world, hub or UI changed. The original
+`01-the-door.png` is now **superseded**: it predates the registry and shows a
+single door with the old prompt; it is kept as the historical frame the numbered
+set has always been, but `door-standalone.png` is the current reference.
+Act 7's own frames live in its own set — see [[speedway]].
 
 `friend-chat-standalone.png` was captured twice to verify both documented
 paths: once against a plain static server (no `/api/chat` route → 501/404 →

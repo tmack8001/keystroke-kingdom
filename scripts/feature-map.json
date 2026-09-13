@@ -1,5 +1,5 @@
 {
-  "_comment": "GENERATED ARTIFACT of the source graph (Trevor's 'code-llmwiki'): the canonical source of truth is the YAML frontmatter of docs/features/*.md (code/screenshots/capture/rules fields) \u2014 edit THOSE pages, then have the content-librarian regenerate this JSON for hook/jq consumption. Consumed by .claude/agents/content-librarian.md and the doc-currency Stop hook. Two sections: `features` (first matching pattern wins; patterns are prefixes evaluated against repo-relative paths) and `themes` (per-theme-file minimal-blast-radius map: each theme's ONE level screenshot + the research/wiki page that grounds its mechanics \u2014 consult this for js/themes/*.js changes instead of the coarse js/themes/ catch-all in features). Regenerated 2026-07-12 (FEATURE scope: EXPERIENCE win-ratio, the Name Moment, local-LLM wordgen) \u2014 added the new wordgen page (main.go, js/wordgen.js); supersedes the 2026-07-12 inaugural LIBRARY build. 2026-07-13: added the `themes` per-file screenshot+research map (Trevor). 2026-07-14: added docs/features/text-worlds.md (Act 6 \u2014 all 5 worlds, feature scope) covering js/textworld/* + js/chat.js; also corrected the js/themes/ entry's stale `.claude/rules/act5-full-circle.md` rules reference (that file was consolidated into `.claude/rules/levels/act5.md` on 2026-07-12 \u2014 level-themes.md's own frontmatter already reflected this, this JSON had drifted) to match. SCHEMA LIMITATION surfaced by this change: `main.go` is now genuinely documented by TWO pages (wordgen.md's /api/wordgen* section, text-worlds.md's /api/chat section) but this schema's `features` array supports only one doc per pattern \u2014 kept routed to wordgen.md (the earlier, larger claim); text-worlds.md still lists main.go in its own `code:` frontmatter for accuracy. A main.go change should prompt checking BOTH docs until/unless this schema grows multi-doc-per-pattern support. 2026-07-18: text-worlds.md's `code:` frontmatter gained `js/textworld/riddles.js` (the new shared riddle module for the riddle-system enhancement) — no new `features` entry was needed since the existing `js/textworld/` directory-prefix pattern already routes it to text-worlds.md; verified still accurate, not regenerated. 2026-07-19 (FEATURE scope: history-cards rebuild + save slots): added the new `js/slots.js` -> save-slots.md entry (unlimited per-family saved games, replacing the old single-save kk-progress/kk-cards model). history-cards.md's frontmatter is unchanged (still `js/history-cards.js` only) despite the 17->41+secret card rebuild and its new per-slot collection ownership in js/slots.js. The old onboarding-continue.md (js/ui/screens.js) is retitled/rewritten in place (continue screen retired, slot-picker + collection-gallery rendering documented) with its `feature`/`doc` slug UNCHANGED (`onboarding-continue` / docs/features/onboarding-continue.md) so existing wikilinks and this map entry stay valid — do not create a duplicate entry for it. 2026-07-27 (FEATURE scope: history-cards hacker-culture batch, 41+1 -> 54+1=55 total): history-cards.md frontmatter rules[] gained research/hacker-culture.md alongside the existing research/computing-history-moments.md (both now ground the card bank); code[] unchanged (still js/history-cards.js only) so no new features[] entry was needed. docs/screenshots/screens/collection-gallery.png regenerated via an ad-hoc scratchpad script (not the checked-in capture-screens.js, which predates the 2026-07-19 slots/collection rebuild and has no slots/collection capture logic at all) seeding a synthetic fully-collected slot to verify the new total (55/55, confirmed) and check for title-overflow (none from the new batch; one pre-existing multi-word-label truncation noted on the page). docs/screenshots/capture-cards.js (the designated capture script for this feature) is confirmed BROKEN independent of this change — its wire-check assumes the pre-2026-07-19 object-keyed HISTORY_CARDS shape (Object.keys on what is now an array) and its CARD_LEVELS list is stale; it exits fatally on any invocation. Flagged as tooling debt, not fixed here (out of a content-librarian's file ownership). 2026-07-27b (FEATURE scope: Level 25 Hacker Manifesto finale capstone): added the new `js/finale-quote.js` -> engine-flow.md entry (a data+pure-helpers module, mirroring history-cards.js's shape, that supplies the tiered/EXPERIENCE-escalating manifesto excerpt spliced into Level 25 as a third guaranteed win-gate, finalePending, alongside cardPending/namePending — all logic lives in js/main.js, which already routed to engine-flow.md and needed no new features[] entry of its own). engine-flow.md frontmatter gained js/finale-quote.js in code[] and research/wiki/culture/hacker-manifesto.md in rules[]; a new \"Level 25 finale\" section documents the tier mapping, the splice-order invariant, and the finalePending gate. Chose a SECTION on the existing engine-flow.md over a dedicated page: the feature is small (one data module + ~20 lines of engine wiring), has no distinct screen state of its own (it renders through the existing Level 25 word-processor prompt, already covered by level-themes.md/25-word-processor.png), and its closest precedent (the Name Moment) lives the same way — fully inside engine-flow.md with no separate page. Screenshot: no new capture needed — docs/screenshots/levels/act5-full-circle/25-word-processor.png (existing, level-themes.md-owned) already covers the Level 25 screen chrome; the finale TEXT's specific render (prompt fits at both winRatio 1 and 3.5, no overflow) was already validated this session by the game-developer agent via scratchpad screenshots (finale-r1.png, finale-r3.5-widest.png) and is cited in engine-flow.md's prose rather than duplicated into the docs/screenshots tree, since those images are scratch validation artifacts, not the page's reference set. 2026-07-28 (FEATURE scope, dispatched explicitly by manifest — the L25 finale redesign game-developer edits landed outside the impacted-files manifest this wave): the 2026-07-27b up-front manifesto splice was REDESIGNED into an earned POST-TARGET coda (Trevor's 'MY STORY') — L25 now plays its normal pool to the traditional win target first, then extends past it into a rotating, tier-scaled, all-26-letter 'walk the keyboard' story with a typo->Backspace->correct beat, capped by the (unchanged) finale-quote.js manifesto excerpt. Two new data/logic modules added to `features[]`, both routed to engine-flow.md (mirroring the finale-quote.js entry's shape, no screenshot set of their own): `js/keyboard-story.js` (the coda assembler: static story bank, typo beats, tier scaling, rotation, untrusted-generated-story validation) and `js/keyboard-story-gen.js` (the optional local-LLM prefetch client, mirroring js/wordgen.js). The js/finale-quote.js entry's `note` was updated in place (still routes to engine-flow.md, no new entry needed — its role narrowed from 'the whole finale' to 'the coda's manifesto-capstone data source only'). engine-flow.md frontmatter code[] gained js/keyboard-story.js + js/keyboard-story-gen.js; its 'Level 25 finale' section was REWRITTEN (not appended) to describe only the current coda flow, cross-checked against docs/testing/STRATEGY.md's already-updated INV-62..66 (owned by test-engineer, read-only here) for terminology (`startCoda`, `codaActive`/`codaTyped`/`codaLines`, `normalTargetMet`) so the two docs agree. level-themes.md's Word Processor section was similarly rewritten for `beginFinale(subLens)`'s new dynamic-subLens contract. SCREENSHOT DEVIATION (SUPERSEDED 2026-09-11 — see that entry below; both the deviation and its tooling debt are RESOLVED, this sentence is kept only as history): docs/screenshots/levels/act5-full-circle/25-word-processor.png was regenerated to show the CODA IN PROGRESS (accumulated story doc + resolved typo beat + manifesto capstone beginning in the prompt), captured AT THE TIME by an ad-hoc content-librarian Playwright script driving real gameplay into the coda on the static-fallback story bank, because `capture-all.js 25` then captured only the level's pre-game chrome and had no gameplay-driving capability. docs/screenshots/capture-cards.js remains confirmed BROKEN (unrelated, carried over from 2026-07-27, still unfixed tooling debt). 2026-09-11 (FEATURE scope, dispatched by manifest — the published-GitHub-Pages wave: adaptive pacing, the Level 24 name gate, nine easter eggs, the wordgen blocklist security fix, relative /api paths): NO features[] entry changed — every changed game file already routed to a page (index.html, js/audio.js, js/chat.js, js/keyboard-story-gen.js, js/main.js, js/mystery.js, js/themes/*, js/ui/cabinet-art.js, js/wordgen.js, main.go) and no page's code[] field moved, so this regeneration is a PROSE correction of this _comment plus the js/finale-quote.js note. RESOLVED from the 2026-07-28 entry above: `node docs/screenshots/capture-all.js 25` now plays Level 25 for real into the 'MY STORY' coda (pinning the per-slot storyRotation + clearing kk-stories for determinism, predicting the coda from the shipping js/keyboard-story.js and verifying the engine served it, screenshotting at the first manifesto line, then typing through to LEVEL COMPLETE) — so the L25 reference frame is now regenerated by its listed `capture` command like every other level, and a LIBRARY-scope run can no longer revert it. level-themes.md's 'deliberate one-off exception' note is retired accordingly. New capture FILTER support added this pass (the standing allowance; nothing else in those scripts was touched): capture-all.js accepts `--acts-only` / `--levels-only` alongside its token filter, so a js/ui/cabinet-art.js change can refresh docs/screenshots/acts/<act>.png WITHOUT re-shooting that act's five gameplay frames; capture-eggs.js's EGG_PHRASES list was synced with js/main.js's EGGS (its wire-check is FATAL on drift by design, which had made the whole easter-eggs set un-regenerable the moment `sudo`/`allyourbase` landed) so only the two new phrases needed capturing. CROSS-PAGE NOTE, unchanged but now larger: main.go is routed here to wordgen.md yet hosts FOUR surfaces — /api/wordgen* (wordgen.md), /api/chat (text-worlds.md), /api/keyboard-story (engine-flow.md) and the new themed 404 (easter-eggs.md); a main.go change should prompt checking all four until this schema grows multi-doc-per-pattern support. Likewise the 2026-09-11 easter-egg batch spread the hidden layer across six files owned by five OTHER pages, so easter-eggs.md's code[] is still js/themes/terminal.js ONLY (deliberate — adding js/main.js or js/ui/cabinet-art.js there would collide with engine-flow.md / select-screen.md's ownership); that page now opens with a surface-to-owning-page table instead. docs/screenshots/capture-cards.js STILL confirmed BROKEN (carried over from 2026-07-27, unrelated to this wave, still unfixed tooling debt).",
+  "_comment": "GENERATED ARTIFACT of the source graph (Trevor's 'code-llmwiki'): the canonical source of truth is the YAML frontmatter of docs/features/*.md (code/screenshots/capture/rules fields) — edit THOSE pages, then have the content-librarian regenerate this JSON for hook/jq consumption. Consumed by .claude/agents/content-librarian.md and the doc-currency Stop hook. Two sections: `features` (first matching pattern wins; patterns are prefixes evaluated against repo-relative paths) and `themes` (per-theme-file minimal-blast-radius map: each theme's ONE level screenshot + the research/wiki page that grounds its mechanics — consult this for js/themes/*.js changes instead of the coarse js/themes/ catch-all in features). Regenerated 2026-07-12 (FEATURE scope: EXPERIENCE win-ratio, the Name Moment, local-LLM wordgen) — added the new wordgen page (main.go, js/wordgen.js); supersedes the 2026-07-12 inaugural LIBRARY build. 2026-07-13: added the `themes` per-file screenshot+research map (Trevor). 2026-07-14: added docs/features/text-worlds.md (Act 6 — all 5 worlds, feature scope) covering js/textworld/* + js/chat.js; also corrected the js/themes/ entry's stale `.claude/rules/act5-full-circle.md` rules reference (that file was consolidated into `.claude/rules/levels/act5.md` on 2026-07-12 — level-themes.md's own frontmatter already reflected this, this JSON had drifted) to match. SCHEMA LIMITATION surfaced by this change: `main.go` is now genuinely documented by TWO pages (wordgen.md's /api/wordgen* section, text-worlds.md's /api/chat section) but this schema's `features` array supports only one doc per pattern — kept routed to wordgen.md (the earlier, larger claim); text-worlds.md still lists main.go in its own `code:` frontmatter for accuracy. A main.go change should prompt checking BOTH docs until/unless this schema grows multi-doc-per-pattern support. 2026-07-18: text-worlds.md's `code:` frontmatter gained `js/textworld/riddles.js` (the new shared riddle module for the riddle-system enhancement) — no new `features` entry was needed since the existing `js/textworld/` directory-prefix pattern already routes it to text-worlds.md; verified still accurate, not regenerated. 2026-07-19 (FEATURE scope: history-cards rebuild + save slots): added the new `js/slots.js` -> save-slots.md entry (unlimited per-family saved games, replacing the old single-save kk-progress/kk-cards model). history-cards.md's frontmatter is unchanged (still `js/history-cards.js` only) despite the 17->41+secret card rebuild and its new per-slot collection ownership in js/slots.js. The old onboarding-continue.md (js/ui/screens.js) is retitled/rewritten in place (continue screen retired, slot-picker + collection-gallery rendering documented) with its `feature`/`doc` slug UNCHANGED (`onboarding-continue` / docs/features/onboarding-continue.md) so existing wikilinks and this map entry stay valid — do not create a duplicate entry for it. 2026-07-27 (FEATURE scope: history-cards hacker-culture batch, 41+1 -> 54+1=55 total): history-cards.md frontmatter rules[] gained research/hacker-culture.md alongside the existing research/computing-history-moments.md (both now ground the card bank); code[] unchanged (still js/history-cards.js only) so no new features[] entry was needed. docs/screenshots/screens/collection-gallery.png regenerated via an ad-hoc scratchpad script (not the checked-in capture-screens.js, which predates the 2026-07-19 slots/collection rebuild and has no slots/collection capture logic at all) seeding a synthetic fully-collected slot to verify the new total (55/55, confirmed) and check for title-overflow (none from the new batch; one pre-existing multi-word-label truncation noted on the page). docs/screenshots/capture-cards.js (the designated capture script for this feature) is confirmed BROKEN independent of this change — its wire-check assumes the pre-2026-07-19 object-keyed HISTORY_CARDS shape (Object.keys on what is now an array) and its CARD_LEVELS list is stale; it exits fatally on any invocation. Flagged as tooling debt, not fixed here (out of a content-librarian's file ownership). 2026-07-27b (FEATURE scope: Level 25 Hacker Manifesto finale capstone): added the new `js/finale-quote.js` -> engine-flow.md entry (a data+pure-helpers module, mirroring history-cards.js's shape, that supplies the tiered/EXPERIENCE-escalating manifesto excerpt spliced into Level 25 as a third guaranteed win-gate, finalePending, alongside cardPending/namePending — all logic lives in js/main.js, which already routed to engine-flow.md and needed no new features[] entry of its own). engine-flow.md frontmatter gained js/finale-quote.js in code[] and research/wiki/culture/hacker-manifesto.md in rules[]; a new \"Level 25 finale\" section documents the tier mapping, the splice-order invariant, and the finalePending gate. Chose a SECTION on the existing engine-flow.md over a dedicated page: the feature is small (one data module + ~20 lines of engine wiring), has no distinct screen state of its own (it renders through the existing Level 25 word-processor prompt, already covered by level-themes.md/25-word-processor.png), and its closest precedent (the Name Moment) lives the same way — fully inside engine-flow.md with no separate page. Screenshot: no new capture needed — docs/screenshots/levels/act5-full-circle/25-word-processor.png (existing, level-themes.md-owned) already covers the Level 25 screen chrome; the finale TEXT's specific render (prompt fits at both winRatio 1 and 3.5, no overflow) was already validated this session by the game-developer agent via scratchpad screenshots (finale-r1.png, finale-r3.5-widest.png) and is cited in engine-flow.md's prose rather than duplicated into the docs/screenshots tree, since those images are scratch validation artifacts, not the page's reference set. 2026-07-28 (FEATURE scope, dispatched explicitly by manifest — the L25 finale redesign game-developer edits landed outside the impacted-files manifest this wave): the 2026-07-27b up-front manifesto splice was REDESIGNED into an earned POST-TARGET coda (Trevor's 'MY STORY') — L25 now plays its normal pool to the traditional win target first, then extends past it into a rotating, tier-scaled, all-26-letter 'walk the keyboard' story with a typo->Backspace->correct beat, capped by the (unchanged) finale-quote.js manifesto excerpt. Two new data/logic modules added to `features[]`, both routed to engine-flow.md (mirroring the finale-quote.js entry's shape, no screenshot set of their own): `js/keyboard-story.js` (the coda assembler: static story bank, typo beats, tier scaling, rotation, untrusted-generated-story validation) and `js/keyboard-story-gen.js` (the optional local-LLM prefetch client, mirroring js/wordgen.js). The js/finale-quote.js entry's `note` was updated in place (still routes to engine-flow.md, no new entry needed — its role narrowed from 'the whole finale' to 'the coda's manifesto-capstone data source only'). engine-flow.md frontmatter code[] gained js/keyboard-story.js + js/keyboard-story-gen.js; its 'Level 25 finale' section was REWRITTEN (not appended) to describe only the current coda flow, cross-checked against docs/testing/STRATEGY.md's already-updated INV-62..66 (owned by test-engineer, read-only here) for terminology (`startCoda`, `codaActive`/`codaTyped`/`codaLines`, `normalTargetMet`) so the two docs agree. level-themes.md's Word Processor section was similarly rewritten for `beginFinale(subLens)`'s new dynamic-subLens contract. SCREENSHOT DEVIATION (SUPERSEDED 2026-09-11 — see that entry below; both the deviation and its tooling debt are RESOLVED, this sentence is kept only as history): docs/screenshots/levels/act5-full-circle/25-word-processor.png was regenerated to show the CODA IN PROGRESS (accumulated story doc + resolved typo beat + manifesto capstone beginning in the prompt), captured AT THE TIME by an ad-hoc content-librarian Playwright script driving real gameplay into the coda on the static-fallback story bank, because `capture-all.js 25` then captured only the level's pre-game chrome and had no gameplay-driving capability. docs/screenshots/capture-cards.js remains confirmed BROKEN (unrelated, carried over from 2026-07-27, still unfixed tooling debt). 2026-09-11 (FEATURE scope, dispatched by manifest — the published-GitHub-Pages wave: adaptive pacing, the Level 24 name gate, nine easter eggs, the wordgen blocklist security fix, relative /api paths): NO features[] entry changed — every changed game file already routed to a page (index.html, js/audio.js, js/chat.js, js/keyboard-story-gen.js, js/main.js, js/mystery.js, js/themes/*, js/ui/cabinet-art.js, js/wordgen.js, main.go) and no page's code[] field moved, so this regeneration is a PROSE correction of this _comment plus the js/finale-quote.js note. RESOLVED from the 2026-07-28 entry above: `node docs/screenshots/capture-all.js 25` now plays Level 25 for real into the 'MY STORY' coda (pinning the per-slot storyRotation + clearing kk-stories for determinism, predicting the coda from the shipping js/keyboard-story.js and verifying the engine served it, screenshotting at the first manifesto line, then typing through to LEVEL COMPLETE) — so the L25 reference frame is now regenerated by its listed `capture` command like every other level, and a LIBRARY-scope run can no longer revert it. level-themes.md's 'deliberate one-off exception' note is retired accordingly. New capture FILTER support added this pass (the standing allowance; nothing else in those scripts was touched): capture-all.js accepts `--acts-only` / `--levels-only` alongside its token filter, so a js/ui/cabinet-art.js change can refresh docs/screenshots/acts/<act>.png WITHOUT re-shooting that act's five gameplay frames; capture-eggs.js's EGG_PHRASES list was synced with js/main.js's EGGS (its wire-check is FATAL on drift by design, which had made the whole easter-eggs set un-regenerable the moment `sudo`/`allyourbase` landed) so only the two new phrases needed capturing. CROSS-PAGE NOTE, unchanged but now larger: main.go is routed here to wordgen.md yet hosts FOUR surfaces — /api/wordgen* (wordgen.md), /api/chat (text-worlds.md), /api/keyboard-story (engine-flow.md) and the new themed 404 (easter-eggs.md); a main.go change should prompt checking all four until this schema grows multi-doc-per-pattern support. Likewise the 2026-09-11 easter-egg batch spread the hidden layer across six files owned by five OTHER pages, so easter-eggs.md's code[] is still js/themes/terminal.js ONLY (deliberate — adding js/main.js or js/ui/cabinet-art.js there would collide with engine-flow.md / select-screen.md's ownership); that page now opens with a surface-to-owning-page table instead. docs/screenshots/capture-cards.js STILL confirmed BROKEN (carried over from 2026-07-27, unrelated to this wave, still unfixed tooling debt). 2026-09-13 (FEATURE scope, dispatched by manifest — the Act 7 \"THE SPEEDWAY\" wave plus the static-host + kid-safety corrections): the biggest structural change since Act 6. (1) NEW PAGE docs/features/speedway.md (Act 7, the racing wing) with its OWN screenshot set docs/screenshots/speedway/ and a NEW capture script docs/screenshots/capture-speedway.js — js/speedway/** previously matched NO page's code[] at all (a genuine hole in the graph: 2,912 lines of shipping game code with no doc). Eight per-file patterns are emitted (hub/track/ghost/words/render.kit/tracks.index/monaco-gp/f-zero) FOLLOWED BY a `js/speedway/` directory-prefix catch-all, so a future track or renderer file routes to the page automatically while the named files keep first-match-wins precedence. (The same trailing-slash prefix convention was restored to text-worlds.md's code[] as `js/textworld/`, which the old hand-maintained map carried but the page's frontmatter did not — regenerating from frontmatter would otherwise have silently dropped it. Prefix patterns now live in the pages' own frontmatter, so this artifact is 100% derived.) Chose a DEDICATED PAGE over folding Act 7 into text-worlds.md: it is a separate wing behind its own door, with its own hub, its own persistence namespace (kk-slots[i].speedway), its own re-implementation of the sacred wrong-keypress contract, its own render architecture and 16 of its own invariants (INV-76..91) — the text-worlds.md precedent is that a wing gets a page. (2) NEW `tracks` section, the exact analogue of `themes`: a per-track-file minimal-blast-radius map (each track's capture subset + the research/wiki page that grounds its era and mechanics), so a js/speedway/tracks/*.js change refreshes ONE track's frames instead of the whole set. (3) js/word-blocklist.json + js/word-blocklist.js added to wordgen.md's code[] — the kid-safety FLOOR is documented in full by that page's \"The kid-safety floor\" section but neither file matched any pattern, so two safety-critical files were invisible to the hook. Same cross-page caveat as main.go: the floor is ALSO consumed by js/chat.js (text-worlds.md), js/keyboard-story.js (engine-flow.md) and js/speedway/words.js (speedway.md); an edit to the JSON should prompt checking all four. (4) STALE CLAIMS CORRECTED, the failure class this session kept hitting: `state.doorFocused` (a boolean) became `state.doorIndex` + the BACK_WALL_DOORS registry when the second door landed — text-worlds.md asserted the boolean in two places and select-screen.md documented no back wall at all; the registry now lives on select-screen.md (cabinet-art.js owns it) with the routing half on engine-flow.md. wordgen.md's blocklist section described a substring layer that was removed 2026-09-12 and a 31-word floor that is now 53; text-worlds.md contrasted its exact-word chat gate against \"wordgen's substring blocklist\", also stale. save-slots.md's schema block was missing BOTH storyRotation (2026-07-28) and speedway (2026-09-13). (5) SCREENSHOTS regenerated narrowly: the new speedway/ set (9 frames, 0 console errors) and textworlds/door-standalone.png ONLY (the back wall now renders a ROW of doors) — acts/*.png were deliberately NOT regenerated because the 2026-09-13 cabinet-art.js diff touches only the back-wall registry and door art, leaving renderSelectScreen's act view, drawCabinet and CABINET_DATA byte-identical (checked against the diff, not assumed). docs/screenshots/capture-cards.js STILL confirmed BROKEN (carried over from 2026-07-27, unrelated, still unfixed tooling debt).",
   "features": [
     {
       "pattern": "js/audio.js",
@@ -79,7 +79,8 @@
       "rules": [
         ".claude/rules/tech.md",
         ".claude/rules/security.md",
-        ".claude/rules/easter-eggs.md"
+        ".claude/rules/easter-eggs.md",
+        "research/wiki/culture/hacker-manifesto.md"
       ],
       "screenshots": "docs/screenshots/screens/",
       "capture": "node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js"
@@ -89,11 +90,13 @@
       "feature": "engine-flow",
       "doc": "docs/features/engine-flow.md",
       "rules": [
+        ".claude/rules/tech.md",
         ".claude/rules/security.md",
+        ".claude/rules/easter-eggs.md",
         "research/wiki/culture/hacker-manifesto.md"
       ],
-      "screenshots": null,
-      "capture": null,
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js",
       "note": "REDESIGNED 2026-07-28: no longer an up-front splice — now the manifesto-capstone DATA source consumed by js/keyboard-story.js's assembleCoda() as the final line(s) of the Level 25 'MY STORY' coda. No screenshot set of its own; the coda's reference frame lives on level-themes.md/js/themes/wordprocessor.js's entry (docs/screenshots/levels/act5-full-circle/25-word-processor.png — regenerated 2026-09-11 VIA `node docs/screenshots/capture-all.js 25`, which now carries a real coda-driving capture path; the 2026-07-28 ad-hoc-script exception is retired). See engine-flow.md's \"Level 25 finale — the 'MY STORY' coda\" section."
     },
     {
@@ -101,12 +104,13 @@
       "feature": "engine-flow",
       "doc": "docs/features/engine-flow.md",
       "rules": [
+        ".claude/rules/tech.md",
         ".claude/rules/security.md",
-        ".claude/rules/product.md",
+        ".claude/rules/easter-eggs.md",
         "research/wiki/culture/hacker-manifesto.md"
       ],
-      "screenshots": null,
-      "capture": null,
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js",
       "note": "NEW 2026-07-28. The Level 25 'MY STORY' coda assembler: static all-26-letter story bank, typo->Backspace->correct beats, EXPERIENCE-tier length scaling, per-slot rotation, and validation of untrusted LLM-generated stories. No screenshot set of its own — see the js/finale-quote.js entry above for where the coda's reference frame lives. See engine-flow.md's \"Level 25 finale — the 'MY STORY' coda\" section."
     },
     {
@@ -114,10 +118,13 @@
       "feature": "engine-flow",
       "doc": "docs/features/engine-flow.md",
       "rules": [
-        ".claude/rules/security.md"
+        ".claude/rules/tech.md",
+        ".claude/rules/security.md",
+        ".claude/rules/easter-eggs.md",
+        "research/wiki/culture/hacker-manifesto.md"
       ],
-      "screenshots": null,
-      "capture": null,
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js",
       "note": "NEW 2026-07-28. Optional local-LLM client for the Level 25 coda's story variety (fire-and-forget fetch to the game's own /api/keyboard-story, main.go) — mirrors js/wordgen.js's shape. No screenshot set; a static host (no Go server) plays the coda entirely on js/keyboard-story.js's static bank. See engine-flow.md's \"Level 25 finale — the 'MY STORY' coda\" section."
     },
     {
@@ -125,10 +132,13 @@
       "feature": "engine-flow",
       "doc": "docs/features/engine-flow.md",
       "rules": [
-        ".claude/rules/security.md"
+        ".claude/rules/tech.md",
+        ".claude/rules/security.md",
+        ".claude/rules/easter-eggs.md",
+        "research/wiki/culture/hacker-manifesto.md"
       ],
-      "screenshots": null,
-      "capture": null,
+      "screenshots": "docs/screenshots/screens/",
+      "capture": "node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js",
       "note": "NEW 2026-07-28 (generation yield/variety hardening). The `kk-stories` localStorage cache: persists ONLY doubly-validated L25 coda stories (game content, NOT PII — security.md rule 8) so generation variety accumulates across sessions; defensive reads (rule 4: try/catch, shape-validated, garbage→empty, never throws), capped to 20; deduped vs the static bank + earlier entries; recent bases feed back as the `/api/keyboard-story?avoid=` anti-dup hint (story text only, rule 6). Static bank remains the winnability floor regardless (INV-67). See engine-flow.md's \"Level 25 finale — the 'MY STORY' coda\" section + security.md rules 7/8."
     },
     {
@@ -138,7 +148,8 @@
       "rules": [
         ".claude/rules/tech.md",
         ".claude/rules/security.md",
-        ".claude/rules/easter-eggs.md"
+        ".claude/rules/easter-eggs.md",
+        "research/wiki/culture/hacker-manifesto.md"
       ],
       "screenshots": "docs/screenshots/screens/",
       "capture": "node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js"
@@ -162,6 +173,28 @@
       ],
       "screenshots": null,
       "capture": null
+    },
+    {
+      "pattern": "js/word-blocklist.json",
+      "feature": "wordgen",
+      "doc": "docs/features/wordgen.md",
+      "rules": [
+        ".claude/rules/security.md"
+      ],
+      "screenshots": null,
+      "capture": null,
+      "note": "The SINGLE SOURCE OF TRUTH for the kid-safety floor, read by BOTH languages (main.go embeds + unmarshals it; js/word-blocklist.js imports it as BASE_WORDS). Routed to wordgen.md, which documents the floor and the two-tier matcher in full — but it is consumed by FOUR surfaces: /api/wordgen (wordgen.md), /api/chat + chatOutputOK (text-worlds.md), the L25 coda (engine-flow.md) and Act 7's word banks (speedway.md). Check all four on an edit. Editing this JSON changes both languages at once by design (journal L41)."
+    },
+    {
+      "pattern": "js/word-blocklist.js",
+      "feature": "wordgen",
+      "doc": "docs/features/wordgen.md",
+      "rules": [
+        ".claude/rules/security.md"
+      ],
+      "screenshots": null,
+      "capture": null,
+      "note": "The client half of the shared floor: BASE_WORDS (immovable) + the ADDITIVE parent layer (settings.blockedWords via setUserBlockedWords — a parent may only ever ADD). Same four-surface caveat as the JSON above."
     },
     {
       "pattern": "js/freeplay.js",
@@ -288,6 +321,237 @@
       "capture": "node docs/screenshots/capture-all.js"
     },
     {
+      "pattern": "js/speedway/hub.js",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js"
+    },
+    {
+      "pattern": "js/speedway/track.js",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js",
+      "note": "The shared race engine — and the ONE file in the act that re-implements the sacred wrong-keypress contract (Act 7 does not route through js/main.js's handleGameKey). Read the banner at the top of the file before changing a line of its input handling; INV-77's tests cite INV-1..INV-5 directly. Also owns the lap's character-length win condition (INV-76), the fixed advance floor (INV-78), CHARGE (INV-79), the field-as-atmosphere rule (INV-82) and the pit board's no-minus-sign guarantee (INV-83)."
+    },
+    {
+      "pattern": "js/speedway/ghost.js",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js",
+      "note": "Consumer-only: the ENTIRE ghost validation chain lives in js/slots.js (one definition of \"valid\", one file — journal L41). SPLIT_COUNT (64) and the record's `v` are pinned by comment on BOTH sides and asserted by slots.test.mjs — changing one without the other silently stops every ghost from saving. A js/slots.js change should prompt checking save-slots.md AND speedway.md."
+    },
+    {
+      "pattern": "js/speedway/words.js",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js",
+      "note": "Act 7's static word banks. Consumes the SHARED kid-safety floor (js/word-blocklist.json via js/word-blocklist.js — routed to wordgen.md) plus its own NEVER_WORDS tone list; a floor edit should prompt checking this page too."
+    },
+    {
+      "pattern": "js/speedway/render/kit.js",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js",
+      "note": "The era-scoped render kit: kitFor(tier) hands a renderer only its era's primitives and turns the era-forbidden members of the shared 2D context into throwing tripwires for the duration of a frame (INV-85). It is the blast-radius centre of the wing's GRAPHICS — a change here can affect EVERY track's frames, so refresh the whole speedway set, not one track (contrast the per-file `tracks` map below)."
+    },
+    {
+      "pattern": "js/speedway/tracks/index.js",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js",
+      "note": "The track registry. A row added/removed here changes the HUB's list, so refresh at least `capture-speedway.js hub` in addition to that track's own frames. Per-track blast radius: the `tracks` section below."
+    },
+    {
+      "pattern": "js/speedway/tracks/monaco-gp.js",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js"
+    },
+    {
+      "pattern": "js/speedway/tracks/f-zero.js",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js"
+    },
+    {
+      "pattern": "js/speedway/",
+      "feature": "speedway",
+      "doc": "docs/features/speedway.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        ".claude/rules/theme-authoring.md",
+        "docs/specs/act7-speed-racing.md"
+      ],
+      "screenshots": "docs/screenshots/speedway/",
+      "capture": "node docs/screenshots/capture-speedway.js",
+      "note": "Directory-prefix CATCH-ALL, evaluated after the named files above (first match wins). It exists so a NEW track or renderer file routes to speedway.md automatically instead of falling through to no page — the hole that js/speedway/** itself sat in until 2026-09-13."
+    },
+    {
+      "pattern": "js/textworld/hub.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/engine.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/greendragon.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/tileworld.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/tile-worlds.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/riddles.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/maker.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/imfriend.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
+      "pattern": "js/textworld/personas.js",
+      "feature": "text-worlds",
+      "doc": "docs/features/text-worlds.md",
+      "rules": [
+        ".claude/rules/product.md",
+        ".claude/rules/security.md",
+        "docs/handoffs/im-friend-build.md"
+      ],
+      "screenshots": "docs/screenshots/textworlds/",
+      "capture": "node docs/screenshots/capture-textworlds.js"
+    },
+    {
       "pattern": "js/chat.js",
       "feature": "text-worlds",
       "doc": "docs/features/text-worlds.md",
@@ -309,35 +573,199 @@
         "docs/handoffs/im-friend-build.md"
       ],
       "screenshots": "docs/screenshots/textworlds/",
-      "capture": "node docs/screenshots/capture-textworlds.js"
+      "capture": "node docs/screenshots/capture-textworlds.js",
+      "note": "Directory-prefix CATCH-ALL for Act 6, same role as js/speedway/ above: a new world module routes to text-worlds.md without a frontmatter edit. Carried by the old hand-maintained map; restored to the page's own code[] frontmatter 2026-09-13 so it survives regeneration."
     }
   ],
   "themes": {
     "_comment": "Per-theme minimal-blast-radius map (Trevor, 2026-07-13). Each js/themes/*.js file resolves to its ONE level screenshot (regenerate with `capture`, not the all-levels catch-all above) and the research/wiki page that GROUNDS its signature mechanic (theme-authoring.md's wiki-fidelity rule: the scene must show the original game's real play, judged against this page, never model memory). When a theme file changes, refresh its `screenshot` and re-check the theme against its `research` page. Every theme also carries rules .claude/rules/theme-authoring.md + its act file (see levels.md). `research: null` = not a game with a wiki page (terminal/high-score/word-processor) OR a known research gap (see notes). Source of truth: docs/features/level-themes.md frontmatter; keep both in sync. Keyed by theme file; the `js/themes/` entry in `features` remains the coarse fallback.",
-    "js/themes/breakout.js":       { "level": 1,  "screenshot": "docs/screenshots/levels/act1-arcade/01-breakout.png",              "capture": "node docs/screenshots/capture-all.js 1",  "research": "research/wiki/games/breakout.md" },
-    "js/themes/invaders.js":       { "level": 2,  "screenshot": "docs/screenshots/levels/act1-arcade/02-space-invaders.png",        "capture": "node docs/screenshots/capture-all.js 2",  "research": "research/wiki/games/space-invaders.md" },
-    "js/themes/pacman.js":         { "level": 3,  "screenshot": "docs/screenshots/levels/act1-arcade/03-pac-man.png",               "capture": "node docs/screenshots/capture-all.js 3",  "research": "research/wiki/games/pac-man.md" },
-    "js/themes/fighter.js":        { "level": 4,  "screenshot": "docs/screenshots/levels/act1-arcade/04-galaga.png",                "capture": "node docs/screenshots/capture-all.js 4",  "research": "research/wiki/games/galaga.md" },
-    "js/themes/joust.js":          { "level": 5,  "screenshot": "docs/screenshots/levels/act1-arcade/05-joust.png",                 "capture": "node docs/screenshots/capture-all.js 5",  "research": "research/wiki/games/joust.md" },
-    "js/themes/donkeykong.js":     { "level": 6,  "screenshot": "docs/screenshots/levels/act2-computer-wing/06-donkey-kong.png",    "capture": "node docs/screenshots/capture-all.js 6",  "research": "research/wiki/games/donkey-kong.md" },
-    "js/themes/dragonlair.js":     { "level": 7,  "screenshot": "docs/screenshots/levels/act2-computer-wing/07-dragons-lair.png",   "capture": "node docs/screenshots/capture-all.js 7",  "research": "research/wiki/games/dragons-lair.md" },
-    "js/themes/tetris.js":         { "level": 8,  "screenshot": "docs/screenshots/levels/act2-computer-wing/08-tetris.png",         "capture": "node docs/screenshots/capture-all.js 8",  "research": "research/wiki/games/tetris.md" },
-    "js/themes/mario.js":          { "level": 9,  "screenshot": "docs/screenshots/levels/act2-computer-wing/09-super-mario-bros.png","capture": "node docs/screenshots/capture-all.js 9",  "research": "research/wiki/games/super-mario-bros.md" },
-    "js/themes/zelda.js":          { "level": 10, "screenshot": "docs/screenshots/levels/act2-computer-wing/10-legend-of-zelda.png", "capture": "node docs/screenshots/capture-all.js 10", "research": "research/wiki/games/legend-of-zelda.md" },
-    "js/themes/sonic.js":          { "level": 11, "screenshot": "docs/screenshots/levels/act3-basement/11-sonic.png",               "capture": "node docs/screenshots/capture-all.js 11", "research": "research/wiki/games/sonic-the-hedgehog.md" },
-    "js/themes/streetfighter.js":  { "level": 12, "screenshot": "docs/screenshots/levels/act3-basement/12-street-fighter-ii.png",   "capture": "node docs/screenshots/capture-all.js 12", "research": "research/wiki/games/street-fighter-ii.md" },
-    "js/themes/myst.js":           { "level": 13, "screenshot": "docs/screenshots/levels/act3-basement/13-myst.png",                "capture": "node docs/screenshots/capture-all.js 13", "research": "research/wiki/games/myst.md" },
-    "js/themes/dkc.js":            { "level": 14, "screenshot": "docs/screenshots/levels/act3-basement/14-donkey-kong-country.png",  "capture": "node docs/screenshots/capture-all.js 14", "research": "research/wiki/games/donkey-kong-country.md" },
-    "js/themes/pokemon.js":        { "level": 15, "screenshot": "docs/screenshots/levels/act3-basement/15-pokemon.png",             "capture": "node docs/screenshots/capture-all.js 15", "research": "research/wiki/games/pokemon-red-blue.md" },
-    "js/themes/simcity.js":        { "level": 16, "screenshot": "docs/screenshots/levels/act4-command-center/16-simcity-2000.png",   "capture": "node docs/screenshots/capture-all.js 16", "research": "research/wiki/games/simcity-2000.md" },
-    "js/themes/goldeneye.js":      { "level": 17, "screenshot": "docs/screenshots/levels/act4-command-center/17-goldeneye-007.png",  "capture": "node docs/screenshots/capture-all.js 17", "research": "research/wiki/games/goldeneye-007.md" },
-    "js/themes/ageofempires.js":   { "level": 18, "screenshot": "docs/screenshots/levels/act4-command-center/18-age-of-empires.png", "capture": "node docs/screenshots/capture-all.js 18", "research": "research/wiki/games/age-of-empires.md" },
-    "js/themes/ff7.js":            { "level": 19, "screenshot": "docs/screenshots/levels/act4-command-center/19-final-fantasy-vii.png","capture": "node docs/screenshots/capture-all.js 19", "research": "research/wiki/games/final-fantasy-vii.md" },
-    "js/themes/terminal.js":       { "level": 20, "screenshot": "docs/screenshots/levels/act4-command-center/20-terminal.png",       "capture": "node docs/screenshots/capture-all.js 20", "research": null, "note": "Command line, not a game — no wiki page. Primary feature is easter-eggs (see features[]); this entry only maps its level screenshot. BLAST-RADIUS WARNING (2026-09-11): this file also EXPORTS the Act 4 white rabbit (resetWhiteRabbit/maybeWhiteRabbit/drawWhiteRabbit), imported by simcity.js, goldeneye.js, ageofempires.js and ff7.js — so a change to the RABBIT touches levels 16-20, not just 20, while a change to the terminal scene itself (incl. the frozen Y2K clock) touches only this screenshot." },
-    "js/themes/outrun.js":         { "level": 21, "screenshot": "docs/screenshots/levels/act5-full-circle/21-out-run.png",           "capture": "node docs/screenshots/capture-all.js 21", "research": "research/wiki/games/out-run.md" },
-    "js/themes/qbert.js":          { "level": 22, "screenshot": "docs/screenshots/levels/act5-full-circle/22-qbert.png",             "capture": "node docs/screenshots/capture-all.js 22", "research": "research/wiki/games/q-bert.md" },
-    "js/themes/missilecommand.js": { "level": 23, "screenshot": "docs/screenshots/levels/act5-full-circle/23-missile-command.png",   "capture": "node docs/screenshots/capture-all.js 23", "research": null, "note": "RESEARCH GAP: no research/wiki/games/missile-command.md yet — arcade-historian follow-up (theme-authoring.md: under-documented mechanics is a research task, not a license to improvise)." },
-    "js/themes/highscore.js":      { "level": 24, "screenshot": "docs/screenshots/levels/act5-full-circle/24-high-score-entry.png",  "capture": "node docs/screenshots/capture-all.js 24", "research": null, "note": "High-score entry (player types their own name) — not a game." },
-    "js/themes/wordprocessor.js":  { "level": 25, "screenshot": "docs/screenshots/levels/act5-full-circle/25-word-processor.png",   "capture": "node docs/screenshots/capture-all.js 25", "research": null, "note": "Word processor (first sentences) — not a game." }
+    "js/themes/breakout.js": {
+      "level": 1,
+      "screenshot": "docs/screenshots/levels/act1-arcade/01-breakout.png",
+      "capture": "node docs/screenshots/capture-all.js 1",
+      "research": "research/wiki/games/breakout.md"
+    },
+    "js/themes/invaders.js": {
+      "level": 2,
+      "screenshot": "docs/screenshots/levels/act1-arcade/02-space-invaders.png",
+      "capture": "node docs/screenshots/capture-all.js 2",
+      "research": "research/wiki/games/space-invaders.md"
+    },
+    "js/themes/pacman.js": {
+      "level": 3,
+      "screenshot": "docs/screenshots/levels/act1-arcade/03-pac-man.png",
+      "capture": "node docs/screenshots/capture-all.js 3",
+      "research": "research/wiki/games/pac-man.md"
+    },
+    "js/themes/fighter.js": {
+      "level": 4,
+      "screenshot": "docs/screenshots/levels/act1-arcade/04-galaga.png",
+      "capture": "node docs/screenshots/capture-all.js 4",
+      "research": "research/wiki/games/galaga.md"
+    },
+    "js/themes/joust.js": {
+      "level": 5,
+      "screenshot": "docs/screenshots/levels/act1-arcade/05-joust.png",
+      "capture": "node docs/screenshots/capture-all.js 5",
+      "research": "research/wiki/games/joust.md"
+    },
+    "js/themes/donkeykong.js": {
+      "level": 6,
+      "screenshot": "docs/screenshots/levels/act2-computer-wing/06-donkey-kong.png",
+      "capture": "node docs/screenshots/capture-all.js 6",
+      "research": "research/wiki/games/donkey-kong.md"
+    },
+    "js/themes/dragonlair.js": {
+      "level": 7,
+      "screenshot": "docs/screenshots/levels/act2-computer-wing/07-dragons-lair.png",
+      "capture": "node docs/screenshots/capture-all.js 7",
+      "research": "research/wiki/games/dragons-lair.md"
+    },
+    "js/themes/tetris.js": {
+      "level": 8,
+      "screenshot": "docs/screenshots/levels/act2-computer-wing/08-tetris.png",
+      "capture": "node docs/screenshots/capture-all.js 8",
+      "research": "research/wiki/games/tetris.md"
+    },
+    "js/themes/mario.js": {
+      "level": 9,
+      "screenshot": "docs/screenshots/levels/act2-computer-wing/09-super-mario-bros.png",
+      "capture": "node docs/screenshots/capture-all.js 9",
+      "research": "research/wiki/games/super-mario-bros.md"
+    },
+    "js/themes/zelda.js": {
+      "level": 10,
+      "screenshot": "docs/screenshots/levels/act2-computer-wing/10-legend-of-zelda.png",
+      "capture": "node docs/screenshots/capture-all.js 10",
+      "research": "research/wiki/games/legend-of-zelda.md"
+    },
+    "js/themes/sonic.js": {
+      "level": 11,
+      "screenshot": "docs/screenshots/levels/act3-basement/11-sonic.png",
+      "capture": "node docs/screenshots/capture-all.js 11",
+      "research": "research/wiki/games/sonic-the-hedgehog.md"
+    },
+    "js/themes/streetfighter.js": {
+      "level": 12,
+      "screenshot": "docs/screenshots/levels/act3-basement/12-street-fighter-ii.png",
+      "capture": "node docs/screenshots/capture-all.js 12",
+      "research": "research/wiki/games/street-fighter-ii.md"
+    },
+    "js/themes/myst.js": {
+      "level": 13,
+      "screenshot": "docs/screenshots/levels/act3-basement/13-myst.png",
+      "capture": "node docs/screenshots/capture-all.js 13",
+      "research": "research/wiki/games/myst.md"
+    },
+    "js/themes/dkc.js": {
+      "level": 14,
+      "screenshot": "docs/screenshots/levels/act3-basement/14-donkey-kong-country.png",
+      "capture": "node docs/screenshots/capture-all.js 14",
+      "research": "research/wiki/games/donkey-kong-country.md"
+    },
+    "js/themes/pokemon.js": {
+      "level": 15,
+      "screenshot": "docs/screenshots/levels/act3-basement/15-pokemon.png",
+      "capture": "node docs/screenshots/capture-all.js 15",
+      "research": "research/wiki/games/pokemon-red-blue.md"
+    },
+    "js/themes/simcity.js": {
+      "level": 16,
+      "screenshot": "docs/screenshots/levels/act4-command-center/16-simcity-2000.png",
+      "capture": "node docs/screenshots/capture-all.js 16",
+      "research": "research/wiki/games/simcity-2000.md"
+    },
+    "js/themes/goldeneye.js": {
+      "level": 17,
+      "screenshot": "docs/screenshots/levels/act4-command-center/17-goldeneye-007.png",
+      "capture": "node docs/screenshots/capture-all.js 17",
+      "research": "research/wiki/games/goldeneye-007.md"
+    },
+    "js/themes/ageofempires.js": {
+      "level": 18,
+      "screenshot": "docs/screenshots/levels/act4-command-center/18-age-of-empires.png",
+      "capture": "node docs/screenshots/capture-all.js 18",
+      "research": "research/wiki/games/age-of-empires.md"
+    },
+    "js/themes/ff7.js": {
+      "level": 19,
+      "screenshot": "docs/screenshots/levels/act4-command-center/19-final-fantasy-vii.png",
+      "capture": "node docs/screenshots/capture-all.js 19",
+      "research": "research/wiki/games/final-fantasy-vii.md"
+    },
+    "js/themes/terminal.js": {
+      "level": 20,
+      "screenshot": "docs/screenshots/levels/act4-command-center/20-terminal.png",
+      "capture": "node docs/screenshots/capture-all.js 20",
+      "research": null,
+      "note": "Command line, not a game — no wiki page. Primary feature is easter-eggs (see features[]); this entry only maps its level screenshot. BLAST-RADIUS WARNING (2026-09-11): this file also EXPORTS the Act 4 white rabbit (resetWhiteRabbit/maybeWhiteRabbit/drawWhiteRabbit), imported by simcity.js, goldeneye.js, ageofempires.js and ff7.js — so a change to the RABBIT touches levels 16-20, not just 20, while a change to the terminal scene itself (incl. the frozen Y2K clock) touches only this screenshot."
+    },
+    "js/themes/outrun.js": {
+      "level": 21,
+      "screenshot": "docs/screenshots/levels/act5-full-circle/21-out-run.png",
+      "capture": "node docs/screenshots/capture-all.js 21",
+      "research": "research/wiki/games/out-run.md"
+    },
+    "js/themes/qbert.js": {
+      "level": 22,
+      "screenshot": "docs/screenshots/levels/act5-full-circle/22-qbert.png",
+      "capture": "node docs/screenshots/capture-all.js 22",
+      "research": "research/wiki/games/q-bert.md"
+    },
+    "js/themes/missilecommand.js": {
+      "level": 23,
+      "screenshot": "docs/screenshots/levels/act5-full-circle/23-missile-command.png",
+      "capture": "node docs/screenshots/capture-all.js 23",
+      "research": null,
+      "note": "RESEARCH GAP: no research/wiki/games/missile-command.md yet — arcade-historian follow-up (theme-authoring.md: under-documented mechanics is a research task, not a license to improvise)."
+    },
+    "js/themes/highscore.js": {
+      "level": 24,
+      "screenshot": "docs/screenshots/levels/act5-full-circle/24-high-score-entry.png",
+      "capture": "node docs/screenshots/capture-all.js 24",
+      "research": null,
+      "note": "High-score entry (player types their own name) — not a game."
+    },
+    "js/themes/wordprocessor.js": {
+      "level": 25,
+      "screenshot": "docs/screenshots/levels/act5-full-circle/25-word-processor.png",
+      "capture": "node docs/screenshots/capture-all.js 25",
+      "research": null,
+      "note": "Word processor (first sentences) — not a game."
+    }
+  },
+  "tracks": {
+    "_comment": "Per-track minimal-blast-radius map (2026-09-13), the exact analogue of `themes` above for Act 7's racing wing. Each js/speedway/tracks/*.js file resolves to the capture SUBSET that regenerates only its own frames (never the whole speedway set) and the research/wiki page that GROUNDS its era and its signature mechanic — the same wiki-fidelity rule theme-authoring.md imposes on js/themes/*: the scene must show what the original machine actually did, judged against the research graph, never model memory. Every track also carries rules docs/specs/act7-speed-racing.md + .claude/rules/product.md. NOTE the asymmetry with `themes`: a change to js/speedway/render/kit.js or js/speedway/track.js affects EVERY track's frames (shared engine + shared render vocabulary), so those regenerate the whole set — only the files below are per-track. Source of truth: docs/features/speedway.md; keep both in sync.",
+    "js/speedway/tracks/monaco-gp.js": {
+      "track": "monaco-gp",
+      "title": "MONACO GP",
+      "year": 1979,
+      "tier": "ttl",
+      "eraRank": 1,
+      "screenshots": [
+        "docs/screenshots/speedway/02-monaco-gp-start-line.png",
+        "docs/screenshots/speedway/03-monaco-gp-racing.png",
+        "docs/screenshots/speedway/04-monaco-gp-pit-board.png",
+        "docs/screenshots/speedway/05-monaco-gp-ghost-start-line.png",
+        "docs/screenshots/speedway/06-monaco-gp-racing-the-ghost.png"
+      ],
+      "capture": "node docs/screenshots/capture-speedway.js monaco-start,monaco-racing,monaco-lap",
+      "research": "research/wiki/games/monaco-gp.md",
+      "note": "The `monaco-lap` subset DRIVES A WHOLE CLEAN LAP and then a second one — it is the only capture in the repo that photographs the ghost on track, and the only source of the pit-board frame."
+    },
+    "js/speedway/tracks/f-zero.js": {
+      "track": "f-zero",
+      "title": "F-ZERO",
+      "year": 1990,
+      "tier": "mode7",
+      "eraRank": 5,
+      "screenshots": [
+        "docs/screenshots/speedway/07-f-zero-start-line.png",
+        "docs/screenshots/speedway/08-f-zero-racing.png"
+      ],
+      "capture": "node docs/screenshots/capture-speedway.js fzero-start,fzero-racing",
+      "research": "research/wiki/games/f-zero.md",
+      "note": "Mode 7 — a raster ground plane rotated and scaled, everything else a sprite. The kit denies this tier a gradient on purpose, so the dusk sky is drawn as raster bands."
+    }
   }
 }

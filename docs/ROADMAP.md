@@ -699,6 +699,24 @@ fetch sites are all relative same-origin `/api/*`; `playerName` appears in NO re
   stated; and **always additive to a Canvas-2D fallback**. `tech.md` Stack table + `CLAUDE.md` §Stack.
   **No vendored byte has landed and none should until Trevor confirms the backend choice (Q10).**
 
+- **Close-out follow-ups from the 2026-09-13 librarian pass:**
+  - **`js/main.js` never passes `onComplete` to `Speedway.start`**, so the hub's `onTrackComplete`
+    credit path is dead code in the shipping game. Not a bug — the ghost record IS the record of
+    play — but it is a wired-for/not-wired gap someone will trip over. One line, in `js/main.js`.
+  - **Cosmetic, Act 7:** the start-line card and pit board draw OUTSIDE the `RESERVED` band and
+    cover the track's right-margin furniture (on Monaco GP they hide the CHARGE rail's caption).
+    The "the engine owns exactly one band" rule holds for the RACING phase only; the other phases
+    need their own scoping.
+  - **Cosmetic, back wall:** with two doors the `▼ THE SPEEDWAY` next-line crowds the unfocused
+    door's `TYPE TO ENTER` hint. Readable now, tighter with a third wing.
+  - ~~**`docs/screenshots/capture-cards.js` is broken**~~ **IT IS NOT — CORRECTED TWICE.** Two
+    separate doc-audit passes (2026-09-11 and 2026-09-13) reported this script broken. Both were
+    wrong, and both times it was verified WORKING by running it (`capture-cards.js L13` → exit 0,
+    6/6 cards, zero console errors). **The cause of the false report is a COMMENT in the file
+    describing the bug that was fixed on 2026-07-28** — read as present tense. The comment has
+    been rewritten to say so explicitly. *Worth generalizing: a comment describing a past failure
+    is not evidence of a current one, and "I read the code" is not the same claim as "I ran it."*
+
 ### ✅ Act 7 "THE SPEEDWAY" — BUILT 2026-09-13 (Phase 0 + Phase 1, five-lane swarm)
 
 **The wing exists and is playable.** A second back-wall door → a hub (*"every lap you drive, you
@@ -850,7 +868,7 @@ enters `js/speedway/**` at all. The one high-severity finding was not in Act 7.*
   both specs should be revised.
 
 - **Select-screen door registry — an Act 7 PREREQUISITE, useful even if Act 7 slips.**
-  `js/ui/cabinet-art.js` hard-codes exactly ONE back-wall door: `state.doorFocused` is a boolean,
+  `js/ui/cabinet-art.js` hard-codes exactly ONE back-wall door: `state.doorFocused` WAS a boolean (retired 2026-09-13 → `BACK_WALL_DOORS` + `state.doorIndex`),
   `renderDoorView()` writes the literal `'THE GREEN DRAGON · a text world'`, and `navigateAct()`
   returns early because the door "is the last thing here." Generalize to a `BACK_WALL_DOORS`
   registry + `state.doorIndex` **before a second wing lands**, so Acts 8/9 are a data row rather
