@@ -1071,6 +1071,8 @@ const CABINET_DATA = {
 
   16: {
     label: 'LEVEL 16',
+    // act4.md: a PC on a desk. SimCity 2000, Maxis 1993, Mac/DOS.
+    shell: 'console', machine: 'pc',
     keys: '5 6',
     era: '1993',
     colors: { body: '#030810', screen: '#000', accent: '#4488cc', trim: '#0a1a2a' },
@@ -1107,6 +1109,8 @@ const CABINET_DATA = {
 
   17: {
     label: 'LEVEL 17',
+    // act4.md: the console in the corner. GoldenEye 007, N64 1997 — "four-player split-screen", a television game.
+    shell: 'console', machine: 'n64', display: 'crt90s',
     keys: '4 7',
     era: '1997',
     colors: { body: '#060606', screen: '#000', accent: '#c8a840', trim: '#2a2010' },
@@ -1145,6 +1149,8 @@ const CABINET_DATA = {
 
   18: {
     label: 'LEVEL 18',
+    // act4.md: a PC on a desk. Age of Empires, Ensemble 1997 — the LAN game of the era.
+    shell: 'console', machine: 'pc',
     keys: '3 8',
     era: '1997',
     colors: { body: '#080402', screen: '#000', accent: '#c8840a', trim: '#3a1800' },
@@ -1185,6 +1191,8 @@ const CABINET_DATA = {
 
   19: {
     label: 'LEVEL 19',
+    // act4.md: the console in the corner. Final Fantasy VII, PS1 1997. The machine is GREY; black is the PS2.
+    shell: 'console', machine: 'playstation', display: 'crt90s',
     keys: '2 9',
     era: '1997',
     colors: { body: '#00080a', screen: '#000', accent: '#00e8a8', trim: '#003a28' },
@@ -1702,7 +1710,20 @@ function drawConsoleStation(canvas, data, scale = 2) {
     // 1993 CD-ROM on a wood-veneer television was the first thing that looked
     // wrong once these were on screen together.
     const monitor = data.machine === 'pc';
-    if (monitor) {
+    const crt90s  = data.display === 'crt90s';
+    if (crt90s) {
+      // A late-90s television is moulded grey plastic, not wood veneer. Act 4 is
+      // a computer room, and the console in the corner of one sat on this, not on
+      // a 1970s sideboard set.
+      ctx.fillStyle = '#6e7076';  ctx.fillRect(4, 3, 48, 44);   // plastic shell
+      ctx.fillStyle = '#4e5056';  ctx.fillRect(4, 42, 48, 5);
+      ctx.fillStyle = '#15151a';  ctx.fillRect(7, 6, 42, 33);   // the bezel well
+      data.drawScreen(ctx, 9, 8, 38, 29);
+      ctx.fillStyle = '#42444a';                                 // speaker grille
+      for (let i = 0; i < 4; i++) ctx.fillRect(42, 41 + i, 7, 1);
+      ctx.fillStyle = '#3ad06a';  ctx.fillRect(8, 43, 2, 2);     // power lamp
+      ctx.fillStyle = '#55575d';  ctx.fillRect(12, 47, 32, 4);   // squat plastic base
+    } else if (monitor) {
       ctx.fillStyle = '#cec5ac';  ctx.fillRect(6, 3, 44, 42);  // beige plastic monitor
       ctx.fillStyle = '#9b9480';  ctx.fillRect(6, 42, 44, 3);
       ctx.fillStyle = '#14141b';  ctx.fillRect(9, 6, 38, 33);  // the bezel well
@@ -1724,6 +1745,7 @@ function drawConsoleStation(canvas, data, scale = 2) {
     }
   }
   drawMachine(ctx, data);
+  if (data.drawExtras) data.drawExtras(ctx, w, h);
 }
 
 // One machine each, drawn from the photographs stored in

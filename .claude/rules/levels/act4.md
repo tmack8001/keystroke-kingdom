@@ -14,6 +14,49 @@ graphic-quality bar: early 3D, PS1/N64-era polygon rendering. Cross-act tables l
 
 **Graphic quality:** Early PS1/N64 3D. The visual language is now real-time polygons, textured environments, genuine 3D space. The games here feel different in kind from everything prior, not just better.
 
+## The machines in this room — CLIENT and SERVER *(Trevor, 2026-09-13)*
+
+Act 4 was the only act that named **no object for any level**, while Acts 2 and 3 name one
+each ("the NES in the center of the room", "a Game Boy Pocket on a backlit stand"). That gap
+surfaced as a question with real teeth: **what games are played in a server room?** Nobody
+plays Final Fantasy VII in a server room. Three of the five levels sit on a computer
+(SimCity 2000, Age of Empires, the terminal); two are living-room console games (GoldenEye on
+an N64, FF7 on a PlayStation).
+
+Trevor's answer resolves it, and it is better than treating the room as a compromise:
+
+> *"The theme of the server room was 'games moved online — so client/server interactions'…
+> But the client side is still a set top, computer, or gaming console/handheld."*
+
+**You are standing in the SERVER half. Every game on the wall is the CLIENT half.** The room
+is the thing the games are talking to, not the thing they run on — which is exactly what the
+late 90s were, and it makes a mixed wall correct rather than tolerated. The act's own thesis
+is unchanged and independent of hardware: every one of these five is a **numbers** game
+(populations and budgets, mission codes, resource counts and population limits, HP/MP, binary).
+
+**So the objects, now specified:**
+
+| Level | Game | The object on the wall |
+|---|---|---|
+| 16 | SimCity 2000 | A beige PC and monitor on a desk (Mac/DOS, 1993) |
+| 17 | GoldenEye 007 | A **Nintendo 64** on a moulded-grey 90s television — the four-player split-screen machine, in the corner |
+| 18 | Age of Empires | A beige PC and monitor on a desk — the LAN game of 1997 |
+| 19 | Final Fantasy VII | A **PlayStation** on a 90s television. The console is **GREY**; black is the PS2 |
+| 20 | Terminal | The terminal itself — the room's own machine, and the only one that is not a client |
+
+**A late-90s television is moulded grey plastic, not wood veneer.** The wood-veneer set belongs
+to Acts 2–3; using it here would put a 1997 console on a 1970s sideboard.
+
+**⚠️ Accuracy guard for any future act (Trevor, unverified — cite before using):** *"handheld
+so don't think had WiFi/wireless capabilities in the 90s, more a late 2000s or 2010s."* A 90s
+handheld links by **cable**, not wirelessly. Do not draw or describe a wireless handheld in a
+90s scene without a citation.
+
+**This act is deliberately NOT the online act.** Trevor: *"We can still evolve into a server
+room and keep that design for a later arc that has all online played games turning the LAN into
+an internet one."* Act 4 is where games *started* talking to servers; the arc where everything
+is online is its own future wing (docs/ROADMAP.md §2).
+
 | Level | New Keys | Game | Developer | Year | Rationale |
 |---|---|---|---|---|---|
 | 16 | 5, 6 | SimCity 2000 | Maxis | 1993 | Index fingers up — numbers as city, populations, budgets |
