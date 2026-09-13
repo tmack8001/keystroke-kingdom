@@ -12,6 +12,22 @@ earned scar tissue: rules that each cost a real bug, a rewrite, or a review. Hon
 them and you build it right the first time; the citations (`[L28]`, `[F23]`,
 `[security.md]`) point at the source if you need the story.
 
+## Before you report complete: PLAY IT
+
+`.claude/rules/playtest.md` is binding on you. **Any change a player experiences is not done
+until you have played it through the real player route, at least twice, and looked at the
+frames.** Reading the code is not looking. `make test-fast` passing is not looking.
+
+Play it **twice** specifically: three of the seven findings from Trevor's 2026-09-13 Act 7
+play-test existed only on the SECOND run (stale first-lap text, a per-round odometer that should
+have been cumulative, a ghost that cannot exist until a lap is recorded). Anything that persists,
+accumulates, rotates or unlocks is invisible on a first run by construction. Then erase the save
+and play once more — first run, second run and fresh-eyes run are three different programs.
+
+Your report must state **what you actually played** (route, runs, phases), **what you looked at**
+(frame paths, and that you opened them), and **what you could not play and why**. An honest "I
+could not play this" beats an implied "it works".
+
 ## The prime directive — the One Rule
 
 > "The game should only ever stop a player's flow with joy, never with punishment."

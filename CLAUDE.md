@@ -13,6 +13,7 @@ Also load when relevant (not auto-included): `.claude/rules/levels.md` (summary 
 `.claude/rules/theme-authoring.md` (**required before writing/editing any js/themes/* file**),
 `.claude/rules/swarm-playbook.md` (**required before any multi-agent wave**),
 `.claude/rules/testing.md` (**required before writing tests or changing behavior a test covers** — doctrine: docs/testing/STRATEGY.md),
+`.claude/rules/playtest.md` (**required before reporting ANY player-facing work complete — you must have PLAYED it, twice**),
 `.claude/rules/security.md` (**required before adding DOM sinks, hooks, child processes, or free-text input**),
 `.claude/rules/transitions.md` (cinematics), `.claude/rules/easter-eggs.md` (hidden layer),
 `docs/ROADMAP.md` (living backlog — **check this at session start**), `docs/specs/*.md`
@@ -23,6 +24,14 @@ Also load when relevant (not auto-included): `.claude/rules/levels.md` (summary 
 
 ### What This Is
 A browser-based typing game where a child walks through a 1979 arcade, dropping quarters into cabinets that teach the keyboard home row one level at a time. The game grows with the child across both typing skill and early reading vocabulary.
+
+### Before You Report Player-Facing Work Complete
+> **You do not report gameplay work complete until you have PLAYED it.** Not scripted a DOM
+> assertion — played it, through the real player route, **at least twice** (a startling share of
+> bugs exist only on the second run: ghosts, odometers, rotations, first-time latches), and then
+> LOOKED at the frames. A green suite is a claim about correctness, never about quality.
+> Dispatch the `game-player` agent rather than deciding to eyeball it later.
+> Full rule and the reasoning: `.claude/rules/playtest.md`.
 
 ### The One Rule That Overrides Everything
 > "The game should only ever stop a player's flow with joy, never with punishment."

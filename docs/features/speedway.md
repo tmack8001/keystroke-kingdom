@@ -161,8 +161,13 @@ track's declared length.
 |---|---|---|
 | `grid` | start-line card: title, year, and either `YOUR LAST LAP IS OUT THERE WITH YOU` or `FIRST LAP — YOU SET THE PACE` | Space/Enter → race · Escape → hub |
 | `racing` | the engine's one panel (see below) over the track's scene | the word · Escape → hub |
-| `finish` | the pit board under a checkered flash, `FINISH_FANFARE_MS` = 700 ms | Space/Enter settles early; it settles itself |
+| `finish` | **the TRACK owns the whole screen** for a per-track `celebrationMs` (clamped 1200–6000, exactly like a theme's `victory()`); the engine keeps to its band with a compact checkered ribbon. Monaco GP 2800 ms, F-Zero 3200 ms. *Changed 2026-09-13: was `FINISH_FANFARE_MS` = 700 ms, which slammed the pit board over a frozen scene — covering the player's own vehicle at the moment it crossed the line.* | Space/Enter → the pit board (it does NOT auto-settle) |
 | `pit` | the pit board | Space/Enter → hub · Escape → hub |
+
+**The `finish` and `pit` footers are deliberately different strings** — the celebration
+ribbon draws `SPACE — THE PIT BOARD`, the board draws `SPACE — BACK TO THE PITS`. That is
+the supported way to tell the two phases apart from outside (a test or a capture script),
+and it is why **leaving a track now takes two Space presses, not one.**
 
 `hasWon()` is `phase === 'pit' || phase === 'finish'`. `inspect()` is the act's one
 sanctioned read-only observable-state accessor (the wing is canvas-only, so there

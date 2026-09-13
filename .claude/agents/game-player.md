@@ -169,9 +169,32 @@ budget is run-wide.
   unlocks EVERY cabinet regardless of kk-progress — verified in
   js/ui/cabinet-art.js isLevelLocked — so no localStorage seeding is needed); ArrowDown
   ×(act-1), ArrowRight ×(pos-1), Enter, Enter (name confirm), Space, Space.
+- ⚠️ **`wopr` on the TITLE screen reaches select WITHOUT confirming a name, so NO SAVE
+  SLOT EXISTS.** Anything that persists then commits to nothing — this is how Act 7's
+  ghosts, odometer and "never driven" label all silently failed at once (2026-09-13
+  play-test, finding N1). If you are testing anything that saves, go through name entry.
+- **Bonus wings are ACTS now (2026-09-13), not a shared back wall.** From the select
+  screen: **ArrowDown ×5 → ACT 6 · THE TEXT WORLDS**, **ArrowDown ×6 → ACT 7 · THE
+  SPEEDWAY**, then ◀/▶ to pick a machine and Space to enter. The older route
+  ("×6 → the back wall → ▶ to the SPEEDWAY door") is retired and lands elsewhere.
+- **`scripts/playtest.mjs` is now the fast way in** — `--at=speedway:monaco-gp` (defaults
+  to 2 laps, because lap 1 has no ghost), `--at=cinematic:mystery` (reached by actually
+  winning Level 5), `--at=complete:13 --laps=3` (the card rotation on screen),
+  `--fresh` for a brand-new machine. `node scripts/playtest.mjs --list` for all 13.
+  See `scripts/README-playtest.md` and `.claude/rules/playtest.md`.
+- **Act 7 has no recorder mode.** `record-playthrough.js` has no `--wing=` and the act
+  draws entirely on canvas with no DOM prompt, so there is no exit-code win-gate for a
+  track. Drive Playwright directly and read the expected key from `track.js`'s sanctioned
+  read-only `inspect()` accessor (dynamic-import it at the same module URL so you get the
+  LIVE instance, not a second copy).
 - Fresh-run first-time experience requires `localStorage.clear()` at start; level
   completions write `kk-progress`, and a continue screen appears on any page load with
   progress present — the recorder never reloads mid-run, so it never hits it.
+- ⚠️ **Adaptive pacing (built 2026-09-13) widened the post-keypress pauses.** They are
+  now `paced(300)` / `paced(150)` — up to **2×**, so 600ms / 300ms. Any tool that caches
+  an expected token on the old fixed 150/300 numbers can desync. The recorder re-reads the
+  DOM every press and is unaffected; a hand-rolled driver may not be. Note the ceiling is
+  reached at ~900ms/key, which is an ordinary five-year-old's cadence.
 - Cinematic dwell: any keypress SKIPS a cinematic; wait (≈48s ceiling, early-exit when
   the page moves on), then one Space at the title card. The fullcircle montage becomes
   Level 21 with no title card — the transition IS the level.

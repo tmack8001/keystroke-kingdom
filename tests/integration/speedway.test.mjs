@@ -197,12 +197,38 @@ async function enterFirstLap(page, baseUrl) {
 }
 
 // Pit board → hub menu → the next lap's start line → racing.
+// CHANGED 2026-09-13, design-first per .claude/rules/testing.md rule 1.
+//
+// This used to wait a fixed 1000 ms and press Space ONCE, which assumed the
+// flag → hub path was a single keypress. It was, while `finish` auto-settled after
+// FINISH_FANFARE_MS = 700. The celebration is now a real per-track window
+// (Monaco 2800 ms, F-Zero 3200 ms — docs/features/speedway.md, changed there first),
+// it does NOT auto-settle, and leaving a track takes TWO presses: finish → pit → hub.
+// The old fixed wait landed its single press inside `finish`, so the next press hit
+// the hub menu and the lap never started — three tests failing with "never reached a
+// start line" for a reason that had nothing to do with what they were testing.
+//
+// Poll for the phase instead of timing it. The two footers are deliberately
+// distinguishable for exactly this purpose, and that contract is documented.
 async function nextLap(page) {
-  await page.waitForTimeout(1000);          // let the checkered fanfare settle
-  await page.keyboard.press('Space');       // pit board → hub menu
-  await page.waitForTimeout(500);
+  await pressThrough(page, 'SPACE — THE PIT BOARD');   // celebration → pit board
+  await pressThrough(page, 'SPACE — BACK TO THE PITS'); // pit board → hub menu
   await toStartLine(page);
   await startRacing(page);
+}
+
+// Press Space until the named footer is gone, rather than guessing how long a phase
+// lasts. Tolerates the footer never appearing (a phase may already have advanced).
+async function pressThrough(page, footer, timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const showing = await captureDrawn(page, 2)
+      .then((d) => drawnIncludes(d, footer))
+      .catch(() => false);
+    if (!showing) return;
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(150);
+  }
 }
 
 // ─── The persisted record (surface (b)) ────────────────────────────────────

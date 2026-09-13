@@ -61,6 +61,24 @@ The screenshot must read as a complete scene *with the panels present* (L29, L17
   accuracy for a young child (L18).
 - **Engagement gates** — background simulation must not progress the game state in an
   unattended tab; gate consequential events on recent keystrokes (L20).
+- **Cabinet art is faithful, not gimmicky — DRAW A REAL THING.** A real cabinet where one
+  exists; the **real console, computer or handheld** where one does not. The only ruled-out
+  option is inventing a coin-op that never existed and implying it did.
+  *Added 2026-09-13 after the absence of this sentence caused a real error:* a research page
+  wrote *"There is no Super Mario Kart arcade cabinet. SNES only. **Do not draw one.**"* — the
+  narrow claim was true (the 1992 SNES title was never a coin-op) but it was relayed as an
+  absolute, on a page that never mentioned the licensed **Mario Kart Arcade GP** line (Namco,
+  2005 → GP DX, still in production). The right answer was **in the same paragraph** — *"the
+  faithful object is an SNES and a television"* — but it sat under the prohibition, and the
+  prohibition is what travelled. **A "do not do X" with no "do Y instead" beside it reads as
+  "there is nothing to draw."** Write both halves, always.
+  The game has done this since Act 2, which `levels/act2.md` describes as *"computers and
+  consoles from different eras line the walls, each one running a classic game"* — a gold-
+  cartridge NES beside a wooden TV (L10), a Game Boy Pocket on a backlit stand (L15).
+  Ground the hardware like any other era claim: `research/wiki/culture/home-games-in-cabinets.md`
+  and `research/wiki/tech/console-hardware-silhouettes.md`, never model memory. (That page
+  exists partly because a summariser asserted mid-research that the original PlayStation was
+  black. **It is grey.** Black is the PS2.)
 - **Era fidelity** — palette/fidelity per the level's act file
   (`.claude/rules/levels/actN.md`). Faithful recreation over gimmick; no key-glyph puns.
 - **Mechanics fidelity, wiki-grounded** (Trevor, 2026-07-12) — the scene must show the
