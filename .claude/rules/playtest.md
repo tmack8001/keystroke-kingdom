@@ -95,6 +95,15 @@ node scripts/playtest.mjs --at=victory:3              # the celebration window, 
 It defaults `speedway` to **two** laps on purpose: a first lap has no ghost, so a one-lap
 visit cannot show the thing worth looking at.
 
+**A capture waits for the animation to FINISH, never merely to appear** *(added 2026-09-13,
+journal F28)*. Every `waitFor*` predicate fires the instant a `hidden` class comes off, but
+`.complete-overlay` fades in over 0.4s and `.history-card` drops in over 0.4s — so a shot taken
+on visibility photographs a **30%-opacity** card over a theme mid-victory-bloom, and a perfectly
+good feature looks broken. `shot()` now awaits `settleAnimations()` first (finite animations
+only — the arcade's deliberate infinite ones would hang it). If you write a new capture script,
+do the same: **wait for done, not for present.** A screenshot is a claim about a moment, and the
+moment has to be chosen.
+
 ```bash
 make run                      # or your own static server on your assigned port
 # then, through the real route, as a player:
@@ -127,7 +136,10 @@ Every report on player-facing work states:
 - `.claude/rules/theme-authoring.md` §"Victory must celebrate" — verify with differing
   frames from an actually-won run, never by reading the code (journal L36).
 - `docs/testing/STRATEGY.md` — what the suite covers, and therefore what it does not.
-- Journal **F24** (the recorder synthesized success while stalled for two hours),
+- Journal **F28** (this tool photographed frames the player never sees — a working history
+  card looked buried, and the hunt was for a z-index bug that did not exist. **When the
+  evidence says something is broken, check the instrument first**),
+  **F24** (the recorder synthesized success while stalled for two hours),
   **L36** (code that looks animated can render identical frames), **F23** (Level 8
   shipped unwinnable — nothing had ever tried to win it), **F26** (the published build
   shipped broken — nothing had ever tried to load it). This rule is the same lesson a

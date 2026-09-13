@@ -17,6 +17,7 @@
 | [[F25-early-reader-prompt-suppressed-the-models-long-word-ability\|F25]] | I claimed the LLM couldn't make long words — it was the prompt suppressing it | addressed | high | research-integrity | 2026-07-13 | 2026-07-13 |
 | [[F26-local-suite-green-published-site-broken\|F26]] | Every gate was green and the published game was 404ing — nothing validated the environment players use | addressed | high | tooling | 2026-09-11 | 2026-09-11 |
 | [[F27-one-directional-safety-test-ratchets-between-two-wrong-states\|F27]] | A safety filter tested in one direction only — so two "fixes" in two days left it wrong both ways | addressed | high | testing | 2026-09-13 | 2026-09-13 |
+| [[F28-the-playtest-tool-photographed-frames-the-player-never-sees\|F28]] | The playtest tool photographed frames the player never sees — and a working feature looked broken | addressed | high | tooling | 2026-09-13 | 2026-09-13 |
 | [[F5-keyboard-preview-had-no-number-row\|F5]] | The keyboard preview had no number row at all | addressed | medium | a11y | 2026-07-11 | 2026-07-11 |
 | [[F8-eniac-six-programmers-list-named-five\|F8]] | The ENIAC "six programmers" list named five people | addressed | medium | research-integrity | 2026-07-11 | 2026-07-11 |
 | [[F10-settings-survival-build-agent-died-twice\|F10]] | The settings/survival build agent died twice | addressed | medium | agent-process | 2026-07-11 | 2026-07-11 |

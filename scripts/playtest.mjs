@@ -198,6 +198,40 @@ async function openBrowser(headless) {
 }
 
 // ── the run context ──────────────────────────────────────────────────────────
+// Wait for finite CSS entry animations to land before capturing.
+//
+// 2026-09-13: this tool existed so you could "go look at it", and it was showing
+// frames the player never sees. Every waitFor* predicate below fires the instant
+// a `hidden` class comes off — so a phase screenshot caught .complete-overlay
+// mid-`fadeIn` and .history-card mid-`cardDrop` (both 0.4s). At ~30% opacity over
+// a theme mid-victory-bloom, a perfectly good history card photographs as
+// unreadable garbage buried under the celebration, and the reviewer goes hunting
+// for a z-index bug that does not exist. Same class as journal F24: the evidence
+// synthesised a failure instead of a success, but it is the same lie.
+//
+// Only FINITE animations are awaited. The arcade is full of deliberate infinite
+// ones (readyPulse, the blinking INSERT COIN, cursor blinks); awaiting those
+// would hang forever, so `iterations === Infinity` is skipped by construction.
+// Capped, and failures are swallowed — a screenshot must never be the thing that
+// breaks a playtest run.
+async function settleAnimations(page, capMs = 1200) {
+  try {
+    await page.evaluate(async (cap) => {
+      if (typeof document.getAnimations !== 'function') return;
+      const finite = document.getAnimations().filter((a) => {
+        if (a.playState !== 'running') return false;
+        const t = a.effect && a.effect.getTiming ? a.effect.getTiming() : null;
+        return t ? t.iterations !== Infinity : false;
+      });
+      if (!finite.length) return;
+      await Promise.race([
+        Promise.all(finite.map((a) => a.finished.catch(() => {}))),
+        new Promise((r) => setTimeout(r, cap)),
+      ]);
+    }, capMs);
+  } catch { /* page navigated or closed mid-settle — the shot still happens */ }
+}
+
 class Run {
   constructor(page, opts, baseUrl) {
     this.page = page;
@@ -224,6 +258,7 @@ class Run {
     const dir = this.opts.shot;
     fs.mkdirSync(dir, { recursive: true });
     const file = path.join(dir, label.replace(/[^a-z0-9.-]+/gi, '-') + '.png');
+    await settleAnimations(this.page);
     await this.page.screenshot({ path: file });
     this.shots.push(file);
     return file;
