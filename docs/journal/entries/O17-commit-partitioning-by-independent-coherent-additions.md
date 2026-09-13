@@ -4,10 +4,12 @@ kind: observation
 title: Commit partitioning — split by independent coherent additions
 found: 2026-07-12
 session: 2026-07-12 wordgen/API hardening (Trevor's direction)
-status: open
+status: addressed
 importance: medium
 category: docs-process
 refs: [L33]
+addressed-by: "Practised for the first time at scale on the 2026-09-11..13 branch: 14 commits split by independent coherent addition — fix(static-host), fix(safety) x2, feat(engine), feat(eggs), fix(themes), feat(mobile), fix(tooling), docs, research, feat(act7). Each names its own reasoning and evidence rather than listing files. Two were authored days apart on the same subsystem (the blocklist over-block, then the compound gap the fix reopened) and deliberately kept SEPARATE so the record shows the oscillation and why the second fix is shaped as it is — squashing them would have hidden the lesson journal F27 exists to record."
+addressed-date: 2026-09-13
 ---
 
 **O17 — Commit partitioning: split by independent coherent additions.** Trevor's

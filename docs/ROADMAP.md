@@ -699,6 +699,79 @@ fetch sites are all relative same-origin `/api/*`; `playerName` appears in NO re
   stated; and **always additive to a Canvas-2D fallback**. `tech.md` Stack table + `CLAUDE.md` §Stack.
   **No vendored byte has landed and none should until Trevor confirms the backend choice (Q10).**
 
+### ✅ Act 7 "THE SPEEDWAY" — BUILT 2026-09-13 (Phase 0 + Phase 1, five-lane swarm)
+
+**The wing exists and is playable.** A second back-wall door → a hub (*"every lap you drive, you
+drive with yourself"*) → two tracks eleven years apart. Storage, ghosts, the sacred contract, and
+the era ladder all land; `/security-review` discharged.
+
+- **Phase 0 — the door registry.** `state.doorFocused` (boolean) became `BACK_WALL_DOORS` +
+  `state.doorIndex`, so **a third wing is one data row plus one line** — `renderDoorView`,
+  `navigateAct`, `navigateWithinAct` and `selectByPosition` never need touching again. Act 6
+  verified unchanged: identical unlock predicate, identical art/labels, **same navigation
+  distance** (5× ArrowDown still lands on the Green Dragon, which `game-driver.mjs` depends on),
+  textworld 28/28 + hidden-layer 10/10 green.
+- **The hub is imported LAZILY, deliberately.** A static import would put a bonus room in the
+  critical module graph, so on the published static host a missing `js/speedway/*` would abort
+  `main.js` and **brick all 25 levels**. Lazily, a failure costs exactly one warm card — proven by
+  deleting the file and watching the game stay playable.
+- **Two tracks, maximally distant Canvas-2D tiers:** Monaco GP (Sega, Nov 1979, `ttl`) — one ink on
+  black, five authored areas that narrow, ice/gravel as dither, a ghost made translucent the only
+  way 1979 could (an ordered dither); its clock and car destruction **deleted**. F-Zero (Nintendo,
+  Nov 1990, `mode7`) — a per-pixel affine ground plane with real yaw, a raster-**banded** dusk sky
+  (no gradient primitive exists at that tier); its power meter becomes CHARGE, **no lives, no
+  retirement**. Both drawn from `research/wiki` ground truth, never model memory.
+- **Graphics-climb enforced by ABSENCE** (journal O21). `kitFor(tier)` returns a frozen,
+  null-prototype pen holding only that era's primitives, AND era-forbidden members of the **shared**
+  canvas context become throwing tripwires for the duration of a frame, restored in a `finally`.
+  Verified: `p.gradient(...)` at `ttl` → `TypeError`; reaching around to `ctx.createLinearGradient`
+  → *"does not exist in the ttl era"*; released after the frame. **Virtua Racing physically cannot
+  texture a polygon**, so the compression Trevor forbade is *unavailable*, not merely discouraged.
+  Resolution and filtering climb too (240px at `ttl` → native at `modern`; smoothing off until
+  `texpoly`, exactly where bilinear enters the historical record). The kit draws its **own 5×7
+  bitmap font** — era-honest AND a complete sidestep of the Press Start 2P glyph trap (O11).
+- **The sacred contract re-proven, not assumed.** Act 7 is a parallel input path, so `track.js`
+  re-implements the wrong-keypress contract clause-for-clause — and the tests cite **INV-1..INV-5
+  directly**, not Act 7's own invariants: 400 wrong keys → zero laps and an odometer of exactly 0;
+  60 wrong keys on one letter → accuracy exactly `round(100·L/(L+1))` (**one mistake charged
+  once**); a clean lap with Shift/Ctrl/Alt/Meta held → accuracy **exactly 100**.
+- **A drawn-TEXT test oracle** (new, worth reusing): wraps `fillText`/`strokeText` and asserts
+  **strings only** — never position, size or colour. It makes *"no placement string, ever"* and
+  *"no minus sign"* enforceable on a canvas-only wing **without** violating `testing.md` rule 4's
+  ban on pixel assertions — the check the spec had flagged would otherwise need the rule to move.
+- **New invariants INV-76…INV-91.** INV-89/90/91 are catalogued but untested pending a live
+  renderer in a lap, the `modern` tier, and an actually-vendored library.
+
+**Three bugs the lanes caught in each other, all fixed:**
+1. **`MAX_MS = 999999`** carried the comment *"a lap can never plausibly exceed this"* — an
+   assumption about **how fast a CHILD types**, baked into a storage constant. At WIZARD a 120-char
+   track is 420 characters, so it broke at **~5 WPM**. The slowest typist in the game would have
+   been the one player who never got to race herself, in an act built entirely on *"did you beat
+   you?"* Raised to 40 min; byte budget re-verified (9,867 B/slot worst case).
+2. **Nothing injected the track registry** — the placeholder TEST OVAL was the whole wing, and
+   Monaco GP and F-Zero were unreachable. Wired; static-host module graph 62 → 66.
+3. **The lazy import blinded the static-host gate** (journal L47) — F26's exact failure class
+   walking back in through a door the fix didn't cover. Crawler now follows dynamic imports and
+   WARNS on computed ones; proven by deleting `hub.js` and watching the gate FAIL.
+
+**Also retired a naming collision before it calcified:** two lanes spelled one quantity
+`t`/`crashed` and `progress`/`spin`, and the core lane was emitting BOTH in lockstep to avoid
+breaking either. One name per concept now — `spin` also because `crash` is on the act's own
+never-word list.
+
+**Gates:** 373 unit pass / 1 todo · **161 integration pass / 0 fail / 0 cancelled** · static-host
+PASS (66 ES modules) · wiki lint clean · `go vet` clean.
+
+**⚠️ Still open for Trevor (none blocking):**
+- **The wing name** — the lanes shipped **THE SPEEDWAY**; spec §11 Q5 offers alternatives.
+- **Does Act 7 award history cards?** Currently **no**, deliberately: it would inflate the
+  "★ found / total" denominator with cards unreachable until L25 **and** the door.
+- **The rendering backend** (spec §11 Q10) — still gated by INV-91's doc-first ordering. The
+  `modern` tier's primitives are Canvas 2D today and a WebGL path slots in **behind
+  `kitFor('modern')` without touching a single renderer**, so this stays cheap to defer.
+- **Phase 2+**: the remaining 9 tracks, incl. the locked Virtua Racing (`flatpoly`) + Daytona USA
+  (`texpoly`) pair the kit was built to keep distinct.
+
 ### Act 7 `/security-review` — 2026-09-13 (the review the build owed)
 
 *Verdict: **2 confirmed, 2 plausible — all four FIXED same day.** **The Act 7 wing itself is

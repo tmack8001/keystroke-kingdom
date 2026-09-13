@@ -4,11 +4,11 @@
 
 | ID | Title | Status | Importance | Category | Found | Addressed |
 |---|---|---|---|---|---|---|
-| [[O17-commit-partitioning-by-independent-coherent-additions\|O17]] | Commit partitioning — split by independent coherent additions | open | medium | docs-process | 2026-07-12 |  |
 | [[O2-fluent-errors-recur-in-predictable-classes\|O2]] | Fluent errors recur in predictable classes | adopted | high | research-integrity | 2026-07-11 |  |
 | [[O7-design-values-that-keep-recurring-in-trevors-feedback\|O7]] | Design values that keep recurring in Trevor's feedback | adopted | high | game-design | 2026-07-11 |  |
 | [[O18-first-behavioral-suite-harvest\|O18]] | Documented intent drifts silently until something executes the docs — first suite harvest | addressed | high | game-design | 2026-07-12 | 2026-07-13 |
 | [[O19-dont-edit-files-a-test-agent-is-probing\|O19]] | A test agent + live orchestrator edits on the same files = false findings | adopted | high | agent-process | 2026-07-14 |  |
+| [[O21-make-a-constraint-structural-and-it-stops-needing-discipline\|O21]] | Make a constraint structural and it stops needing discipline — the era render kit | adopted | high | graphics | 2026-09-13 |  |
 | [[O1-subagents-are-injection-suspicious-by-default\|O1]] | Subagents are injection-suspicious by default, and that's good | adopted | medium | agent-process | 2026-07-11 |  |
 | [[O3-metrics-need-documented-artifact-classes\|O3]] | Metrics need documented artifact classes | adopted | medium | a11y | 2026-07-11 |  |
 | [[O4-qa-agents-find-real-shipping-bugs\|O4]] | QA agents find real shipping bugs when given license to fix trivial ones | adopted | medium | agent-process | 2026-07-11 |  |
@@ -23,4 +23,5 @@
 | [[O14-tightly-scoped-multi-part-instructions-land-in-one-clean-pass\|O14]] | Tightly-scoped multi-part instructions land in one clean pass | adopted | medium | agent-process | 2026-06-25 |  |
 | [[O15-proactive-self-audit-against-design-rules-happened-before-being-asked\|O15]] | Proactive self-audit against design rules happened before being asked | adopted | medium | game-design | 2026-06-25 |  |
 | [[O16-enforcement-hooks-dogfood-instantly-and-impartially\|O16]] | Enforcement hooks dogfood instantly and impartially | adopted | medium | agent-process | 2026-07-11 |  |
+| [[O17-commit-partitioning-by-independent-coherent-additions\|O17]] | Commit partitioning — split by independent coherent additions | addressed | medium | docs-process | 2026-07-12 | 2026-09-13 |
 | [[O20-magic-constant-standing-in-for-a-measurement\|O20]] | A magic constant standing in for a measurement is a bug waiting for its first long input | adopted | medium | graphics | 2026-09-11 |  |
