@@ -25,6 +25,24 @@
 // to dither its ghost, because 1979 had no alpha). It does NOT give this file a
 // gradient: the dusk sky is drawn as raster BANDS, which is how the hardware did it.
 //
+// THE WIN MOMENT (arcade-historian pass, 2026-09-13 — f-zero.md, 3 → 6 refs):
+//   · What we CAN use: per lap the original granted a ~4-second SUPER JET speed
+//     boost, and its race-completion celebration was "spinning the camera into a
+//     side-on position" over your machine. Both are documented and both are
+//     PLACEMENT-FREE, so both survive INV-82. Both are built below.
+//   · What we CANNOT use, and why: nearly all of F-Zero's completion content is
+//     PLACEMENT — points by finishing position, disqualification below a place
+//     cutoff that tightens each lap, "only the best three racers count as winners",
+//     league standings. INV-82 forbids placement, position and finish order
+//     anywhere in this act. Also deleted: the power meter, retirement, and the
+//     machine EXPLODING.
+//   · The checkered flag IS drawn here, unlike on Monaco GP — but note honestly
+//     that it is a LATER convention: its earliest verified appearance in a video
+//     game is Pole Position (1982). On a 1990 cabinet it is unremarkable; on the
+//     1979 track it would be an anachronism, which is why that file has none.
+//   · Confetti / fireworks / crowds / podiums are `[unverified]` in racing games
+//     1974–1990 and are drawn nowhere in this act.
+//
 // LAYOUT: the vanishing point sits at 0.34W — deliberately off horizontal centre
 // (journal L17) — and the RACE ENGINE owns the band `s.reserved` names (its prompt
 // + ghost line + lap bar + CHARGE floor, one opaque panel, nominally 0.70–0.94H).
@@ -34,8 +52,13 @@
 //
 // The power bar here is not a duplicate of the engine's CHARGE bar — it is F-Zero's
 // own gauge, the thing this cabinet had where the engine has a plain bar.
+//
+// Every stacked text block derives its leading from `textHeight()`/`lineStep()`.
+// The kit draws its own 5×7 bitmap font, so `measureText` is meaningless here and a
+// hand-tuned pixel constant is exactly how the title and the developer line ended up
+// drawn on top of each other (Trevor, 2026-09-13; journal O20's class of bug).
 
-import { kitFor, readScene } from '../render/kit.js';
+import { kitFor, readScene, textHeight, textWidth, lineStep } from '../render/kit.js';
 
 const kit = kitFor('mode7');
 
@@ -66,6 +89,33 @@ const CANOPY = ['.###.', '#####', '.###.'];
 const FLAME_A = ['.#####.', '..###..', '...#...'];
 const FLAME_B = ['..###..', '.#####.', '..###..', '...#...'];
 const RIVAL = ['..#####..', '.#######.', '#########', '##.###.##', '#.......#'];
+// The player's craft seen from the SIDE — used only by the camera-spin celebration,
+// which is the documented F-Zero race-completion move.
+const CRAFT_SIDE = [
+  '......#####......',
+  '....#########....',
+  '..###############',
+  '#################',
+  '.###############.',
+  '..##.#######.##..',
+  '...#.........#...'
+];
+// A blinking chevron that hangs over the player's craft and points at it. Trevor,
+// 2026-09-13: "it was really hard to determine which car was mine." Sixteen colours
+// is a much bigger budget than Monaco GP's one ink, so this tier can answer with
+// colour AND a marker AND scale: the rivals are drawn in the palette's NEUTRAL half
+// (silver / grey / slate / violet), while the player is the only vivid blue-and-rose
+// machine on the plane, the only one with a cyan canopy, and the only one wearing
+// this marker.
+// Deliberately SMALL and hugging the craft: an earlier, larger version floating
+// well above it read as a distant rival machine, which is the opposite of the job.
+const MARKER = ['#####', '.###.', '..#..'];
+// Rivals never borrow the player's inks. Neutral, cool, and clearly "other traffic".
+// Vivid enough to READ at distance on a dark plane (the whole point of finding 8 is
+// that the field must be PRESENT), but never wearing the player's blue / rose / cyan.
+// No rival ever wears MAGENTA either: it is close enough to the player's rose that
+// a distant rival and the player's own marker read as the same object.
+const RIVAL_INKS = [11, 12, 2, 5, 13];    // green, silver, amber, purple, grey
 const PYLON = ['.#.', '###', '.#.', '.#.', '.#.', '.#.', '###'];
 const GATE_POST = ['####', '####', '.##.', '.##.', '.##.', '.##.', '.##.', '.##.', '####'];
 const SPARK = ['.#.', '###', '.#.'];
@@ -89,11 +139,15 @@ const TOWERS = [
   [0.950, 0.026, 0.145]
 ];
 
+// Ambient traffic for when the engine has handed us no field. Expressed as `rel`
+// (a signed offset from the player) — the same contract the real field uses, so
+// there is exactly one way to place a craft in this file.
 const AMBIENT_COUNT = 5;
-function ambientCraft(i, ms, progress) {
+function ambientCraft(i, ms) {
   const drift = (ms * 0.000018) * (0.8 + i * 0.11);
+  const span = 0.30;
   return {
-    progress: (progress + 0.05 + i * 0.14 + drift) % 1,
+    rel: 0.01 + ((i * 0.07 + drift) % span),
     lane: Math.sin(i * 1.7 + ms * 0.0004) * 0.7,
     spin: i === 3 && Math.sin(ms * 0.00035) > 0.88 ? 1 : 0
   };
@@ -102,6 +156,11 @@ function ambientCraft(i, ms, progress) {
 function fmod(a, m) {
   const r = a % m;
   return r < 0 ? r + m : r;
+}
+
+function easeInOut(t) {
+  const x = Math.min(1, Math.max(0, t));
+  return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 }
 
 // The ground plane's texture function, sampled per pixel by kit.affinePlane.
@@ -134,9 +193,22 @@ function drawScene(ctx, W, H, state) {
     const vpX = 0.34 * PW;                   // never the horizontal centre (L17)
     const craftX = 0.33 * PW;
     const craftY = resTop - 0.085 * PH;      // the craft rides just above the panel
+    // The decoration clock — it runs at the start line too, which is what lets the
+    // craft hover with its thrusters lit instead of hanging there as a still frame.
+    const T = s.animMs;
 
     // Camera: the plane rotates as the course bends — the Mode 7 signature.
-    const yaw = Math.sin(s.progress * 9.2) * 0.30 + Math.sin(s.progress * 2.1) * 0.06;
+    //
+    // THE CELEBRATION CAMERA (documented, f-zero.md): F-Zero's race-completion move
+    // was "spinning the camera into a side-on position" over your machine. Here the
+    // plane's yaw swings out to a quarter turn across the celebration window and the
+    // craft swaps to its side profile as it gets there — the same shot, made out of
+    // the only thing this hardware could actually do, which is rotate its one raster
+    // plane. `spin` is derived entirely from clamped elapsed time (journal F1/L36),
+    // so any single throttled frame still lands somewhere coherent in the move.
+    const spin = s.celebrating ? easeInOut(Math.min(1, Math.max(0, s.celebrate / 0.75))) : 0;
+    const yaw = Math.sin(s.progress * 9.2) * 0.30 + Math.sin(s.progress * 2.1) * 0.06
+      + spin * 1.35;
     const camZ = s.progress * LAP_DEPTH;
     const cos = Math.cos(yaw), sin = Math.sin(yaw);
     // Pin the road centre under the craft at the craft's depth, so the swing of
@@ -182,20 +254,47 @@ function drawScene(ctx, W, H, state) {
     // ── the finish gate, standing where the lap ends ────────────────────────
     const gateV = camZ + (1 - s.progress) * LAP_DEPTH;
     if (gateV - camZ < 70) {
-      p.billboard(GATE_POST, -ROAD_HALF - 0.2, gateV, C.amber, { size: 0.075 });
-      p.billboard(GATE_POST, ROAD_HALF + 0.2, gateV, C.amber, { size: 0.075 });
+      const gateInk = s.celebrating && (Math.floor(T / 110) % 2 === 0) ? C.pale : C.amber;
+      const gl = p.billboard(GATE_POST, -ROAD_HALF - 0.2, gateV, gateInk, { size: 0.075 });
+      const gr = p.billboard(GATE_POST, ROAD_HALF + 0.2, gateV, gateInk, { size: 0.075 });
+      // The checkered banner across the gate. NOTE (research, 2026-09-13): the
+      // checkered flag is a LATER convention than Monaco GP — earliest verified
+      // video-game appearance is Pole Position (1982). By 1990 it is unremarkable,
+      // so it belongs here and nowhere near the 1979 track.
+      if (gl && gr && gr.x > gl.x) {
+        const cell = Math.max(2, Math.round((gr.x - gl.x) / 16));
+        const by = Math.min(gl.y, gr.y) - gl.h;
+        for (let cx = gl.x; cx < gr.x; cx += cell) {
+          for (let r = 0; r < 2; r++) {
+            const on = ((Math.round((cx - gl.x) / cell) + r) % 2) === 0;
+            p.rect(cx, by + r * cell, Math.min(cell, gr.x - cx), cell,
+              on ? C.white : C.night);
+          }
+        }
+      }
     }
 
     // ── the field: alive, fallible, never scored ────────────────────────────
+    // Placed by `rel` — a signed offset from the player, which the engine now holds
+    // in a rolling band so the road is populated for the WHOLE lap instead of
+    // whenever the player's absolute progress happened to converge with theirs
+    // (Trevor, 2026-09-13: "only visible towards the end … and not reachable/
+    // passable"). `car.progress` wraps and must never be differenced against the
+    // player's — that subtraction was the bug.
+    //
+    // `rel === 0` now means LEVEL WITH YOU: the offset added below is the craft's
+    // own depth, so a rival at rel 0 is drawn beside the player's machine and one at
+    // a small negative rel has genuinely just been passed. They are never scored,
+    // ranked or compared (INV-82) — passing one is simply a nice thing that happens.
     const count = s.fieldCount > 0 ? s.fieldCount : AMBIENT_COUNT;
     for (let i = 0; i < count; i++) {
-      const car = s.fieldCount > 0 ? s.field[i] : ambientCraft(i, s.ms, s.progress);
-      const rel = car.progress - s.progress;
-      if (rel < -0.02 || rel > 0.26) continue;
-      const v = camZ + rel * LAP_DEPTH + 2.4;
+      const car = s.fieldCount > 0 ? s.field[i] : ambientCraft(i, T);
+      const rel = car.rel;
+      if (rel < -0.05 || rel > 0.34) continue;
+      const v = camZ + rel * LAP_DEPTH + lzCraft;
       const spun = car.spin > 0.5;
-      const lane = car.lane * (ROAD_HALF - 0.45) + (spun ? Math.sin(s.ms / 120) * 0.25 : 0);
-      const ink = [C.rose, C.green, C.amber, C.magenta, C.cyan][i % 5];
+      const lane = car.lane * (ROAD_HALF - 0.45) + (spun ? Math.sin(T / 120) * 0.25 : 0);
+      const ink = RIVAL_INKS[i % RIVAL_INKS.length];
       const hit = p.billboard(RIVAL, lane, v, ink, { size: 0.055 });
       // They spin. They puff. They recover. Nobody is hurt and nothing is scored.
       if (spun && hit) {
@@ -218,7 +317,7 @@ function drawScene(ctx, W, H, state) {
               { scale: Math.max(1, Math.round(hit.scale * 0.6)) });
             if (s.ghostWaiting) {
               // Waiting at the line, cheering, until you get there (spec §5.5).
-              const bob = Math.sin(s.ms / 180) * 3;
+              const bob = Math.sin(T / 180) * 3;
               const sc = Math.max(1, Math.round(hit.scale * 0.8));
               p.blit1bit(SPARK, hit.x - hit.w * 0.8, hit.y - hit.h - 6 + bob, C.pale, { scale: sc });
               p.blit1bit(SPARK, hit.x + hit.w * 0.6, hit.y - hit.h - 3 - bob, C.pale, { scale: sc });
@@ -230,47 +329,122 @@ function drawScene(ctx, W, H, state) {
     }
 
     // ── charge, as the craft's own thrust ───────────────────────────────────
-    if (s.charge > 0.03) {
-      p.withAlpha(0.25 + s.charge * 0.5, () => {
-        const reach = 6 + s.charge * 34;
-        for (let i = 0; i < 6; i++) {
+    // A completed WORD fires the SUPER JET (documented: F-Zero granted a ~4-second
+    // speed boost once per lap). Here it is a burst of thrust streaks and a wider,
+    // brighter flare — and it moves the craft exactly NOWHERE. Lap position is
+    // `charsTyped / lapChars` and this block cannot write to it (INV-78); the boost
+    // is what typing FAST already felt like, made visible.
+    // The SUPER JET holds lit through the whole celebration: the documented F-Zero
+    // per-lap reward was a ~4-second speed boost, so the lap ending on full thrust
+    // under a side-on camera is the original's own vocabulary, not an invention.
+    const jet = Math.max(s.boost, s.celebrating ? 0.55 : 0);
+    const thrust = Math.min(1, s.charge + jet * 0.6);
+    if (thrust > 0.03 && spin < 0.2) {
+      // Down-the-road speed lines while the camera is behind the machine.
+      p.withAlpha(0.25 + thrust * 0.5, () => {
+        const reach = 6 + thrust * 34 + jet * 26;
+        const lines = 6 + Math.round(jet * 5);
+        for (let i = 0; i < lines; i++) {
           const yy = craftY - 18 - i * 7;
-          const spread = 2 + i * 2.2 + s.charge * 5;
-          p.rect(craftX - spread - 26, yy, reach * 0.4, 1, C.cyan);
-          p.rect(craftX + spread + 22, yy, reach * 0.4, 1, C.cyan);
+          const spread = 2 + i * 2.2 + thrust * 5;
+          p.rect(craftX - spread - 26, yy, reach * 0.4, 1, jet > 0.35 ? C.pale : C.cyan);
+          p.rect(craftX + spread + 22, yy, reach * 0.4, 1, jet > 0.35 ? C.pale : C.cyan);
+        }
+      });
+    } else if (thrust > 0.03) {
+      // Once the camera is side-on, the SUPER JET reads as a trail streaming off the
+      // back of the machine instead of as lines coming at you.
+      p.withAlpha(0.3 + thrust * 0.45, () => {
+        for (let i = 0; i < 7; i++) {
+          const yy = craftY - 10 + i * 3;
+          const len = 14 + thrust * 46 - Math.abs(i - 3) * 6;
+          if (len <= 2) continue;
+          p.rect(craftX - 34 - len, yy, len, 1, i % 2 ? C.cyan : C.pale);
         }
       });
     }
 
     // ── the player's craft ──────────────────────────────────────────────────
-    const bob = Math.sin(s.ms / 260) * 1.2;
+    // IDLE / ATTRACT MOTION. The start line used to render a byte-identical frozen
+    // frame, because every animation here was keyed to the LAP clock, which does not
+    // start until the first keystroke. Keyed to the decoration clock, an
+    // anti-gravity machine standing on the grid does what an anti-gravity machine
+    // does: it hovers, its thrusters idle, and its shadow breathes underneath it.
+    // None of it moves the craft one unit down the course.
+    const hover = s.idling ? 2.6 : 1.2;
+    const bob = Math.sin(T / (s.idling ? 340 : 260)) * hover;
     const SC = 3;                                  // the hero vehicle's sprite scale
     const cw = CRAFT[0].length * SC, chh = CRAFT.length * SC;
-    const cx0 = craftX - cw / 2, cy0 = craftY - chh / 2 + bob;
+    // A word completed shoves the sprite forward and it settles back — spectacle in
+    // the sprite, never in the position on the course.
+    const cx0 = craftX - cw / 2, cy0 = craftY - chh / 2 + bob - jet * 8;
     // Anti-grav shadow on the plane below — it never touches the road.
     p.withAlpha(0.4, () => {
-      p.rect(cx0 + SC * 2, cy0 + chh + SC * 3, cw - SC * 4, SC, C.black);
-      p.rect(cx0 + SC * 4, cy0 + chh + SC * 4, cw - SC * 8, SC, C.black);
+      const lift = s.idling ? Math.sin(T / 340) * SC : 0;
+      p.rect(cx0 + SC * 2, cy0 + chh + SC * 3 + lift, cw - SC * 4, SC, C.black);
+      p.rect(cx0 + SC * 4, cy0 + chh + SC * 4 + lift, cw - SC * 8, SC, C.black);
     });
-    const flame = (Math.floor(s.ms / 70) % 2 === 0) ? FLAME_A : FLAME_B;
-    const fs = s.charge > 0.5 ? SC : SC - 1;
+    const flame = (Math.floor(T / (s.idling ? 110 : 70)) % 2 === 0) ? FLAME_A : FLAME_B;
+    const hot = s.charge > 0.5 || jet > 0.2;
+    const fs = hot ? SC + (jet > 0.35 ? 1 : 0) : SC - 1;
     p.blit1bit(flame, craftX - flame[0].length * fs / 2, cy0 + chh - SC,
-      s.charge > 0.5 ? C.cyan : C.amber, { scale: fs });
-    p.blit1bit(CRAFT, cx0, cy0, C.blue, { scale: SC });
-    p.rect(cx0 + SC, cy0 + chh - SC * 2, cw - SC * 2, SC, C.navy);
-    p.rect(cx0 + SC * 2, cy0 + chh - SC, cw - SC * 4, SC, C.rose);
-    p.blit1bit(CANOPY, craftX - CANOPY[0].length * SC / 2, cy0 + SC, C.cyan, { scale: SC });
+      jet > 0.35 ? C.pale : (hot ? C.cyan : C.amber), { scale: fs });
+
+    // THE CAMERA SPIN lands side-on, so past the halfway point of the move the
+    // machine is drawn in profile — which is the whole point of the shot.
+    if (spin > 0.55) {
+      const ss = SC + 1;
+      const sw = CRAFT_SIDE[0].length * ss, sh = CRAFT_SIDE.length * ss;
+      p.blit1bit(CRAFT_SIDE, craftX - sw / 2, craftY - sh / 2 + bob, C.blue, { scale: ss });
+      p.rect(craftX - sw / 2 + ss * 2, craftY - sh / 2 + bob + sh - ss, sw - ss * 4, ss, C.rose);
+      p.blit1bit(CANOPY, craftX - CANOPY[0].length * ss / 2 - ss * 2,
+        craftY - sh / 2 + bob - ss, C.cyan, { scale: ss });
+    } else {
+      p.blit1bit(CRAFT, cx0, cy0, C.blue, { scale: SC });
+      p.rect(cx0 + SC, cy0 + chh - SC * 2, cw - SC * 2, SC, C.navy);
+      p.rect(cx0 + SC * 2, cy0 + chh - SC, cw - SC * 4, SC, C.rose);
+      p.blit1bit(CANOPY, craftX - CANOPY[0].length * SC / 2, cy0 + SC, C.cyan, { scale: SC });
+    }
+
+    // WHICH CRAFT IS MINE. A marker hangs over the player's machine and pulses.
+    // Together with the rivals' neutral inks (RIVAL_INKS) and this craft's larger
+    // fixed sprite scale, the answer is readable in a glance from three directions
+    // at once: colour, size, and a thing pointing at it.
+    if (spin < 0.55) {
+      const mk = 2;
+      const mw = MARKER[0].length * mk;
+      const mBob = Math.sin(T / 200) * 2;
+      // White/rose, which no rival ink and no piece of Mute City ever uses, so the
+      // marker can never be mistaken for scenery. Held clear of the craft's canopy
+      // by a full marker height.
+      const mInk = (Math.floor(T / 320) % 2 === 0) ? C.white : C.rose;
+      p.blit1bit(MARKER, craftX - mw / 2, cy0 - MARKER.length * mk - 3 + mBob, mInk,
+        { scale: mk });
+    }
 
     // ── top band: whose console this is ─────────────────────────────────────
-    p.text('F-ZERO', 0.255 * PW, 0.022 * PH, C.pale, { scale: 2 });
-    p.text('NINTENDO 1990', 0.255 * PW, 0.092 * PH, C.cyan, { scale: 1 });
+    // MEASURED, not guessed: the subtitle's top is the title's top plus the title's
+    // own cell height plus a leading of most of a cell. Before this, both lines were
+    // placed with hand-tuned canvas fractions and landed on top of each other.
+    const titleTop = Math.round(0.020 * PH);
+    const subTop = titleTop + lineStep(2, 0.85);
+    p.text('F-ZERO', 0.255 * PW, titleTop, C.pale, { scale: 2 });
+    p.text('NINTENDO 1990', 0.255 * PW, subTop, C.cyan, { scale: 1 });
 
     // ── the dash sliver below the engine's panel: F-Zero's own power gauge ──
+    // Laid out left to right from measured widths, so no caption can grow into the
+    // next one: MODE 7 · CHARGE · the gauge, each clear of the last by a glyph cell.
     const dy = resBot + 0.016 * PH;
     p.rect(0, resBot, PW, PH - resBot, C.night);   // an opaque dash, not see-through road
-    p.text('MODE 7', 0.045 * PW, dy, C.magenta, { scale: 1 });
-    p.text('CHARGE', 0.400 * PW, dy, C.pale, { scale: 1 });
-    const mx = 0.560 * PW, mw = 0.395 * PW, mh = 0.026 * PH, my = dy + 1;
+    const dashX = 0.045 * PW;
+    p.text('MODE 7', dashX, dy, C.magenta, { scale: 1 });
+    const chargeX = Math.max(dashX + textWidth('MODE 7', 1) + textWidth('MM', 1),
+      0.400 * PW);
+    p.text('CHARGE', chargeX, dy, C.pale, { scale: 1 });
+    const mx = Math.max(chargeX + textWidth('CHARGE', 1) + textWidth('MM', 1),
+      0.560 * PW);
+    const mw = PW - 0.045 * PW - mx;
+    const mh = 0.026 * PH, my = dy + Math.round((textHeight(1) - 0.026 * PH) / 2);
     p.rect(mx - 2, my - 2, mw + 4, mh + 4, C.deep);
     p.rect(mx - 1, my - 1, mw + 2, 1, C.cyan);
     p.rect(mx - 1, my + mh, mw + 2, 1, C.cyan);
@@ -297,5 +471,9 @@ export const TRACK = Object.freeze({
   vehicle: 'anti-gravity craft',
   tagline: 'one raster plane, rotated and scaled, and not a polygon in sight',
   lapChars: 220,
+  // Long enough for the camera to complete its quarter turn and hold the side-on
+  // shot for a beat. Clamped by track.js into the same 1200–6000 ms band every level
+  // theme's victory() returns; Space skips it at any moment.
+  celebrationMs: 3200,
   drawScene
 });

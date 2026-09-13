@@ -81,6 +81,18 @@ export function setTracks(list) {
   if (ok) tracks = ok;
 }
 
+// Open the hub ON a specific track. The select screen now shows Act 7's tracks as
+// individual arcade cabinets, so picking F-ZERO on the wall and then landing on
+// MONACO GP would be a small lie — the cabinet you walked up to should be the one
+// the hub is offering. main.js calls this feature-detected, so an unknown id or an
+// empty registry is a silent no-op rather than a trap (the One Rule: a wing that
+// can't honour a request still opens, it just opens where it was going to anyway).
+export function focusTrack(id) {
+  if (!id || !Array.isArray(tracks)) return;
+  const i = tracks.findIndex((t) => t && t.id === id);
+  if (i >= 0) cursor = i;
+}
+
 export function isActive() { return active; }
 
 export function start(cvs, opts = {}) {

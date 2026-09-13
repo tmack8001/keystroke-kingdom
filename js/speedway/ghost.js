@@ -46,7 +46,69 @@
 // keystroke counts and a local timestamp are GAMEPLAY DATA, not a new PII class
 // (rule 8) — the same status as the kk-stories cache.
 
-import { readSpeedway, writeSpeedway } from '../slots.js';
+import { readSpeedway, writeSpeedway, getActive } from '../slots.js';
+
+// ── THE SESSION FALLBACK: why a lap used to forget itself ──────────────────
+// Trevor's play-test, 2026-09-13: "complete a lap → return to the pits → start the
+// same track again, and the card still reads FIRST LAP", and "the odometer is only
+// the letters typed that specific round".
+//
+// ONE cause, two symptoms. Ghost records live INSIDE the active saved game
+// (kk-slots[i].speedway), so `writeSpeedway` is a deliberate silent no-op when
+// there is NO active saved game. Act 7's door is gated at level 25 or the WOPR
+// bypass — and the bypass path (type `wopr` on the title screen) reaches the select
+// screen WITHOUT ever creating a slot, which is exactly how the wing gets played
+// today. On that path every commit evaporated: each lap re-read `emptyRecord()`, so
+// the start-line card said FIRST LAP forever, the hub row stayed "never driven", LAPS
+// stuck at 1, and ODOMETER showed only the lap just driven.
+//
+// The fix is not to paper over the card. It is to give the act a truthful record
+// even when there is nowhere to persist one: a small in-memory record per track,
+// used ONLY when the store has nothing (i.e. only when persistence is unavailable),
+// and tagged with the saved game it belongs to so it can never leak across games.
+// The store stays authoritative the instant it works — a persisted commit forgets
+// its session twin. Monotonicity (INV-83) is unchanged: these records are built by
+// the same read-then-increment path, so they only ever rise.
+//
+// Bounded by construction: one entry per track, capped, cleared when the active
+// game changes. Nothing here is persisted and nothing leaves the machine.
+const SESSION_MAX_TRACKS = 14;      // matches slots.js's SPEEDWAY_MAX_TRACKS in spirit
+const sessionRecords = new Map();
+let sessionOwner = undefined;       // the saved game these belong to (null = no game)
+
+// Which saved game is active, defensively (slots.js is the validator; this is just
+// "don't throw if the store is unavailable").
+function activeGameKey() {
+  try {
+    const a = getActive();
+    return (a === undefined) ? null : a;
+  } catch {
+    return null;
+  }
+}
+
+function sessionRecordFor(trackId) {
+  const key = activeGameKey();
+  if (sessionOwner !== undefined && key !== sessionOwner) {
+    sessionRecords.clear();         // a different game is active — never leak across
+    sessionOwner = key;
+  }
+  return sessionRecords.get(trackId) || null;
+}
+
+function rememberSessionRecord(trackId, record) {
+  const key = activeGameKey();
+  if (sessionOwner !== undefined && key !== sessionOwner) sessionRecords.clear();
+  sessionOwner = key;
+  if (!sessionRecords.has(trackId) && sessionRecords.size >= SESSION_MAX_TRACKS) {
+    sessionRecords.delete(sessionRecords.keys().next().value);
+  }
+  sessionRecords.set(trackId, record);
+}
+
+function forgetSessionRecord(trackId) {
+  sessionRecords.delete(trackId);
+}
 
 // PINNED to js/slots.js `SPLIT_COUNT` (a table of any other length is rejected on
 // read AND write). Changing one without the other silently stops every ghost from
@@ -64,9 +126,15 @@ export function emptyRecord() {
 // slots.js returns a validated record or null. We turn null into the empty record so
 // every caller can read `.laps` / `.last` without a guard — the only two states a
 // track ever sees are "a record" and "a record with no ghost in it".
+//
+// Precedence is deliberate and one-way: the PERSISTED record always wins. The
+// in-memory session record is consulted only when the store has nothing for this
+// track, which (given writeSpeedway merges rather than forgets) means only when
+// there was nowhere to persist to. See the banner above.
 export function readRecord(trackId) {
   const rec = readSpeedway(trackId);
-  return rec || emptyRecord();
+  if (rec) return rec;
+  return sessionRecordFor(trackId) || emptyRecord();
 }
 
 // The lap we actually race. `null` ⇒ first lap (warm, never an error).
@@ -152,28 +220,34 @@ export function commitLap(trackId, ghost, stats) {
   }
 
   writeSpeedway(trackId, patch);
-  let after = readRecord(trackId);
+  // Read the STORE, not readRecord() — the session fallback below must not be able
+  // to masquerade as a successful write.
+  let after = readSpeedway(trackId);
 
   // If the store declined this lap's ghost (it is the validator; e.g. a lap longer
   // than its ms ceiling), PUT THE OLD GHOST BACK rather than leaving the track with
   // none. Checked by reading back rather than by copying slots.js's limits here, so
   // this stays correct whatever those limits are (L41: one definition, one file).
-  if (ghost && !after.last && prevLast) {
+  if (ghost && after && !after.last && prevLast) {
     writeSpeedway(trackId, { last: prevLast });
-    after = readRecord(trackId);
+    after = readSpeedway(trackId);
   }
 
-  // When there is no active saved game at all, nothing persists — the board still
-  // shows this lap's own true facts, it just won't be there to race next time.
-  const persisted = after.laps === patch.laps && after.chars === patch.chars;
+  // When there is no active saved game at all, nothing persists. The board still
+  // shows this lap's own true facts — AND the same record is kept in memory for the
+  // rest of the session, so the next lap on this track races the ghost it just set,
+  // counts as lap 2, and adds to the odometer instead of starting over.
+  const persisted = !!after && after.laps === patch.laps && after.chars === patch.chars;
   const record = persisted ? after : {
     v: 1,
-    last: ghost || null,
+    last: ghost || prevLast || null,
     best: patch.best || before.best,
     laps: patch.laps,
     chars: patch.chars,
     cleanBest: patch.cleanBest,
   };
+  if (persisted) forgetSessionRecord(trackId);
+  else rememberSessionRecord(trackId, record);
 
   const improvedMs = (ghost && prevLast && prevLast.ms > ghost.ms) ? (prevLast.ms - ghost.ms) : 0;
   return {

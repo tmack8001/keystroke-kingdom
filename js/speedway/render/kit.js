@@ -645,6 +645,35 @@ function hexToRgb(hex) {
   return n.map(v => (Number.isFinite(v) ? v : 0));
 }
 
+// ─── Text metrics for LAYOUT ────────────────────────────────────────────────
+// The kit draws its OWN 5×7 bitmap font, so `ctx.measureText` is meaningless here
+// and a webfont's metrics are the wrong answer. A renderer that stacks two lines
+// must derive its leading from the cell the kit actually draws — journal O20 is
+// exactly this class of bug (a magic constant standing in for a text measurement is
+// how the word-processor coda overflowed into the HUD). Two lines of F-ZERO title
+// drawn on top of each other, found by Trevor 2026-09-13, is the same mistake.
+//
+// These mirror `text()` in buildPen: advance = GLYPH_W*scale + tracking*scale,
+// height = GLYPH_H*scale. Both tiers in the wing have px = 1; a future px > 1 tier
+// should pass `kit.px` in as part of `scale`.
+export function textHeight(scale = 1) {
+  return GLYPH_H * Math.max(1, Math.round(scale));
+}
+
+export function textWidth(str, scale = 1, tracking = 1) {
+  const sc = Math.max(1, Math.round(scale));
+  const n = String(str == null ? '' : str).length;
+  if (n <= 0) return 0;
+  return n * (GLYPH_W * sc + tracking * sc) - tracking * sc;
+}
+
+// The baseline-to-baseline step for stacked lines: the taller line's own height
+// plus a leading expressed as a fraction of ONE cell, so it scales with the font
+// rather than with the canvas.
+export function lineStep(scale = 1, leadCells = 0.7) {
+  return Math.round(textHeight(scale) + GLYPH_H * Math.max(0, leadCells));
+}
+
 // ─── kitFor ─────────────────────────────────────────────────────────────────
 export function kitFor(tier) {
   const spec = TIER_SPEC[tier];
@@ -745,13 +774,48 @@ const LAYER_NAMES = {
 const SCENE = {
   progress: 0, ghostProgress: null, ghostWaiting: false, charge: 0,
   chars: 0, ms: 0, field: [], fieldCount: 0,
+  // ── the animation contract (added 2026-09-13) ────────────────────────────
+  // `ms` is the LAP's elapsed measurement and deliberately STOPS when the race is
+  // waiting for the player — which meant every renderer that drove its idle motion
+  // off it rendered a frozen photograph at the start line. `animMs` is the
+  // DECORATION clock: it always advances, nothing consequential reads it, and it is
+  // what an engine-running / rotor-turning / flag-waving idle should be keyed to.
+  animMs: 0,
+  idling: false,        // standing on the grid, engine running, not yet racing
+  boost: 0,             // 0..1 decaying kick from a completed WORD (spectacle only)
+  wordsDone: 0,
+  celebrate: 0,         // 0..1 through the finish celebration; 1 once settled
+  celebrating: false,   // the lap is won — draw the era's own win moment
+  phase: 'racing',
+  odometer: 0,          // CUMULATIVE letters on this track, all laps (only rises)
+  laps: 0,              // CUMULATIVE laps on this track (only rises)
   // The band of the canvas the RACE ENGINE owns (its prompt + ghost line + lap
   // bar + CHARGE floor, one opaque panel). A track composes around it and never
   // inside it. Read from state, never hard-coded, so retuning the panel moves
   // ONE constant in the engine instead of every renderer.
-  reserved: { top: 0.70, bottom: 0.94 }
+  reserved: { top: 0.70, bottom: 0.94 },
+  // What the ENGINE is covering beyond `reserved` in the current phase, in canvas
+  // fractions — the start-line card or the pit board. `null` while racing and while
+  // celebrating, when the engine keeps strictly to `reserved`. A renderer uses it to
+  // keep readable furniture out from under an opaque card (or to simply skip what
+  // would be hidden). `overlaps()` below is the whole API most renderers need.
+  overlay: null
 };
-const FIELD_SLOTS = Array.from({ length: 8 }, () => ({ progress: 0, lane: 0, spin: 0, speed: 1 }));
+const OVERLAY = { left: 0, right: 0, top: 0, bottom: 0 };
+
+// Does a rect given in canvas FRACTIONS intersect the engine's current card?
+// Fractions, never pixels, so a renderer stays in canvas space (journal L16).
+export function overlaps(overlay, left, top, right, bottom) {
+  if (!overlay) return false;
+  return !(right <= overlay.left || left >= overlay.right
+    || bottom <= overlay.top || top >= overlay.bottom);
+}
+// `rel` is the field entry a renderer should READ: a signed lap-fraction offset
+// from the player (negative = behind you). `progress` is the same car as an absolute
+// lap fraction and WRAPS, so `car.progress - s.progress` is not a safe distance —
+// that subtraction is exactly why the field used to vanish for most of a lap.
+const FIELD_SLOTS = Array.from({ length: 8 },
+  () => ({ progress: 0, rel: 0, lane: 0, spin: 0, speed: 1 }));
 SCENE.field = FIELD_SLOTS;
 
 export function readScene(s) {
@@ -763,12 +827,28 @@ export function readScene(s) {
   SCENE.charge = clamp(src.charge, 0, 1);
   SCENE.chars = Math.max(0, Math.min(1e7, Math.round(Number(src.chars) || 0)));
   SCENE.ms = Math.max(0, Math.min(6e8, Number(src.ms) || 0));
+  // An engine that predates the animation contract still animates: animMs falls
+  // back to the lap clock rather than to zero.
+  const anim = Number(src.animMs);
+  SCENE.animMs = Math.max(0, Math.min(6e8, Number.isFinite(anim) ? anim : SCENE.ms));
+  SCENE.idling = src.idling === true || src.phase === 'grid';
+  SCENE.boost = clamp(src.boost, 0, 1);
+  SCENE.wordsDone = Math.max(0, Math.min(1e6, Math.round(Number(src.wordsDone) || 0)));
+  SCENE.celebrate = clamp(src.celebrate, 0, 1);
+  SCENE.celebrating = src.celebrating === true
+    || src.phase === 'finish' || src.phase === 'pit';
+  SCENE.phase = typeof src.phase === 'string' ? src.phase : 'racing';
+  SCENE.odometer = Math.max(0, Math.min(1e9, Math.round(Number(src.odometer) || 0)));
+  SCENE.laps = Math.max(0, Math.min(1e6, Math.round(Number(src.laps) || 0)));
   const f = Array.isArray(src.field) ? src.field : [];
   const n = Math.min(f.length, FIELD_SLOTS.length);
   for (let i = 0; i < n; i++) {
     const e = f[i] && typeof f[i] === 'object' ? f[i] : {};
     const slot = FIELD_SLOTS[i];
     slot.progress = clamp(e.progress, 0, 1);
+    slot.rel = Number.isFinite(Number(e.rel))
+      ? clamp(e.rel, -1, 1)
+      : slot.progress - SCENE.progress;      // pre-contract engines still place cars
     slot.lane = clamp(e.lane, -1, 1);
     slot.spin = clamp(e.spin, 0, 1);
     slot.speed = clamp(e.speed == null ? 1 : e.speed, 0, 4);
@@ -780,5 +860,17 @@ export function readScene(s) {
   if (!(bottom > top)) { top = 0.70; bottom = 0.94; }
   SCENE.reserved.top = top;
   SCENE.reserved.bottom = bottom;
+
+  const ov = src.overlay && typeof src.overlay === 'object' ? src.overlay : null;
+  if (ov) {
+    OVERLAY.left = clamp(ov.left, 0, 1);
+    OVERLAY.right = clamp(ov.right, 0, 1);
+    OVERLAY.top = clamp(ov.top, 0, 1);
+    OVERLAY.bottom = clamp(ov.bottom, 0, 1);
+    SCENE.overlay = (OVERLAY.right > OVERLAY.left && OVERLAY.bottom > OVERLAY.top)
+      ? OVERLAY : null;
+  } else {
+    SCENE.overlay = null;
+  }
   return SCENE;
 }
