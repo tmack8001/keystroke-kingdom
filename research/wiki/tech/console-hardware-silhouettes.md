@@ -2,7 +2,7 @@
 title: Console hardware silhouettes — drawing the machine instead of a cabinet
 type: concept
 tags: [video-game-history, hardware, cabinet, act7, act2, theme-authoring]
-sources: 9
+sources: 14
 verified: 2026-09-13
 ---
 
@@ -29,6 +29,39 @@ on a backlit stand"* (L15 Pokémon). Act 7 can simply use the same grammar.
 Related: [[home-games-in-cabinets]] · [[nintendo-vs-system]] · [[nes-hardware]] ·
 [[mario-kart]] · [[gran-turismo]] · [[excitebike]] · [[need-for-speed-underground]] · [[f1-25]] ·
 [[sixteen-bit-era]] · [[early-3d-era]] · `.claude/rules/theme-authoring.md`
+
+## Which machine to draw: the one it DEBUTED on
+
+*(Trevor, 2026-09-13: "Of course many of these were later created into arcade games, but most
+(Mario) were home first and later ported to an arcade cabinet after finding popularity and
+arcade nostalgia.")*
+
+He is right, and it is the rule that decides every station in Acts 2–4:
+
+> **Draw the platform the game shipped on FIRST. A later arcade conversion does not change
+> what the game was.**
+
+The worked case is the one he named. *Super Mario Bros.* shipped for the Famicom/NES on
+**13 September 1985**; **VS. Super Mario Bros.** — Nintendo's own arcade version, running NES
+hardware inside a cabinet — followed in **February 1986** ([[nintendo-vs-system]]). So an
+arcade Super Mario Bros. genuinely exists, and Level 9 is still an **NES**, because that is
+where the game was born and where a child met it.
+
+This also keeps two existing rules from fighting each other. [[home-games-in-cabinets]] says a
+licensed arcade conversion is real and may be drawn — that page exists because a "no cabinet
+exists" claim was once shipped wrongly. This page says which one to draw *here*. Both hold:
+**the conversion is real; the debut platform is what this game depicts.**
+
+Two consequences worth stating, because they are not symmetrical:
+
+- **Arcade-first titles stay cabinets even when they had famous home ports.** Donkey Kong
+  (1981), Dragon's Lair (1983), Street Fighter II (1991), Out Run, Q*bert and Missile Command
+  are coin-ops that later reached living rooms. They are drawn as cabinets.
+- **Home-first titles stay machines even when they later reached an arcade.** Super Mario Bros.,
+  Zelda, Sonic, Donkey Kong Country, Pokémon, Myst.
+
+And where a title is genuinely ambiguous or the debut is contested, **say so on its page rather
+than picking** — the ordering is a factual claim like any other and needs its citation.
 
 ## The facts — machine by machine
 
@@ -90,6 +123,65 @@ Related: [[home-games-in-cabinets]] · [[nintendo-vs-system]] · [[nes-hardware]
   **top-loading**, with a built-in Ethernet port.
 - **Silhouette at 56×80:** a black rectangle standing on end, with **one thin blue-lit slot** and
   a pair of tiny USB squares. The blue light is the whole identity.
+
+### Sega Genesis, Model 1 (North America, 1989) — draw at 16-bit
+
+The machine [[sonic-the-hedgehog]] shipped on. **Photograph-verified 2026-09-13.**
+
+- **Black, low and wedge-shaped**, with a **ridged vent strip** running along the top-left.
+- **The identifier is the circular raised cartridge bay** at the right of the top surface,
+  carrying a **red `GENESIS` badge and `16-BIT`**. Nothing else in this era looks like it.
+- **Silhouette at 56×80:** a black slab; one lighter ridged band top-left; a **dark circle**
+  right of centre with a **red pixel-run** across it. The red-on-black badge is the whole
+  message at this size.
+- **⚠️ Not the Japanese Mega Drive and not the Model 2.** The JP Mk1 and the 1993 Model 2 are
+  different objects; Sonic in a North American living room is the Model 1.
+
+### Super Nintendo (North America, 1991) — the photograph, added
+
+Text notes are above; the photograph confirms and sharpens them.
+
+- **Light grey, boxy**, with a darker grey recessed panel across the top.
+- **The identifier is the pair of PURPLE sliding switches** on the front face — power and
+  reset, side by side, unmistakable at any size.
+- Two controller ports on the angled lower front.
+- **Silhouette at 56×80:** a pale grey box, a darker inset band on top, and **two purple pixel
+  blocks** low on the front.
+
+### Game Boy Pocket (1996) — draw at 4-shade dot-matrix
+
+`.claude/rules/levels/act3.md` names this exact model for L15: *"A Game Boy Pocket on a backlit
+stand."* **Photograph-verified 2026-09-13.**
+
+- **Silver-grey, portrait**, notably slimmer than the original 1989 Game Boy.
+- **A grey-green LCD** high on the face inside a slightly lighter bezel.
+- **Black cross D-pad lower-left**; **two round grey buttons lower-right**, labelled B then A
+  (B is to the LEFT of A); two small slanted SELECT/START pills between them, below.
+- **Speaker holes** in the lower-right corner.
+- **Silhouette at 56×80:** a tall pale rectangle; a grey-green screen block in its upper half;
+  a black cross and two dots below. The portrait orientation alone distinguishes it from every
+  other machine on this page.
+
+### Nintendo 64 (1996) — draw at early-3D fidelity
+
+- **Dark charcoal, curved and organic** — the only console here that is not a rectangle.
+- **Cartridge slot on the top surface.**
+- **The identifier is four controller ports in a CURVED ROW across the front**, and the
+  `NINTENDO 64` logo with its multicoloured 3D "64" in the centre front.
+- **Silhouette at 56×80:** a dark rounded mass with **four pale notches along its front edge**
+  and a small colour fleck at centre. Four ports is the fact — every other console here has
+  two.
+
+### Sony PlayStation (SCPH-1000/1001, 1994/95) — the photograph, added
+
+- **GREY.** Photograph-confirmed, which matters because this wiki records a summariser
+  asserting mid-research that the original PlayStation was black. **Black is the PS2.**
+- A flat wide box with a **round CD lid** occupying most of the top surface.
+- Controller: grey, D-pad left, the **four-symbol face buttons** right.
+- **Silhouette at 56×80:** a pale grey slab with a **circle** on top. The circle is the message.
+- **⚠️ Model note:** the photograph is an **SCPH-1000 (Japanese launch)**. The North American
+  SCPH-1001 is the same industrial design and the same grey; where a claim depends on port or
+  badge detail rather than shape and colour, source the NA unit.
 
 ### Apple II / Apple IIe (1977–1986, beige) — draw at 8-bit
 
@@ -177,6 +269,49 @@ Reference photographs, stored in the vault so the drawing claims above stay audi
 - **Licence:** Public domain
 - **Retrieved:** 2026-09-13
 
+### `sega-genesis-model-1.jpg`
+![A North American Sega Genesis Model 1: a low black console with a ridged vent strip, a circular raised cartridge bay carrying a red GENESIS 16-BIT badge, and its controller](../media/console-hardware-silhouettes/sega-genesis-model-1.jpg)
+- **Shows:** the circular cartridge bay and the red GENESIS / 16-BIT badge — the two details
+  that survive at cabinet scale.
+- **Source:** [File:Sega-Genesis-Mod1-Set.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Sega-Genesis-Mod1-Set.jpg)
+- **Author:** Evan-Amos
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-13
+
+### `super-nintendo-na.jpg`
+![A North American Super Nintendo: a light grey boxy console with a darker recessed top panel and two purple sliding switches on the front](../media/console-hardware-silhouettes/super-nintendo-na.jpg)
+- **Shows:** the two purple sliding switches, which are the fastest identifier at any size.
+- **Source:** [File:Nintendo-Super-NES-Console-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nintendo-Super-NES-Console-FL.jpg)
+- **Author:** Evan-Amos
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-13
+
+### `game-boy-pocket.jpg`
+![A Game Boy Pocket: a slim silver-grey portrait handheld with a grey-green LCD high on the face, a black cross D-pad lower-left and two round buttons lower-right](../media/console-hardware-silhouettes/game-boy-pocket.jpg)
+- **Shows:** the exact model `act3.md` names for Level 15, and its portrait proportions.
+- **Source:** [File:Game-Boy-Pocket-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Game-Boy-Pocket-FL.jpg)
+- **Author:** Evan-Amos
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-13
+
+### `nintendo-64.jpg`
+![A Nintendo 64: a dark charcoal console with curved organic edges, a cartridge slot on top, and four controller ports in a curved row across the front](../media/console-hardware-silhouettes/nintendo-64.jpg)
+- **Shows:** the four front ports in their curved row — the count that distinguishes it from
+  every two-port console on this page.
+- **Source:** [File:Nintendo-64-Console-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nintendo-64-Console-FL.jpg)
+- **Author:** Evan-Amos
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-13
+
+### `sony-playstation-scph-1000.jpg`
+![A Sony PlayStation SCPH-1000: a flat wide GREY console with a round CD lid on top, beside its grey controller](../media/console-hardware-silhouettes/sony-playstation-scph-1000.jpg)
+- **Shows:** that it is **grey**, and the round CD lid. Stored partly as standing evidence
+  against the black-PlayStation error this wiki already had to correct once.
+- **Source:** [File:PlayStation-SCPH-1000-with-Controller.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:PlayStation-SCPH-1000-with-Controller.jpg)
+- **Author:** Evan-Amos
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-13
+
 ### `beige-desktop-pc-monitor-on-top.jpg`
 ![A beige horizontal desktop PC with the CRT monitor sitting on top of the case and the keyboard in front, drive slots on the case's front face](../media/console-hardware-silhouettes/beige-desktop-pc-monitor-on-top.jpg)
 - **Shows:** the form this section describes — horizontal case, monitor on top, keyboard in
@@ -232,3 +367,8 @@ as a historical term of art — treat it as an authoring shorthand, not a fact.*
 7. [Apple IIe — Wikipedia (raw wikitext)](https://en.wikipedia.org/w/index.php?title=Apple_IIe&action=raw) — the 1984 case revision as "dyed plastic mold in a slightly darker beige" with "darker keycaps (small black lettering, versus large white print)"; the January 1987 "Platinum IIe" colour change to light grey; the recessed metal ID badges showing the Apple logo with "//e". **[fetched]**
 8. [File:Iie-system.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Iie-system.jpg) and [File:Old packard bell pc.jpg](https://commons.wikimedia.org/wiki/File:Old_packard_bell_pc.jpg) — the two reference photographs, stored in this vault under `wiki/media/console-hardware-silhouettes/` with their licences. Every silhouette detail above was read off these frames. **[images viewed]**
 9. [File:NES-Console-Set.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NES-Console-Set.jpg) — Evan-Amos's public-domain hardware photography; the reference for the Level 9 console station. **[image viewed]**
+10. [File:Sega-Genesis-Mod1-Set.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Sega-Genesis-Mod1-Set.jpg) — Evan-Amos, public domain. North American Genesis Model 1. **[image viewed]**
+11. [File:Nintendo-Super-NES-Console-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nintendo-Super-NES-Console-FL.jpg) — Evan-Amos, public domain. NA Super Nintendo; the purple switches. **[image viewed]**
+12. [File:Game-Boy-Pocket-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Game-Boy-Pocket-FL.jpg) — Evan-Amos, public domain. The Game Boy Pocket named in act3.md. **[image viewed]**
+13. [File:Nintendo-64-Console-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nintendo-64-Console-FL.jpg) — Evan-Amos, public domain. Four front controller ports. **[image viewed]**
+14. [File:PlayStation-SCPH-1000-with-Controller.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:PlayStation-SCPH-1000-with-Controller.jpg) — Evan-Amos, public domain. Confirms the original PlayStation is grey. **[image viewed]**

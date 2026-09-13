@@ -738,9 +738,30 @@ drawn, not just the text silhouette notes — text-only produced three wrong pan
 afternoon. Store the reference in `research/wiki/media/` with its licence (research/WIKI.md
 §Media). Gaps still to source: **Genesis, Game Boy Pocket, N64, a wooden-cabinet TV.**
 
-**Sequencing:** one worked example first (L9, the NES), looked at by Trevor, before the
-remaining eleven. Anything here changes what the game looks like, so it is a review gate, not
-a sweep.
+**✅ ACTS 2 AND 3 DONE 2026-09-13.** L9 + L10 NES under a wooden TV, L11 Genesis, L13 a beige
+PC on a **monitor** (a console plugs into a television; a computer has a monitor — drawing
+Myst's 1993 CD-ROM on wood veneer was the first thing that looked wrong once they were on
+screen together), L14 SNES with its two purple switches, L15 a Game Boy Pocket on its stand.
+**L6 Donkey Kong, L7 Dragon's Lair and L12 Street Fighter II correctly stay arcade cabinets** —
+all three are arcade-first, and seeing SF2 stand as a coin-op among Act 3's consoles is the
+debut-platform rule visible on screen. Every machine drawn from an Evan-Amos public-domain
+photograph, stored and credited in `research/wiki/media/console-hardware-silhouettes/`.
+
+**STILL OPEN — two, both deliberate:**
+
+1. **L8 Tetris — a genuine research gap, not an oversight.** `act2.md` says *"a computer
+   running the original"*, and the original is a **1984 Electronika 60** in the USSR — not a
+   beige western desktop. No photograph of one has been sourced, and `levels.md` separately
+   credits the *Game Boy* version (1989), so even the intended object is ambiguous. It keeps
+   its arcade cabinet until someone decides which machine it is and finds a picture of it.
+   **Do not fudge this with the beige PC.**
+2. **Act 4 (L16–20) — needs a decision, not just drawing.** The games are console and PC
+   titles (SimCity 2000 PC, GoldenEye N64, Age of Empires PC, Final Fantasy VII PS1), and the
+   N64, PlayStation and PC machines are already drawn and photograph-sourced. But **Act 4's
+   premise is a late-90s SERVER ROOM**, not a living room, so a console on a domestic TV may
+   read wrong there in a way it does not in the Basement. It also wants a **plastic 90s CRT**
+   rather than the wood-veneer television, which is a third display variant. Worth Trevor
+   looking at one before the act is swept.
 
 ### Found 2026-09-11 (pre-existing, surfaced by the swarm — not caused by it)
 

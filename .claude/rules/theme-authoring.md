@@ -95,6 +95,14 @@ The screenshot must read as a complete scene *with the panels present* (L29, L17
   *themselves only*. **⚠️ Known exposure: only the PANELS have been checked against
   photographs. All 25 cabinet SCREENS, and the console silhouettes, are still text-authored
   and unverified against imagery.**
+- **Draw the platform the game DEBUTED on** *(Trevor, 2026-09-13)*. Many console games later
+  got arcade cabinets — *Super Mario Bros.* (NES, 13 Sept 1985) became **VS. Super Mario Bros.**
+  (arcade, Feb 1986) — but the debut platform is what this game depicts, because that is where
+  the game was born and where a child met it. So arcade-first titles stay cabinets even when
+  they had famous home ports (Donkey Kong, Street Fighter II, Out Run), and home-first titles
+  stay machines even when they reached an arcade (Mario, Zelda, Sonic, Pokémon, Myst). Where a
+  debut is genuinely contested, say so on the wiki page rather than picking.
+  Reference: `research/wiki/tech/console-hardware-silhouettes.md`.
 - **Era fidelity** — palette/fidelity per the level's act file
   (`.claude/rules/levels/actN.md`). Faithful recreation over gimmick; no key-glyph puns.
 - **Mechanics fidelity, wiki-grounded** (Trevor, 2026-07-12) — the scene must show the

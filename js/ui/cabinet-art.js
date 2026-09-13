@@ -802,7 +802,10 @@ const CABINET_DATA = {
   9: {
     label: 'LEVEL 9',
     // act2.md: "The NES in the center of the room" — a console, not a coin-op.
-    shell: 'console',
+    // Debut platform: Famicom/NES, 13 Sept 1985. (VS. Super Mario Bros, the arcade
+    // version, came Feb 1986 — later, so it is not what we draw. See
+    // theme-authoring.md "Draw the platform the game DEBUTED on".)
+    shell: 'console', machine: 'nes',
     keys: 'W O',
     era: '1985',
     colors: { body: '#000820', screen: '#000', accent: '#5c94fc', trim: '#1a3060' },
@@ -835,6 +838,8 @@ const CABINET_DATA = {
 
   10: {
     label: 'LEVEL 10',
+    // act2.md: "A gold-cartridge NES beside a wooden TV." Zelda, NES 1986.
+    shell: 'console', machine: 'nes',
     keys: 'Q P',
     era: '1986',
     colors: { body: '#020804', screen: '#000', accent: '#e8d040', trim: '#443010' },
@@ -876,6 +881,8 @@ const CABINET_DATA = {
 
   11: {
     label: 'LEVEL 11',
+    // act3.md: "A Genesis console." Sonic, Sega Genesis, 23 June 1991.
+    shell: 'console', machine: 'genesis',
     keys: 'V M',
     era: '1991',
     colors: { body: '#010a08', screen: '#000', accent: '#23d353', trim: '#0a3020' },
@@ -946,6 +953,8 @@ const CABINET_DATA = {
 
   13: {
     label: 'LEVEL 13',
+    // act3.md: "A computer running the first great CD-ROM game." Myst, 1993.
+    shell: 'console', machine: 'pc',
     keys: 'C ,',
     era: '1993',
     colors: { body: '#04080c', screen: '#000', accent: '#80a0b8', trim: '#1a2838' },
@@ -977,6 +986,8 @@ const CABINET_DATA = {
 
   14: {
     label: 'LEVEL 14',
+    // act3.md: "A SNES cartridge that made the entire industry stop and stare."
+    shell: 'console', machine: 'snes',
     keys: 'X .',
     era: '1994',
     colors: { body: '#020a00', screen: '#000', accent: '#44cc44', trim: '#0a2a08' },
@@ -1018,6 +1029,8 @@ const CABINET_DATA = {
 
   15: {
     label: 'LEVEL 15',
+    // act3.md: "A Game Boy Pocket on a backlit stand." Pokemon, Game Boy 1996.
+    shell: 'console', machine: 'gameboy-pocket',
     keys: 'Z /',
     era: '1996',
     colors: { body: '#060400', screen: '#000', accent: '#ffcc00', trim: '#443300' },
@@ -1683,39 +1696,136 @@ function drawConsoleStation(canvas, data, scale = 2) {
   ctx.fillStyle = '#2b2016';  ctx.fillRect(0, 62, w, 18);     // the floor/shelf
   ctx.fillStyle = '#171009';  ctx.fillRect(0, 68, w, 12);
 
-  // A wooden television — act2.md L10 says "a wooden TV" in so many words.
-  ctx.fillStyle = '#6b4a2a';  ctx.fillRect(4, 3, 48, 44);     // veneer cabinet
-  ctx.fillStyle = '#4a3320';
-  ctx.fillRect(4, 43, 48, 4);                                 // shadowed underside
-  ctx.fillStyle = '#1a1a20';  ctx.fillRect(7, 6, 42, 34);     // the bezel well
-  data.drawScreen(ctx, 9, 8, 38, 30);                         // the game itself
-  ctx.fillStyle = '#c8a26a';                                  // two tuning knobs
-  ctx.fillRect(50, 12, 3, 4);
-  ctx.fillRect(50, 20, 3, 4);
-  ctx.fillStyle = '#3a2816';                                  // legs
-  ctx.fillRect(9, 47, 4, 5);
-  ctx.fillRect(43, 47, 4, 5);
+  const handheld = data.machine === 'gameboy-pocket';
+  if (!handheld) {
+    // A console plugs into a TELEVISION; a computer has a MONITOR. Drawing Myst's
+    // 1993 CD-ROM on a wood-veneer television was the first thing that looked
+    // wrong once these were on screen together.
+    const monitor = data.machine === 'pc';
+    if (monitor) {
+      ctx.fillStyle = '#cec5ac';  ctx.fillRect(6, 3, 44, 42);  // beige plastic monitor
+      ctx.fillStyle = '#9b9480';  ctx.fillRect(6, 42, 44, 3);
+      ctx.fillStyle = '#14141b';  ctx.fillRect(9, 6, 38, 33);  // the bezel well
+      data.drawScreen(ctx, 11, 8, 34, 29);
+      ctx.fillStyle = '#b5ad98';  ctx.fillRect(24, 45, 8, 5);  // stand
+      ctx.fillRect(20, 49, 16, 2);
+    } else {
+      // A wooden television — act2.md L10 says "a wooden TV" in so many words.
+      ctx.fillStyle = '#6b4a2a';  ctx.fillRect(4, 3, 48, 44);  // veneer cabinet
+      ctx.fillStyle = '#4a3320';  ctx.fillRect(4, 43, 48, 4);  // shadowed underside
+      ctx.fillStyle = '#1a1a20';  ctx.fillRect(7, 6, 42, 34);  // the bezel well
+      data.drawScreen(ctx, 9, 8, 38, 30);                      // the game itself
+      ctx.fillStyle = '#c8a26a';                               // two tuning knobs
+      ctx.fillRect(50, 12, 3, 4);
+      ctx.fillRect(50, 20, 3, 4);
+      ctx.fillStyle = '#3a2816';                               // legs
+      ctx.fillRect(9, 47, 4, 5);
+      ctx.fillRect(43, 47, 4, 5);
+    }
+  }
+  drawMachine(ctx, data);
+}
 
-  // The NES, front-loading, two-tone grey with the red wordmark.
-  ctx.fillStyle = '#d3d3d3';  ctx.fillRect(8, 53, 28, 9);     // light upper body
-  ctx.fillStyle = '#9a9a9a';  ctx.fillRect(8, 59, 28, 3);     // darker lower band
-  ctx.fillStyle = '#c2c2c2';  ctx.fillRect(11, 54, 17, 4);    // the cartridge door
-  ctx.fillStyle = '#2a2a2e';  ctx.fillRect(30, 53, 4, 6);     // the dark right stripe
-  ctx.fillStyle = '#c8202a';  ctx.fillRect(11, 60, 9, 1);     // "Nintendo" in red
-  ctx.fillStyle = '#7a7a7a';                                  // POWER / RESET
-  ctx.fillRect(22, 60, 3, 1);
-  ctx.fillRect(26, 60, 3, 1);
+// One machine each, drawn from the photographs stored in
+// research/wiki/media/console-hardware-silhouettes/ — never from the text notes
+// alone (journal F29). Each keeps to the two or three details that survive here.
+function drawMachine(ctx, data) {
+  switch (data.machine) {
+    case 'nes': {
+      ctx.fillStyle = '#d3d3d3';  ctx.fillRect(8, 53, 28, 9);   // light upper body
+      ctx.fillStyle = '#9a9a9a';  ctx.fillRect(8, 59, 28, 3);   // darker lower band
+      ctx.fillStyle = '#c2c2c2';  ctx.fillRect(11, 54, 17, 4);  // the cartridge door
+      ctx.fillStyle = '#2a2a2e';  ctx.fillRect(30, 53, 4, 6);   // the dark right stripe
+      ctx.fillStyle = '#c8202a';  ctx.fillRect(11, 60, 9, 1);   // "Nintendo" in red
+      ctx.fillStyle = '#7a7a7a';
+      ctx.fillRect(22, 60, 3, 1);
+      ctx.fillRect(26, 60, 3, 1);
+      drawPad(ctx, 39, 55, '#cfcfcf', '#c8202a');
+      break;
+    }
+    case 'genesis': {
+      ctx.fillStyle = '#17171a';  ctx.fillRect(8, 52, 28, 10);  // black slab
+      ctx.fillStyle = '#2e2e33';  ctx.fillRect(10, 53, 9, 4);   // ridged vent strip
+      ctx.fillStyle = '#101013';
+      for (let i = 0; i < 4; i++) ctx.fillRect(10, 53 + i, 9, 1);
+      ctx.fillStyle = '#232327';  ctx.fillRect(24, 52, 11, 8);  // the round cart bay
+      ctx.fillRect(23, 54, 13, 4);
+      ctx.fillStyle = '#d1202a';  ctx.fillRect(26, 55, 8, 2);   // the red GENESIS badge
+      drawPad(ctx, 39, 55, '#1d1d21', '#8a8a90');
+      break;
+    }
+    case 'snes': {
+      ctx.fillStyle = '#dcdcdc';  ctx.fillRect(8, 51, 28, 11);  // pale grey box
+      ctx.fillStyle = '#b4b4b4';  ctx.fillRect(11, 52, 22, 4);  // recessed top panel
+      ctx.fillStyle = '#8f7bc4';  ctx.fillRect(14, 58, 5, 3);   // the PURPLE switches
+      ctx.fillRect(22, 58, 5, 3);
+      ctx.fillStyle = '#9a9a9a';  ctx.fillRect(10, 60, 4, 2);   // controller ports
+      ctx.fillRect(30, 60, 4, 2);
+      drawPad(ctx, 39, 55, '#dcdcdc', '#8f7bc4');
+      break;
+    }
+    case 'n64': {
+      ctx.fillStyle = '#2a2a2e';  ctx.fillRect(8, 51, 28, 11);  // dark charcoal, rounded
+      ctx.fillRect(9, 50, 26, 2);
+      ctx.fillStyle = '#3a3a40';  ctx.fillRect(14, 51, 15, 3);  // cartridge slot on top
+      ctx.fillStyle = '#8e8e96';                                 // FOUR front ports
+      for (let i = 0; i < 4; i++) ctx.fillRect(11 + i * 6, 59, 4, 2);
+      ctx.fillStyle = '#2ba3d6';  ctx.fillRect(20, 56, 2, 2);    // the colour fleck
+      ctx.fillStyle = '#d14a2a';  ctx.fillRect(23, 56, 2, 2);
+      drawPad(ctx, 39, 55, '#c9c9c9', '#2a2a2e');
+      break;
+    }
+    case 'playstation': {
+      ctx.fillStyle = '#c9c6bd';  ctx.fillRect(8, 53, 28, 9);   // GREY. Black is the PS2.
+      ctx.fillStyle = '#b3b0a7';  ctx.fillRect(13, 53, 16, 7);  // the round CD lid
+      ctx.fillRect(12, 55, 18, 4);
+      ctx.fillStyle = '#9d9a92';  ctx.fillRect(19, 56, 4, 2);
+      drawPad(ctx, 39, 55, '#c9c6bd', '#8e8b84');
+      break;
+    }
+    case 'gameboy-pocket': {
+      // A handheld has no television: it IS the screen. act3.md L15 —
+      // "A Game Boy Pocket on a backlit stand."
+      ctx.fillStyle = '#b9bcc0';  ctx.fillRect(17, 12, 22, 46);  // silver-grey body
+      ctx.fillStyle = '#cdd0d4';  ctx.fillRect(19, 15, 18, 20);  // lighter screen bezel
+      ctx.fillStyle = '#1a1a20';  ctx.fillRect(20, 16, 16, 17);
+      data.drawScreen(ctx, 20, 16, 16, 17);                      // the game, dot-matrix
+      ctx.fillStyle = '#26262a';                                 // black cross D-pad
+      ctx.fillRect(21, 42, 6, 2);
+      ctx.fillRect(23, 40, 2, 6);
+      ctx.fillStyle = '#8e9195';                                 // B then A
+      ctx.fillRect(31, 43, 3, 3);
+      ctx.fillRect(35, 41, 3, 3);
+      ctx.fillStyle = '#8e9195';                                 // select / start
+      ctx.fillRect(25, 49, 4, 1);
+      ctx.fillRect(30, 49, 4, 1);
+      ctx.fillStyle = '#9fa2a6';                                 // speaker holes
+      for (let i = 0; i < 3; i++) ctx.fillRect(33 + i * 2, 53, 1, 3);
+      ctx.fillStyle = '#3a3a44';  ctx.fillRect(20, 58, 16, 4);   // the backlit stand
+      break;
+    }
+    case 'pc': {                                                 // a beige desktop + keyboard
+      ctx.fillStyle = '#cec5ac';  ctx.fillRect(8, 51, 30, 9);
+      ctx.fillStyle = '#9b9480';  ctx.fillRect(8, 58, 30, 2);
+      ctx.fillStyle = '#2a2a30';  ctx.fillRect(24, 53, 11, 2);   // 5.25-inch slot
+      ctx.fillRect(24, 56, 7, 1);                                // 3.5-inch slot
+      ctx.fillStyle = '#5fd35f';  ctx.fillRect(36, 56, 2, 2);
+      ctx.fillStyle = '#cec5ac';  ctx.fillRect(40, 55, 13, 6);   // keyboard
+      ctx.fillStyle = '#8b8370';
+      for (let i = 0; i < 4; i++) ctx.fillRect(42 + i * 3, 57, 2, 2);
+      break;
+    }
+  }
+}
 
-  // The controller: black cross left, two red buttons right.
-  ctx.fillStyle = '#cfcfcf';  ctx.fillRect(39, 55, 13, 7);
-  ctx.fillStyle = '#26262a';                                  // D-pad
-  ctx.fillRect(41, 57, 4, 2);
-  ctx.fillRect(42, 56, 2, 4);
-  ctx.fillStyle = '#8a8a8a';  ctx.fillRect(45, 58, 3, 1);     // select/start
-  ctx.fillStyle = '#c8202a';                                  // A and B
-  ctx.fillRect(47, 57, 2, 2);
-  ctx.fillRect(50, 57, 2, 2);
-  ctx.fillStyle = '#0a0a12';  ctx.fillRect(37, 58, 2, 1);     // the cable
+// A small gamepad: body, black cross, two face buttons.
+function drawPad(ctx, x, y, body, btn) {
+  ctx.fillStyle = body;       ctx.fillRect(x, y, 13, 7);
+  ctx.fillStyle = '#26262a';  ctx.fillRect(x + 2, y + 2, 4, 2);
+  ctx.fillRect(x + 3, y + 1, 2, 4);
+  ctx.fillStyle = btn;        ctx.fillRect(x + 8, y + 2, 2, 2);
+  ctx.fillRect(x + 11, y + 2, 2, 2);
+  ctx.fillStyle = '#0a0a12';  ctx.fillRect(x - 2, y + 3, 2, 1);  // the cable
 }
 
 function drawCabinet(canvas, levelNum, scale = 2) {
