@@ -96,10 +96,24 @@ func TestBlocklist(t *testing.T) {
 	// Use a permissive key set so charset never masks the blocklist under test.
 	lm := levelManifest{Keys: strings.Split("abcdefghijklmnopqrstuvwxyz", "")}
 
-	blocked := []string{"hell", "kill", "gun", "shell"} // "shell" contains "hell"
+	blocked := []string{"hell", "kill", "gun", "guns", "killing"}
 	got := validateWords(blocked, paramsFor(lm))
 	if len(got) != 0 {
 		t.Errorf("expected all blocked, got %v", got)
+	}
+
+	// CHANGED 2026-09-12 (Trevor): "shell" used to be asserted BLOCKED here, with the
+	// comment `// "shell" contains "hell"`. That was the substring matcher's defect
+	// written down as a requirement. "shell" is an ordinary word a child should learn
+	// (seashell; and the vocabulary research wants it for the racing act), and the same
+	// rule was silently eating "altitude" (tit), "compass"/"class"/"assist" (ass),
+	// "speed" (pee), "title" (tit) and "forward" (war). Matching is now exact-word +
+	// generated inflections, so innocent words containing a bad SUBSTRING must pass.
+	innocent := []string{"shell", "altitude", "attitude", "compass", "class", "assist",
+		"speed", "title", "forward", "warm", "cockpit", "peacock", "titan", "deadline"}
+	if got := validateWords(innocent, paramsFor(lm)); len(got) != len(innocent) {
+		t.Errorf("innocent words must NOT be blocked; %d of %d survived: %v",
+			len(got), len(innocent), got)
 	}
 
 	// Innocent words with the same permissive charset must pass.

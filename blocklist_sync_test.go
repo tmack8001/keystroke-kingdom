@@ -82,7 +82,10 @@ func TestIsBlockedCatchesFloorWordInsideCompound(t *testing.T) {
 // The additive substring layer must not be lost while unioning in the floor: these
 // are words the Go literal uniquely catches (they are not in the JSON floor), plus
 // the inflection behavior that is the whole reason a substring layer exists here.
-func TestIsBlockedKeepsSubstringExtras(t *testing.T) {
+// RENAMED + RESCOPED 2026-09-12 (Trevor overruled substring matching; see
+// .claude/rules/security.md rule 7). The extras list is still enforced — as EXACT
+// WORDS plus generated inflections, never as substrings.
+func TestIsBlockedKeepsExtraBlockedWords(t *testing.T) {
 	uniqueToExtras := []string{
 		"ass", "arse", "crap", "butt", "fart", "poop", "pee", "died",
 		"hate", "war", "piss", "cock", "boob", "tit", "slut", "whore",
@@ -92,10 +95,23 @@ func TestIsBlockedKeepsSubstringExtras(t *testing.T) {
 			t.Errorf("isBlocked lost substring-extra coverage for %q", w)
 		}
 	}
-	// Inflections: exact-word matching alone would miss these.
-	for _, w := range []string{"killing", "guns", "deadly", "warlike"} {
+	// Inflections are generated (expandBlockedForms), so these are still caught
+	// without any substring rule.
+	for _, w := range []string{"killing", "guns", "deadly", "dying", "hating", "hateful"} {
 		if !isBlocked(w) {
-			t.Errorf("isBlocked lost inflection coverage for %q (substring layer)", w)
+			t.Errorf("isBlocked lost inflection coverage for %q", w)
+		}
+	}
+	// And the counterpart that is the WHOLE POINT of the change: ordinary words that
+	// merely CONTAIN a blocked string must pass. "warlike" was previously caught by the
+	// substring "war"; it is an ordinary adjective and is deliberately no longer blocked.
+	// If any word here should genuinely be blocked, add it to js/word-blocklist.json —
+	// the auditable floor — never by reinstating substring matching.
+	for _, w := range []string{"altitude", "attitude", "latitude", "compass", "class",
+		"assist", "passenger", "speed", "title", "forward", "warm", "award", "shell",
+		"cockpit", "peacock", "titan", "titanic", "deadline", "warlike"} {
+		if isBlocked(w) {
+			t.Errorf("innocent word %q is blocked — substring over-blocking has returned", w)
 		}
 	}
 }

@@ -126,9 +126,29 @@ HTML, shell, or JavaScript.
    path may ADD to it but may never REPLACE it.** `isBlocked` is now the UNION of the floor
    (exact-match, on the whole word and on each letter-token so `zig-vodka` cannot smuggle one
    through) and `wordgenSubstringExtras`, a deliberately-kept ADDITIVE substring layer.
-   The two match differently on purpose: **substring matching is only safe on a single
-   generated word, never on prose** ("hello" contains "hell") — which is why wordgen can
-   afford substrings and the coda/chat path uses exact words. `js/wordgen.js` `takeWords()`
+   **⚠️ SUBSTRING MATCHING WAS REMOVED 2026-09-12 (Trevor) — it was a defect, not a
+   conservative trade.** The earlier note here argued substrings were "only safe on a single
+   generated word" — that was wrong in the direction that matters. `strings.Contains` blocked
+   any word merely CONTAINING a bad string, so **`altitude` was rejected for containing
+   `tit`**, and with it `attitude`, `latitude`, `compass`, `mass`, `class`, `assist`,
+   `passenger`, `speed`, `title`, `competition`, `forward`, `award`, `warm` and `shell`. That
+   silently removes ordinary vocabulary a child should be learning — and `altitude` is the
+   single most on-theme word in the proposed flight act. A test had even written the defect
+   down as a requirement (`main_test.go` asserted `shell` must be blocked, with the comment
+   *"shell contains hell"*).
+   **The rule is now: a word is blocked if it IS a blocked word, or is a blocked word's
+   generated INFLECTION** (`expandBlockedForms` — plural/-ed/-ing/-er/-y/-ly/-ful/-ness, the
+   silent-e drop, CVC doubling, y→ies, and ie→y so `die`→`dying`). Compound smuggling is
+   still stopped by matching each letters-only TOKEN (`zig-vodka`), which is tokenization, not
+   substring matching. **Anything else that should be blocked goes in
+   `js/word-blocklist.json`** — the auditable floor, whose blast radius can be enumerated;
+   a substring rule's cannot. When the change was made, the words it had been catching only
+   incidentally were audited and the genuinely-unsafe ones added explicitly to the floor
+   (`assassin`, `assassinate`, `harass`, `warfare`, `warhead`), along with pre-existing gaps
+   the substring rule never caught either (`molest`, `bastard`, `bugger`, `stupid`, `idiot`).
+   **The client (`js/word-blocklist.js`) was already exact-word only** and its own comment
+   already said *"a substring match would over-block innocent words"* — only the Go wordgen
+   path was wrong. `js/wordgen.js` `takeWords()`
    now applies `hasBlockedWord` from the same single source as a client backstop.
    `blocklist_sync_test.go` pins floor-coverage for BOTH consumers, compound smuggling, and
    extras retention — the ABSENCE of that test is why the drift survived undetected, so any

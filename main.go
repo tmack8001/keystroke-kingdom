@@ -889,7 +889,11 @@ func charsetOK(w string, allowed map[rune]bool) bool {
 // belongs in the shared floor — put it in js/word-blocklist.json so BOTH languages
 // and BOTH paths (wordgen + chat/coda) get it. This layer may only ever ADD to the
 // floor, never replace it. blocklist-sync_test.go pins that relationship.
-var wordgenSubstringExtras = []string{
+// The extras list: words NOT in the shared floor that should still never reach a
+// child. Matched as exact words + inflections (see expandBlockedForms), never as
+// substrings. Renamed from wordgenSubstringExtras 2026-09-12 when substring
+// matching was removed as a defect.
+var wordgenExtraBlocked = []string{
 	"ass", "arse", "sex", "damn", "hell", "crap", "butt", "fart", "poop", "pee",
 	"kill", "die", "died", "dead", "death", "gun", "gore", "blood", "hate",
 	"drug", "drugs", "beer", "wine", "sexy", "nazi", "war", "shit", "fuck",
@@ -908,23 +912,94 @@ var wordgenSubstringExtras = []string{
 // Before 2026-09-11 this consulted layer 2 ONLY, so seven floor words (bitch,
 // booze, liquor, murder, suicide, vodka, whiskey) were spellable, generated, and
 // servable to a child from Level 9 onward. Layer 1 is the fix; do not remove it.
+// expandBlockedForms returns a bad word plus its ordinary English inflections, so
+// the matcher can block "guns", "killing" and "deadly" WITHOUT resorting to
+// substring matching.
+//
+// Why this exists (Trevor, 2026-09-12): the previous layer used
+// strings.Contains, which blocked any word merely CONTAINING a bad string —
+// so "altitude" was rejected for containing "tit", and with it "attitude",
+// "latitude", "compass", "mass", "class", "assist", "passenger", "speed",
+// "title", "competition", "forward", "award" and "warm". That is not a
+// conservative safety trade, it is a defect: it silently removes ordinary
+// vocabulary a child should be learning, and "altitude" is the single most
+// on-theme word in a flight act.
+//
+// The rule is now: a word is blocked if it IS a bad word, or is a bad word's
+// inflected form. Nothing else. If some other word should be blocked, it goes
+// in js/word-blocklist.json — which is auditable, unlike a substring rule whose
+// blast radius nobody can enumerate.
+func expandBlockedForms(bad string) []string {
+	out := []string{bad}
+	add := func(forms ...string) { out = append(out, forms...) }
+
+	add(bad+"s", bad+"es", bad+"ed", bad+"ing", bad+"er", bad+"ers", bad+"y", bad+"ly",
+		bad+"ful", bad+"ness")
+
+	// hate -> hating / hated (drop the silent e before a vowel suffix)
+	if strings.HasSuffix(bad, "e") {
+		stem := strings.TrimSuffix(bad, "e")
+		add(stem+"ing", stem+"ed", stem+"er", stem+"ers", stem+"y")
+	}
+	// gun -> gunning / gunned; war -> warring (CVC doubling)
+	if n := len(bad); n >= 3 && isVowel(bad[n-2]) && !isVowel(bad[n-1]) && !isVowel(bad[n-3]) {
+		d := bad + string(bad[n-1])
+		add(d+"ing", d+"ed", d+"er", d+"ers", d+"y")
+	}
+	// party -> parties (y -> ies)
+	if strings.HasSuffix(bad, "y") {
+		add(strings.TrimSuffix(bad, "y") + "ies")
+	}
+	// die -> dying (ie -> y before -ing; also lie/tie). Caught by a real test,
+	// not anticipated: the silent-e rule alone yields "diing".
+	if strings.HasSuffix(bad, "ie") {
+		add(strings.TrimSuffix(bad, "ie") + "ying")
+	}
+	return out
+}
+
+func isVowel(b byte) bool {
+	switch b {
+	case 'a', 'e', 'i', 'o', 'u':
+		return true
+	}
+	return false
+}
+
+// blockedForms is the expanded exact-match set, built once from the extras list.
+var blockedForms = func() map[string]bool {
+	m := map[string]bool{}
+	for _, bad := range wordgenExtraBlocked {
+		for _, f := range expandBlockedForms(bad) {
+			m[f] = true
+		}
+	}
+	return m
+}()
+
 func isBlocked(w string) bool {
 	lw := strings.ToLower(w)
-	// Layer 1 — the shared exact-word floor (whole word, then per letter-token).
-	if chatWordBlocklist[lw] {
+	// Check the whole string, then each letters-only token, against BOTH the
+	// shared floor and the expanded extras. Token-splitting is what stops a
+	// compound like "zig-vodka" smuggling a floor word through; it is NOT
+	// substring matching, so "altitude" is untouched.
+	if chatWordBlocklist[lw] || blockedForms[lw] {
 		return true
 	}
 	for _, tok := range strings.FieldsFunc(lw, func(r rune) bool {
 		return r < 'a' || r > 'z'
 	}) {
-		if chatWordBlocklist[tok] {
+		if chatWordBlocklist[tok] || blockedForms[tok] {
 			return true
 		}
 	}
-	// Layer 2 — the additive substring extras.
-	for _, bad := range wordgenSubstringExtras {
-		if lw == bad || strings.Contains(lw, bad) {
-			return true
+	// The shared floor's own inflections too (guns/killed/kills are already
+	// listed explicitly, but a future floor addition gets them for free).
+	for f := range chatWordBlocklist {
+		for _, v := range expandBlockedForms(f) {
+			if lw == v {
+				return true
+			}
 		}
 	}
 	return false
