@@ -2,7 +2,7 @@
 title: Arcade control panels — the drawing reference
 type: concept
 tags: [arcade, cabinet, hardware, theme-authoring, act1, act5]
-sources: 10
+sources: 11
 verified: 2026-09-13
 ---
 
@@ -58,7 +58,7 @@ What each input device is, and the one or two things that survive at 56×80:
 | Lv | Cabinet | Controls | Sourcing |
 |---|---|---|---|
 | 1 | [[breakout]] | **Rotary knob, NO buttons, NO joystick** | TEXT |
-| 2 | [[space-invaders]] | 2-way stick + 1 large pale fire button (2 red START buttons sit apart, upper right) | **TEXT + IMAGERY** |
+| 2 | [[space-invaders]] | **TAITO version:** 2-way stick + 1 large pale fire button (2 red START buttons apart, upper right). **Bally/Midway NA version: LEFT/RIGHT BUTTONS instead of the stick** | **TEXT + IMAGERY** |
 | 3 | [[pac-man]] | **4-way stick, no gameplay buttons** | **TEXT + IMAGERY** |
 | 4 | [[galaga]] | 2-way stick + 1 fire | TEXT |
 | 5 | [[joust]] | 2-way stick + the one **Flap** button | TEXT |
@@ -145,13 +145,26 @@ to the restoration photographs and not to the merchandise.
 - **Weight:** **PRIMARY for the original cabinet** — a real machine, photographed before
   restoration, so nothing has been "improved" toward what a modern eye expects. This is the
   best class of source this page has found, and the kind to look for first.
-- **⚠️ Open question this source raised, and it is a good one.** A commenter on the post asks:
-  *"Did all of the Taito cabs in the UK have the L-R joystick? We (mostly) had buttons here."*
-  If correct, **some Taito Space Invaders cabinets shipped with left/right BUTTONS instead of
-  a joystick** — a regional or revision variant. This is a reader comment, not a citation, so
-  it is recorded as an open question at low weight, **not** acted on. It is also the cleanest
-  possible illustration of this page's own discipline: even a primary photograph of a real
-  machine establishes *that* machine, and "the original" may not be one thing.
+- **An open question this source raised — RESOLVED the same day, and it is the best worked
+  example on this page.** A commenter asked: *"Did all of the Taito cabs in the UK have the
+  L-R joystick? We (mostly) had buttons here."* Trevor's read was *"probably Taito vs
+  Midway?"*, and he was right. Museum of the Game's Space Invaders entry states it outright:
+
+  > *"Joystick: 2-way (left, right) — **Left/Right button on the Bally/Midway North American
+  > Version**. Buttons: 1 - Fire"*
+
+  Taito published in Japan/Asia/Europe; **Bally/Midway Manufacturing** published in North
+  America — and **the Midway cabinet replaced the joystick with left/right BUTTONS.** Same
+  game, same year, two different things under your hands depending on which continent you
+  stood on.
+
+  **So "the original Space Invaders control panel" is not one object, and any drawing of it
+  has to say which one it is.** Level 2 draws the **Taito** cabinet: that is what the design
+  bible specifies (*"Space Invaders — Taito, 1978"*, `.claude/rules/levels/act1.md`) and what
+  the restoration photographs above show. The descriptor in `cabinet-art.js` says so inline.
+
+  This is the discipline of this page in a single case: even a primary photograph of a real
+  machine establishes *that* machine.
 - **Retrieved:** 2026-09-13 Recorded because a replica photo looks
 exactly as authoritative as a museum photo and is not, and this project has already shipped
 one confident-but-wrong cabinet claim (the Mario Kart "no cabinet exists" error,
@@ -235,3 +248,4 @@ Reference photographs, stored in the vault so the drawings above stay auditable
 8. Wikimedia Commons photographs of real cabinets, stored in this vault under `wiki/media/arcade-control-panels/` with their licences — the imagery half of every **TEXT + IMAGERY** row above. **[images viewed]**
 9. [Official Space Invaders Quarter Size Arcade Cabinet — Numskull](https://numskull.com/products/official-space-invaders-quarter-size-arcade-cabinet) — consulted and **rejected as a sourcing basis** (see §Rejected above): a licensed quarter-scale replica whose panel carries three buttons where the original takes one. Its product copy ("everything from the artwork, shape and buttons match the original") is marketing, not a citation. Image looked at, deliberately **not** stored — commercial photography. **[fetched, look-only]**
 10. [Taito Space Invaders Restoration 1 — Arcade Blogger](https://arcadeblogger.com/2026/02/23/taito-space-invaders-restoration-1/) — restoration documentation of an original unrestored Taito upright; the source of the Level 2 panel layout and of the correction above. Photographs looked at, deliberately **not** stored (all rights reserved). **[fetched, look-only]**
+11. [Space Invaders — Museum of the Game (arcade-museum.com)](https://www.arcade-museum.com/Videogame/space-invaders) — control-panel layout: "Joystick: 2-way (left, right) - Left/Right button on the Bally/Midway North American Version. Buttons: 1 - Fire"; cabinet styles cocktail / cabaret-mini / upright-standard. The source that resolves the Taito-vs-Midway control split. Corroborated on publisher by [Space Invaders — Wikipedia](https://en.wikipedia.org/wiki/Space_Invaders): Taito for JP/AS/EU, Midway Manufacturing for NA/EU. **[fetched]**

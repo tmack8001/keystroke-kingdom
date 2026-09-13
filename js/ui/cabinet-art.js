@@ -560,7 +560,13 @@ const CABINET_DATA = {
     label: 'LEVEL 2',
     keys: 'D K',
     era: '1980',
-    // Space Invaders: "two-way joystick (left/right) plus fire button"
+    // Space Invaders: "two-way joystick (left/right) plus fire button" — and WHICH
+    // cabinet matters. Museum of the Game: "Joystick: 2-way (left, right) - Left/Right
+    // button on the Bally/Midway North American Version." Taito published JP/AS/EU,
+    // Bally/Midway published North America, and the MIDWAY cabinet replaced the stick
+    // with LEFT/RIGHT BUTTONS. We draw the TAITO cabinet — what levels/act1.md
+    // specifies ("Space Invaders — Taito, 1978") and what the restoration photographs
+    // of serial 000871 show. (research/wiki/tech/arcade-control-panels.md)
     controls: { stick: '2way',      buttons: 1 },
     colors: { body: '#1a1a0e', screen: '#000', accent: '#ffff00', trim: '#444' },
     drawScreen(ctx, x, y, w, h) {
