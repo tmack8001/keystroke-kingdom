@@ -79,6 +79,22 @@ The screenshot must read as a complete scene *with the panels present* (L29, L17
   and `research/wiki/tech/console-hardware-silhouettes.md`, never model memory. (That page
   exists partly because a summariser asserted mid-research that the original PlayStation was
   black. **It is grey.** Black is the PS2.)
+- **Control panels are part of the drawing, and TEXT ALONE IS NOT ENOUGH** *(2026-09-13)*.
+  Every cabinet used to share one generic joystick-and-two-buttons panel while the wiki's own
+  pages said otherwise — Breakout takes a **rotary paddle knob and no joystick at all**,
+  Pac-Man has **no gameplay buttons**, Street Fighter II has **six**, Missile Command a
+  **trackball**, Out Run a **wheel, shifter and pedals**. Per-cabinet descriptors now live in
+  `CABINET_DATA[n].controls`, each with its citation inline; **absence means "not sourced",
+  never "assume a joystick"**. Reference: `research/wiki/tech/arcade-control-panels.md`.
+  **Trevor's standard is text AND imagery:** *"make sure we base them on actual discovered
+  text and imagery of an arcade cabinet."* When photographs were finally found, **all three
+  drawings made from text alone were wrong** — journal **F29** names the three ways
+  (silence filled by default; a cited detail dropped because it was awkward to draw; a rule
+  applied inconsistently within one document). Prefer a **restorer's photographs of an
+  UNRESTORED machine**; treat replicas, mini-cabinets and later revisions as evidence for
+  *themselves only*. **⚠️ Known exposure: only the PANELS have been checked against
+  photographs. All 25 cabinet SCREENS, and the console silhouettes, are still text-authored
+  and unverified against imagery.**
 - **Era fidelity** — palette/fidelity per the level's act file
   (`.claude/rules/levels/actN.md`). Faithful recreation over gimmick; no key-glyph puns.
 - **Mechanics fidelity, wiki-grounded** (Trevor, 2026-07-12) — the scene must show the

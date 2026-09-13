@@ -2,7 +2,7 @@
 title: Console hardware silhouettes — drawing the machine instead of a cabinet
 type: concept
 tags: [video-game-history, hardware, cabinet, act7, act2, theme-authoring]
-sources: 6
+sources: 8
 verified: 2026-09-13
 ---
 
@@ -91,22 +91,91 @@ Related: [[home-games-in-cabinets]] · [[nintendo-vs-system]] · [[nes-hardware]
 - **Silhouette at 56×80:** a black rectangle standing on end, with **one thin blue-lit slot** and
   a pair of tiny USB squares. The blue light is the whole identity.
 
-### A period PC, and a modern sim rig — **[unverified] / under-documented**
+### Apple II / Apple IIe (1977–1986, beige) — draw at 8-bit
 
-Act 7's PC-era stations ([[need-for-speed-underground]] on PC, [[f1-25]] on PC) and the sim
-terminus want a **beige-or-black tower plus a monitor**, or a **wheel-and-pedal rig**. This pass
-sourced **no** description of either object, because the web-search budget was exhausted before
-reaching them. Two honest options for an author:
+The machine [[stickybear]] actually ran on, and therefore the honest object for any
+Stickybear set dressing. **There is no Stickybear arcade cabinet and there never was**
+([[bear-on-a-blue-screen]]) — this is the thing to draw instead.
 
-1. Reuse the game's **existing** computer renderings — Act 2's Computer Wing and Act 4's Command
-   Center already draw era machines, and Act 4 is explicitly a late-90s server room.
-2. Commission a follow-up pass. **Do not invent hardware detail from feel** — the same failure
-   mode that produced the "no cabinet exists" error.
+- **The computer IS the keyboard.** A low beige wedge with the keys sunk into its top
+  surface; there is no separate keyboard and no separate box. Everything else sits on it.
+- **The monitor sits ON TOP of the wedge** — a deep-bezelled beige CRT, roughly as wide as
+  the machine under it.
+- **The Disk II drive stands alongside**, and it is the fastest identifier in the whole
+  silhouette: a small beige box with a **BLACK front face**, a horizontal slot with a
+  fold-down door, a small red IN USE lamp, and the rainbow Apple logo on the face.
+- **The rainbow Apple stripes** (green, yellow, orange, red, purple, blue, top to bottom)
+  on a recessed badge at the wedge's front-left, with `//e` beside it.
+- **Colour: beige, not grey.** Wikipedia records the 1984 case revision as *"dyed plastic
+  mold in a slightly darker beige"* with *"more-professional-looking print on darker
+  keycaps (small black lettering, versus large white print)"*. **The light-grey machine is
+  the 1987 "Platinum" IIe** — a different, later object. Stickybear's 1982–88 run belongs
+  to the beige one.
+- **Silhouette at 56×80:** beige wedge across the lower third with three short rows of
+  darker keycaps; monitor as a beige rectangle above it with a dark inset screen; a narrow
+  beige box to the right with a black lower half. Three details survive at that size — the
+  **rainbow stripe run**, the **black drive face**, and the **screen colour**.
+- **What is on the screen matters:** for Stickybear it is **blue**, which is the line's
+  Apple II house palette ([[bear-on-a-blue-screen]]) — not the green phosphor of the mono
+  monitor in the photograph below.
+
+### A period beige PC (late 1980s – mid 1990s) — draw at VGA fidelity
+
+The honest object for an MS-DOS game — [[gizmos-and-gadgets]] (1993) is the case this was
+sourced for. **This section replaces an earlier `[unverified]` note** that recorded no
+description at all and warned against inventing one.
+
+- **A horizontal desktop case with the CRT sitting ON TOP of it**, and the keyboard on the
+  desk in front. This is the defining arrangement — a tower beside the desk is a different,
+  later look.
+- **Everything is the same beige**: case, monitor, keyboard.
+- **The front face carries the drives**, grouped to one side: a **wide 5.25-inch slot** and
+  a **smaller 3.5-inch slot**, with a small power lamp beside them. Vents or a badge fill
+  the rest of the face.
+- **Silhouette at 56×80:** three stacked beige blocks — monitor, case, keyboard — with two
+  dark horizontal slots of *different widths* on the case's front. The differing slot
+  widths are what say "floppy era" rather than "any beige box".
+- **Honest limit:** the photograph below is a mid-1990s Packard Bell, not a specifically
+  1993 machine, and it carries CD-ROM and Windows 95 markers that a 1993 DOS scene should
+  not. What it verifies is the **form** — horizontal case, monitor on top, keyboard in
+  front, drives on the front face — not the model.
+
+### A modern sim rig — **[unverified] / under-documented**
+
+The sim terminus wants a **wheel-and-pedal rig**, and no description of one was sourced. (The
+period-PC half of this gap was **closed 2026-09-13** — see the section above.) **Do not invent
+hardware detail from feel** — the same failure mode that produced the "no cabinet exists" error.
 
 The one thing that *is* established: [[f1-25]] and modern sims are genuinely played on **wheel
 and pedal rigs**, and force feedback is a documented consumer technology from the late 1990s
 (`research/racing-games-by-era.md` §11). A wheel clamped to a desk in front of a monitor is a
 real object and a safe thing to draw.
+
+## Media
+
+Reference photographs, stored in the vault so the drawing claims above stay auditable
+(research/WIKI.md §Media). Both are freely licensed and safe to redistribute.
+
+### `apple-iie-system.jpg`
+![An Apple IIe system: the beige wedge with the keyboard built in, the monitor sitting on top, and the Disk II drive alongside with its black front face](../media/console-hardware-silhouettes/apple-iie-system.jpg)
+- **Shows:** the whole arrangement in one frame — wedge, monitor-on-top, Disk II with its
+  black face, slot and rainbow logo, and the recessed `apple //e` badge. This image is the
+  direct source of the silhouette notes above.
+- **Source:** [File:Iie-system.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Iie-system.jpg)
+- **Author:** Pratyeka (own work, 2016-12-18)
+- **Licence:** CC BY-SA 4.0
+- **Retrieved:** 2026-09-13
+
+### `beige-desktop-pc-monitor-on-top.jpg`
+![A beige horizontal desktop PC with the CRT monitor sitting on top of the case and the keyboard in front, drive slots on the case's front face](../media/console-hardware-silhouettes/beige-desktop-pc-monitor-on-top.jpg)
+- **Shows:** the form this section describes — horizontal case, monitor on top, keyboard in
+  front, drives on the front face. **Caveat, repeated from above:** it is a mid-1990s
+  Packard Bell with CD-ROM and Windows 95 on the desk, so it verifies the arrangement, not
+  a 1993 model.
+- **Source:** [File:Old packard bell pc.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Old_packard_bell_pc.jpg)
+- **Author:** Spacekid (own work, 2003-07-21)
+- **Licence:** CC0 (public domain dedication)
+- **Retrieved:** 2026-09-13
 
 ## Bit-depth mapping (for Trevor's "8-bit / 16-bit / 24-bit renderings")
 
@@ -149,3 +218,5 @@ as a historical term of art — treat it as an authoring shorthand, not a fact.*
 - **Nintendo 64, GameCube, Xbox and Game Boy hardware appearance** — not researched here. The
   Game Boy Pocket already appears in `.claude/rules/levels/act3.md` as design intent, but this
   wiki carries **no sourced physical description** of it.
+7. [Apple IIe — Wikipedia (raw wikitext)](https://en.wikipedia.org/w/index.php?title=Apple_IIe&action=raw) — the 1984 case revision as "dyed plastic mold in a slightly darker beige" with "darker keycaps (small black lettering, versus large white print)"; the January 1987 "Platinum IIe" colour change to light grey; the recessed metal ID badges showing the Apple logo with "//e". **[fetched]**
+8. [File:Iie-system.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Iie-system.jpg) and [File:Old packard bell pc.jpg](https://commons.wikimedia.org/wiki/File:Old_packard_bell_pc.jpg) — the two reference photographs, stored in this vault under `wiki/media/console-hardware-silhouettes/` with their licences. Every silhouette detail above was read off these frames. **[images viewed]**

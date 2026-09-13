@@ -247,6 +247,147 @@ function drawSpeedwayDoor(canvas, scale = 2) {
   ctx.fillRect(34, 42, 3, 4);
 }
 
+// ─── Act set dressing — the machines standing in the room ───────────────────
+// Act 2's own design text has asked for this since it shipped: "Computers and
+// consoles from different eras line the walls, each one running a classic game"
+// (.claude/rules/levels/act2.md). These are two of those machines, running the
+// two programs Trevor named as childhood favourites.
+//
+// DRAW A REAL THING (.claude/rules/theme-authoring.md). The faithful object for
+// Stickybear is an Apple II with a 5.25-inch disk in the drive, and for Gizmos &
+// Gadgets a beige MS-DOS desktop — never an invented coin-op, because no
+// Stickybear arcade cabinet ever existed and no Stickybear title was ever a
+// side-scroller (research/wiki/pedagogy/bear-on-a-blue-screen.md).
+//
+// Both silhouettes were drawn from PHOTOGRAPHS looked at during authoring, not
+// from memory — the same standard the Stickybear history card was held to, and
+// the exact failure the hardware page warns about ("do not invent hardware
+// detail from feel"). Sources and the detail list:
+// research/wiki/tech/console-hardware-silhouettes.md.
+//
+// They are SET DRESSING, exactly like a wing's back-wall door: no data-level, no
+// onPick, pointer-events:none, and the cursor walks straight past them.
+
+// `deskY` is where the desk surface starts, so each machine can SIT on it
+// instead of floating above it — the first draft left an 11px void under the
+// Apple, which read as a computer hovering in a dark room.
+function drawDeskShell(canvas, scale, deskY) {
+  const w = 56, h = 80;
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = Math.round(w * scale) + 'px';
+  canvas.style.height = Math.round(h * scale) + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#0a0a12';  ctx.fillRect(0, 0, w, h);                 // the dark room
+  ctx.fillStyle = '#2b2016';  ctx.fillRect(0, deskY, w, h - deskY);      // desk top
+  ctx.fillStyle = '#171009';  ctx.fillRect(0, deskY + 5, w, h - deskY - 5); // front edge
+  return ctx;
+}
+
+// Act 2 — an Apple IIe: beige wedge with the keyboard built in, monitor sitting
+// on top of it, Disk II drive alongside. The three details that survive at this
+// size are the RAINBOW apple stripes, the Disk II's BLACK front face, and the
+// blue screen. (The 1987 "Platinum" IIe is light grey — this is the earlier
+// beige one, which is the machine Stickybear's 1982-88 run actually shipped for.)
+function drawAppleIIe(canvas, scale = 2) {
+  const ctx = drawDeskShell(canvas, scale, 62);
+  const BEIGE = '#d6ccb0', SHADE = '#a89e84', KEYCAP = '#8b8370';
+
+  ctx.fillStyle = BEIGE;    ctx.fillRect(9, 4, 34, 34);     // monitor case
+  ctx.fillStyle = SHADE;    ctx.fillRect(9, 36, 34, 2);
+  ctx.fillStyle = '#16161d'; ctx.fillRect(12, 7, 28, 25);    // bezel well
+
+  // The screen is BLUE on purpose: blue is the Stickybear house palette on the
+  // Apple II, verified by viewing the archived screenshots rather than assumed
+  // (research/wiki/pedagogy/bear-on-a-blue-screen.md).
+  ctx.fillStyle = '#1f6fd0'; ctx.fillRect(13, 8, 26, 23);
+  ctx.fillStyle = '#e8622a';                                 // big orange lettering
+  ctx.fillRect(25, 11, 11, 3);
+  ctx.fillRect(27, 15, 7, 2);
+  ctx.fillStyle = '#f0e2c4';                                 // the bear, lower-left
+  ctx.fillRect(15, 20, 10, 9);
+  ctx.fillRect(14, 18, 3, 3);                                // ears
+  ctx.fillRect(23, 18, 3, 3);
+  ctx.fillStyle = '#16161d';                                 // eyes
+  ctx.fillRect(17, 23, 2, 2);
+  ctx.fillRect(21, 23, 2, 2);
+  ctx.fillStyle = '#e8622a';  ctx.fillRect(18, 26, 4, 2);    // muzzle
+
+  ctx.fillStyle = BEIGE;    ctx.fillRect(3, 40, 40, 22);     // the computer = the keyboard
+  ctx.fillStyle = SHADE;    ctx.fillRect(3, 59, 40, 3);
+
+  const APPLE = ['#61bb46', '#fdb827', '#f5821f', '#e03a3e', '#963d97', '#009ddc'];
+  APPLE.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(6 + i, 42, 1, 4); });
+
+  ctx.fillStyle = KEYCAP;                                    // three rows of keycaps
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 11; col++) ctx.fillRect(7 + col * 3, 48 + row * 3, 2, 2);
+  }
+
+  ctx.fillStyle = BEIGE;    ctx.fillRect(45, 44, 10, 18);    // Disk II drive
+  ctx.fillStyle = '#101014'; ctx.fillRect(45, 49, 10, 13);    // its black front face
+  ctx.fillStyle = '#3a3a42'; ctx.fillRect(46, 52, 8, 3);      // the slot
+  ctx.fillStyle = '#e03a3e'; ctx.fillRect(46, 58, 2, 1);      // IN USE lamp
+}
+
+// Act 3 — a beige MS-DOS desktop: horizontal case with the CRT sitting ON TOP of
+// it and the keyboard in front, which is how these actually stood on a desk. The
+// identifying details are the two floppy slots on the front face — a WIDE 5.25
+// inch above a SMALL 3.5 inch — and the power lamp beside them.
+function drawBeigePC(canvas, scale = 2) {
+  const ctx = drawDeskShell(canvas, scale, 62);
+  const BEIGE = '#cec5ac', SHADE = '#9b9480';
+
+  ctx.fillStyle = BEIGE;    ctx.fillRect(12, 3, 32, 27);     // monitor
+  ctx.fillStyle = SHADE;    ctx.fillRect(12, 28, 32, 2);
+  ctx.fillStyle = '#14141b'; ctx.fillRect(15, 6, 26, 19);     // bezel well
+
+  // 1993 is 256-colour VGA — the screen is the game's own loop: a machine you
+  // built, on a bench, about to be raced (research/wiki/games/gizmos-and-gadgets.md).
+  ctx.fillStyle = '#2c6b8f'; ctx.fillRect(16, 7, 24, 17);     // workshop wall
+  ctx.fillStyle = '#b8b0a0'; ctx.fillRect(16, 19, 24, 5);     // the bench
+  ctx.fillStyle = '#d8352a'; ctx.fillRect(20, 13, 13, 5);     // the car you built
+  ctx.fillStyle = '#9fd8ff'; ctx.fillRect(23, 14, 5, 3);      // windscreen
+  ctx.fillStyle = '#16161d'; ctx.fillRect(21, 17, 3, 3);      // wheels
+  ctx.fillRect(29, 17, 3, 3);
+  ctx.fillStyle = '#f2c832';                                  // a cog on the wall
+  ctx.fillRect(35, 9, 4, 4);
+  ctx.fillRect(34, 10, 6, 2);
+  ctx.fillRect(36, 8, 2, 6);
+
+  ctx.fillStyle = BEIGE;    ctx.fillRect(4, 32, 48, 18);      // the desktop case
+  ctx.fillStyle = SHADE;    ctx.fillRect(4, 47, 48, 3);
+  ctx.fillStyle = '#b5ad98';                                  // vents on the left face
+  for (let i = 0; i < 4; i++) ctx.fillRect(8, 36 + i * 3, 12, 1);
+  ctx.fillStyle = '#2a2a30'; ctx.fillRect(28, 36, 18, 3);      // 5.25-inch slot
+  ctx.fillRect(28, 41, 11, 2);                                // 3.5-inch slot
+  ctx.fillStyle = '#5fd35f'; ctx.fillRect(48, 42, 2, 2);       // power lamp
+
+  ctx.fillStyle = BEIGE;    ctx.fillRect(8, 52, 40, 10);      // keyboard
+  ctx.fillStyle = SHADE;    ctx.fillRect(8, 59, 40, 3);
+  ctx.fillStyle = '#8b8370';
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 12; col++) ctx.fillRect(11 + col * 3, 54 + row * 3, 2, 2);
+  }
+}
+
+// NOT YET PLACED (Trevor, 2026-09-13). These two were first stood at the head of
+// Act 2's and Act 3's walls as set dressing, and on screen they were wrong:
+//
+//   "on the cabinet selection they look out of place next to traditional cabinets"
+//
+// He is right, and the reason is instructive: an arcade cabinet is a tall box you
+// stand at, and a home computer is a low thing you sit at. Side by side in one row
+// they read as two different KINDS of object, and the row is a row of one kind.
+// The fix is not to restyle them — it is to give them their own act, "where
+// different office and home computers and gaming consoles are introduced"
+// (docs/ROADMAP.md §2). They are kept here, drawn and grounded, ready for it.
+export const HOME_MACHINES = {
+  'apple-iie': { art: drawAppleIIe, label: 'APPLE IIe',  hint: 'STICKYBEAR · 1985',        era: '1983' },
+  'msdos-pc':  { art: drawBeigePC,  label: 'MS-DOS PC',  hint: 'GIZMOS & GADGETS · 1993',  era: '1993' },
+};
+
 // ─── The bonus acts' cabinets ───────────────────────────────────────────────
 // Same shape as CABINET_DATA below and drawn by the same cabinet shell, because
 // these ARE cabinets in the same arcade — they just stand in the back room. Keyed
@@ -394,6 +535,8 @@ const CABINET_DATA = {
     label: 'LEVEL 1',
     keys: 'J F',
     era: '1977',
+    // Breakout: "rotary knob (paddle controller), horizontal movement only" — NO joystick (research/wiki/games/breakout.md)
+    controls: { stick: 'knob',      buttons: 0 },
     colors: { body: '#1a1a2e', screen: '#000', accent: '#39ff14', trim: '#333' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#000';
@@ -417,6 +560,8 @@ const CABINET_DATA = {
     label: 'LEVEL 2',
     keys: 'D K',
     era: '1980',
+    // Space Invaders: "two-way joystick (left/right) plus fire button"
+    controls: { stick: '2way',      buttons: 1 },
     colors: { body: '#1a1a0e', screen: '#000', accent: '#ffff00', trim: '#444' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#000';
@@ -447,6 +592,8 @@ const CABINET_DATA = {
     label: 'LEVEL 3',
     keys: 'S L',
     era: '1985',
+    // Pac-Man: "four-way joystick (no diagonals)" — and no buttons at all
+    controls: { stick: '4way',      buttons: 0 },
     colors: { body: '#0e1a2e', screen: '#000', accent: '#6cf', trim: '#335' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#000';
@@ -475,6 +622,8 @@ const CABINET_DATA = {
     label: 'LEVEL 4',
     keys: 'A ?',
     era: '1991',
+    // Galaga: "two-way joystick (left/right) plus fire button"
+    controls: { stick: '2way',      buttons: 1 },
     colors: { body: '#1a0a2e', screen: '#000', accent: '#f0f', trim: '#424' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#100820';
@@ -510,6 +659,8 @@ const CABINET_DATA = {
     label: 'LEVEL 5',
     keys: 'G H',
     era: '1982',
+    // Joust: 2-way joystick + the one "Flap" button
+    controls: { stick: '2way',      buttons: 1 },
     colors: { body: '#1a0800', screen: '#000', accent: '#ff6600', trim: '#442200' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#000';
@@ -578,6 +729,8 @@ const CABINET_DATA = {
     label: 'LEVEL 7',
     keys: 'R U',
     era: '1983',
+    // Dragon's Lair: "the correct directional/sword input" — a stick and one sword button
+    controls: { stick: '8way',      buttons: 1 },
     colors: { body: '#0e0018', screen: '#000', accent: '#cc66ff', trim: '#330055' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#080010';
@@ -750,6 +903,8 @@ const CABINET_DATA = {
     label: 'LEVEL 12',
     keys: 'B N',
     era: '1991',
+    // Street Fighter II: "8-way joystick + six buttons (three punch, three kick)" — the layout that became the fighting-game standard
+    controls: { stick: '8way',      buttons: 6 },
     colors: { body: '#0c0000', screen: '#000', accent: '#ff4400', trim: '#3a0800' },
     drawScreen(ctx, x, y, w, h) {
       // Sky
@@ -1082,6 +1237,11 @@ const CABINET_DATA = {
     label: 'LEVEL 21',
     keys: '- =',
     era: '1986',
+    // Out Run: "steering wheel + stick shift (high/low gear) + accelerator/brake pedals"
+    // IMAGERY: the deluxe cabinet is a SIT-DOWN car — the photo shows a real wheel
+    // and two floor pedals. The upright shell here keeps the wheel and shifter on
+    // the panel and puts the pedals down on the base.
+    controls: { stick: 'wheel', buttons: 0, pedals: true },
     colors: { body: '#2a0a2a', screen: '#000', accent: '#ff5aa0', trim: '#4a1a3a' },
     drawScreen(ctx, x, y, w, h) {
       // Sunset sky gradient
@@ -1131,6 +1291,8 @@ const CABINET_DATA = {
     label: 'LEVEL 22',
     keys: '[ ] \\',
     era: '1982',
+    // Q*bert: "four-way joystick rotated 45 degrees to match Q*bert's diagonal movement axes"
+    controls: { stick: '4way-diag', buttons: 0 },
     colors: { body: '#1a0a2a', screen: '#000', accent: '#ff8c1a', trim: '#3a1a4a' },
     drawScreen(ctx, x, y, w, h) {
       // Dark violet background
@@ -1168,6 +1330,13 @@ const CABINET_DATA = {
     label: 'LEVEL 23',
     keys: "` '",
     era: '1980',
+    // Missile Command: "trackball + three fire buttons" (arcade-museum.com; Theurer
+    // chose the trackball for speed over a joystick). IMAGERY-CORRECTED: the photo
+    // (research/wiki/tech/arcade-control-panels.md) shows the trackball on the RIGHT
+    // and the three fire buttons as large YELLOW rectangles to its LEFT — neither
+    // fact is in any text source we hold.
+    controls: { stick: 'trackball', buttons: 3, stickSide: 'right',
+                buttonColor: '#e8c81e', buttonShape: 'wide' },
     colors: { body: '#040404', screen: '#000', accent: '#ff2222', trim: '#2a0a0a' },
     drawScreen(ctx, x, y, w, h) {
       // Black sky
@@ -1302,6 +1471,123 @@ function drawRubberDuck(ctx, x, y) {
 // cabinets AND the bonus acts' cabinets, because they are the same arcade. Only
 // the marquee colours and the SCREEN differ, which is what "a different cabinet"
 // has always meant here.
+// ─── The control panel ──────────────────────────────────────────────────────
+// Every cabinet used to get the same panel: one joystick and two buttons. The
+// game's OWN research says otherwise on nearly every machine, and Trevor caught
+// it (2026-09-13): "we should also look when we should introduce more than a
+// joystick and two buttons... as eventually games got more complex with more
+// buttons, more levers, etc."
+//
+// The panel is the one part of a cabinet a player's hands actually touched, so a
+// wrong one is the same class of error as a wrong screen — and Breakout's was
+// not merely generic, it was FALSE: Breakout has no joystick at all. Its own
+// wiki page says "rotary knob (paddle controller), horizontal movement only."
+//
+// `controls` is therefore a CITED descriptor, and absent means "not yet
+// sourced" — never "assume a joystick". Ground truth is research/wiki/games/*.md
+// and research/arcade-cabinets-by-era.md, per theme-authoring.md's mechanics-
+// fidelity rule; a machine whose controls the wiki does not document is an
+// arcade-historian follow-up, not a licence to improvise.
+//
+//   stick:   'knob' | 'trackball' | 'wheel' | 'none'
+//            | '2way' | '4way' | '4way-diag' | '8way'
+//   buttons: 0-6
+const DEFAULT_CONTROLS = { stick: '8way', buttons: 2 };
+
+// Optional fields, added 2026-09-13 when photographs of real cabinets were read
+// (Trevor: "make sure we base them on actual discovered text AND imagery"):
+//   stickSide:   'left' (default) | 'right'   — Missile Command's trackball sits
+//                RIGHT of its fire buttons, which the text source never said.
+//   buttonColor: overrides the cabinet accent — Missile Command's three fire
+//                buttons are large YELLOW rectangles, not small accent squares.
+//   buttonShape: 'square' (default) | 'wide'
+//   pedals:      true — a driving cabinet's floor pedals, drawn on the base.
+function drawControlPanel(ctx, w, data) {
+  const c = data.controls || DEFAULT_CONTROLS;
+  const n = Math.max(0, Math.min(6, c.buttons === undefined ? DEFAULT_CONTROLS.buttons : c.buttons));
+  const stickRight = c.stickSide === 'right';
+
+  ctx.fillStyle = '#222';
+  ctx.fillRect(10, 46, w - 20, 12);          // the panel itself
+
+  ctx.save();
+  ctx.translate(stickRight ? 14 : 0, 0);     // the device block, left or right
+  drawStickDevice(ctx, c.stick);
+  ctx.restore();
+
+  drawPanelButtons(ctx, n, stickRight ? 11 : 28,
+                   c.buttonColor || data.colors.accent, c.buttonShape);
+}
+
+// Drawn around x12-24; the caller translates it into place.
+function drawStickDevice(ctx, stick) {
+  switch (stick) {
+    case 'none':
+      break;
+    case 'knob':                              // Breakout: a rotary paddle dial
+      ctx.fillStyle = '#555';
+      ctx.fillRect(14, 48, 8, 8);
+      ctx.fillRect(13, 49, 10, 6);
+      ctx.fillStyle = '#ccc';                 // the pointer, so it reads as a DIAL
+      ctx.fillRect(17, 48, 2, 4);
+      break;
+    case 'trackball':                         // Missile Command: a big rolling ball
+      ctx.fillStyle = '#888';
+      ctx.fillRect(13, 47, 10, 10);
+      ctx.fillRect(12, 48, 12, 8);
+      ctx.fillStyle = '#ddd';                 // highlight — a sphere, not a disc
+      ctx.fillRect(15, 49, 3, 3);
+      break;
+    case 'wheel':                             // Out Run: a wheel, and a gear shifter
+      // Drawn as a RING seen from above. The first attempt drew dark spokes on a
+      // dark panel and photographed as a grey plus sign — a steering wheel has to
+      // read as a circle with a hole in it or it is not a steering wheel.
+      ctx.fillStyle = '#9a9a9a';
+      ctx.fillRect(13, 46, 10, 12);           // rim
+      ctx.fillRect(12, 48, 12, 8);
+      ctx.fillStyle = '#222';                 // the hole
+      ctx.fillRect(15, 49, 6, 6);
+      ctx.fillRect(16, 48, 4, 8);
+      ctx.fillStyle = '#9a9a9a';
+      ctx.fillRect(17, 51, 2, 2);             // hub
+      ctx.fillStyle = '#555';                 // the stick shift, beside it
+      ctx.fillRect(30, 50, 2, 6);
+      ctx.fillStyle = '#c8c8c8';
+      ctx.fillRect(29, 48, 4, 3);
+      break;
+    default: {                                // a stick: shaft, ball, and its gate
+      const gate = stick === '4way' || stick === '4way-diag';
+      ctx.fillStyle = '#3a3a3a';
+      if (gate) ctx.fillRect(13, 48, 9, 8);   // a square gate plate reads "restricted"
+      else ctx.fillRect(14, 49, 7, 6);
+      ctx.fillStyle = '#666';
+      ctx.fillRect(16, 48, 3, 8);             // shaft
+      ctx.fillStyle = '#f00';
+      ctx.fillRect(15, 46, 5, 3);             // ball top
+      if (stick === '4way-diag') {            // Q*bert's stick is rotated 45 degrees
+        ctx.fillStyle = '#9a9a9a';            // so its gate points at the CORNERS
+        ctx.fillRect(12, 46, 3, 3);
+        ctx.fillRect(20, 46, 3, 3);
+        ctx.fillRect(12, 55, 3, 3);
+        ctx.fillRect(20, 55, 3, 3);
+      }
+      break;
+    }
+  }
+}
+
+// Up to three across, wrapping to a second row — which is exactly how Street
+// Fighter II's six (three punch, three kick) actually sat.
+function drawPanelButtons(ctx, n, x0, color, shape) {
+  const wide = shape === 'wide';
+  const bw = wide ? 5 : 4, pitch = wide ? 6 : 6;
+  ctx.fillStyle = color;
+  for (let i = 0; i < n; i++) {
+    const col = i % 3, row = Math.floor(i / 3);
+    ctx.fillRect(x0 + col * pitch, (n > 3 ? 47 : 49) + row * 5, bw, wide ? 5 : 4);
+  }
+}
+
 function drawCabinetArt(canvas, data, scale = 2) {
   const w = 56;
   const h = 80;
@@ -1325,15 +1611,7 @@ function drawCabinetArt(canvas, data, scale = 2) {
   ctx.fillRect(sx-1, sy-1, sw+2, sh+2);
   data.drawScreen(ctx, sx, sy, sw, sh);
 
-  ctx.fillStyle = '#222';
-  ctx.fillRect(10, 46, w-20, 12);
-  ctx.fillStyle = '#666';
-  ctx.fillRect(16, 48, 3, 8);
-  ctx.fillStyle = '#f00';
-  ctx.fillRect(15, 46, 5, 3);
-  ctx.fillStyle = data.colors.accent;
-  ctx.fillRect(28, 49, 4, 4);
-  ctx.fillRect(34, 49, 4, 4);
+  drawControlPanel(ctx, w, data);
 
   ctx.fillStyle = '#555';
   ctx.fillRect(w/2-3, 60, 6, 2);
@@ -1349,6 +1627,18 @@ function drawCabinetArt(canvas, data, scale = 2) {
   ctx.fillRect(5, 10, 1, 54);
   ctx.fillRect(w-6, 10, 1, 54);
   ctx.globalAlpha = 1;
+
+  // A driving cabinet's floor pedals. Drawn HERE, not in drawControlPanel, because
+  // the panel is painted before the cabinet's base and the base was overpainting
+  // them — they photographed as simply absent.
+  if (data.controls && data.controls.pedals) {
+    ctx.fillStyle = '#8d8d8d';
+    ctx.fillRect(21, 66, 5, 7);
+    ctx.fillRect(30, 66, 5, 7);
+    ctx.fillStyle = '#4a4a4a';
+    ctx.fillRect(21, 72, 5, 2);
+    ctx.fillRect(30, 72, 5, 2);
+  }
 
   // Optional per-cabinet set dressing drawn on the cabinet BODY (not its
   // screen) — see CABINET_DATA[20].drawExtras, the rubber duck.

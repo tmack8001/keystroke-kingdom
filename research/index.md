@@ -151,7 +151,7 @@ Agents: read this file first, then drill into pages. Schema: [[WIKI]].*
 - [[zero-wing]] *(entity, 4 refs, verified 2026-07-11)* — Zero Wing is a 1989 Japanese arcade shoot-'em-up; its mistranslated 1991 European Sega Mega Drive port produced the opening cutscene line "All your base are belong to us," which became one of the internet's earliest vira
 - [[zork]] *(entity, L15, 3 refs, verified 2026-07-19)* — Zork, developed 1977–1979 at MIT by Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling for the PDP-10, is the single-player interactive-fiction game that expanded on [[colossal-cave-adventure]]'s two-word parser i
 
-## wiki/tech/ — Machines, formats, and era-hardware concepts (57)
+## wiki/tech/ — Machines, formats, and era-hardware concepts (58)
 
 - [[56k-modem]] *(entity, L16, 3 refs, verified 2026-07-19)* — 56K modems, standardized as ITU-T V.90 in September 1998, were the fastest and last generation of dial-up modems before broadband — capping a decade-long climb from 14.4k (1993) through 28.8k (1994) and 33.6k (1996), and
 - [[acoustic-coupler]] *(entity, 2 refs, verified 2026-07-27)* — The acoustic coupler was a cradle of rubber cups that clamped snugly around an ordinary telephone handset, letting a computer "talk" to another computer over a regular phone line as audio tones — no direct electrical con
@@ -159,6 +159,7 @@ Agents: read this file first, then drill into pages. Schema: [[WIKI]].*
 - [[ansi-escape-codes]] *(entity, L20, 3 refs, verified 2026-07-13)* — ANSI escape codes are the in-band control sequences (standardized as ANSI X3.64 in 1979, building on ECMA-48 from 1976) that let a plain text terminal display color, cursor movement, and other formatting — the mechanism 
 - [[apollo-guidance-computer-dsky]] *(entity, 4 refs, verified 2026-09-12)* — The **DSKY** (Display and Keyboard, pronounced "dis-key") was how Apollo astronauts talked to the Apollo Guidance Computer. It was a **numeric keyboard** with a row of status lights and lighted number displays, designed 
 - [[apple-computer]] *(entity, L10, 3 refs, verified 2026-07-19)* — Apple Computer was founded April 1, 1976 by Steve Jobs and Steve Wozniak (with early partner Ronald Wayne) in the Jobs family garage in Los Altos, California — beginning with the hand-built Apple I, unveiled that July at
+- [[arcade-control-panels]] *(concept, 10 refs, verified 2026-09-13)* — The control panel is the one part of an arcade cabinet a player's hands actually touched, and it is the fastest way to tell two machines apart at a glance. This page is the drawing reference for the 56×80 cabinet art on 
 - [[arpa-ipto-funding]] *(concept, 4 refs, verified 2026-09-12)* — The 1960s–90s computing boom has a funding story, and it is not "public vs private." **ARPA's Information Processing Techniques Office (IPTO), founded 1962 under J.C.R. Licklider, is estimated to have funded about 70% of
 - [[ascii]] *(entity, L22, 4 refs, verified 2026-07-11)* — ASCII (American Standard Code for Information Interchange) was standardized as ASA X3.4-1963 on June 17, 1963, a 7-bit/128-character code that gave every character a number — the foundation of both binary text encoding (
 - [[ascii-overhead-world-conventions]] *(concept, 22 refs, verified 2026-07-17)* — *Commissioned 2026-07-17: Trevor flagged that Act 6's two tile worlds (THE GLIMMER DEEP, THE WHISPERWOOD — `js/textworld/tileworld.js` + `tile-worlds.js`) use controls and a map scale that don't match any of the ASCII-wo
@@ -166,7 +167,7 @@ Agents: read this file first, then drill into pages. Schema: [[WIKI]].*
 - [[benz-patent-motorwagen]] *(entity, 5 refs, verified 2026-09-12)* — Carl Benz filed for a patent on a "vehicle powered by a gas engine" on **29 January 1886**; the patent (DRP 37435 — see the numbering caveat below) was granted **2 November 1886** and is widely called the birth certifica
 - [[call-and-response]] *(concept, L3, 10 refs, verified 2026-09-13)* — Call and response is the older of the rhythm genre's two lineages — **[[touch-me-atari]] (Atari, 1974) → [[simon-electronic-game]] (Milton Bradley, 1978) → [[parappa-the-rapper]] (1996) → [[space-channel-5]] (1999) → Rhy
 - [[commodore-64]] *(entity, L17, 3 refs, verified 2026-07-11)* — The Commodore 64, launched at CES in January 1982 at $595, holds the Guinness World Record for best-selling desktop computer of all time — with total unit-sales estimates ranging widely across sources, from a "credible m
-- [[console-hardware-silhouettes]] *(concept, 6 refs, verified 2026-09-13)* — When a Keystroke Kingdom station is a **console or PC game**, the honest object to draw is **the machine it actually ran on** — and the game has been doing this since Act 2 shipped. This page is the drawing reference: fo
+- [[console-hardware-silhouettes]] *(concept, 8 refs, verified 2026-09-13)* — When a Keystroke Kingdom station is a **console or PC game**, the honest object to draw is **the machine it actually ran on** — and the game has been doing this since Act 2 shipped. This page is the drawing reference: fo
 - [[discrete-logic-era]] *(concept, 2 refs, verified 2026-07-11)* — The discrete-logic era (roughly 1972–1978) covers arcade games built entirely from transistor-transistor logic (TTL) circuits with no microprocessor, no ROM, and no software — where the entire game existed as a physical,
 - [[early-3d-era]] *(concept, 2 refs, verified 2026-07-11)* — The early real-time 3D era (roughly 1993–2000, PS1/N64-generation hardware) is defined by two different, incompatible sets of technical compromises: the PlayStation's lack of a hardware z-buffer and its affine (non-persp
 - [[early-graphical-mmorpgs-1990s]] *(concept, 4 refs, verified 2026-07-13)* — A ranked comparison of pre-EverQuest online worlds researched to pin down a specific childhood memory: **ASCII/text-graphical, overhead like Zelda, genuinely multiplayer with a persistent shared world, had named clans/al
@@ -311,5 +312,5 @@ Agents: read this file first, then drill into pages. Schema: [[WIKI]].*
 ## Journal & planning (project memory)
 
 - [[JOURNAL]] — journal schema · [[dashboard]] — live Dataview status board
-- 96 journal entries (0 OPEN) — views: [[learnings]] · [[observations]] · [[failures]]
+- 97 journal entries (0 OPEN) — views: [[learnings]] · [[observations]] · [[failures]]
 - [[ROADMAP]] — *Captured 2026-07-11 at the end of the Act 5 / Free Play / Settings / Graphics build session. Everything below is discussed-and-agreed direction or discovered-and-deferred work. Update this file as items land or change; 
