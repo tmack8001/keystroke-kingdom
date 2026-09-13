@@ -21,6 +21,12 @@
 // an in-session-only game, exactly like the old single-save did. The only
 // personal datum stored is the display name (already the PII floor; no new class
 // of data — security.md rule 8), one per game.
+//
+// Act 7 note: a slot also carries `speedway` — per-track ghost records (lap times,
+// split tables, keystroke counts, accuracy, a local timestamp). That is GAMEPLAY
+// data, NOT a new PII class (security.md rule 8): no age, surname, location, or
+// contact info is ever stored, nothing about it is ever transmitted (rule 6), and
+// it is bounded by construction (see SPEEDWAY_* caps below).
 
 import { legacyLevelToCardId } from './history-cards.js';
 
@@ -28,10 +34,131 @@ const SLOTS_KEY = 'kk-slots';
 const SCHEMA_VERSION = 1;
 const NAME_MAX = 16; // arcade high-score convention (transitions.md §Name Entry)
 
+// ── Act 7 "THE SPEEDWAY" ghost-storage bounds ───────────────────────────────
+// kk-slots must never grow without limit, so every dimension of the ghost store
+// is capped here and enforced on BOTH read and write (spec: docs/specs/
+// act7-speed-racing.md §5 storage, INV-84).
+const SPEEDWAY_RECORD_VERSION = 1;
+const SPEEDWAY_MAX_TRACKS = 14;   // 11 designed tracks + headroom; least-recent evicted
+const SPLIT_COUNT = 64;           // exactly 64 milestones: i/63 of the lap
+const MAX_MS = 2400000;           // 40 min.
+// RAISED from 999,999 (~16.7 min) on 2026-09-13. The old value carried the comment
+// "a lap can never plausibly exceed this" — an assumption about how fast a CHILD
+// types, baked into a storage constant. It is wrong for exactly the player this game
+// is for: Act 7's lap clock is time-on-task, and at WIZARD (3.5x) a 120-char track is
+// 420 characters, so the old ceiling was breached at ~2.4 s/character — about 5 WPM,
+// squarely inside a five-year-old's range. A lap that cannot be stored is a ghost that
+// silently never appears, so the slowest typist in the game would have been the one
+// player who never got to race themselves. Byte cost of the extra digit is ~64 B per
+// ghost; the worst case stays well inside the 10 KB per-slot budget.
+const MAX_KEYS = 1000000;         // lifetime-proof keystroke ceiling
+const MAX_COUNTER = 1000000000;   // laps / chars / cleanBest odometer ceiling
+const MAX_AT = 4102444800000;     // 2100-01-01 — keeps timestamps digit-bounded
+// Track ids come from the code's own station table (never user input); this is a
+// belt-and-braces allowlist so a tampered store can't inject an unbounded key.
+// The leading-alphanumeric requirement also rules out "__proto__" as a key.
+const TRACK_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$/;
+
 // A brand-new game's progress, matching the shape main.js's getProgress()
 // has always returned. Kept in one place so createSlot and the read path agree.
 function freshProgress() {
   return { furthestLevel: 1, completed: {}, nameMoment: null, textWorlds: {} };
+}
+
+// ── Speedway (Act 7) ghost validation ───────────────────────────────────────
+// security.md rule 4: this whole store is untrusted input. EVERY value below is
+// validated field-by-field; anything malformed degrades to "no ghost" (null) so
+// the track still plays — it simply has nothing to race against. Nothing here
+// ever throws.
+
+// A display-only odometer value: garbage or out-of-range is CLAMPED into range
+// (a wrong lap count is cosmetic and must never cost a player her record).
+function clampInt(value, lo, hi) {
+  if (!Number.isFinite(value)) return null;
+  return Math.max(lo, Math.min(hi, Math.round(value)));
+}
+
+// A value the ghost REPLAY depends on: out-of-range is REJECTED, not clamped.
+// Clamping a nonsense lap time would produce a nonsense ghost (an instant or
+// eternal lap); "no ghost" is the honest, playable degradation.
+function strictInt(value, lo, hi) {
+  if (!Number.isFinite(value)) return null;
+  const n = Math.round(value);
+  return (n < lo || n > hi) ? null : n;
+}
+
+// Same, for a field that may legitimately be absent: missing reads as 0, but a
+// PRESENT-yet-invalid value still rejects (null) — absence is not corruption.
+function optInt(value, lo, hi) {
+  if (value === undefined || value === null) return 0;
+  return strictInt(value, lo, hi);
+}
+
+// A full ghost: the lap you race against. `splits[i]` is the ms at which progress
+// first reached i/63 of the lap — a table of EXACTLY SPLIT_COUNT non-decreasing
+// integers. Any other length is rejected outright (a short/long table would make
+// the replay interpolation meaningless).
+function normalizeGhost(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (!Array.isArray(raw.splits) || raw.splits.length !== SPLIT_COUNT) return null;
+  const splits = [];
+  let prev = 0;
+  for (let i = 0; i < SPLIT_COUNT; i++) {
+    const v = strictInt(raw.splits[i], 0, MAX_MS);
+    if (v === null) return null;          // a bad split ⇒ no ghost at all
+    splits.push(Math.max(prev, v));       // splits are non-decreasing by contract
+    prev = splits[i];
+  }
+  const ms = strictInt(raw.ms, 0, MAX_MS);          // mandatory
+  const keys = optInt(raw.keys, 0, MAX_KEYS);
+  const acc = optInt(raw.acc, 0, 100);
+  const at = optInt(raw.at, 0, MAX_AT);
+  if (ms === null || keys === null || acc === null || at === null) return null;
+  return { ms, splits, keys, acc, at };
+}
+
+// The keepsake best: a time and when it happened, never raced on track — so it
+// deliberately carries NO split table (that is what keeps "2 ghosts per track"
+// cheap). A full ghost handed in here is normalized DOWN to { ms, at }.
+function normalizeBest(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const ms = strictInt(raw.ms, 0, MAX_MS);          // mandatory
+  const at = optInt(raw.at, 0, MAX_AT);
+  if (ms === null || at === null) return null;
+  return { ms, at };
+}
+
+function normalizeTrackRecord(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  // An unknown future schema version is dropped rather than half-trusted.
+  if (raw.v !== undefined && raw.v !== SPEEDWAY_RECORD_VERSION) return null;
+  const laps = clampInt(raw.laps, 0, MAX_COUNTER);
+  const chars = clampInt(raw.chars, 0, MAX_COUNTER);
+  const cleanBest = clampInt(raw.cleanBest, 0, MAX_COUNTER);
+  return {
+    v: SPEEDWAY_RECORD_VERSION,
+    last: normalizeGhost(raw.last),
+    best: normalizeBest(raw.best),
+    laps: laps === null ? 0 : laps,
+    chars: chars === null ? 0 : chars,
+    cleanBest: cleanBest === null ? 0 : cleanBest,
+  };
+}
+
+// The whole per-slot map. Unknown-shaped ids and malformed records are dropped;
+// a slot that has never raced (or a legacy save from before Act 7) reads as {}.
+function normalizeSpeedway(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out = {};
+  let kept = 0;
+  for (const id of Object.keys(raw)) {
+    if (!TRACK_ID_RE.test(id)) continue;
+    const rec = normalizeTrackRecord(raw[id]);
+    if (!rec) continue;
+    out[id] = rec;
+    if (++kept >= SPEEDWAY_MAX_TRACKS) break;
+  }
+  return out;
 }
 
 // ── Validation ────────────────────────────────────────────────────────────
@@ -63,7 +190,11 @@ function normalizeSlot(raw) {
   // keyed by level for symmetry though only level 25 uses it). Tolerate garbage.
   const storyRotation = (raw.storyRotation && typeof raw.storyRotation === 'object')
     ? raw.storyRotation : {};
-  return { name, furthestLevel, completed, nameMoment, textWorlds, cards, cardRotation, storyRotation };
+  // Act 7 ghosts, bounded + garbage-tolerant. A save written before Act 7 simply
+  // has no `speedway` field and reads as {} — exactly like textWorlds above, so
+  // migration is invisible and no returning player loses a game.
+  const speedway = normalizeSpeedway(raw.speedway);
+  return { name, furthestLevel, completed, nameMoment, textWorlds, cards, cardRotation, storyRotation, speedway };
 }
 
 // ── Low-level persistence ───────────────────────────────────────────────────
@@ -178,7 +309,7 @@ export function setActive(i) {
 export function createSlot(name) {
   const st = state();
   const clean = (typeof name === 'string' && name.trim()) ? name.slice(0, NAME_MAX) : 'PLAYER ONE';
-  st.slots.push({ name: clean, ...freshProgress(), cards: [], cardRotation: {}, storyRotation: {} });
+  st.slots.push({ name: clean, ...freshProgress(), cards: [], cardRotation: {}, storyRotation: {}, speedway: {} });
   st.active = st.slots.length - 1;
   writeState(st);
   return st.active;
@@ -314,4 +445,73 @@ export function bumpStoryRotation(level) {
   const cur = Number.isFinite(s.storyRotation[String(level)]) ? s.storyRotation[String(level)] : 0;
   s.storyRotation[String(level)] = cur + 1;
   writeState(st);
+}
+
+// ── Act 7 "THE SPEEDWAY": per-track ghost records ───────────────────────────
+// Scoped to the ACTIVE saved game, stored INSIDE the slot (kk-slots[i].speedway)
+// — deliberately not a new localStorage namespace, which is what makes both
+// erase paths cover ghosts for free: eraseSlot/eraseActiveSlot remove the whole
+// slot object, eraseAll removes kk-slots entirely.
+//
+//   kk-slots[i].speedway = {
+//     "<trackId>": { v:1, last:{ms,splits[64],keys,acc,at}|null,
+//                          best:{ms,at}|null, laps, chars, cleanBest }
+//   }
+//
+// Gameplay data only — no PII (security.md rule 8) — and it never leaves the
+// machine (rule 6).
+
+// Read one track's record for the active game. Returns null when there is no
+// active game, no record, or the stored record is malformed in any way: the
+// caller's contract is simply "no ghost", never an exception.
+export function readSpeedway(trackId) {
+  if (typeof trackId !== 'string' || !TRACK_ID_RE.test(trackId)) return null;
+  const st = state();
+  const s = st.active !== null ? st.slots[st.active] : null;
+  if (!s || !s.speedway) return null;
+  return Object.prototype.hasOwnProperty.call(s.speedway, trackId) ? s.speedway[trackId] : null;
+}
+
+// Merge fields into one track's record for the active game and persist. Fields
+// absent from `rec` keep their stored value; an explicit `null` for last/best
+// clears that ghost. Every incoming value is re-validated (the caller is just as
+// untrusted as storage). Never throws: an invalid id, no active game, or an
+// unavailable localStorage is a silent no-op — the race still runs, it just
+// doesn't persist.
+export function writeSpeedway(trackId, rec) {
+  try {
+    if (typeof trackId !== 'string' || !TRACK_ID_RE.test(trackId)) return;
+    if (!rec || typeof rec !== 'object' || Array.isArray(rec)) return;
+    const st = state();
+    if (st.active === null || !st.slots[st.active]) return;
+    const s = st.slots[st.active];
+    if (!s.speedway || typeof s.speedway !== 'object') s.speedway = {};
+    const prev = s.speedway[trackId] || normalizeTrackRecord({});
+    const merged = normalizeTrackRecord({
+      v: SPEEDWAY_RECORD_VERSION,
+      last: rec.last !== undefined ? rec.last : prev.last,
+      best: rec.best !== undefined ? rec.best : prev.best,
+      laps: rec.laps !== undefined ? rec.laps : prev.laps,
+      chars: rec.chars !== undefined ? rec.chars : prev.chars,
+      cleanBest: rec.cleanBest !== undefined ? rec.cleanBest : prev.cleanBest,
+    });
+    if (!merged) return;
+    s.speedway[trackId] = merged;
+    // Bound the map: when a new track pushes past the cap, evict the least
+    // recently raced OTHER track (never the one just written).
+    const ids = Object.keys(s.speedway);
+    if (ids.length > SPEEDWAY_MAX_TRACKS) {
+      const recency = (id) => {
+        const r = s.speedway[id];
+        return Math.max((r.last && r.last.at) || 0, (r.best && r.best.at) || 0);
+      };
+      ids.filter(id => id !== trackId)
+        .sort((a, b) => recency(a) - recency(b))
+        .slice(0, ids.length - SPEEDWAY_MAX_TRACKS)
+        .forEach(id => { delete s.speedway[id]; });
+    }
+    writeState(st);
+  } catch (e) {
+    // Never throw — a ghost that can't be saved must never interrupt play.
+  }
 }

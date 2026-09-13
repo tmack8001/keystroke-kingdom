@@ -471,6 +471,172 @@ crowding".)*
   §Proposed #4 + §Design Rules 1; onboarding.md §Design Rules for the Opening;
   CLAUDE.md §Wrong Keypress Behavior.)
 
+### Act 7 — "THE SPEEDWAY" (the racing wing) — docs/specs/act7-speed-racing.md §5 + §10, product.md §Core Principles (the One Rule), CLAUDE.md §Wrong Keypress Behavior, security.md rules 4/6/8, theme-authoring.md §The EXPERIENCE win-ratio
+
+*(added 2026-09-13 — the second bonus wing, a parallel screen behind the select
+screen's second back-wall door. Numbering follows the spec's own §10 proposal
+1:1, so the spec and this catalog never drift. The design source is the spec;
+where the spec restates an older clause, the ORIGINAL doc is cited too.)*
+
+**The trap this section exists for:** Act 7 does NOT route through `js/main.js`'s
+pattern engine (`handleGameKey`/`buildPatterns`) — it is a parallel input path in
+`js/speedway/track.js`, exactly as Act 6 is in `js/textworld/`. It therefore does
+**not inherit the sacred wrong-keypress contract for free**; the contract is
+re-implemented, and **INV-77's tests cite INV-1..INV-5 directly** rather than
+Act 7's own numbers (spec §5.3 and §8's first risk row: *"Two implementations of
+one contract is the structural cost of a parallel input path"*).
+
+**The observable surfaces for Act 7** (the wing draws entirely on the shared
+canvas, so there is no `#prompt-sequence` to read — same situation as Act 6, and
+the same resolution): (a) which `.screen` is visible (`readScreen()` — the
+`speedway-screen` card while the hub loads/fails, `null` once the wing owns the
+canvas, `select-screen` back at the door on exit); (b) the **persisted**
+`kk-slots[i].speedway` TrackRecord (`js/slots.js readSpeedway/writeSpeedway`) —
+the actual promise the wing keeps to a returning player; (c) the **strings the
+wing asks the canvas to draw** (a `fillText`/`strokeText` recorder), used ONLY
+for text-content assertions — never for position, size, colour or any pixel, so
+STRATEGY §2's prohibition on "pixel/geometry assertions on canvas art" is
+respected exactly as written; and (d) `consoleErrors`.
+
+- **INV-76** (L2) **Distance is produced by typing, never consumed by time.** An
+  Act 7 lap completes when the last character of the lap is typed correctly, and
+  by no other means. No clock, timer, countdown, checkpoint or elapsed-time
+  threshold can end, shorten, fail or interrupt a lap; a lap left idle for an
+  arbitrary period is still exactly where it was and still finishable, and a
+  very slow run completes exactly like a fast one. (product.md §1 "No timers
+  running out. No forced failure states."; CLAUDE.md §The One Rule; spec §5.1.)
+- **INV-77** (L2) **The sacred wrong-keypress contract holds verbatim in Act 7,
+  and nothing is ever taken.** *Cites INV-1..INV-5 directly.* A wrong key in a
+  track produces a gentle nudge; the letter **stays and waits** (the prompt does
+  not advance — INV-1/INV-4); the mistake is logged quietly (INV-2); the correct
+  key then advances normally with **no double penalty** (INV-3); and pure
+  modifier keydowns (Shift/Control/Alt/Meta alone) are **ignored entirely and
+  are never a mistake** (INV-5). Act 7's own addition: a wrong key never reduces
+  charge, never reduces speed below the floor, never moves the vehicle
+  backwards, and never decrements lap progress, the odometer, the lap count or
+  the clean-run best. (CLAUDE.md §Wrong Keypress Behavior; product.md §3
+  "Reinforce, Don't Punish"; Survival's "wrong keys cost nothing"; spec §5.3.)
+- **INV-78** (L2) **The advance floor is invariant.** Every correct keystroke
+  advances the vehicle by the same fixed distance, independent of typing rate,
+  accuracy, charge level, ghost presence, EXPERIENCE tier, word-length settings
+  or track — so **every track is finishable at any typing rate by any player**,
+  and a lap always demands the same number of CORRECT keystrokes however many
+  wrong ones were pressed along the way. (Trevor's locked decision #4; product.md
+  §1 "Adaptive, Not Competitive"; spec §5.2(a).)
+- **INV-79** (L2) **Charge is additive-only and decays uniformly.** The boost
+  meter is increased only by correct keystrokes, is decreased only by continuous
+  time-decay applied identically during flawless and error-laden play, is never
+  zeroed or deducted by a mistake, and can never make the vehicle slower than the
+  INV-78 floor. An inaccurate run is slower only because it EARNED less, never
+  because anything was confiscated. (Super Mario Kart's coin buffer with the hit
+  removed — research/racing-games-by-era.md §12; spec §5.2(b).)
+- **INV-80** (L2) **The ghost is yourself, and it is never an opponent.** The
+  ghost is rendered from the player's own previous completed lap on that track,
+  is labelled as the player's own previous run (never RIVAL/OPPONENT/a name),
+  and on reaching the finish line **remains on screen** until the player
+  finishes. No placement, position number, finish order, ranking, elimination or
+  defeat string exists anywhere in Act 7 — in any drawn string or any stored
+  value. (Trevor's locked decision #6; product.md §1; spec §5.5.)
+- **INV-81** (L2) **The first lap has no ghost and still completes warmly.** With
+  no stored record for a track, the lap runs with no ghost vehicle, is framed as
+  setting the pace, and on completion CREATES the record. No Act 7 surface
+  requires a ghost to exist, and a corrupt stored record is indistinguishable
+  from none (INV-84). (spec §5.5; product.md "A child should leave every session
+  feeling capable".)
+- **INV-82** (L2) **The field is atmosphere, never competition, and the player
+  never fails.** AI vehicles are never scored or compared against the player in
+  any surface or stored value; their speed derives from the player's own rolling
+  keystroke rate clamped to a band around it; and the player's vehicle has no
+  crash, spin, stall or stop state under any input whatsoever. (Trevor's locked
+  decision #6; Daytona USA's adaptive AI via tech.md §Adaptive Pacing; the
+  Missile Command precedent, levels/act5.md Level 23; spec §5.4.)
+- **INV-83** (L2) **Act 7's counters only ever go up, and no negative number is
+  ever displayed.** Lap count, odometer and clean-run best are monotonically
+  non-decreasing across every run, including slower and error-heavy ones; the pit
+  board never renders a minus sign, a negative delta or a "slower by" comparison
+  — a slower lap simply OMITS the improvement line and shows time and best as two
+  unannotated facts. (iRacing's incident ledger inverted —
+  research/racing-games-by-era.md §12 final row; product.md §6 "Stats Are Present
+  But Never Looming"; spec §5.5.1.)
+- **INV-84** (L1) **Ghost storage is per-slot, bounded, and garbage-tolerant.**
+  Ghost records live INSIDE the active save slot (`kk-slots[i].speedway`, never a
+  new namespace — which is what makes both erase paths cover ghosts for free),
+  are normalized field-by-field on read inside try/catch, enforce the documented
+  caps (a split table of exactly 64 non-decreasing integer milliseconds; at most
+  the two documented ghosts per track, `last` raced + `best` keepsake), drop
+  unknown track ids and unknown schema versions, **never throw on any malformed
+  input**, and degrade to "no ghost" rather than breaking the track. Erasing a
+  saved game erases its ghosts; no ghost datum is ever transmitted anywhere and
+  none of it is PII. (security.md rules 4, 6 and 8; js/slots.js `normalizeSlot`
+  as the reference implementation; spec §5.5 + §6.)
+- **INV-85** (L1/L2) **The era ladder is declared and mechanically enforced.**
+  Every registered track declares a render tier from the enum plus a `variant`
+  and an authored `eraRank`; **`eraRank` is non-decreasing when tracks are
+  ordered by `year`**; **no two tracks share an identical (tier, variant) pair**
+  (F-Zero and Super Mario Kart are both `mode7`, Pole Position and Hang-On both
+  `scaler` — so each must declare a distinct variant); the earliest track by year
+  is `ttl` and the latest is `modern`; and where they are registered, **Virtua
+  Racing declares `flatpoly` and Daytona USA declares `texpoly`** (the locked
+  pair). Each track's renderer is constructed with `kit.for(station)`, which
+  exposes only that tier's primitives — a `ttl` renderer has no gradient
+  available, a `flatpoly` renderer has no `texturedPoly`. **This is a PURE DATA
+  assertion**: spec §5.6 explicitly rejected a canvas colour-histogram check
+  because `.claude/rules/testing.md` rule 4 forbids pixel assertions and the rule
+  has not moved. (Trevor's locked decision #3; product.md §5 "Graphic Quality
+  Grows With the Player"; spec §5.6(2).)
+- **INV-86** (L2) **Anti-trap: Escape always makes progress toward the arcade.**
+  From every state in Act 7 — the still-loading card, the "still being built"
+  card, the hub chooser, a start line, mid-lap, the pit board — Escape alone
+  reaches track → hub → arcade, and there is no state from which it fails. The
+  wing is lazily imported, so a missing/404'ing `js/speedway/*` must cost exactly
+  one warm card that any key walks out of, never a dead end and never a broken
+  arcade. (product.md's One Rule extended to "never trapped"; mirrors Act 6's
+  INV-46; spec §5.1 + js/main.js `enterSpeedway`.)
+- **INV-87** (L1) **Act 7's content floor is static, kid-safe, and network-free.**
+  Every track's word pool is a curated static bank containing no `BASE_WORDS`
+  floor word and none of the never-words (`crash`, `wreck`, `collision`,
+  `burnout`, `spin out`, `dnf`, `dead`, `die`, `kill`) — in any pool word OR any
+  line of Act 7 prose; no Act 7 code path issues any network request; and
+  MIN/MAX WORD LENGTH is applied best-effort with a fallback to the track's own
+  words, so no settings combination can make a track unfinishable. (security.md
+  rules 6 & 7; product.md §Word Length "winnability is never traded for it";
+  research/automotive-vocabulary.md §2; spec §5.7.)
+- **INV-88** (L2) **EXPERIENCE scales the road, never the demand.** A higher
+  EXPERIENCE tier increases a track's character length only; it never increases a
+  required speed, a required accuracy, or any threshold the player must meet, and
+  every tier remains finishable at any typing rate. At the default tier,
+  behaviour is identical to an unscaled track. (theme-authoring.md §The
+  EXPERIENCE win-ratio: "a higher ratio is always MORE play, never a penalty";
+  spec §5.1.)
+- **INV-89** (L1/L2) *(awaiting renderers — no test in the 2026-09-13 wave)* **The
+  rendering backend is invisible above the render kit.** Whatever a track draws
+  with, it exposes the unchanged module contract (`start`/`stop`/`keystroke`/
+  `miss`/`patternComplete`/`victory`, `patternComplete()` monotonic and never
+  un-winning, `victory()` returning its duration in ms), it draws inside the
+  stage regions with the UI's centre reserved, and no engine or screen code
+  branches on which backend a track uses. A WebGL track composites through its
+  own offscreen canvas into the shared 2D canvas — the shared canvas never
+  changes context type. (theme-authoring.md §The module contract + §The win-gate
+  accumulator pitfall; visual-validation.md §The Theme Layout Contract; spec
+  §5.6d.)
+- **INV-90** (L2) *(awaiting the `modern` tier — no test in the 2026-09-13 wave)*
+  **WebGL is optional; no track is ever blank.** If a WebGL context cannot be
+  created or is lost, the track renders through its Canvas-2D fallback and
+  remains fully completable with the ghost, the field and the pit board intact.
+  No rendering condition can make a track unplayable, unwinnable or empty.
+  (product.md's One Rule — winnability is the floor; INV-64/INV-67's shape:
+  accelerated content is always additive to a static floor; spec §5.6d.)
+- **INV-91** (L0) *(conditional — only bites if a library is ever vendored)* **Any
+  vendored graphics library is committed, local, licensed and crawlable.** It
+  lives under `js/vendor/<name>/` as ES modules committed to the repo, is
+  imported only by repo-relative path (never a CDN, never root-absolute),
+  carries its `LICENSE` beside it, requires no build step, and appears in the
+  module graph `scripts/static-host-check.mjs` crawls with every file returning
+  200 in both the `/` and `/keystroke-kingdom/` host shapes. **And the doc-first
+  gate holds:** tech.md/CLAUDE.md's "no framework" tenet must carry Trevor's
+  narrowed exemption BEFORE any vendored byte lands (testing.md rule 1's
+  ordering). (security.md rule 6; journal F26; spec §5.6d + §11 Q9.)
+
 ## 6. Findings protocol
 
 `docs/testing/FINDINGS.md` is the ledger. Each entry:

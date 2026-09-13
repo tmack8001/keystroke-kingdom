@@ -1191,6 +1191,16 @@
   margin-top: 2px;
 }
 
+/* The back wall's doors to the bonus wings (BACK_WALL_DOORS in
+   js/ui/cabinet-art.js). They stand in the cabinet row, but carry longer,
+   sentence-style labels, so each keeps a column of its own instead of
+   stretching the row when two or more doors are open. */
+.select-door .cabinet-label {
+  max-width: 130px;
+  line-height: 1.6;
+  text-align: center;
+}
+
 .select-prompt {
   font-size: 8px;
   color: var(--crt-green);
@@ -1432,4 +1442,44 @@
 .blockword-chip-x {
   color: var(--nudge-red);
   font-size: 8px;
+}
+
+/* ═══ ACT 7 — THE SPEEDWAY (the second back-wall door) ══════════════════════
+   The wing draws itself on the shared canvas (js/speedway/hub.js), exactly like
+   Act 6. This screen is only the DOM home it is entered through, holding the two
+   states the hub can't draw because it isn't up yet: warming up, and not built
+   on this build. Both are warm, and both walk straight back out — a door in this
+   arcade never opens on a dead end. Sunset pit-lane amber, to match the door. */
+.speedway-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 32px 40px;
+  background: rgba(10, 6, 4, 0.86);   /* scrim panel, never element opacity */
+  border: 2px solid var(--crt-amber-dim);
+  max-width: 560px;
+  text-align: center;
+}
+
+.speedway-title {
+  font-size: 12px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 10px var(--crt-amber);
+  letter-spacing: 5px;
+}
+
+.speedway-line {
+  font-size: 8px;
+  color: var(--atari-white);
+  letter-spacing: 2px;
+  line-height: 2;
+}
+
+.speedway-prompt {
+  font-size: 8px;
+  color: var(--crt-amber);
+  letter-spacing: 2px;
+  margin-top: 6px;
+  animation: blink 1.2s step-end infinite;
 }

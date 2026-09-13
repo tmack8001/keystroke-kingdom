@@ -216,6 +216,24 @@
   <div class="select-hint"><span data-enter-key>ENTER</span> TO START / ESC TO CANCEL</div>
 </div>
 
+<!-- ACT 7 — THE SPEEDWAY (the second back-wall door).
+     The wing itself is canvas-drawn by js/speedway/hub.js, exactly like Act 6's
+     Text Worlds; this screen is the DOM home it is entered through, and it holds
+     the two states the hub cannot draw because it isn't up yet. Both are warm
+     and both walk straight back out — a door never opens on a dead end. -->
+<div class="screen hidden" id="speedway-screen">
+  <div class="speedway-card" id="speedway-loading">
+    <div class="speedway-title">THE SPEEDWAY</div>
+    <div class="speedway-line">WARMING UP THE ENGINE...</div>
+  </div>
+  <div class="speedway-card hidden" id="speedway-unbuilt">
+    <div class="speedway-title">THE SPEEDWAY</div>
+    <div class="speedway-line">THIS TRACK IS STILL BEING BUILT.</div>
+    <div class="speedway-line">COME BACK SOON — THE ARCADE IS WAITING.</div>
+    <div class="speedway-prompt">PRESS ANY KEY TO GO BACK</div>
+  </div>
+</div>
+
 <!-- LEVEL COMPLETE OVERLAY -->
 <div class="complete-overlay hidden" id="complete-overlay">
   <div class="complete-modal">

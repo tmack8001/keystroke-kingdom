@@ -45,6 +45,7 @@ try {
 }
 
 const failures = [];
+const warnings = [];
 const infos = [];
 let checked = 0;
 
@@ -139,9 +140,21 @@ if (absoluteRefs.length) {
 console.log(`  ${refs.size} local asset reference(s) checked`);
 
 // ── 3. the ES-module import graph ────────────────────────────────────────
-// No dynamic import() exists in js/ (verified 2026-09-11) — a static regex
-// crawl from the page's module entry points reaches every file the browser
-// will ever request.
+// A static regex crawl from the page's module entry points reaches every file
+// the browser will ever request — INCLUDING lazily-loaded ones.
+//
+// This comment used to read "No dynamic import() exists in js/ (verified
+// 2026-09-11)". That assumption was invalidated on 2026-09-13 when the Act 7
+// wing was attached with a deliberate lazy `import('./speedway/hub.js')` — so a
+// bonus wing failing to load can never abort main.js and brick all 25 levels on
+// the published static host. Good decision, but it silently made an entire
+// module subtree INVISIBLE to this gate: the very failure class this script
+// exists to catch (journal F26 — a file that exists locally but was never
+// committed is a live 404 for every player).
+// Dynamic specifiers are now crawled too. A literal `import('...')` is
+// resolvable; a computed one (a template literal or a variable) is NOT, and is
+// reported as a warning rather than silently skipped, because an unresolvable
+// specifier is exactly where an uncommitted file would hide.
 console.log('[3/4] ES module import graph');
 const entryPoints = new Set(['js/main.js']);
 const scriptRe = /<script\b[^>]*type\s*=\s*["']module["'][^>]*>/gi;
@@ -157,6 +170,10 @@ let moduleCount = 0;
 // `import x from 'y'` / `export … from 'y'` / bare `import 'y'` — plus the
 // `with { type: 'json' }` attribute form used by js/word-blocklist.js.
 const specRe = /(?:^|[\s;}])(?:import|export)\s[^'"();]*?from\s*["']([^"']+)["']|(?:^|[\s;}])import\s*["']([^"']+)["']/g;
+// Lazy/dynamic: `import('./x.js')` — literal specifiers only.
+const dynRe = /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g;
+// A computed dynamic import we cannot resolve — warn, never skip silently.
+const dynComputedRe = /\bimport\s*\(\s*(?!["'])[^)]*\)/g;
 
 while (queue.length) {
   const url = queue.shift();
@@ -183,6 +200,24 @@ while (queue.length) {
       continue;
     }
     queue.push(new URL(spec, url).href);
+  }
+  // Lazily-imported modules are requested by the browser too, so they must be
+  // reachable on the published host exactly like statically-imported ones.
+  dynRe.lastIndex = 0;
+  while ((im = dynRe.exec(res.text)) !== null) {
+    const spec = im[1];
+    if (!isLocalRef(spec)) continue;
+    if (spec.startsWith('/')) {
+      failures.push(`  ABSOLUTE dynamic import in ${url}: '${spec}' (breaks any non-root host)`);
+      continue;
+    }
+    queue.push(new URL(spec, url).href);
+  }
+  // A computed specifier cannot be resolved statically. Surface it — an
+  // uncommitted file behind one would otherwise be invisible here.
+  dynComputedRe.lastIndex = 0;
+  while ((im = dynComputedRe.exec(res.text)) !== null) {
+    warnings.push(`  UNRESOLVABLE dynamic import in ${url}: ${im[0].slice(0, 60)} — this gate cannot follow a computed specifier; verify that target by hand`);
   }
 }
 console.log(`  ${moduleCount} module file(s) reachable`);
@@ -213,6 +248,7 @@ if (rootProbe !== new URL('api/wordgen/health', BASE).href) {
   infos.push(`  INFO  ${rootProbe} → ${res.status || 'unreachable'} — domain root, OUTSIDE our prefix. The clients use relative paths and never request this; probed only so a regression to absolute paths is visible here.`);
 }
 for (const line of infos) console.log(line);
+for (const w of warnings) console.log(`  WARN ${w.trim()}`);
 
 // ── summary ──────────────────────────────────────────────────────────────
 console.log('');

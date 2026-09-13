@@ -31,19 +31,64 @@ function firstUnlockedAtOrBelow(state, levels, levelNum) {
   return levels[0];
 }
 
-// ─── The back-wall door → Act 6, Text Worlds ────────────────────────────────
-// A diegetic door sits one step BELOW the last act on the select screen. It
-// appears once the full keyboard is earned (or the WOPR dev bypass lights it).
-// state.doorFocused is a sub-state of the 'select' screen; entering it (Space)
-// hands off to the text-world engine (see main.js case 'select' / 'textworld').
+// ─── The back wall: the doors to the bonus wings ────────────────────────────
+// Past the last act, the select cursor steps DOWN into the back of the arcade,
+// where diegetic doors lead to the bonus wings (Act 6 Text Worlds, Act 7 The
+// Speedway). They appear once the full keyboard is earned — or the WOPR dev
+// bypass lights them.
+//
+// The back wall is a REGISTRY, never a boolean: `state.doorIndex`
+// (null | 0..N-1) is a sub-state of the 'select' screen. Adding a third wing is
+// ONE DATA ROW in BACK_WALL_DOORS plus its entry function in main.js's
+// DOOR_ENTRY map — never another edit to renderDoorView() or navigateAct().
+//
+// Navigation can never strand the cursor (the One Rule): ↑ always walks back up
+// and out of the back wall into the acts, ←/→ walk between doors standing side
+// by side, and Escape leaves the select screen entirely from anywhere.
 const DOOR_UNLOCK_LEVEL = 25;
 function doorUnlocked(state) {
   return !!state.selectBypass || (state.maxUnlockedLevel || 1) >= DOOR_UNLOCK_LEVEL;
 }
 
-// Pixel-art door matching drawCabinet's 56×80 footprint: a glowing emerald
-// doorway in the dark back wall, gold handle, two faint dragon-eyes in the glow.
-function drawDoor(canvas, scale = 2) {
+const BACK_WALL_DOORS = [
+  { id: 'textworld',
+    label: 'THE GREEN DRAGON · a text world',
+    hint: 'TYPE TO ENTER',
+    art: drawTextWorldDoor,
+    unlock: doorUnlocked },
+  { id: 'speedway',
+    label: 'THE SPEEDWAY · race yourself',
+    hint: 'TYPE TO ENTER',
+    art: drawSpeedwayDoor,
+    unlock: doorUnlocked },
+];
+
+// The doors standing open to this player, in back-wall order.
+function availableDoors(state) {
+  return BACK_WALL_DOORS.filter(d => d.unlock(state));
+}
+
+// The door the cursor is standing at, or null if it's still among the cabinets.
+// Tolerates a stale/out-of-range index — it simply reads as "no door".
+export function focusedDoor(state) {
+  const doors = availableDoors(state);
+  const i = state.doorIndex;
+  return (typeof i === 'number' && i >= 0 && i < doors.length) ? doors[i] : null;
+}
+
+// Park the cursor on a named door — a wing hands control back through the door
+// the player walked in by. An unknown or still-locked id clears the focus
+// instead, so the cursor lands among the cabinets rather than nowhere.
+export function focusDoor(state, id) {
+  const i = availableDoors(state).findIndex(d => d.id === id);
+  state.doorIndex = i >= 0 ? i : null;
+}
+
+export function clearDoorFocus(state) { state.doorIndex = null; }
+
+// Pixel-art doors matching drawCabinet's 56×80 footprint. Shared shell first:
+// the dark back wall, the stone frame, and the light spilling on the floor.
+function drawDoorShell(canvas, scale, glowTop, glowBottom, spill) {
   const w = 56, h = 80;
   canvas.width = w;
   canvas.height = h;
@@ -60,21 +105,60 @@ function drawDoor(canvas, scale = 2) {
   ctx.fillRect(15, 11, 26, 63);
 
   const g = ctx.createLinearGradient(0, 11, 0, 74);   // the glowing doorway
-  g.addColorStop(0, '#0c3');
-  g.addColorStop(1, '#042');
+  g.addColorStop(0, glowTop);
+  g.addColorStop(1, glowBottom);
   ctx.fillStyle = g;
   ctx.fillRect(17, 13, 22, 59);
 
-  ctx.globalAlpha = 0.5;            // green light spilling on the floor
-  ctx.fillStyle = '#0f6';
+  ctx.globalAlpha = 0.5;            // light spilling on the floor
+  ctx.fillStyle = spill;
   ctx.fillRect(9, 74, 38, 4);
   ctx.globalAlpha = 1;
+  return ctx;
+}
 
+// Act 6 — a glowing emerald doorway, gold handle, two faint dragon-eyes.
+function drawTextWorldDoor(canvas, scale = 2) {
+  const ctx = drawDoorShell(canvas, scale, '#0c3', '#042', '#0f6');
   ctx.fillStyle = '#ffd23f';        // gold handle
   ctx.fillRect(34, 42, 3, 4);
   ctx.fillStyle = '#7fffbf';        // two faint eyes in the glow
   ctx.fillRect(24, 34, 2, 2);
   ctx.fillRect(30, 34, 2, 2);
+}
+
+// Act 7 — a pit-lane roll-up door: chequered header board, sunset glow beyond,
+// two headlights idling in it. Same 1-8 colour pixel bar as every cabinet here.
+function drawSpeedwayDoor(canvas, scale = 2) {
+  const ctx = drawDoorShell(canvas, scale, '#ff7b1a', '#7a0b2e', '#fb3');
+
+  for (let c = 0; c < 6; c++) {     // chequered flag board over the doorway
+    ctx.fillStyle = (c % 2 === 0) ? '#f4f4f4' : '#101018';
+    ctx.fillRect(17 + c * 4, 14, 4, 3);
+    ctx.fillStyle = (c % 2 === 0) ? '#101018' : '#f4f4f4';
+    ctx.fillRect(17 + c * 4, 17, 4, 3);
+  }
+
+  ctx.fillStyle = '#5a1f2e';        // the road running out of the doorway
+  ctx.fillRect(19, 52, 18, 20);
+  ctx.fillStyle = '#f4f4f4';        // centre line, receding
+  ctx.fillRect(27, 54, 2, 3);
+  ctx.fillRect(27, 60, 2, 4);
+  ctx.fillRect(27, 67, 2, 4);
+
+  ctx.fillStyle = '#e8203c';        // a car idling in the doorway, facing out
+  ctx.fillRect(23, 54, 11, 12);
+  ctx.fillStyle = '#9fd8ff';        // windscreen
+  ctx.fillRect(25, 56, 7, 4);
+  ctx.fillStyle = '#101018';        // tyres
+  ctx.fillRect(21, 62, 3, 5);
+  ctx.fillRect(33, 62, 3, 5);
+  ctx.fillStyle = '#fff6cc';        // headlights
+  ctx.fillRect(24, 62, 3, 2);
+  ctx.fillRect(30, 62, 3, 2);
+
+  ctx.fillStyle = '#c9ccd6';        // chrome pull handle
+  ctx.fillRect(34, 42, 3, 4);
 }
 
 const CABINET_DATA = {
@@ -1043,7 +1127,8 @@ function drawCabinet(canvas, levelNum, scale = 2) {
 export function renderSelectScreen(state) {
   mothNoteActivity();   // a render means the player is doing something
   mothStart();
-  if (state.doorFocused) { renderDoorView(state); return; }
+  const focused = focusedDoor(state);
+  if (focused) { renderDoorView(state, focused); return; }
   const act = getActForLevel(state.selectedLevel);
   const actIdx = ACTS.indexOf(act);
 
@@ -1109,61 +1194,91 @@ export function renderSelectScreen(state) {
   }
 }
 
-// The door sub-view of the select screen (state.doorFocused). Reuses the
-// cabinet DOM/labels so it sits naturally where the cabinet grid was.
-function renderDoorView(state) {
+// The back-wall sub-view of the select screen (state.doorIndex is set). Every
+// unlocked door is drawn side by side, exactly where the cabinet grid was, with
+// the focused one highlighted — the back wall reads as a room with doors in it,
+// not as one door at a time. Labels come from BACK_WALL_DOORS, so a new wing
+// needs no edit here.
+function renderDoorView(state, door) {
+  const doors = availableDoors(state);
+  const idx = doors.indexOf(door);
+
   $('select-act-label').textContent = '◈   THE BACK OF THE ARCADE   ◈';
 
   const promptEl = $('select-prompt');
   if (promptEl.dataset.base === undefined) promptEl.dataset.base = promptEl.textContent;
-  promptEl.textContent = 'A door hums softly.   SPACE: ENTER   ·   ↑: BACK';
+  promptEl.textContent = doors.length > 1
+    ? 'Doors hum softly.   ◀ ▶: CHOOSE   ·   SPACE: ENTER   ·   ↑: BACK'
+    : 'A door hums softly.   SPACE: ENTER   ·   ↑: BACK';
 
-  $('select-act-prev').textContent = '▲  ACT 5  —  FULL CIRCLE';
-  $('select-act-next').textContent = '';
+  const lastAct = ACTS[ACTS.length - 1];
+  $('select-act-prev').textContent = idx > 0
+    ? `▲  ${doors[idx - 1].label}`
+    : `▲  ACT ${lastAct.num}  —  ${lastAct.name}`;
+  $('select-act-next').textContent = idx >= 0 && idx < doors.length - 1
+    ? `▼  ${doors[idx + 1].label}`
+    : '';
 
   const container = $('select-cabinets');
   container.innerHTML = '';
 
-  const div = document.createElement('div');
-  div.className = 'select-cabinet selected';
+  for (const d of doors) {
+    const div = document.createElement('div');
+    div.className = 'select-cabinet select-door' + (d === door ? ' selected' : '');
+    div.dataset.door = d.id;   // NOT data-level — the moth only visits cabinets
 
-  const canvas = document.createElement('canvas');
-  drawDoor(canvas);
+    const canvas = document.createElement('canvas');
+    d.art(canvas);
 
-  const label = document.createElement('div');
-  label.className = 'cabinet-label';
-  label.textContent = 'THE GREEN DRAGON · a text world';
+    const label = document.createElement('div');
+    label.className = 'cabinet-label';
+    label.textContent = d.label;
 
-  const keys = document.createElement('div');
-  keys.className = 'select-keys';
-  keys.textContent = 'TYPE TO ENTER';
+    const keys = document.createElement('div');
+    keys.className = 'select-keys';
+    keys.textContent = d.hint;
 
-  div.appendChild(canvas);
-  div.appendChild(label);
-  div.appendChild(keys);
-  container.appendChild(div);
+    div.appendChild(canvas);
+    div.appendChild(label);
+    div.appendChild(keys);
+    container.appendChild(div);
+
+    div.addEventListener('click', () => {
+      focusDoor(state, d.id);
+      renderSelectScreen(state);
+    });
+  }
 }
 
 export function updateSelectHighlight(state) {
   mothNoteActivity();
+  // At the back wall there are no levels to highlight — renderDoorView owns it.
+  if (focusedDoor(state)) return;
   document.querySelectorAll('.select-cabinet').forEach(el => {
     el.classList.toggle('selected', parseInt(el.dataset.level) === state.selectedLevel);
   });
 }
 
 export function navigateAct(state, delta) {
-  // The back-wall door sits one step BELOW the last act.
-  if (state.doorFocused) {
-    if (delta < 0) { state.doorFocused = false; renderSelectScreen(state); }
-    return; // ArrowDown while at the door does nothing — it's the last thing here.
+  // The back wall's doors sit one step BELOW the last act, and ↑/↓ walk through
+  // them in registry order. ↑ from the first door always returns to the acts —
+  // the back wall can never trap the cursor.
+  const doors = availableDoors(state);
+  if (focusedDoor(state)) {
+    const next = state.doorIndex + delta;
+    if (next < 0) { clearDoorFocus(state); renderSelectScreen(state); return; }
+    if (next >= doors.length) return; // the back wall is the last thing here
+    state.doorIndex = next;
+    renderSelectScreen(state);
+    return;
   }
   const act = getActForLevel(state.selectedLevel);
   const actIdx = ACTS.indexOf(act);
   const newActIdx = actIdx + delta;
   if (newActIdx < 0) return;
   if (newActIdx >= ACTS.length) {
-    // Past the final act → reveal the door, if the full keyboard is earned.
-    if (delta > 0 && doorUnlocked(state)) { state.doorFocused = true; renderSelectScreen(state); }
+    // Past the final act → step into the back wall, if any door is earned.
+    if (delta > 0 && doors.length > 0) { state.doorIndex = 0; renderSelectScreen(state); }
     return;
   }
   const newLevels = ACTS[newActIdx].levels;
@@ -1177,7 +1292,15 @@ export function navigateAct(state, delta) {
 }
 
 export function navigateWithinAct(state, delta) {
-  if (state.doorFocused) return; // the door has no left/right neighbours
+  // The back wall's doors stand side by side, so ◀ ▶ walks between them too.
+  if (focusedDoor(state)) {
+    const doors = availableDoors(state);
+    const next = state.doorIndex + delta;
+    if (next < 0 || next >= doors.length) return;
+    state.doorIndex = next;
+    renderSelectScreen(state);
+    return;
+  }
   const act = getActForLevel(state.selectedLevel);
   const pos = act.levels.indexOf(state.selectedLevel);
   const newPos = pos + delta;
@@ -1189,7 +1312,7 @@ export function navigateWithinAct(state, delta) {
 }
 
 export function selectByPosition(state, pos) {
-  if (state.doorFocused) return; // number keys don't apply at the door
+  if (focusedDoor(state)) return; // number keys don't apply at the back wall
   const act = getActForLevel(state.selectedLevel);
   const levelNum = act.levels[pos - 1];
   if (!levelNum) return;

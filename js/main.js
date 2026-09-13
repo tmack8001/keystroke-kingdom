@@ -2,7 +2,7 @@ import * as Audio from './audio.js';
 import { LEVELS, FINGER_MAP } from './levels.js';
 import { updateHUD, showFingerHint, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter } from './ui/hud.js';
 import { showScreen, applyLevelTheme, renderReadyScreen, renderSlotsScreen, renderCollectionScreen, createStars } from './ui/screens.js';
-import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked } from './ui/cabinet-art.js';
+import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked, focusedDoor, focusDoor, clearDoorFocus } from './ui/cabinet-art.js';
 import { Themes, activeTheme, stopAll } from './themes/index.js';
 import * as KeyboardPreview from './ui/keyboard-preview.js';
 import * as Mystery from './mystery.js';
@@ -254,9 +254,11 @@ const state = {
   // bypass sets selectBypass=true, unlocking every cabinet for dev/parents.
   maxUnlockedLevel: 1,
   selectBypass: false,
-  // Sub-state of the 'select' screen: the back-wall door to Act 6 (Text Worlds)
-  // is focused. Only ever true while on the select screen; any Escape clears it.
-  doorFocused: false,
+  // Sub-state of the 'select' screen: which of the back wall's doors to the
+  // bonus wings the cursor is standing at (null = none, still among the
+  // cabinets). Indexes cabinet-art.js's BACK_WALL_DOORS registry — read it
+  // through focusedDoor(state), never directly. Any Escape clears it.
+  doorIndex: null,
 
   // Settings screen navigation
   settingsReturn: 'title',   // 'title' | 'pause'
@@ -1822,7 +1824,7 @@ function handleBlockWordsKey(e) {
 }
 
 // ─── Act 6 — Text Worlds: the back-wall door entry/exit ─────────────────────
-// Entered from the select screen's door sub-state (state.doorFocused). Runs as a
+// Entered from the select screen's back-wall sub-state (state.doorIndex). Runs as a
 // parallel screen ('textworld') on the shared canvas, like the act cinematics —
 // the pattern engine (handleGameKey) is never involved. No survival timer is ever
 // started here, so the wing inherits zero time pressure (One Rule).
@@ -1838,10 +1840,93 @@ function enterTextWorld() {
 
 function returnToArcadeFromTextWorld() {
   TextWorldHub.stop();
-  state.doorFocused = true;   // land back on the door we came through
+  focusDoor(state, 'textworld');   // land back on the door we came through
   showScreen('select', state);
   renderSelectScreen(state);
 }
+
+// ─── Act 7 — The Speedway: the second back-wall door ────────────────────────
+// The exact analogue of enterTextWorld above: a parallel screen ('speedway') on
+// the shared canvas with its own hub, entered from the back wall. The 25-level
+// pattern engine (handleGameKey/buildPatterns) is never involved, and no
+// survival timer is ever started here — the wing inherits zero time pressure.
+//
+// The hub is imported LAZILY rather than statically, for one reason: this wing
+// is a bonus room, and a bonus room must never be able to take the whole game
+// down with it. On static hosting (tmack8001.github.io) a missing or 404'ing
+// js/speedway/* would abort main.js's module graph at load and brick all 25
+// levels; loaded on demand, a failure costs exactly one warm "still under
+// construction" card and the player walks straight back into the arcade. Same
+// silent-static-fallback posture as wordgen (security.md rule 6).
+let Speedway = null;          // the js/speedway/hub.js namespace, once loaded
+let speedwayLoading = false;  // a second Space while it loads must not re-enter
+
+function enterSpeedway() {
+  if (speedwayLoading) return;
+  stopAll();
+  if (Speedway) { startSpeedwayHub(); return; }
+  speedwayLoading = true;
+  showSpeedwayCard('speedway-loading');
+  // Load the hub AND the track registry together. The hub keeps its injected-registry
+  // shape (it falls back to a built-in TEST OVAL so the door never opens on an empty
+  // room), but a player must actually reach the real era tracks — without this the
+  // placeholder is the whole wing. Both are STATIC specifiers inside the dynamic
+  // import, so scripts/static-host-check.mjs crawls the subtree and a missing track
+  // file is caught by the gate rather than shipping as a live 404 (journal F26).
+  Promise.all([import('./speedway/hub.js'), import('./speedway/tracks/index.js')])
+    .then(([mod, tracksMod]) => {
+      speedwayLoading = false;
+      Speedway = mod;
+      try {
+        if (typeof mod.setTracks === 'function' && Array.isArray(tracksMod.TRACKS)) {
+          mod.setTracks(tracksMod.TRACKS);
+        }
+      } catch { /* a bad registry falls back to the hub's own placeholder, never a trap */ }
+      if (state.screen !== 'speedway') return;   // the player already walked out
+      startSpeedwayHub();
+    })
+    .catch(() => {
+      speedwayLoading = false;
+      if (state.screen !== 'speedway') return;
+      showSpeedwayCard('speedway-unbuilt');
+    });
+}
+
+function startSpeedwayHub() {
+  try {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    state.screen = 'speedway';
+    Speedway.start($('invaders-canvas'), {
+      onExit: returnToArcadeFromSpeedway,   // ESC from the hub → back to the door
+    });
+  } catch (err) {
+    // A wing that can't start is a disappointment, never a trap (the One Rule).
+    Speedway = null;
+    showSpeedwayCard('speedway-unbuilt');
+  }
+}
+
+// The two states the hub can't draw because it isn't up: warming up, and not
+// built on this build. Both live on #speedway-screen and both walk back out.
+function showSpeedwayCard(id) {
+  showScreen('speedway', state);
+  $('speedway-loading').classList.toggle('hidden', id !== 'speedway-loading');
+  $('speedway-unbuilt').classList.toggle('hidden', id !== 'speedway-unbuilt');
+}
+
+function returnToArcadeFromSpeedway() {
+  if (Speedway) Speedway.stop();
+  focusDoor(state, 'speedway');   // land back on the door we came through
+  showScreen('select', state);
+  renderSelectScreen(state);
+}
+
+// The back wall's doors → their wings. A third wing is a data row in
+// cabinet-art.js's BACK_WALL_DOORS plus one entry here.
+const DOOR_ENTRY = {
+  textworld: enterTextWorld,
+  speedway: enterSpeedway,
+};
 
 // ─── Touch-device notice: this cabinet needs a keyboard ───────────────────
 //
@@ -2302,10 +2387,21 @@ document.addEventListener('keydown', (e) => {
       TextWorldHub.handleKey(e);
       break;
 
+    case 'speedway':
+      // Act 7 The Speedway. Same shape as Act 6: the hub owns Escape internally
+      // (track → chooser → arcade); every other key is the wing's input.
+      e.preventDefault();
+      if (Speedway && Speedway.isActive()) { Speedway.handleKey(e); break; }
+      // The hub isn't up — either still loading, or not built on this build. On
+      // the "still building it" card ANY key walks back out to the arcade; while
+      // it's still loading, Escape does. Never a dead end (the One Rule).
+      if (!speedwayLoading || e.key === 'Escape') returnToArcadeFromSpeedway();
+      break;
+
     case 'select':
       e.preventDefault();
       if (e.key === 'f' || e.key === 'F') {
-        if (state.doorFocused) break; // free play doesn't apply at the door
+        if (focusedDoor(state)) break; // free play doesn't apply at the back wall
         state.freePlay = !state.freePlay;
         renderSelectScreen(state);
       } else if (e.key >= '1' && e.key <= '5') {
@@ -2319,7 +2415,8 @@ document.addEventListener('keydown', (e) => {
       } else if (e.key === 'ArrowDown') {
         navigateAct(state, 1);
       } else if (e.key === 'Enter' || e.key === ' ') {
-        if (state.doorFocused) { enterTextWorld(); break; }
+        const door = focusedDoor(state);
+        if (door) { const enterWing = DOOR_ENTRY[door.id]; if (enterWing) enterWing(); break; }
         // Guard: never enter a locked cabinet (belt-and-suspenders — the
         // cursor can't normally land on one, but the WOPR bypass or a stale
         // selection shouldn't slip a locked level through).
@@ -2336,7 +2433,7 @@ document.addEventListener('keydown', (e) => {
         }, 0);
       } else if (e.key === 'Escape') {
         state.freePlay = false;
-        state.doorFocused = false;   // leaving the select screen clears the door sub-state
+        clearDoorFocus(state);       // leaving the select screen clears the back-wall sub-state
         showScreen('title', state);
       }
       break;
