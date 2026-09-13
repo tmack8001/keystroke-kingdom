@@ -172,6 +172,51 @@ the keys", the default, always) vs **SURVIVAL** ("quarters on the line — 1979 
 | Erase All Progress | — | Y/N confirm required |
 | Visual Theme | 1979 Arcade | Future: expandable (Oona's ideas!) — see docs/ROADMAP.md |
 
+### EXPERIENCE also buys FIDELITY, not just volume *(Trevor, 2026-09-13 — direction)*
+
+Until now EXPERIENCE scaled one axis: **how much** a level demands (a longer road, more
+patterns). Trevor added a second:
+
+> *"when on wizard mode sure let's make these games more similar to their origins… wizard mode
+> can make it harder and more realistic to the original game play."*
+
+**So a higher tier also buys a MORE FAITHFUL RECREATION of the original game.** The 25 cabinets
+are deliberately typing games wearing a classic game's clothes (`theme-authoring.md` requires the
+SCENE to show the signature mechanic operating, never the player's hands to perform it) — and at
+WIZARD a theme may push that scene closer to how the original actually played. This is a genuine
+reward for the player who wants one, in a game that otherwise keeps its cabinets gentle.
+
+**The contract that made EXPERIENCE safe is unchanged and still absolute: a higher tier is MORE
+play and MORE fidelity, never a penalty.** Three things that follow, and they bind:
+- **It is opt-in.** EXPERIENCE is player-chosen and defaults to FIRST QUARTER. A child never
+  lands in WIZARD by accident, so no added fidelity ever arrives uninvited.
+- **Fidelity may never import a failure state.** The original's game-over, lives, timers,
+  placement and grades stay in the original. What crosses over is how the world LOOKS and
+  BEHAVES, not what it takes from you.
+- **Winnability is untouched at every tier.** The One Rule floor holds: a level must remain
+  completable at 3.5× exactly as at 1×.
+
+**The mechanism Trevor proposed for the rhythm act is the model for the whole idea, and it is
+worth stating as a pattern:**
+
+> *"have the band/tune fall out of rhythm or out of pitch so it sounds wrong, but you aren't
+> punishing the child — they can still advance slower through it, which would be the same they
+> would do playing an instrument they aren't experts at anyway."*
+
+**A consequence that is HONEST and AUDIBLE but costs nothing.** Fall behind the beat and the band
+drifts out of time; the music tells you the truth, and takes nothing away. You still finish. It is
+the gentle-nudge sound scaled up to a whole band — the same shape as the sacred wrong-keypress
+contract, where the game tells the child something is off and then waits for them.
+
+It also solves the rhythm genre's central collision. A rhythm game normally needs a **timing
+window that gates**; here the timing window **degrades the music instead of gating the player**.
+You can be off-beat for an entire song and still reach the end — which is exactly what a real
+beginner on a real instrument experiences, and nobody stops them either.
+
+**The general form, reusable by any act:** at higher tiers, let the world respond more truthfully
+to how well the player is doing — in look, sound and behaviour — while the path forward stays
+open. Consequence without cost.
+
 ### Word Length — the difficulty lever that ages with the player *(built 2026-07-13)*
 
 **Design tenet (Trevor):** the game must **age with the player** — it stays fun and
