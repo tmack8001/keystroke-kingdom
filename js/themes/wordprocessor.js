@@ -251,12 +251,23 @@ function drawText(W, H, px, py, pw, ph) {
     : Math.max(13, Math.floor(pw * 0.020));
   const lineH = Math.round(fontSize * 1.7);
   const marginX = Math.round(pw * 0.05);
-  const maxCharsPerLine = Math.max(20, Math.floor((pw - marginX * 2) / (fontSize * 0.62)));
-
   ctx.font = `${fontSize}px "Press Start 2P", monospace`;
   ctx.textAlign = 'left';        // explicit — canvas 2D state leaks between draws (journal L28)
   ctx.textBaseline = 'top';
   ctx.fillStyle = '#242a33';
+
+  // Wrap width is MEASURED, never assumed. This used to divide by `fontSize * 0.62`,
+  // which overestimated the line length by ~61%: Press Start 2P is monospace with an
+  // advance of exactly 1.0x fontSize (measured, not guessed — ctx.measureText on a
+  // 20-char run returns 16px/char at 16px and 23px/char at 23px). The bad constant was
+  // invisible at the default EXPERIENCE tier because the coda's visible text never needs
+  // to wrap there, but at 1.5x and above the document ran past the paper's right edge,
+  // slid under the reserved top-right HUD stats region and spilled off-canvas — a
+  // violation of the theme layout contract in .claude/rules/visual-validation.md.
+  // measureText covers the webfont AND the 'monospace' fallback (which is NOT 1.0), so
+  // this stays correct if Press Start 2P hasn't loaded yet on the first frames.
+  const advance = ctx.measureText('M').width || fontSize;
+  const maxCharsPerLine = Math.max(20, Math.floor((pw - marginX * 2) / advance));
 
   const lines = wrapText(text, maxCharsPerLine);
 

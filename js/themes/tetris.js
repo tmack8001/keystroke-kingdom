@@ -870,8 +870,9 @@ export function patternComplete() {
 // The engine calls this at level complete and holds the victory screen for a few
 // seconds. We fill that window with the Game Boy Tetris rocket launch: a bottom-
 // up board flash-clear into a pixel rocket lift-off with an exhaust trail. We
-// return the animation duration in ms (forward-compatible: the engine currently
-// ignores the return value; a follow-up will consume it to time the hold).
+// return the animation duration in ms; the engine holds the victory window for
+// exactly that long (clamped 1200-6000ms) so the LEVEL COMPLETE card lands as
+// the rocket does, instead of the legacy fixed 4s hold.
 export function victory() {
   victoryMode = true;
   victoryStartMs = performance.now();
