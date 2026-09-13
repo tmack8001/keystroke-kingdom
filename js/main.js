@@ -40,7 +40,56 @@ const EGGS = {
   'adventure': 'WARREN ROBINETT WAS HERE. 1979.',                 // the first video game easter egg
   'eliza':     'HOW DOES TYPING MAKE YOU FEEL?',                  // ELIZA, 1966
   'hello':     'HELLO. YOU FOUND ME. COME IN.',                   // what the Mystery Cabinet says
+  'sudo':      'PERMISSION GRANTED. YOU ALWAYS HAD IT.',         // Unix + xkcd 149, softened for kids
+  'allyourbase': 'ALL YOUR KEYS ARE BELONG TO YOU.',             // Zero Wing, 1991 — inverted into our promise
 };
+// ─── The eighth-key confession (easter-eggs.md proposal #8) ────────────────
+// The one hidden line that is NOT summoned by a magic word — it is a REVEAL,
+// shown exactly once ever, on the level-complete card the FIRST time this saved
+// game finishes Level 20 (the terminal: the level where the computer is finally
+// earned). The joke is that the line ENDS with the character without ever naming
+// it — the eighth key keeps its in-game anonymity (CLAUDE.md) while the player is
+// let in on what programmers call it. It never interrupts flow: the complete
+// overlay is a natural pause point, and this is pure decoration on it.
+const EIGHTH_KEY_CONFESSION = 'THE EIGHTH KEY HAS A NAME.\nPROGRAMMERS END EVERY LINE WITH IT;';
+
+// ─── The rubber duck (easter-eggs.md proposal #4) ──────────────────────────
+// The duck itself is set dressing on the Level 20 terminal cabinet (drawn in
+// js/ui/cabinet-art.js). This is its second half: ONCE, from Level 22 onward,
+// the first hint the player earns after a wrong keypress carries a quiet extra
+// line beneath it. Rubber-duck debugging, handed to someone far enough into the
+// arcade to have been genuinely stuck on something.
+//
+// Two hard constraints, both from easter-eggs.md's design rules:
+//   • it never REPLACES the finger hint — the hint is the help, this is only the
+//     wink, appended underneath it and never shown on its own;
+//   • it never appears UNPROMPTED — it rides on a hint, and hints only ever
+//     follow a wrong keypress. The opening finger guide at the very first prompt
+//     stays the game's one sanctioned unprompted hint (onboarding.md); this does
+//     not become a second exception.
+// Once, then never again. The latch is per page load: a per-saved-game latch
+// would read better but the only field-validated progress store is js/slots.js,
+// which this module doesn't own (see the ENGINE lane report).
+const DUCK_HINT = 'STUCK? TELL THE DUCK.';
+let duckHintShown = false;
+
+// Append the duck line UNDER a finger hint that is already on screen. Bails out
+// entirely if no hint is showing, so it can never stand in for one.
+function maybeShowDuckHint() {
+  if (duckHintShown || state.level < 22) return;
+  const host = $('finger-hint');
+  if (!host || !host.firstChild) return;
+  duckHintShown = true;
+  const el = document.createElement('div');
+  // Fixed code literal via textContent — never innerHTML, never user-influenced
+  // (security.md rules 1-2).
+  el.textContent = DUCK_HINT;
+  // Full-opacity muted grey rather than element opacity (journal L2/F3), and a
+  // step quieter than the hint above it so the help keeps primacy.
+  el.style.cssText = 'margin-top:10px;font-size:7px;letter-spacing:2px;color:#8a8a8a';
+  host.appendChild(el);
+}
+
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 let konamiIdx = 0;
 let eggTimer = null;
@@ -139,6 +188,14 @@ const state = {
   bestStreak: 0,
   mistakes: {},
   wrongOnCurrent: false,
+  // ADAPTIVE PACING (tech.md §Adaptive Pacing). A rolling window of the recent
+  // intervals between CORRECT keypresses, and the gentleness multiplier derived
+  // from it. See the "Adaptive pacing" section below — paceScale is never a
+  // timer and never a deadline; it only ever stretches the engine's cosmetic
+  // between-prompt pauses (and, in opt-in Survival, LENGTHENS the allowance).
+  paceSamples: [],
+  paceScale: 1,
+  lastCorrectAt: null,
   paused: false,
   startTime: null,
   patterns: [],
@@ -155,6 +212,14 @@ const state = {
   // it mid-session; nameMomentFired() (persisted) guards it across sessions.
   nameMomentWord: null,
   nameMomentDone: false,
+
+  // Level 24 ("the player types their own name", act5.md). The capitalized name
+  // pattern injected as guaranteed content for this play, and whether it has
+  // been completed yet. Like a history card, the level cannot end until it has
+  // (see l24NamePending in handleGameKey) — Level 24's whole narrative point is
+  // never left to the arithmetic of where the win gate happens to land.
+  l24NameWord: null,
+  l24NameTyped: false,
 
   // Level 25 "MY STORY" coda (js/keyboard-story.js). The manifesto is no longer
   // spliced up front — instead, once the level's TRADITIONAL win target is first
@@ -314,7 +379,11 @@ function buildPatterns(level) {
   // face, not a drill. Completing it gets the normal word celebration — never
   // the golden first-time flourish (that only fires when nameMomentWord is
   // set, which it isn't here). At most one appearance per run.
-  if (!state.nameMomentWord) {
+  // Level 24 is excluded: it is the capitals ceremony ("You already know every
+  // letter. Now make them BIG." — act5.md) and it already injects the name in
+  // TITLE CASE as guaranteed content. A lowercase copy landing among the drills
+  // a few patterns earlier both crowded the level and undercut its one lesson.
+  if (!state.nameMomentWord && state.level !== 24) {
     const words = spellableNameWords(state.playerName, state.level);
     if (words.length && Math.random() < 0.35) {
       const word = words[Math.floor(Math.random() * words.length)];
@@ -424,6 +493,92 @@ function formatTime(ms) {
   return min + ':' + String(sec).padStart(2, '0');
 }
 
+// ─── Adaptive pacing ────────────────────────────────────────────────────
+// tech.md §Adaptive Pacing: "Track average time between correct keypresses.
+// Use rolling average to set prompt display speed. Player slows down → game
+// slows down with them. ... No hard timer — pace is always derived from the
+// player."
+//
+// WHAT "PROMPT DISPLAY SPEED" IS IN THIS ENGINE. There is exactly one place the
+// engine decides how fast the game moves on: the two cosmetic pauses in
+// handleGameKey — the beat before the NEXT PATTERN renders (historically a flat
+// 300ms) and the beat before the next letter inside a pattern lights up
+// (historically 150ms). Nothing else in the base engine is time-driven at all.
+// Those two pauses ARE the prompt display speed, so those are what adapt.
+//
+// WHY THIS CAN NEVER BECOME PRESSURE (the One Rule):
+//   • The multiplier is clamped to [1, PACE_MAX_SCALE]. It can only ever make a
+//     pause LONGER — never shorter than the hand-tuned baseline. A fast player
+//     gets byte-identical behavior; a slow player gets more room to breathe.
+//     (tech.md's "player speeds up → game can OPTIONALLY increase pace" is the
+//     half we deliberately decline: speeding up for a fast child is the one
+//     direction that could ever feel like being chased.)
+//   • It gates nothing. No prompt is ever withdrawn, no input window closes, no
+//     state advances on a clock. The letter still stays and waits forever.
+//   • Intervals that span a MISTAKE are never sampled, so neither the miss nor a
+//     slow self-correction can move the pace in either direction — the
+//     wrong-keypress contract stays completely outside this system.
+//   • A single long think is capped (PACE_SAMPLE_CAP_MS) and the window is short,
+//     so walking away and coming back can't distort the feel of the next word.
+// The derived value is published on the game screen as `data-pace` — an
+// observable, non-visual surface (never a HUD readout: product.md §6, stats are
+// never looming, and a visible "speed" would be exactly the pressure we refuse).
+
+// The per-keystroke interval the engine's historical 300/150ms pauses were tuned
+// for (~400ms ≈ a comfortable early-reader cadence). At or below this, pacing is
+// a complete no-op.
+const PACE_BASELINE_MS = 400;
+// One long pause (looking at the keyboard, a parent talking) is capped so it
+// can't dominate the average.
+const PACE_SAMPLE_CAP_MS = 4000;
+// How many recent intervals the rolling average covers.
+const PACE_WINDOW = 8;
+// The gentlest the game will ever get: pauses at most double. Bounded so the
+// adaptation stays a feel, never a stall.
+const PACE_MAX_SCALE = 2;
+
+// Publish the derived pace on the game screen (observable state for tests and
+// for any future theme that wants to breathe with the player). Never rendered
+// as text to the player.
+function publishPace() {
+  const el = $('game-screen');
+  if (el) el.dataset.pace = state.paceScale.toFixed(2);
+}
+
+function resetPace() {
+  state.paceSamples = [];
+  state.paceScale = 1;
+  state.lastCorrectAt = null;
+  publishPace();
+}
+
+// Fold one correct keypress into the rolling average. `sampleable` is false for
+// the first key of a pattern (that interval includes the render pause and
+// reading the new word, not typing) and for any keypress whose letter had a
+// mistake logged against it (the wrong-key contract stays out of pacing).
+function recordPaceSample(now, sampleable) {
+  if (sampleable && state.lastCorrectAt !== null) {
+    const dt = now - state.lastCorrectAt;
+    if (dt > 0) {
+      state.paceSamples.push(Math.min(dt, PACE_SAMPLE_CAP_MS));
+      if (state.paceSamples.length > PACE_WINDOW) state.paceSamples.shift();
+    }
+  }
+  state.lastCorrectAt = now;
+  if (state.paceSamples.length) {
+    const avg = state.paceSamples.reduce((a, b) => a + b, 0) / state.paceSamples.length;
+    state.paceScale = Math.min(PACE_MAX_SCALE, Math.max(1, avg / PACE_BASELINE_MS));
+  } else {
+    state.paceScale = 1;
+  }
+  publishPace();
+}
+
+// A baseline delay, stretched to the player's own measured pace. Always >= base.
+function paced(baseMs) {
+  return Math.round(baseMs * state.paceScale);
+}
+
 // ─── SURVIVAL wrapper ───────────────────────────────────────────────────
 // tech.md: "Survival Mode ... implemented as a wrapper/modifier on top of
 // base engine. Base engine never has survival logic — it's always
@@ -435,7 +590,13 @@ function formatTime(ms) {
 function survivalPatternDuration(pattern) {
   const mult = DIFFICULTY_MULTIPLIER[settings.difficulty] || DIFFICULTY_MULTIPLIER.novice;
   const base = 5000 + 1400 * pattern.length;
-  return Math.round(base * mult);
+  // ADAPTIVE PACING applies here too, in the only direction it ever can: the
+  // allowance is multiplied by the player's own measured pace (>= 1), so a
+  // slower typist gets MORE time, never less. "The game adapts to the player's
+  // pace — if they're slow, the game slows with them" (product.md §1) is most
+  // load-bearing in the one opt-in mode where a clock exists at all. At the
+  // baseline pace this is byte-identical to the historical formula.
+  return Math.round(base * mult * state.paceScale);
 }
 
 function stopSurvivalTimer() {
@@ -591,6 +752,12 @@ function handleGameKey(e) {
   }
 
   if (key === expected) {
+    // ADAPTIVE PACING: fold this keystroke into the rolling average BEFORE
+    // wrongOnCurrent is cleared — an interval that spans a mistake (and a slow
+    // self-correction) is never sampled, so the wrong-keypress contract can
+    // never move the pace in either direction. The first key of a pattern is
+    // also skipped: that interval is render-pause + reading, not typing.
+    recordPaceSample(Date.now(), state.currentIndex > 0 && !state.wrongOnCurrent);
     state.totalCorrect++;
     state.totalAttempts++;
     state.streak++;
@@ -630,6 +797,15 @@ function handleGameKey(e) {
             promptArea.classList.add('card-glint');
           }
         }
+      }
+
+      // Level 24's own name gate: note the moment the capitalized name pattern
+      // is actually completed. Purely a record — the celebration here is the
+      // high-score theme's normal word celebration (the once-ever golden
+      // flourish belongs to the pre-Shift Name Moment, not to level 24).
+      if (!state.freePlay && state.l24NameWord && !state.l24NameTyped
+          && patternsEqual(pattern, state.l24NameWord)) {
+        state.l24NameTyped = true;
       }
 
       // The Name Moment flourish — the once-ever warm golden celebration the
@@ -688,12 +864,23 @@ function handleGameKey(e) {
       const namePending = !state.freePlay
         && state.nameMomentWord
         && !state.nameMomentDone;
+      // Level 24 is "the player types their own name" (act5.md). Like a card,
+      // that moment is GUARANTEED: the level cannot end until the capitalized
+      // name has actually been typed. Before this gate it was reached only
+      // because the arithmetic happened to work out (the intro drills plus a
+      // short card word stayed under the theme's character gate) — a longer card
+      // word would have silently let the name level be won without the name.
+      // Always satisfiable: the name is spliced right after the intro drills, so
+      // it is served long before any win is possible.
+      const l24NamePending = !state.freePlay
+        && state.l24NameWord
+        && !state.l24NameTyped;
       // The traditional win target: theme game won AND enough patterns typed AND
       // the guaranteed card + name moment done. On a normal level, this ENDS the
       // level. On Level 25 it does NOT — it rolls into the "MY STORY" coda instead.
       const normalTargetMet = themeComplete
         && state.patternsCompleted >= minPatterns
-        && !cardPending && !namePending;
+        && !cardPending && !namePending && !l24NamePending;
 
       // Level 25 coda (js/keyboard-story.js): the manifesto + walk-the-keyboard
       // story is a post-target TAIL, not an up-front block. When the traditional
@@ -721,13 +908,13 @@ function handleGameKey(e) {
         renderPrompt(state, level, nextPattern);
         if (settings.hintStyle === 'obvious') showFingerHint(nextPattern[0]);
         startSurvivalPatternTimer(nextPattern);
-      }, 300);
+      }, paced(300));
     } else {
       setTimeout(() => {
         const nextEl = document.querySelector(`.prompt-letter[data-index="${state.currentIndex}"]`);
         if (nextEl) nextEl.classList.add('active');
         renderKeyboard(level, pattern[state.currentIndex], null, state);
-      }, 150);
+      }, paced(150));
     }
 
     updateHUD(state, settings);
@@ -766,6 +953,8 @@ function handleGameKey(e) {
     // lives in keyboard-preview.js / the ready flow, untouched by this.
     if (settings.hintStyle !== 'subtle' || state.mistakes[expected] >= 2) {
       showFingerHint(expected);
+      // ...and, once ever from Level 22 on, the duck rides along underneath it.
+      maybeShowDuckHint();
     }
     updateHUD(state, settings);
 
@@ -776,6 +965,38 @@ function handleGameKey(e) {
   }
 }
 
+// Render (or clear) the eighth-key confession line on the level-complete card.
+// Security: a fixed code literal set via textContent — never innerHTML, never a
+// user-influenced string (security.md rules 1-2). Styled inline because this is
+// an engine-owned one-off, and with a full-opacity muted colour rather than
+// element opacity (journal L2/F3 — opacity halves every contrast ratio).
+function renderEighthKeyConfession(show) {
+  const existing = $('eighth-key-confession');
+  if (existing) existing.remove();
+  if (!show) return;
+  const modal = document.querySelector('.complete-modal');
+  const prompt = $('complete-prompt');
+  if (!modal || !prompt) return;
+  const el = document.createElement('div');
+  el.id = 'eighth-key-confession';
+  el.textContent = EIGHTH_KEY_CONFESSION;
+  el.style.cssText = [
+    'margin:26px auto 28px',
+    // The couplet breaks on its own newline (pre-line) rather than on whatever
+    // the modal width happens to be — two deliberate terminal lines, never a
+    // ragged three-line wrap.
+    'white-space:pre-line',
+    'font-size:8px',
+    'line-height:2.2',
+    'letter-spacing:1px',
+    // A full-opacity muted green, NOT element opacity (journal L2/F3) — quieter
+    // than the blinking accent prompt, still ~9:1 against the modal's black.
+    'color:#35c94a',
+    'text-shadow:0 0 6px rgba(53,201,74,0.5)',
+  ].join(';');
+  modal.insertBefore(el, prompt);
+}
+
 function showLevelComplete() {
   stopSurvivalTimer();
   const elapsed = Date.now() - state.startTime;
@@ -783,6 +1004,17 @@ function showLevelComplete() {
     ? Math.round((state.totalCorrect / state.totalAttempts) * 100)
     : 100;
   const level = getLevelData();
+
+  // The eighth-key confession (easter-eggs.md #8): the FIRST time this saved
+  // game ever finishes Level 20 — the terminal, where the computer is earned.
+  // The one-time latch is DERIVED from progress that already exists (this
+  // level's completed flag, read before recordLevelComplete writes it below),
+  // so it needs no new persisted field and is naturally per-saved-game: a
+  // replay never re-fires it, and another family member's game gets its own.
+  const eighthKeyReveal = !state.freePlay
+    && state.level === 20
+    && !getProgress().completed['20'];
+  renderEighthKeyConfession(eighthKeyReveal);
 
   $('final-time').textContent = formatTime(elapsed);
   $('final-accuracy').textContent = acc + '%';
@@ -999,6 +1231,17 @@ function markNameMomentFired(playerName) {
   saveProgress(p);
 }
 
+// Exact token-array equality — used for the Level 24 capitalized name pattern,
+// whose tokens include uppercase (Shift'd) letters and so can't go through
+// patternMatchesName's lowercase-word comparison.
+function patternsEqual(a, b) {
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 // A just-completed pattern IS the name-moment word when its tokens spell the
 // lowercase word exactly (one letter per token). Mirrors patternMatchesCard.
 function patternMatchesName(pattern, word) {
@@ -1110,14 +1353,43 @@ function startGame() {
 
   state.patterns = buildPatterns(level);
 
+  // ── Level 24: the player's own name, in capitals ──
+  // This is the level's entire narrative point ("The player types their name:
+  // OONA. It appears as a high score entry. Personal, irreplaceable." —
+  // act5.md), so the name is GUARANTEED content: the very first pattern after
+  // the warm-up drills, and win-gated below (l24NamePending) exactly like a
+  // history card, so it can never be missed.
+  //
+  // It used to be injected TWICE — here and again at the pattern list's
+  // MIDPOINT — which is the "Level 24 pattern crowding" item in ROADMAP §3. Two
+  // problems, both of proportion and ordering, neither of removal:
+  //   1. the midpoint slot (~index 17 of ~35) sits PAST where the level actually
+  //      ends at three of the four EXPERIENCE tiers (Level 24's win is driven by
+  //      the high-score theme's character gate, reached around pattern 11), so
+  //      the second copy was unreachable dead weight at the default settings;
+  //   2. the surviving copy landed at the index immediately after the history
+  //      card word, so the level's marquee moment was sandwiched between ENIAC
+  //      and the first word the level actually teaches.
+  // Now: ONE guaranteed copy up front, the card word moved two slots later so
+  // the two guaranteed injections are never adjacent (the card gate makes its
+  // position free — the level cannot end before the card word is typed wherever
+  // it sits), and the name additionally joins the level's own shuffled word pool
+  // as one more capitalized word — a familiar face competing on equal terms with
+  // Sun/Moon/Star rather than a second scripted injection.
+  state.l24NameWord = null;
+  state.l24NameTyped = false;
   if (state.level === 24 && !state.freePlay) {
     const namePattern = buildPlayerNamePattern(state.playerName);
     if (namePattern.length) {
-      // Once as the final intro-adjacent pattern (right after the intro drills)...
-      state.patterns.splice(level.intro.length, 0, namePattern);
-      // ...and once again mid-list, among the shuffled pool.
-      const midpoint = Math.floor(state.patterns.length / 2);
-      state.patterns.splice(midpoint, 0, namePattern);
+      state.l24NameWord = namePattern;
+      // Pool member first (higher index), so the guaranteed splice below can't
+      // shift it out from under this calculation.
+      const poolStart = level.intro.length + 3;
+      if (state.patterns.length > poolStart) {
+        const at = poolStart + Math.floor(Math.random() * (state.patterns.length - poolStart));
+        state.patterns.splice(at, 0, namePattern.slice());
+      }
+      state.patterns.splice(level.intro.length, 0, namePattern.slice());
     }
   }
 
@@ -1146,7 +1418,13 @@ function startGame() {
     // level-win — so the moment word is always reached in real play. The
     // completion gate also waits for it (cards are earned, never missable).
     const cardTokens = wordToTokens(card.word);
-    state.patterns.splice(level.intro.length, 0, cardTokens);
+    // Normally the first slot after the intro drills. At Level 24 the guaranteed
+    // name already occupies that slot, so the card lands two further along —
+    // with one of the level's own words between them — so the player never meets
+    // two guaranteed injections back to back. Safe by construction: cardPending
+    // holds the level open until the moment word is typed, wherever it sits.
+    const cardAt = level.intro.length + (state.l24NameWord ? 2 : 0);
+    state.patterns.splice(cardAt, 0, cardTokens);
   }
 
   // ── Name Moment guaranteed injection ──
@@ -1188,6 +1466,9 @@ function startGame() {
   state.mistakes = {};
   level.keys.forEach(k => state.mistakes[k] = 0);
   state.wrongOnCurrent = false;
+  // Every game starts at the baseline pace and re-derives it from THIS session's
+  // typing — a level played months later never inherits a stale rhythm.
+  resetPace();
   state.startTime = Date.now();
 
   // Wordgen: warm the NEXT level's generated batch while this one plays —
@@ -1560,6 +1841,52 @@ function returnToArcadeFromTextWorld() {
   state.doorFocused = true;   // land back on the door we came through
   showScreen('select', state);
   renderSelectScreen(state);
+}
+
+// ─── Touch-device notice: this cabinet needs a keyboard ───────────────────
+//
+// Keystroke Kingdom teaches TOUCH TYPING on a physical keyboard. On a phone the
+// on-screen keyboard covers roughly half the viewport and hides the very thing
+// the player is meant to read, so the game is not playable there today (see
+// docs/ROADMAP.md §"Mobile & tablet support" for what a real port would take).
+//
+// This notice INFORMS, it never GATES — the One Rule holds even here: a player is
+// stopped only with joy, never punishment. Two deliberate properties:
+//   1. Detection is capability-based (`pointer: coarse` + `hover: none`), never UA
+//      sniffing — UA strings lie and every sniff list rots.
+//   2. It self-dismisses on the first real keydown, because a keypress PROVES a
+//      keyboard is attached. An iPad with a keyboard case, a Chromebook, or a
+//      touchscreen laptop therefore sees it for one keystroke and never again —
+//      no allowlist to maintain, and we never wrongly lock out a device that works.
+function isTouchPrimaryDevice() {
+  if (typeof window.matchMedia !== 'function') return false;
+  try {
+    return (
+      window.matchMedia('(pointer: coarse)').matches &&
+      window.matchMedia('(hover: none)').matches
+    );
+  } catch {
+    return false; // a browser without these queries gets the normal experience
+  }
+}
+
+let keyboardNoticeDismissed = false;
+
+function dismissKeyboardNotice() {
+  if (keyboardNoticeDismissed) return;
+  keyboardNoticeDismissed = true;
+  const el = document.getElementById('keyboard-notice');
+  if (el) el.classList.add('hidden');
+}
+
+function initKeyboardNotice() {
+  if (!isTouchPrimaryDevice()) return; // desktop path is byte-identical to before
+  const el = document.getElementById('keyboard-notice');
+  if (!el) return;
+  el.classList.remove('hidden');
+  // A real physical keypress is the proof we want; capture so it fires before any
+  // screen handler can stopPropagation, and once so it costs nothing afterwards.
+  document.addEventListener('keydown', dismissKeyboardNotice, { capture: true, once: true });
 }
 
 document.addEventListener('keydown', (e) => {
@@ -2030,6 +2357,9 @@ createStars();
 // Slot 1 on the first name confirm.
 (function boot() {
   Slots.ensureMigrated(settings.playerName);
+  // Tell a touch-only visitor this cabinet wants a keyboard — informational only,
+  // never a gate, and gone the moment a real key proves one is attached.
+  initKeyboardNotice();
   // One-time wordgen health probe — fire-and-forget, never awaited; on static
   // hosting this fails fast once and wordgen stays silently dormant.
   initWordgen();

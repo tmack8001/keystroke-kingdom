@@ -403,6 +403,74 @@ js/keyboard-story.js + js/finale-quote.js header comments.)*
   ROWS `blockedWords`; index.html `#blockwords-screen`; security.md rules 1/4/7; product.md
   §One Rule + "settings are toggles".)
 
+### Adaptive pacing, the hidden layer, and Level 24's name
+
+*(added 2026-09-11 — the ENGINE lane: tech.md's designed-but-unbuilt adaptive
+pacing, three easter-eggs.md proposals, and ROADMAP §3's "Level 24 pattern
+crowding".)*
+
+- **INV-70** (L2) **Adaptive pacing is derived from the player and can only ever be
+  GENTLER.** The engine tracks a rolling average of the intervals between CORRECT
+  keypresses and derives a pace multiplier, published as `data-pace` on
+  `#game-screen`. The multiplier is clamped to `[1, 2]`: it can only ever LENGTHEN
+  the engine's cosmetic pauses (the beat before the next pattern renders, the beat
+  before the next letter lights up) and — in opt-in Survival — only ever LENGTHEN the
+  per-pattern allowance. It is never shorter than the hand-tuned baseline, so a
+  player typing at or above the baseline cadence gets byte-identical behavior
+  (`data-pace` stays `1.00`), and a slower player's game slows with them. It gates
+  nothing: no prompt is withdrawn, no input window closes, no state advances on a
+  clock. (tech.md §Adaptive Pacing: "Player slows down → game slows down with them …
+  No hard timer — pace is always derived from the player"; product.md §1 "Adaptive,
+  Not Competitive"; CLAUDE.md §The One Rule.)
+- **INV-71** (L2) **The wrong-keypress contract is outside pacing.** An interval that
+  spans a mistake is never sampled, so neither a wrong key nor a slow self-correction
+  moves the derived pace in EITHER direction — the game never "speeds up to catch
+  up", and a miss is never a pacing penalty. The letter still stays and waits, the
+  mistake is still logged quietly, and the correct key still advances with no double
+  penalty. (CLAUDE.md §Wrong Keypress Behavior; product.md §3 "Reinforce, Don't
+  Punish"; tech.md §Input Handling.)
+- **INV-72** (L0/L2) **Title-screen magic words answer only when summoned.** Every
+  phrase in the engine's `EGGS` table — including `sudo` ("PERMISSION GRANTED. YOU
+  ALWAYS HAD IT.", Unix + xkcd 149) and `allyourbase` ("ALL YOUR KEYS ARE BELONG TO
+  YOU.", Zero Wing 1991) — is typed blind on the attract screen, answers in the WOPR
+  text line, and never appears unprompted, never advertises itself, and never blocks
+  or alters the title flow (the WarGames `SECRET_PHRASES` bypass still works
+  unchanged alongside them). (easter-eggs.md §Design Rules 1 & 5, §Proposed #2/#9.)
+- **INV-73** (L2) **The eighth-key confession fires exactly once per saved game, and
+  never names the key.** The FIRST time a saved game completes Level 20 (the
+  terminal), the level-complete card carries the one-time line "THE EIGHTH KEY HAS A
+  NAME. / PROGRAMMERS END EVERY LINE WITH IT;" — the joke being that the line ENDS
+  with the character without naming it (the in-game anonymity rule holds; INV-29 stays
+  green). Replaying Level 20 in the same saved game never shows it again; the latch is
+  derived from that game's own completion record, so another saved game gets its own
+  reveal. It is decoration on a natural pause point — it never gates, pauses, or
+  interrupts anything. (easter-eggs.md §Proposed #8 + §Design Rules 1; CLAUDE.md §"the
+  eighth key is never called by name".)
+- **INV-74** (L2) **Level 24's name is guaranteed content, and the guaranteed
+  injections are never stacked.** Level 24 is "the player types their own name"
+  (act5.md), so the capitalized name pattern is spliced as the first pattern after the
+  intro drills AND win-gated: the level cannot end until it has actually been typed
+  (the same never-missable guarantee a history card has, and no longer merely an
+  arithmetic accident of where the theme's character gate lands). The level's history
+  card word is spliced two slots later so the player never meets two guaranteed
+  injections back to back, and the lowercase "familiar visitor" name is suppressed at
+  Level 24 (it is the capitals ceremony — "You already know every letter. Now make
+  them BIG."). Nothing guaranteed is ever filtered or dropped; this is ordering and
+  proportion only. (act5.md §Level 24; product.md §"The Name Moment"; ROADMAP §3
+  "Level 24 pattern crowding".)
+- **INV-75** (L2) **The rubber duck rides ALONGSIDE a hint, never instead of one, and
+  never unprompted.** From Level 22 onward, the FIRST finger hint the player earns
+  after a wrong keypress carries a quieter second line beneath it — "STUCK? TELL THE
+  DUCK." — once, then never again. It is only ever APPENDED to a hint that is already
+  on screen (the normal finger hint is never replaced, shortened, or made less
+  helpful), it never appears before a wrong keypress (hints follow misses; the opening
+  finger guide at the very first prompt remains the game's single sanctioned
+  unprompted hint), and below Level 22 it never appears at all. The wrong-keypress
+  contract itself is untouched: gentle nudge, the letter stays and waits, the mistake
+  is logged quietly, the correct key advances with no double penalty. (easter-eggs.md
+  §Proposed #4 + §Design Rules 1; onboarding.md §Design Rules for the Opening;
+  CLAUDE.md §Wrong Keypress Behavior.)
+
 ## 6. Findings protocol
 
 `docs/testing/FINDINGS.md` is the ledger. Each entry:
