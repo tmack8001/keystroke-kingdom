@@ -38,7 +38,7 @@ func main() {
 	mux.HandleFunc("/api/wordgen", handleWordgen)
 	mux.HandleFunc("/api/chat", handleChat)
 	mux.HandleFunc("/api/keyboard-story", handleKeyboardStory)
-	mux.Handle("/", http.FileServer(http.FS(content)))
+	mux.Handle("/", themedNotFound(http.FileServer(http.FS(content))))
 
 	// PORT env → container/operator mode: bind a FIXED port on all interfaces
 	// (Docker port-mapping needs a known, non-loopback bind) and skip the
@@ -759,6 +759,12 @@ func spacedRunes(s string) []string {
 const maxWordsPerBatch = 20
 
 func validateWords(raw []string, p wordgenParams) []string {
+	// FAIL CLOSED: with no sane kid-safety floor loaded, isBlocked would be running
+	// on one layer only — serve nothing and let the client play its static pools
+	// (js/wordgen.js treats an empty batch as a normal no-op). security.md rule 7.
+	if !safetyFloorReady() {
+		return nil
+	}
 	allowed := p.allowed
 	// Effective per-word length window = the request-declared floor/cap, each
 	// already superset-bounded to the play-logic window in parseWordgenParams
@@ -870,20 +876,54 @@ func charsetOK(w string, allowed map[rune]bool) bool {
 	return true
 }
 
-// A conservative, strict blocklist. Kid-facing, so we err toward over-blocking:
-// exact matches AND substring hits are rejected. This is intentionally small and
-// readable — the charset allowlist already eliminates most problems structurally;
-// this catches the words that happen to be spellable from innocent letter sets.
-var blocklist = []string{
+// The wordgen SUBSTRING layer. Kid-facing, so we err toward over-blocking: for a
+// single generated WORD (never prose) a substring hit is rejected as well as an
+// exact match, which catches inflections the exact-word floor cannot ("killing",
+// "guns" from "gun"). This list is NOT the source of truth — it is an ADDITIVE
+// second layer on top of js/word-blocklist.json (see isBlocked below). It exists
+// because substring matching only makes sense here: the same rule applied to prose
+// would over-block innocent words ("hello" contains "hell"), which is why
+// chatOutputOK stays exact-word.
+//
+// SAFETY INVARIANT (security.md rule 7, journal L41): never add a word here that
+// belongs in the shared floor — put it in js/word-blocklist.json so BOTH languages
+// and BOTH paths (wordgen + chat/coda) get it. This layer may only ever ADD to the
+// floor, never replace it. blocklist-sync_test.go pins that relationship.
+var wordgenSubstringExtras = []string{
 	"ass", "arse", "sex", "damn", "hell", "crap", "butt", "fart", "poop", "pee",
 	"kill", "die", "died", "dead", "death", "gun", "gore", "blood", "hate",
 	"drug", "drugs", "beer", "wine", "sexy", "nazi", "war", "shit", "fuck",
 	"piss", "dick", "cock", "boob", "tit", "slut", "whore", "rape", "porn",
 }
 
+// isBlocked is the safety gate on the /api/wordgen generated-word path. It is the
+// UNION of two layers, and the order matters not at all — either hit blocks:
+//
+//  1. the SHARED FLOOR — js/word-blocklist.json, the single source of truth both
+//     languages read (chatWordBlocklist here, BASE_WORDS in js/word-blocklist.js).
+//     Matched exact-word, both on the whole word and on each letter-token of it
+//     (so a compound like "zig-vodka" cannot smuggle a floor word past).
+//  2. wordgenSubstringExtras — the additive substring layer above.
+//
+// Before 2026-09-11 this consulted layer 2 ONLY, so seven floor words (bitch,
+// booze, liquor, murder, suicide, vodka, whiskey) were spellable, generated, and
+// servable to a child from Level 9 onward. Layer 1 is the fix; do not remove it.
 func isBlocked(w string) bool {
-	for _, bad := range blocklist {
-		if w == bad || strings.Contains(w, bad) {
+	lw := strings.ToLower(w)
+	// Layer 1 — the shared exact-word floor (whole word, then per letter-token).
+	if chatWordBlocklist[lw] {
+		return true
+	}
+	for _, tok := range strings.FieldsFunc(lw, func(r rune) bool {
+		return r < 'a' || r > 'z'
+	}) {
+		if chatWordBlocklist[tok] {
+			return true
+		}
+	}
+	// Layer 2 — the additive substring extras.
+	for _, bad := range wordgenSubstringExtras {
+		if lw == bad || strings.Contains(lw, bad) {
 			return true
 		}
 	}
@@ -1417,6 +1457,26 @@ var blocklistJSON []byte
 
 var chatWordBlocklist = map[string]bool{}
 
+// FAIL CLOSED, NEVER OPEN. A malformed-but-parseable blocklist file ({"words":[]},
+// or a truncated list) would leave the floor tiny or empty — and an empty floor
+// silently means "every generated word is safe", which is exactly backwards for a
+// kid-facing filter. minSafetyFloorWords is the sanity bar: below it we refuse to
+// install the file at all and every generated-content path degrades to its static
+// fallback (static word pools / the static story bank / a scripted friend line),
+// which is always winnable and always safe. The shipped file carries 31 words, so
+// this floor has ample headroom over a legitimate edit.
+const minSafetyFloorWords = 10
+
+// safetyFloorLoaded is false until a SANE floor has been installed. Every consumer
+// that would otherwise serve model-generated text to a child checks safetyFloorReady().
+var safetyFloorLoaded = false
+
+// safetyFloorReady reports whether the kid-safety word floor is present and sane.
+// When it is false the server must serve NO generated content (security.md rule 7).
+func safetyFloorReady() bool {
+	return safetyFloorLoaded && len(chatWordBlocklist) >= minSafetyFloorWords
+}
+
 // Load the floor at package init so it is present for BOTH the server and the test
 // binary (the safety blocklist tests depend on it), before any handler runs.
 func init() { loadChatWordBlocklist() }
@@ -1426,9 +1486,10 @@ func loadChatWordBlocklist() {
 		Words []string `json:"words"`
 	}
 	// Embedded at build time, so this only fails on a malformed committed file — caught
-	// by TestChatWordBlocklistLoaded. Never leave the floor empty: a load failure keeps
-	// whatever is already there (empty on first load) but the test gates a good build.
+	// by TestChatWordBlocklistLoaded. A load failure leaves safetyFloorLoaded false,
+	// which fails every generated-content path CLOSED (see safetyFloorReady).
 	if err := json.Unmarshal(blocklistJSON, &parsed); err != nil {
+		safetyFloorLoaded = false
 		return
 	}
 	m := make(map[string]bool, len(parsed.Words))
@@ -1438,10 +1499,23 @@ func loadChatWordBlocklist() {
 			m[w] = true
 		}
 	}
+	// A parseable but implausibly small list is treated as a broken file, not as a
+	// deliberate "block nothing" instruction. Refuse it rather than serve unfiltered.
+	if len(m) < minSafetyFloorWords {
+		safetyFloorLoaded = false
+		return
+	}
 	chatWordBlocklist = m
+	safetyFloorLoaded = true
 }
 
 func chatOutputOK(reply string) bool {
+	// FAIL CLOSED: no sane floor loaded ⇒ no model text reaches a child. The caller
+	// substitutes a safe scripted line (chat) or drops the sentence (coda stories),
+	// so the feature degrades to its offline behavior instead of going unfiltered.
+	if !safetyFloorReady() {
+		return false
+	}
 	word := strings.Builder{}
 	flush := func() bool {
 		if word.Len() == 0 {
@@ -1823,6 +1897,182 @@ func storyCoversAllLetters(s string) bool {
 }
 
 // ─── Dev-server plumbing (unchanged) ─────────────────────────────────────
+
+// ─── The themed 404 — "LEVEL NOT FOUND. INSERT COIN TO CONTINUE." ────────
+//
+// An easter egg, not a feature (.claude/rules/easter-eggs.md, Proposed #7 —
+// "web culture meets arcade"). A mistyped URL lands on a CRT, not on Go's bare
+// "404 page not found". It obeys the egg design rules: it never interrupts play
+// (you can only reach it by leaving the game), it is kid-safe and
+// parent-winking, and — like every other "INSERT COIN" in this game — the coin
+// slot is set dressing wired to absolutely nothing (levels/onboarding.md:
+// "INSERT COIN does nothing. It's set dressing. Don't wire it to anything.").
+//
+// SECURITY (security.md, threat model: "no string a user influenced may ever be
+// interpreted as HTML"): notFoundPage is a FIXED literal. The requested path,
+// the query string, headers, and every other request-derived value are
+// deliberately absent from it. Reflecting the URL into an HTML body is the
+// textbook reflected-XSS sink; this page must never grow a format verb.
+//
+// NO WEBFONT. index.html pulls Press Start 2P from Google Fonts, but an error
+// page that blocks on a third-party font request is worse than one that doesn't
+// — it is exactly the page most likely to be hit offline, on a dead network, or
+// by a bot. So this uses a system monospace stack and gets its arcade feel from
+// color, scanlines, and letter-spacing instead. (It also keeps the 404 free of
+// any external network call, which is the posture the rest of the game holds —
+// security.md rule 6.)
+const notFoundPage = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LEVEL NOT FOUND</title>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: #000;
+    color: #4dff88;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace;
+  }
+  /* The tube: a warm phosphor glow behind the text so the screen reads as ON,
+     then scanlines over everything, then a soft vignette to round the glass. */
+  .crt {
+    position: relative;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1rem;
+    box-sizing: border-box;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 48%, rgba(30, 120, 65, 0.30) 0%, rgba(10, 40, 24, 0.12) 45%, rgba(0, 0, 0, 0) 75%),
+      #000;
+  }
+  .crt::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.30) 3px,
+        rgba(0, 0, 0, 0.30) 4px
+      ),
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.7) 100%);
+  }
+  .crt > * { position: relative; z-index: 1; }
+  h1 {
+    margin: 0 0 1.25rem;
+    font-size: clamp(1.1rem, 5vw, 2.3rem);
+    letter-spacing: 0.2em;
+    text-shadow: 0 0 6px rgba(77, 255, 136, 0.9), 0 0 22px rgba(77, 255, 136, 0.5);
+  }
+  .coin {
+    margin: 0 0 2.5rem;
+    font-size: clamp(0.75rem, 2.8vw, 1.1rem);
+    letter-spacing: 0.24em;
+    color: #ffd23f;
+    text-shadow: 0 0 8px rgba(255, 210, 63, 0.8), 0 0 20px rgba(255, 210, 63, 0.35);
+    animation: blink 1.6s steps(1, end) infinite;
+  }
+  /* Never blinks to invisible: a kid should always be able to read it, and a
+     screenshot taken on the off-beat should still show the line. */
+  @keyframes blink { 0%, 60% { opacity: 1; } 61%, 100% { opacity: 0.45; } }
+  @media (prefers-reduced-motion: reduce) { .coin { animation: none; } }
+  a {
+    color: #4dff88;
+    font-size: clamp(0.65rem, 2.3vw, 0.9rem);
+    letter-spacing: 0.2em;
+    text-decoration: none;
+    border: 2px solid #4dff88;
+    padding: 0.8em 1.4em;
+    display: inline-block;
+    box-shadow: 0 0 14px rgba(77, 255, 136, 0.35);
+  }
+  a:hover, a:focus { background: #4dff88; color: #000; outline: none; }
+  .code {
+    margin-top: 2.75rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.32em;
+    color: #3fae6a;
+  }
+</style>
+</head>
+<body>
+  <div class="crt">
+    <h1>LEVEL NOT FOUND</h1>
+    <p class="coin">INSERT COIN TO CONTINUE</p>
+    <a href="./">BACK TO THE ARCADE</a>
+    <p class="code">ERROR 404</p>
+  </div>
+</body>
+</html>
+`
+
+// themedNotFound wraps the static file handler and swaps Go's plain-text 404 body
+// for the CRT page above.
+//
+// /api/* IS DELIBERATELY EXCLUDED. js/wordgen.js, js/chat.js and
+// js/keyboard-story-gen.js all FEATURE-DETECT the optional local-LLM backend, and
+// js/wordgen.js branches on `resp.status === 404` specifically ("no Go server or
+// no API → static hosting → permanently disabled"). Those 404s are a machine
+// signal, not a page a human reads, so they keep their bare text/plain body. (In
+// practice the Go server registers all three routes and answers them 200, so this
+// only matters for an unregistered /api/* path and for anyone who later adds a
+// route — but a themed HTML body on a probe endpoint is exactly the kind of
+// surprise that costs someone an afternoon.)
+func themedNotFound(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		nw := &notFoundWriter{ResponseWriter: w}
+		next.ServeHTTP(nw, r)
+		if nw.intercepted {
+			// Body is written after the handler returns. net/http discards it for
+			// HEAD requests automatically, so HEAD still gets headers + 404 only.
+			_, _ = io.WriteString(w, notFoundPage)
+		}
+	})
+}
+
+// notFoundWriter watches for a 404 status from the wrapped handler. On a 404 it
+// rewrites the headers for an HTML body and swallows whatever body the wrapped
+// handler wanted to write (Go's "404 page not found\n"), leaving themedNotFound
+// to write the real page. Every other status passes through untouched, so normal
+// asset serving — including Content-Type sniffing and directory redirects — is
+// completely unaffected.
+type notFoundWriter struct {
+	http.ResponseWriter
+	intercepted bool
+}
+
+func (w *notFoundWriter) WriteHeader(code int) {
+	if code == http.StatusNotFound && !w.intercepted {
+		w.intercepted = true
+		h := w.ResponseWriter.Header()
+		// http.Error already set text/plain + Content-Length before calling us.
+		h.Del("Content-Length")
+		h.Set("Content-Type", "text/html; charset=utf-8")
+		h.Set("X-Content-Type-Options", "nosniff")
+	}
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *notFoundWriter) Write(b []byte) (int, error) {
+	if w.intercepted {
+		return len(b), nil // swallow the plain-text body; we write our own
+	}
+	return w.ResponseWriter.Write(b)
+}
 
 func writeURLFile(url string) {
 	exe, err := os.Executable()
