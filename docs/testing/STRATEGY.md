@@ -637,6 +637,14 @@ respected exactly as written; and (d) `consoleErrors`.
   narrowed exemption BEFORE any vendored byte lands (testing.md rule 1's
   ordering). (security.md rule 6; journal F26; spec §5.6d + §11 Q9.)
 
+- **INV-92** — *withdrawn 2026-09-13, before it ever shipped.* It described act set
+  dressing standing in a curriculum act's cabinet row (an Apple IIe on Act 2, an
+  MS-DOS PC on Act 3). Trevor play-reviewed it and rejected the placement — *"on
+  the cabinet selection they look out of place next to traditional cabinets"* — so
+  the behaviour it guarded no longer exists and its test was deleted with it. The
+  number is retired rather than reused, so nothing dangles. The machines are
+  getting their own act instead (docs/ROADMAP.md §2 "The Computer Room").
+
 ## 6. Findings protocol
 
 `docs/testing/FINDINGS.md` is the ledger. Each entry:

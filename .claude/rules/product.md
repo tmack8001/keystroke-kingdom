@@ -251,6 +251,32 @@ the lever has real content to select at both ends.
 
 ---
 
+## Content Rating — the first time this game has needed one *(Trevor, 2026-09-13)*
+
+For twenty-five levels the answer was simple: everything is early-reader, and the
+`js/word-blocklist.json` floor keeps it that way. The proposed **COMPUTER ROOM** wing changes
+that, because its subject is computer hardware history and its canon runs through PC gaming
+into an MMORPG. Trevor's ruling:
+
+> *"This is getting into teen/mature content which is fine at this point it is a separate act,
+> but still shouldn't get into gore, sex or other adult themes."*
+
+**So: a bonus wing may address an older player. It may never address an adult one.**
+
+- **Allowed** where the wing's subject genuinely calls for it: strategy and war *as history*
+  (Age of Empires, Warcraft), the social texture of an MMO, the machines and the industry.
+- **Never, in any act:** gore, sexual content, or other adult themes. Not "toned down" —
+  absent.
+- **The safety floor does not move.** `js/word-blocklist.json` is the single definition every
+  path enforces (security.md rule 7), and **a wing may never lower it.** This is the same
+  house law as Survival being opt-in and every setting only ever making play *safer*: the
+  game's protections are additive, and nothing a player or an act chooses can subtract one.
+- **The One Rule still governs.** A more grown-up subject does not buy a punishment economy —
+  no loss, no failure state, no cruelty. It buys subject matter, not stakes.
+
+This is a rating for SUBJECT, not for difficulty. Difficulty already has its own opt-in levers
+(EXPERIENCE, word length, Survival) and they remain the only way the game gets harder.
+
 ## The Stats Cabinet
 A dedicated arcade cabinet in the world the player can walk up to any time. Displays:
 - Accuracy over time (simple graph)
