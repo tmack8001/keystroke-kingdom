@@ -82,6 +82,12 @@ hoardings. This is the first station in the act where the world is **built** rat
 suggested: the road is a ribbon of textured polygons with kerbs modelled as geometry, not
 painted on.
 
+**Ghost cars: not documented here.** A targeted check of the Wikipedia article for "ghost" and
+"time trial" found **neither**; what reviewers praised was the **replay mode** ("multiple camera
+views… likening the quality to live action video"). GT1's self-measurement instrument is the
+**licence test**, not a ghost. Absence of mention is not proof of absence — treat "GT1 had no
+ghost" as **[unverified]** and don't assert it either way. See [[ghost-car]].
+
 **The signature visual moment.** The **garage / car-selection screen** — a single licensed road
 car rotating slowly on a dark turntable under a spotlight, with its specifications listed
 beside it. Gran Turismo's most famous image is a car **standing still**, and that is exactly

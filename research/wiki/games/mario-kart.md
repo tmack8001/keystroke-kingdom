@@ -2,7 +2,7 @@
 title: Mario Kart
 type: entity
 tags: [video-game-history, game, console, racing, act7, cabinet, history-card]
-sources: 12
+sources: 14
 verified: 2026-09-13
 ---
 
@@ -48,6 +48,12 @@ distinct game in the same franchise, which the one-game-per-cabinet rule explici
   pool of lives, and exhausting them ends the game. (Finishing in the same position three times
   consecutively awards an extra life.)
 - Battle Mode: two players, three balloons each, pop the opponent's to win.
+- **Time Trial — and NO ghost car.** *"In time trial mode, players race against the clock…
+  attempting to set the fastest time possible"* — five laps, 100cc, no items and no coins. The
+  word "ghost" appears nowhere in the Wikipedia article, and the Super Mario Wiki dates ghost
+  data to **Mario Kart 64 (1996)**. The 1992 game's optional second kart in Time Trial
+  (*"by pressing B Button on the second controller"*) is a **computer-controlled opponent**,
+  not a recording of your run. Full lineage: [[ghost-car]].
 - Sales: **8.76 million** copies, the fourth best-selling SNES title. The modern series entry
   **Mario Kart 8 / 8 Deluxe** is the **best-selling racing game of all time**, past 70 million
   units.
@@ -186,6 +192,18 @@ tier's 16-ink palette holds both — the separation is which end of it each trac
    - New pages: [[mario-kart-arcade-gp]] (what actually exists) and [[home-games-in-cabinets]]
      (the general precedent and the "draw a real thing" rule).
 
+## Corrections from citation pass (2026-09-13, third pass — the ghost car)
+
+5. **"Mario Kart invented / introduced the ghost car."** Not this Mario Kart. **Super Mario
+   Kart (1992) has no ghost** — its Time Trial races the clock, and the second kart you can
+   summon on controller two is a **CPU racer**. Ghost data arrives with **Mario Kart 64
+   (1996)**, where Nintendo's own manual calls it *"a recording of the course's best time"*
+   drawn as *"a half visible character."* And the mechanic itself is older than both: Atari
+   Games' **Hard Drivin' (1989)** already *"remembers the path of the car driven by the best
+   driver on record."* This matters to Act 7, whose core loop is racing your own ghost —
+   see [[ghost-car]] for the full evidence, including why its ghost must never read as a
+   rival the way Hard Drivin's "grudge match" did.
+
 ## Corrections from citation pass (2026-09-13, second pass — cabinet precedent)
 
 4. **The framing that a console game "is not a cabinet" is itself too strong.** Putting home
@@ -209,3 +227,5 @@ tier's 16-ink palette holds both — the separation is which end of it each trac
 10. [Mario Kart Arcade GP — Wikipedia](https://en.wikipedia.org/wiki/Mario_Kart_Arcade_GP) *(cabinet-precedent pass, 2026-09-13)* — the Namco-developed, Nintendo-published arcade line: 2005 on the Triforce board, plus GP 2 (March 2007), GP DX (late 2013) and GP VR (14 July 2017); steering wheel, gas and brake pedals; NamCam; up to four linked machines. **[fetched]**
 11. [Mario Kart Arcade GP DX — Bandai Namco Amusement America](https://bandainamco-am.com/collections/mario-kart-arcade-gp-dx) *(cabinet-precedent pass, 2026-09-13)* — the manufacturer's own commercial-product listing proving a licensed Mario Kart arcade cabinet is a real, currently-sold object: seated, rainbow-LED, 42″ HD monitor, four-cabinet linking. **[fetched]**
 12. [Super Nintendo Entertainment System — Wikipedia](https://en.wikipedia.org/wiki/Super_Nintendo_Entertainment_System) *(cabinet-precedent pass, 2026-09-13)* — the physical description a cabinet-art author needs for the "draw the SNES" recommendation: the boxy North American model with purple sliding switches and dark grey eject lever (designer Lance Barr), the lavender/purple diamond controller, and the rounder Super Famicom/PAL variant. **[fetched]**
+13. [Super Mario Kart — Super Mario Wiki (mariowiki.com)](https://www.mariowiki.com/Super_Mario_Kart) *(ghost-car pass, 2026-09-13)* — the Time Trial description (one player, five laps, 100cc, no items or coins; per-lap and total times recorded) and the key sentence: *"By pressing B Button on the second controller, a **computer-controlled opponent** can be chosen to race against."* No ghost feature appears anywhere on the page. **[fetched]**
+14. [Time Trial — Super Mario Wiki (mariowiki.com)](https://www.mariowiki.com/Time_Trial) *(ghost-car pass, 2026-09-13)* — dates **ghost data to Mario Kart 64** as a new addition, with Mario Kart: Super Circuit later adding ghost swapping over the GBA link cable. **[fetched]**

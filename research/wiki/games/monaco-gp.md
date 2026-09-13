@@ -132,7 +132,11 @@ vocabulary is:
 
 - **Blocks and sprites already in ROM** — cars, road edges, scenery. No new shapes at runtime,
   no rotation, no scaling, no particles, no alpha. A "flag" would have to be built from the same
-  coarse blocks the road is built from.
+  coarse blocks the road is built from. *(Consequence for Act 7's ghost car: a **translucent**
+  ghost is an anachronism at this tier — 1979 hardware could not draw one. A solid single-ink
+  car, or a dithered/outline one, is the era-honest ghost here. What makes it read as a
+  recording rather than a rival is that it **cannot be collided with**, which costs nothing on
+  any hardware. Evidence: [[ghost-car]].)*
 - **Solid colour fields** — the road going blue for ice, the screen going black for the tunnel.
   Colour change across a large area is this hardware's loudest possible statement.
 - **One fixed bitmap message.** The ROM demonstrably held a rendered **"GAME OVER"** message —

@@ -95,7 +95,9 @@ awards extra points for beating the previous best time. There is no podium, no t
 cutscene — the celebration is a **printed record line and a new number**, which is very 1984
 and, notably, is the one celebration in this whole act that rewards *you against yourself*
 rather than against a field. **That makes it the single best fit for Act 7's ghost-car design**:
-Excitebike already believed the opponent was your own previous time.
+Excitebike already believed the opponent was your own previous time. It has **no ghost car** —
+the record is a *number painted on the stadium wall*, five years before Atari recorded a lap
+and three before Nintendo drew one. Lineage: [[ghost-car]].
 
 **Punishment mechanics to strip** (format matching `racing-games-by-era.md` §12):
 

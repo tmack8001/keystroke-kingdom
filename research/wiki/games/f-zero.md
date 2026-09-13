@@ -2,7 +2,7 @@
 title: F-Zero
 type: entity
 tags: [video-game-history, game, console, racing, act7]
-sources: 6
+sources: 7
 verified: 2026-09-13
 ---
 
@@ -46,6 +46,12 @@ onto your machine — spectacle with nobody to be better than). See "The win mom
 - **Punishment mechanics:** a **power meter** representing machine durability that depletes on
   every collision and recovers only in pit areas; a lives system; retirement when the meter
   empties.
+- **No ghost car in the 1990 original.** Practice mode is a lap timer; nothing records or
+  replays your run. Ghosts arrive in the N64 sequel **F-Zero X (1998)**, which Wikipedia
+  describes as *"transparent re-enactments of Time Attack performances… recorded by the player
+  or game developer"* (up to three at once, one saved recording per track). If Act 7 gives its
+  F-Zero station a ghost, that is a **1998** borrow wearing 1990 clothes — fine, but know it.
+  Lineage and the opaque-vs-translucent evidence: [[ghost-car]].
 
 ---
 
@@ -131,3 +137,4 @@ boost every time you finished a lap. Going fast was the prize for going around."
 4. [F-Zero (video game) — Wikipedia, Gameplay section](https://en.wikipedia.org/wiki/F-Zero_(video_game)) — supports the five-lap race structure, *"The player must complete each lap in a successively higher place to avoid disqualification from the race,"* and *"For each lap completed, the player is rewarded with an approximate four-second speed boost called the 'Super Jet' and a number of points determined by place"*; points accumulating into extra retry chances; the power meter depleting on collisions and recovering at pit areas; Grand Prix and Practice modes. **[fetched]**
 5. [F-Zero — Hardcore Gaming 101](https://www.hardcoregaming101.net/f-zero/) — supports *"only the best three racers count as winners in the end,"* the "safe" placement limit starting at 15th and tightening each round with disqualification at the finish line, the race ending immediately below 20th, being *"awarded a score according to your ranking,"* the three cups of five tracks, the boost strips and 500+ km/h speeds, the repair-strip energy recovery, and the machine exploding when energy empties. **[fetched]**
 6. [F-Zero (SNES) — VGJUNK](http://retrovania-vgjunk.blogspot.com/2014/11/f-zero-snes.html) — the only located source that actually describes the *celebration*: the camera *"spinning… into a side-on position"* on the winning craft; the league reward being *"footage of your craft zooming around the track shot from various angles as your lap times are displayed — and that's it"*; the Master-difficulty ending being *"a top-down view of your vehicle and… some generic congratulatory message"*; and the judgement that the thin payoff is *"probably F-Zero's single biggest flaw."* Long-running retro-games blog — treated as the reference of record for this specific visual detail, flagged as single-source. **[fetched]**
+7. [F-Zero X — Wikipedia](https://en.wikipedia.org/wiki/F-Zero_X) *(ghost-car pass, 2026-09-13)* — the 1998 sequel's Time Attack ghosts: *"Transparent re-enactments of Time Attack performances, allow racing against ghost racers, recorded by the player or game developer,"* up to three simultaneous player ghosts, one recording saved per track. Cited to date the ghost feature to the sequel, not the 1990 original. **[fetched]**

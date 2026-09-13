@@ -40,6 +40,10 @@ built from a real race track.
   2. A **race timer**, with a set allowance at the start and more granted after each lap.
   3. Running onto the grass slows the car; **hitting a roadside billboard destroys it** in an
      explosion, costing a delay while a new car is placed.
+- **No ghost car — and that's the era's rule, not an omission.** The qualifying lap is a true
+  time trial, but the thing you race is *the clock and the traffic*; nothing records or replays
+  your run. In the sourced record no racing game shows you a recording of your own driving until
+  **1989** ([[ghost-car]]). Pole-Position-era self-measurement is **a number on the screen**.
 
 ## The cabinet build (Act 7 track spec) — added 2026-09-13
 
