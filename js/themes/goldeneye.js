@@ -19,6 +19,9 @@
 // chunky low-poly agent/guard blocks, dim so the letter prompt stays brightest.
 
 import { getWinRatio } from '../settings.js';
+// The Act 4 white rabbit is shared by all five Command Center themes and lives in
+// terminal.js (the act's hidden-history host) — see easter-eggs.md.
+import { resetWhiteRabbit, maybeWhiteRabbit, drawWhiteRabbit } from './terminal.js';
 
 let canvas, ctx, animId;
 let active = false;
@@ -638,6 +641,9 @@ function render() {
     drawHUD(W, H);
   }
 
+  // Hops across the true bottom of the screen, over the split-screen grid.
+  drawWhiteRabbit(ctx, W, H);
+
   animId = requestAnimationFrame(render);
 }
 
@@ -655,6 +661,7 @@ function quadActionCenter(qi) {
 // ─── Public API ──────────────────────────────────────────────────────────────
 export function start() {
   init();
+  resetWhiteRabbit();
   active = true;
   animId = requestAnimationFrame(render);
 }
@@ -698,6 +705,7 @@ export function patternComplete() {
   const c = quadActionCenter(0);
   addPing(c.x, c.y, Math.min(canvas.width, canvas.height) * 0.03, QUADRANTS[0].accent);
   if (p.gadgets >= GADGETS_TO_WIN) hasWon = true;
+  maybeWhiteRabbit(hasWon);   // cosmetic only — never gates or delays the win
   return hasWon;
 }
 

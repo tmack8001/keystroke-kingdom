@@ -44,6 +44,8 @@ Typed blind on the attract screen; answer appears in the WOPR text line for 5s:
 | `adventure` | WARREN ROBINETT WAS HERE. 1979. | The first video game easter egg — Robinett hid his name in 1979 (the year our arcade lives in); the game shipped March 1980 |
 | `eliza` | HOW DOES TYPING MAKE YOU FEEL? | ELIZA, 1966 — the first chatbot |
 | `hello` | HELLO. YOU FOUND ME. COME IN. | The Mystery Cabinet's own greeting, echoed back |
+| `sudo` | PERMISSION GRANTED. YOU ALWAYS HAD IT. | Unix `sudo` + xkcd 149, softened into the game's core message for kids *(built 2026-09-11)* |
+| `allyourbase` | ALL YOUR KEYS ARE BELONG TO YOU. | Zero Wing, 1991 — the mistranslation inverted into the game's promise; era-matched to the Basement *(built 2026-09-11)* |
 
 ### Konami code *(title screen)*
 `↑ ↑ ↓ ↓ ← → ← → B A` → thirty extra stars appear in the sky +
@@ -76,38 +78,100 @@ through it. Independent of the card's own gold-glint and the manifesto finale.
 
 ---
 
-## Proposed (unbuilt — the menu)
+### Grace Hopper's moth *(js/ui/cabinet-art.js — built 2026-09-11)*
+Leave the select screen completely untouched. After ~12s of stillness there is a small
+chance each second that a tiny pixel moth flutters in and settles on one of the **lit**
+cabinet screens — never a dark, unearned one, because moths go to light. Click it:
+`"FIRST ACTUAL CASE OF BUG BEING FOUND."` / `HARVARD MARK II LOGBOOK · SEPTEMBER 9, 1947`,
+fading in low on the screen for 7s.
+*(The Mark II moth, 9 Sept 1947 — the literal insect taped into the operations logbook.
+`research/wiki/moments/mark-ii-moth-1947.md`.)*
+**It deliberately does NOT credit Grace Hopper** — the Smithsonian record is clear she
+neither found nor logged it — and it does NOT claim the moth coined "bug," which predates
+1947. It quotes the logbook's exact caption and nothing more. (This is the F7 lesson: an
+overstated attribution once shipped on a child-facing card.)
+It can only arrive when nothing is happening; any keypress or navigation sends it away;
+missing it costs nothing and it can return. Clicking it never moves the cabinet cursor.
 
-Ordered roughly by bang-for-effort. Each stays within the design rules.
+### The rubber duck *(js/ui/cabinet-art.js + js/main.js — built 2026-09-11)*
+A tiny yellow duck sits on the Level 20 terminal cabinet's control panel — the Command
+Center's actual machine, the one you'd be debugging at. Always there once the cabinet is
+earned, dark while it is still a locked silhouette. Never announced, never interactive.
+From Level 22 on, the FIRST post-wrong-keypress finger hint gets `STUCK? TELL THE DUCK.`
+**appended beneath it** in a quieter grey — never replacing the hint (it bails out entirely
+if no hint is on screen), never unprompted (it rides on a hint, and hints only follow a
+miss — the opening finger guide stays the one sanctioned exception), once only.
+*(Rubber duck debugging — explaining the problem out loud to something that never says a
+word. `research/wiki/culture/rubber-duck-debugging.md`.)*
 
-1. **Grace Hopper's moth** — very rarely, a tiny pixel moth lands on an idle
-   cabinet screen (select screen). Clicking it: "FIRST ACTUAL CASE OF BUG
-   FOUND. — SEPT 9, 1947." The origin of "debugging," as a hide-and-seek moment.
-2. **`sudo` empowerment** — typing `sudo` on the title screen →
-   "PERMISSION GRANTED. YOU ALWAYS HAD IT." (Unix + xkcd 149, softened into
-   the game's core message for kids.)
-3. **The white rabbit** — in Act 4 (late-90s Command Center), a small white
-   pixel rabbit very rarely hops across the bottom of the screen between
-   patterns. Follows nothing. Explains nothing. *(The Matrix, 1999.)*
-4. **Rubber duck** — a tiny yellow duck sits on the Command Center server rack
-   in the select-screen cabinet art. Level 22+ hint text once says: "STUCK?
-   TELL THE DUCK." *(Rubber duck debugging.)*
-5. **Dial-up handshake** — entering the Computer Wing for the first time, a
-   half-second of modem chirp under the door-opening sound. *(BBS era.)*
-6. **Y2K clock** — one monitor in the Command Center background always reads
-   `12/31/99 11:59 PM`. Never explained. *(For the parents who remember.)*
-7. **Themed 404** — the Go server's 404 page: a CRT screen reading
-   "LEVEL NOT FOUND. INSERT COIN TO CONTINUE." *(Web culture meets arcade.)*
-8. **The eighth key confession** — after Level 20 (the terminal), a one-time
-   line: "THE EIGHTH KEY HAS A NAME. PROGRAMMERS END EVERY LINE WITH IT;"
-   — the semicolon secret, revealed only after the computer is earned.
-9. **`all your base`** — Basement-era (1991) title egg: typing
-    `allyourbase` → "ALL YOUR KEYS ARE BELONG TO YOU." *(Zero Wing, inverted
-    into the game's promise.)*
+### The white rabbit *(Act 4, Levels 16–20 — built 2026-09-11)*
+A small white pixel rabbit very rarely hops across the bottom strip between patterns, then
+is gone. No text, no sound, no reward, nothing to click or collect — it follows nothing and
+explains nothing. *(The Matrix, 1999 — era-correct for the late-90s Command Center.)*
+It belongs to the ROOM, not one cabinet: implemented once in `js/themes/terminal.js` and
+imported by `simcity.js` / `goldeneye.js` / `ageofempires.js` / `ff7.js`. Rolled at 1-in-150
+**only at a pattern boundary** (never mid-word), at most once per level play, never on the
+winning boundary; drawn at 0.89–0.95H, well clear of the keyboard guide at 0.823H. Purely
+cosmetic — it never touches the win gate.
 
-*(Former proposal #6, `hello world` in Level 25, is now built — see Implemented above.
-It landed as a document-content trigger (the guaranteed `hello world` history card),
-not the originally-imagined free-type mode.)*
+### The Y2K clock *(Level 20, js/themes/terminal.js — built 2026-09-11)*
+The Command Center's terminal always reads `12/31/99 11:59 PM` in its bottom-right status
+corner. Frozen — it never ticks, never animates, is never explained, and nothing in the game
+ever mentions it. For the parents who remember.
+*(`research/wiki/moments/y2k-bug.md`; the L19 `y2k` history card is the same moment told out
+loud. Note the wiki renders it 24-hour as `12/31/99 23:59`; the 12-hour form here is the
+era-correct format for a US late-90s monitor.)*
+
+### The dial-up handshake *(js/audio.js `modemChirp` + js/mystery.js — built 2026-09-11)*
+The first time the Mystery Cabinet swings aside and the Computer Wing is revealed, half a
+second of modem rides *under* the door — a two-tone answer pair, a warble, and a band-passed
+carrier hiss, mixed at roughly a third of the hinge slide and gone before the chord peaks.
+*(The dial-up handshake: two modems testing the line and negotiating speed and
+error-correction. Hayes' built-in speaker made that negotiation audible and everyone copied
+it, which is why the sound is a generation's shared memory of getting online; CBBS, the first
+public dial-up BBS, ran from 1978. `research/wiki/culture/dialup-modem.md`.)*
+Frequencies are chosen by ear for texture — **no frequency, protocol, or standard is asserted
+anywhere in the code or its comments.** Sine/triangle through a bandpass, never sawtooth:
+nostalgic, never a klaxon. First time only, latched off `completed['6']` (the first cabinet
+inside the wing), so no new storage was added. Respects the sound toggle; never gates the
+cinematic.
+
+### The themed 404 *(main.go — built 2026-09-11)*
+Any URL the server does not have returns a CRT screen instead of Go's plain
+"404 page not found": **LEVEL NOT FOUND** in phosphor green over scanlines, a blinking amber
+**INSERT COIN TO CONTINUE** (inert, like every other coin slot here), a **BACK TO THE ARCADE**
+link home, and a quiet **ERROR 404** footer. *(Web culture meets arcade.)*
+The page is a fixed Go literal — **the requested path is never reflected into it**, which
+would be a textbook reflected-XSS sink. It uses a system monospace stack rather than Press
+Start 2P, so the one page most likely to be hit offline never blocks on a webfont.
+**`/api/*` is excluded** and keeps its bare `text/plain` 404: those are a machine signal the
+local-LLM clients feature-detect on (`js/wordgen.js` branches on `status === 404`).
+
+### The eighth-key confession *(js/main.js — built 2026-09-11)*
+The first time a saved game finishes **Level 20** — the terminal, once the computer is truly
+earned — the level-complete card carries a two-line couplet revealing that the eighth key has
+a name, and ends with the character **without ever naming it**. One time per saved game; the
+latch is derived from `!getProgress().completed['20']`, read before the level is recorded, so
+no storage field was added and a replay never re-fires it.
+*(The semicolon secret, withheld until the machine is earned. INV-29 — the "never say
+semicolon" static check — stays green.)*
+
+## Proposed — the menu is EMPTY
+
+*All ten proposals from the original menu are now built (the last nine landed 2026-09-11;
+`hello world` landed 2026-07-28 as a document-content trigger rather than the originally-
+imagined free-type mode). See "Implemented" above.*
+
+When adding the next one, the design rules at the top of this file are the bar — and note
+what the 2026-09-11 batch got right and is worth copying: **every historical claim came from
+`research/`, not model memory** (`node scripts/wiki-search.mjs "<topic>"` first), one egg
+quoted an institutional artifact verbatim rather than a paraphrase, and one deliberately
+withheld an attribution the sources did not support. An egg that asserts something false is
+worse than no egg.
+
+Open question worth deciding before the next batch: **the moth is mouse-only** (the spec said
+"clicking it"), which sits oddly in a keyboard-first game for a child learning to type. A
+keyboard path would be a different egg, not this one.
 
 ### Deliberately rejected
 - Anything requiring a URL, login, or real network reference (kids retype things)

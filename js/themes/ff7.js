@@ -4,6 +4,10 @@
 // (angular triangle fragments instead of round particles — PS1 poly aesthetic),
 // and a battle-camera push-in on big hits.
 
+// The Act 4 white rabbit is shared by all five Command Center themes and lives in
+// terminal.js (the act's hidden-history host) — see easter-eggs.md.
+import { resetWhiteRabbit, maybeWhiteRabbit, drawWhiteRabbit } from './terminal.js';
+
 let canvas, ctx, animId;
 let active = false;
 let hits = 0;
@@ -390,6 +394,9 @@ function render() {
   ctx.restore();
 
   drawHPBars(W, H);
+  // Outside the battle-camera push-in transform — the rabbit crosses the real
+  // bottom of the screen, not the zoomed battle stage.
+  drawWhiteRabbit(ctx, W, H);
 
   atbFill = Math.min(1, atbFill + 0.003);
 
@@ -400,6 +407,7 @@ function render() {
 
 export function start() {
   init();
+  resetWhiteRabbit();
   active = true;
   animId = requestAnimationFrame(render);
 }
@@ -448,7 +456,9 @@ export function miss() {
 }
 
 export function patternComplete() {
-  return hits >= WIN_HITS;
+  const won = hits >= WIN_HITS;
+  maybeWhiteRabbit(won);   // cosmetic only — never gates or delays the win
+  return won;
 }
 
 export function victory() {

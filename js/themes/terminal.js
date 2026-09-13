@@ -287,6 +287,159 @@ function drawBinaryReveal(W, H) {
   ctx.textBaseline = 'alphabetic';
 }
 
+
+// ─── The white rabbit — Act 4 easter egg ─────────────────────────────────────
+// ".claude/rules/easter-eggs.md": "In Act 4 (late-90s Command Center), a small
+// white pixel rabbit very rarely hops across the bottom of the screen between
+// patterns. Follows nothing. Explains nothing." (The Matrix, 1999 — era-correct
+// for the Command Center, and the film's own white rabbit appears on a screen.)
+//
+// It lives HERE and is imported by the other four Command Center themes
+// (simcity / goldeneye / ageofempires / ff7) so the act shares ONE rabbit rather
+// than five copies — it belongs to the ROOM, not to any single cabinet. Only one
+// theme is ever active at a time, so a single module-level state is correct.
+//
+// Design law it must obey:
+//   • Never interrupts flow — no text, no sound, no reward, no counter, nothing
+//     clickable, nothing collectible. It hops across and is gone.
+//   • Never competes with the letter being read — it is spawned only at a
+//     PATTERN BOUNDARY (from patternComplete(), the one moment the engine gives a
+//     theme between words) and it stays in the bottom strip — its box spans
+//     ~0.89H (hop apex) to 0.95H, entirely below the keyboard guide (measured
+//     bottom edge 0.823H) and nowhere near the prompt panel (0.19–0.43H).
+//   • Very rare — a 1-in-150 roll per pattern boundary, at most ONCE per level
+//     play, and never on the winning boundary (it must not crash the celebration).
+//   • Frame-driven math is clamped (journal F1): position derives from clamped
+//     elapsed time, so a throttled frame lands coherently instead of off in space.
+const RABBIT_MS = 2800;          // full crossing duration
+const RABBIT_CHANCE = 1 / 150;   // per pattern boundary
+const RABBIT_MIN_BOUNDARIES = 2; // never in the first moments of a level
+const RABBIT_HOPS = 9;
+
+let rabbit = null;          // { startMs, dir } while crossing, else null
+let rabbitSeen = false;     // once-per-play latch
+let rabbitBoundaries = 0;
+
+// Two-frame pixel bunny, facing RIGHT (mirrored for a right-to-left crossing).
+// '#' = white pixel. Frame A = mid-leap (ears swept back, legs tucked),
+// frame B = landed (ears up, legs down).
+const RABBIT_LEAP = [
+  '......#.#....',
+  '.......#.#...',
+  '........###..',
+  '........####.',
+  '..####..##.##',
+  '.############',
+  '.############',
+  '############.',
+  '##.......##..',
+];
+const RABBIT_LAND = [
+  '.........#.#.',
+  '.........#.#.',
+  '.........#.#.',
+  '........####.',
+  '..####..##.##',
+  '.############',
+  '.############',
+  '.###########.',
+  '.##....###...',
+];
+
+// Called by every Act 4 theme from start() — a fresh play gets a fresh chance.
+export function resetWhiteRabbit() {
+  rabbit = null;
+  rabbitSeen = false;
+  rabbitBoundaries = 0;
+}
+
+// Called by every Act 4 theme from patternComplete(), passing that theme's win
+// state. Purely cosmetic: it never touches, gates, or delays the win.
+export function maybeWhiteRabbit(won) {
+  rabbitBoundaries++;
+  if (won || rabbitSeen || rabbit) return;
+  if (rabbitBoundaries < RABBIT_MIN_BOUNDARIES) return;
+  if (Math.random() >= RABBIT_CHANCE) return;
+  rabbit = { startMs: performance.now(), dir: Math.random() < 0.5 ? 1 : -1 };
+  rabbitSeen = true;
+}
+
+// Drawn late in each theme's render loop. Takes the drawing context explicitly
+// (never reaches for another module's canvas state) and leaves no ctx state
+// behind — canvas 2D state leaks between screens (journal L28).
+export function drawWhiteRabbit(c, W, H) {
+  if (!rabbit || !c) return;
+  const t = (performance.now() - rabbit.startMs) / RABBIT_MS;
+  if (t >= 1) { rabbit = null; return; }
+  const p = Math.min(1, Math.max(0, t));   // clamp EVERY frame-driven value (F1)
+
+  const unit = Math.max(2, Math.round(H * 0.004));
+  const spriteW = RABBIT_LEAP[0].length * unit;
+  // Travel fully off-canvas on both ends so it never pops into existence.
+  const travel = W + spriteW * 2.5;
+  const startX = rabbit.dir > 0 ? -spriteW * 1.25 : W + spriteW * 0.25;
+  const x = startX + rabbit.dir * travel * p;
+
+  const groundY = H * 0.95;   // feet line — bottom strip, below every UI panel
+  const hopPhase = p * RABBIT_HOPS;
+  const hop = Math.abs(Math.sin(hopPhase * Math.PI));
+  const y = groundY - hop * H * 0.026;
+  const frame = hop > 0.22 ? RABBIT_LEAP : RABBIT_LAND;
+
+  c.save();
+  // A soft dark backing pass first so a white bunny still reads over a bright
+  // scene (the SimCity skyline) as well as over a dark one.
+  drawRabbitFrame(c, frame, x + 1, y + 1, unit, rabbit.dir, 'rgba(0,0,0,0.45)');
+  drawRabbitFrame(c, frame, x, y, unit, rabbit.dir, '#f4f7ff');
+  c.restore();
+}
+
+function drawRabbitFrame(c, frame, x, y, unit, dir, color) {
+  const cols = frame[0].length;
+  const rows = frame.length;
+  const top = y - rows * unit;
+  c.fillStyle = color;
+  for (let r = 0; r < rows; r++) {
+    const line = frame[r];
+    for (let col = 0; col < cols; col++) {
+      if (line[col] !== '#') continue;
+      const cx = dir > 0 ? col : (cols - 1 - col);
+      c.fillRect(Math.round(x + cx * unit), Math.round(top + r * unit), unit, unit);
+    }
+  }
+}
+
+// ─── The Y2K clock — Act 4 easter egg ────────────────────────────────────────
+// ".claude/rules/easter-eggs.md": "One monitor in the Command Center background
+// always reads 12/31/99 11:59 PM. Never explained. (For the parents who
+// remember.)" This terminal IS that monitor — it is the only screen rendered in
+// the Command Center, and this act's hidden-history layer (the POOL_FRAGMENTS
+// whispers above) already lives here.
+//
+// It is set dressing, not an event: a fixed code literal, drawn every frame,
+// frozen — it never ticks, never animates, is never referenced by anything, and
+// nothing in the game ever mentions it. It sits in the bottom-right stage corner
+// (right margin 0.78–1.0W × bottom strip 0.81–1.0H), dim enough to read as a
+// status corner rather than a prompt, bright enough for a parent to actually
+// read. Fixed literal string only — never a DOM sink (security.md rule 1).
+const Y2K_CLOCK = '12/31/99 11:59 PM';
+
+function drawY2KClock(W, H) {
+  const fontSize = Math.max(8, Math.round(W * 0.0085));
+  ctx.save();
+  ctx.font = `${fontSize}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'right';     // explicit — canvas state leaks between screens (L28)
+  ctx.textBaseline = 'alphabetic';
+  ctx.globalAlpha = 0.72;
+  ctx.fillStyle = '#39ff14';
+  ctx.shadowColor = '#39ff14';
+  ctx.shadowBlur = 5;
+  ctx.fillText(Y2K_CLOCK, Math.round(W * 0.962), Math.round(H * 0.888));
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 function render() {
   if (!active) return;
   const W = canvas.width;
@@ -299,6 +452,10 @@ function render() {
   drawTerminalLines(W, H);
   if (chars >= WIN_CHARS) drawBinaryReveal(W, H);
   drawProgress(W, H);
+  drawY2KClock(W, H);
+  // Drawn under the barrel glass so both eggs sit behind the CRT's curvature
+  // like everything else on this screen.
+  drawWhiteRabbit(ctx, W, H);
   updateRefreshGlitch(W, H);
   drawBarrelCurvature();
 
@@ -309,6 +466,7 @@ function render() {
 
 export function start() {
   init();
+  resetWhiteRabbit();
   active = true;
   animId = requestAnimationFrame(render);
 }
@@ -341,7 +499,9 @@ export function keystroke(key) {
 export function miss() {}
 
 export function patternComplete() {
-  return chars >= WIN_CHARS;
+  const won = chars >= WIN_CHARS;
+  maybeWhiteRabbit(won);   // cosmetic only — never gates or delays the win
+  return won;
 }
 
 export function victory() {

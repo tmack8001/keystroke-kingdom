@@ -5,6 +5,10 @@
 // castle walls with distinct top/left/right faces — same iso-3D grammar as
 // simcity.js but re-themed for terrain instead of skyline.
 
+// The Act 4 white rabbit is shared by all five Command Center themes and lives in
+// terminal.js (the act's hidden-history host) — see easter-eggs.md.
+import { resetWhiteRabbit, maybeWhiteRabbit, drawWhiteRabbit } from './terminal.js';
+
 let canvas, ctx, animId;
 let active = false;
 let troops = [];
@@ -492,6 +496,8 @@ function render() {
     drawResources(W, H);
   }
 
+  drawWhiteRabbit(ctx, W, H);
+
   animId = requestAnimationFrame(render);
 }
 
@@ -499,6 +505,7 @@ function render() {
 
 export function start() {
   init();
+  resetWhiteRabbit();
   active = true;
   victoryMode = false;
   victoryFrame = 0;
@@ -544,7 +551,9 @@ export function keystroke() {
 export function miss() {}
 
 export function patternComplete() {
-  return totalGathered >= WIN_RESOURCES;
+  const won = totalGathered >= WIN_RESOURCES;
+  maybeWhiteRabbit(won);   // cosmetic only — never gates or delays the win
+  return won;
 }
 
 export function victory() {

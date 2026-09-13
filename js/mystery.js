@@ -2,6 +2,7 @@
 // Runs on the shared #invaders-canvas. ~50 seconds, skippable to title card.
 
 import * as Audio from './audio.js';
+import * as Slots from './slots.js';
 
 let canvas, ctx;
 let animId = null;
@@ -777,11 +778,46 @@ function drawHiddenRoom(dx, dy, dw, dh, reveal, t) {
   ctx.restore();
 }
 
+// ─── The dial-up handshake chirp — first entry to the Computer Wing only ─────
+//
+// easter-eggs.md Proposed #5: "Entering the Computer Wing for the first time, a
+// half-second of modem chirp under the door-opening sound. (BBS era.)" The sound
+// itself lives in js/audio.js (modemChirp), so it respects the global sound toggle
+// like every other sound in the game — this file only decides WHEN.
+//
+// FIRST TIME ONLY, with no new storage. The latch is derived from progress the
+// game already keeps: `completed['6']` is set the first time the player finishes
+// Level 6, the first cabinet INSIDE the Computer Wing. So the chirp plays while a
+// player has not yet cleared anything in the wing, and never again once they have.
+// (main.js records Level 5 as complete BEFORE this cinematic starts, so neither
+// furthestLevel nor completed['5'] can distinguish a first run from a replay —
+// completed['6'] can.) Nothing is written; no field is added to js/slots.js.
+//
+// Reads defensively (security.md rule 4 — localStorage is untrusted input): any
+// throw or malformed shape falls through to "not first time", which is the quiet
+// outcome. A missing save slot (the WOPR dev bypass) reads as first time.
+function isFirstEntryToComputerWing() {
+  try {
+    const p = Slots.getProgress();
+    const done = p && p.completed;
+    if (!done || typeof done !== 'object') return true;
+    return !(done['6'] || done[6]);
+  } catch (_) {
+    return false;
+  }
+}
+
 function drawPhase5(t, W, H) {
   if (!chordStarted) {
     startChord();
     stopCRTHum();
     playHingeSlide();
+    // The modem chirp is offset ~0.45s so it plays UNDERNEATH the door, not in
+    // front of it: the hinge slide begins at +0.5s and the chord ramps to full at
+    // +1.5s, so the chirp (~0.55s long, mixed at roughly a third of the slide's
+    // level) is a texture inside that swell and is gone before the chord peaks.
+    // Purely decorative — it can never gate or delay the sequence.
+    if (isFirstEntryToComputerWing()) Audio.modemChirp(0.45);
     chordStarted = true;
   }
 

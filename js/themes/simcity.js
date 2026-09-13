@@ -9,6 +9,10 @@
 // Look: extruded flat-shaded polygon buildings (top/left/right faces), dithered
 // gradient bands, painter's-algorithm depth sort — the SimCity 2000 iso look.
 
+// The Act 4 white rabbit is shared by all five Command Center themes and lives in
+// terminal.js (the act's hidden-history host) — see easter-eggs.md.
+import { resetWhiteRabbit, maybeWhiteRabbit, drawWhiteRabbit } from './terminal.js';
+
 let canvas, ctx, animId;
 let active = false;
 let districts = {};   // { residential:[], commercial:[], downtown:[] }
@@ -745,6 +749,10 @@ function render() {
     drawMilestoneStinger(W, H, showT);
   }
 
+  // The white rabbit hops across the bottom strip in screen space — outside the
+  // camera bob's translate, so it never inherits the city's wobble.
+  drawWhiteRabbit(ctx, W, H);
+
   drawHUD(W);
 
   animId = requestAnimationFrame(render);
@@ -753,6 +761,7 @@ function render() {
 // ─── Public API ──────────────────────────────────────────────────────────────
 export function start() {
   init();
+  resetWhiteRabbit();
   active = true;
   animId = requestAnimationFrame(render);
 }
@@ -789,7 +798,9 @@ export function miss() {
 }
 
 export function patternComplete() {
-  return buildingsPlaced >= WIN_BUILDINGS;
+  const won = buildingsPlaced >= WIN_BUILDINGS;
+  maybeWhiteRabbit(won);   // cosmetic only — never gates or delays the win
+  return won;
 }
 
 export function victory() {

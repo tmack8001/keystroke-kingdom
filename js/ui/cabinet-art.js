@@ -753,6 +753,14 @@ const CABINET_DATA = {
         ctx.fillStyle = '#39ff14';
         ctx.fillRect(x + 2, y + h - 10, 5, 4);
       }
+    },
+    // The rubber duck (the hidden layer — .claude/rules/easter-eggs.md). Pure
+    // set dressing on the Command Center's own machine: a tiny yellow duck
+    // perched on the terminal cabinet's control panel, where a programmer
+    // would actually be debugging something. Never announced, never
+    // interactive, never explained. Dark while the cabinet is still locked.
+    drawExtras(ctx) {
+      drawRubberDuck(ctx, 39, 49);
     }
   },
 
@@ -953,6 +961,31 @@ const CABINET_DATA = {
   }
 };
 
+// ─── The rubber duck ────────────────────────────────────────────────────────
+// A 7x8 pixel duck in cabinet space (drawCabinet's 56x80 grid), drawn on the
+// Level 20 terminal cabinet's control panel. Rubber-duck debugging: explaining
+// the problem out loud to something that never says a word
+// (research/wiki/culture/rubber-duck-debugging.md). Set dressing only — the
+// game never points at it (easter-eggs.md rule 5, "eggs are for finding").
+const DUCK_BODY  = '#ffd23f';
+const DUCK_SHADE = '#c8900f';
+const DUCK_BEAK  = '#ff8c1a';
+const DUCK_EYE   = '#1a1206';
+
+function drawRubberDuck(ctx, x, y) {
+  ctx.fillStyle = DUCK_BODY;
+  ctx.fillRect(x + 2, y, 3, 3);          // head
+  ctx.fillRect(x, y + 2, 1, 1);          // upturned tail
+  ctx.fillRect(x, y + 3, 6, 3);          // body
+  ctx.fillStyle = DUCK_SHADE;
+  ctx.fillRect(x + 1, y + 6, 4, 1);      // rounded waterline shadow
+  ctx.fillRect(x, y + 4, 1, 2);          // tail-side shading
+  ctx.fillStyle = DUCK_BEAK;
+  ctx.fillRect(x + 5, y + 1, 2, 1);      // beak
+  ctx.fillStyle = DUCK_EYE;
+  ctx.fillRect(x + 3, y + 1, 1, 1);      // eye
+}
+
 function drawCabinet(canvas, levelNum, scale = 2) {
   const data = CABINET_DATA[levelNum];
   const w = 56;
@@ -1001,9 +1034,15 @@ function drawCabinet(canvas, levelNum, scale = 2) {
   ctx.fillRect(5, 10, 1, 54);
   ctx.fillRect(w-6, 10, 1, 54);
   ctx.globalAlpha = 1;
+
+  // Optional per-cabinet set dressing drawn on the cabinet BODY (not its
+  // screen) — see CABINET_DATA[20].drawExtras, the rubber duck.
+  if (data.drawExtras) data.drawExtras(ctx, w, h);
 }
 
 export function renderSelectScreen(state) {
+  mothNoteActivity();   // a render means the player is doing something
+  mothStart();
   if (state.doorFocused) { renderDoorView(state); return; }
   const act = getActForLevel(state.selectedLevel);
   const actIdx = ACTS.indexOf(act);
@@ -1106,6 +1145,7 @@ function renderDoorView(state) {
 }
 
 export function updateSelectHighlight(state) {
+  mothNoteActivity();
   document.querySelectorAll('.select-cabinet').forEach(el => {
     el.classList.toggle('selected', parseInt(el.dataset.level) === state.selectedLevel);
   });
@@ -1159,3 +1199,285 @@ export function selectByPosition(state, pos) {
 }
 
 export { isLevelLocked };
+
+// ═══ THE MOTH ════════════════════════════════════════════════════════════════
+// A hide-and-seek easter egg (.claude/rules/easter-eggs.md, proposed #1 — now
+// built). Very rarely, while the arcade's select screen is sitting completely
+// still, a tiny pixel moth flutters in and settles on one of the LIT cabinet
+// screens (moths go to light; dark, unearned cabinets get none). Click it and
+// the 1947 logbook line appears for a few seconds, then fades.
+//
+// The 1947 facts are from research/wiki/moments/mark-ii-moth-1947.md (4 cited
+// sources): a moth found in a relay of the Harvard Mark II on September 9,
+// 1947, taped into the operations logbook under "First actual case of bug
+// being found." The text below quotes the logbook and nothing else — the wiki
+// is explicit that Grace Hopper neither found nor logged it (journal F7: a
+// child-facing card once overstated exactly this), and that "bug" for a
+// technical fault predates 1947.
+//
+// Design rules this obeys: it never interrupts flow (it can only appear when
+// nothing is happening, and it never pauses, gates, or steals a keypress); it
+// is never advertised; missing it costs nothing and it can come back another
+// time; it is a friendly visitor, never an infestation.
+
+const MOTH_IDLE_MS    = 12000;  // the screen must sit untouched this long first
+const MOTH_ROLL_MS    = 1000;   // then one quiet roll of the dice per second
+const MOTH_CHANCE     = 0.03;   // ~3% a second — rare enough to be a real find
+const MOTH_ARRIVE_MS  = 2200;   // flutter-in
+const MOTH_REST_MS    = 16000;  // how long it sits before moving on
+const MOTH_LEAVE_MS   = 1600;   // flutter-out
+const MOTH_HIT_R      = 9;      // generous cabinet-space hit radius (small hands)
+const MOTH_MESSAGE_MS = 7000;
+
+const MOTH_FOUND_TEXT =
+  '"FIRST ACTUAL CASE OF BUG BEING FOUND."\n' +
+  'HARVARD MARK II LOGBOOK  ·  SEPTEMBER 9, 1947';
+
+const MOTH_WING  = '#ded7c0';   // pale wing — reads on dark AND bright screens
+const MOTH_SHADE = '#98907a';
+const MOTH_BODY  = '#38322a';
+
+// The moth lives on one cabinet's own 56x80 canvas, in canvas space (journal
+// L16 — never DOM space). `level` is the cabinet it chose.
+const moth = {
+  active: false,
+  found: false,        // found once per page load, then it stops coming
+  level: 0,
+  phase: 'arrive',     // 'arrive' | 'rest' | 'leave'
+  phaseStart: 0,
+  fromX: 0, fromY: 0,
+  restX: 0, restY: 0,
+  x: 0, y: 0,
+};
+
+let mothRaf = null;
+let mothLastActivity = 0;
+let mothLastRoll = 0;
+let mothHiddenSince = 0;
+let mothClickWired = false;
+let mothMessageTimer = null;
+
+function mothNow() {
+  return (typeof performance !== 'undefined' && performance.now)
+    ? performance.now()
+    : Date.now();
+}
+
+// Any navigation, render, or keypress counts as "the player is here" — the moth
+// only ever visits a still screen, and any activity sends it on its way.
+function mothNoteActivity() {
+  const now = mothNow();
+  mothLastActivity = now;
+  // Disturbed: it leaves the way a moth leaves — fluttering off, not blinking
+  // out. Nothing is lost by it going; it can always come back another time.
+  if (moth.active && moth.phase !== 'leave') {
+    moth.phase = 'leave';
+    moth.phaseStart = now;
+  }
+}
+
+function mothHostCanvas(level) {
+  const holder = document.querySelector(
+    '#select-cabinets .select-cabinet[data-level="' + level + '"]');
+  return holder ? holder.querySelector('canvas') : null;
+}
+
+// Put the cabinet back the way we found it and forget the visitor.
+function mothDismiss() {
+  if (!moth.active) return;
+  const host = mothHostCanvas(moth.level);
+  moth.active = false;
+  if (host) drawCabinet(host, moth.level);
+}
+
+function mothStart() {
+  mothWireClick();
+  if (mothRaf !== null) return;
+  mothLastActivity = mothNow();
+  mothRaf = requestAnimationFrame(mothTick);
+}
+
+function mothStop() {
+  if (mothRaf !== null) cancelAnimationFrame(mothRaf);
+  mothRaf = null;
+}
+
+function mothTick(now) {
+  mothRaf = requestAnimationFrame(mothTick);
+
+  const screen = document.getElementById('select-screen');
+  if (!screen || screen.classList.contains('hidden')) {
+    // Not on the arcade floor right now. (renderSelectScreen can legitimately
+    // run a frame or two before showScreen, so allow a short grace period.)
+    if (!mothHiddenSince) mothHiddenSince = now;
+    mothDismiss();
+    mothLastActivity = now;
+    if (now - mothHiddenSince > 1500) mothStop();
+    return;
+  }
+  mothHiddenSince = 0;
+
+  if (!moth.active) { mothMaybeArrive(now); return; }
+
+  const t = Math.max(0, now - moth.phaseStart);   // clamped: never negative
+  let wingsWide = true;
+
+  if (moth.phase === 'arrive') {
+    const p = Math.min(1, t / MOTH_ARRIVE_MS);
+    const e = p * p * (3 - 2 * p);                // smoothstep
+    const settle = 1 - e;                          // wobble fades as it lands
+    moth.x = moth.fromX + (moth.restX - moth.fromX) * e + Math.sin(p * 19) * 5 * settle;
+    moth.y = moth.fromY + (moth.restY - moth.fromY) * e + Math.sin(p * 13) * 3 * settle;
+    wingsWide = Math.floor(t / 80) % 2 === 0;
+    if (p >= 1) { moth.phase = 'rest'; moth.phaseStart = now; }
+
+  } else if (moth.phase === 'rest') {
+    // Moths rest with their wings spread flat, with the occasional shiver.
+    const shiver = t % 1500 < 170;
+    moth.x = moth.restX;
+    moth.y = moth.restY - (shiver ? 1 : 0);
+    wingsWide = !shiver;
+    if (t >= MOTH_REST_MS) { moth.phase = 'leave'; moth.phaseStart = now; }
+
+  } else {
+    const p = Math.min(1, t / MOTH_LEAVE_MS);
+    moth.x = moth.restX + Math.sin(p * 16) * 7 * p;
+    moth.y = moth.restY - 46 * p * p;
+    wingsWide = Math.floor(t / 70) % 2 === 0;
+    if (p >= 1) {
+      mothDismiss();
+      // It has to earn its way back: a fresh idle stretch, a fresh roll.
+      mothLastActivity = now;
+      mothLastRoll = now;
+      return;
+    }
+  }
+
+  mothDraw(wingsWide);
+}
+
+function mothMaybeArrive(now) {
+  if (moth.found) return;
+  if (now - mothLastActivity < MOTH_IDLE_MS) return;
+  if (now - mothLastRoll < MOTH_ROLL_MS) return;
+  mothLastRoll = now;
+  if (Math.random() >= MOTH_CHANCE) return;
+
+  // Only lit cabinets — a moth has no reason to visit a dark silhouette, and
+  // the door view (no data-level) is not a cabinet at all.
+  const lit = document.querySelectorAll(
+    '#select-cabinets .select-cabinet[data-level]:not(.locked)');
+  if (!lit.length) return;
+  const holder = lit[Math.floor(Math.random() * lit.length)];
+  const level = Number(holder.dataset.level);
+  if (!CABINET_DATA[level]) return;
+
+  // Landing spot: somewhere on the cabinet's screen glass (drawCabinet draws it
+  // at 8,12 → 48,42), expressed in cabinet-canvas space.
+  moth.level = level;
+  moth.restX = 15 + Math.floor(Math.random() * 26);
+  moth.restY = 19 + Math.floor(Math.random() * 17);
+  moth.fromX = moth.restX + (Math.random() * 20 - 10);
+  moth.fromY = -8;
+  moth.x = moth.fromX;
+  moth.y = moth.fromY;
+  moth.phase = 'arrive';
+  moth.phaseStart = now;
+  moth.active = true;
+}
+
+function mothDraw(wingsWide) {
+  const host = mothHostCanvas(moth.level);
+  if (!host) { moth.active = false; return; }   // the act changed under us
+  drawCabinet(host, moth.level);
+  const ctx = host.getContext('2d');
+  drawMoth(ctx, moth.x, moth.y, wingsWide);
+}
+
+// 7x8 pixel moth in cabinet space. Wings spread (resting) or folded (mid-flap).
+function drawMoth(ctx, cx, cy, wingsWide) {
+  const x = Math.round(cx), y = Math.round(cy);
+  if (wingsWide) {
+    ctx.fillStyle = MOTH_WING;
+    ctx.fillRect(x - 3, y - 2, 7, 3);      // forewings
+    ctx.fillStyle = MOTH_SHADE;
+    ctx.fillRect(x - 2, y + 1, 5, 2);      // hindwings, a shade darker
+  } else {
+    ctx.fillStyle = MOTH_WING;
+    ctx.fillRect(x - 1, y - 2, 3, 4);
+    ctx.fillStyle = MOTH_SHADE;
+    ctx.fillRect(x - 1, y + 2, 3, 1);
+  }
+  ctx.fillStyle = MOTH_BODY;
+  ctx.fillRect(x, y - 2, 1, 6);            // body
+  ctx.fillRect(x - 1, y - 4, 1, 2);        // antennae
+  ctx.fillRect(x + 1, y - 4, 1, 2);
+}
+
+// ── Finding it ──────────────────────────────────────────────────────────────
+// One capture-phase listener on the cabinet row, wired once. It only ever acts
+// when the moth is actually under the click; every other click passes straight
+// through to the cabinet's own handler, and the keyboard is never touched.
+function mothWireClick() {
+  if (mothClickWired) return;
+  const container = $('select-cabinets');
+  if (!container) return;
+  container.addEventListener('click', mothClickCapture, true);
+  mothClickWired = true;
+}
+
+function mothClickCapture(e) {
+  if (!moth.active || moth.found) return;
+  const target = e.target;
+  if (!target || target.tagName !== 'CANVAS') return;
+  const holder = target.parentElement;
+  if (!holder || Number(holder.dataset.level) !== moth.level) return;
+
+  // Hit-testing INPUT (not art placement) is the one place a pixel ratio is
+  // legitimate: map the click into the canvas's own 56x80 space. offsetX/Y is
+  // already local to the canvas and survives the .selected CSS scale.
+  const sx = target.width / (target.clientWidth || target.width);
+  const sy = target.height / (target.clientHeight || target.height);
+  const dx = e.offsetX * sx - moth.x;
+  const dy = e.offsetY * sy - moth.y;
+  if (Math.sqrt(dx * dx + dy * dy) > MOTH_HIT_R) return;
+
+  e.stopPropagation();   // finding the moth never moves the player's cursor
+  moth.found = true;
+  moth.phase = 'leave';
+  moth.phaseStart = mothNow();
+  mothShowFoundLine();
+}
+
+// The logbook line, in the bottom strip, fading in and out. A fixed code
+// literal into textContent — never innerHTML, never a user-influenced string
+// (.claude/rules/security.md rules 1-2). pointer-events:none so it can never
+// swallow a click, and it never gates or pauses anything (the One Rule).
+function mothShowFoundLine() {
+  const screen = document.getElementById('select-screen');
+  if (!screen) return;
+  let el = document.getElementById('moth-found-line');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'moth-found-line';
+    el.style.cssText = 'position:absolute;left:0;right:0;bottom:4%;text-align:center;'
+      + 'font-size:7px;line-height:2.2;letter-spacing:1px;white-space:pre-line;'
+      + 'color:#e8d9a0;text-shadow:0 0 8px rgba(232,217,160,0.45);'
+      + 'pointer-events:none;opacity:0;transition:opacity 0.5s;';
+    screen.appendChild(el);
+  }
+  el.textContent = MOTH_FOUND_TEXT;
+  el.style.opacity = '1';
+  if (mothMessageTimer) clearTimeout(mothMessageTimer);
+  mothMessageTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    mothMessageTimer = null;
+  }, MOTH_MESSAGE_MS);
+}
+
+// Typing anywhere is activity — the moth only visits a screen nobody is using.
+// Read-only listener: it never inspects a key, never preventDefaults, and never
+// stops propagation, so keyboard navigation is completely unaffected.
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('keydown', mothNoteActivity);
+}
