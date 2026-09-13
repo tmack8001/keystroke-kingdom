@@ -34,7 +34,25 @@ word, title, year, fact, legacyLevel?, secret? }`.
   New cards land on levels 6, 8, 9 (×2), 11 (×3), 12 (×2), 13 (×3), and 20 —
   each at its earliest-typeable level (INV-56), so an already-carded level's pool
   simply grows (e.g. level 11's pool went from one card to four).
-- **Current total: 54 curriculum cards + 1 secret card = 55** (`TOTAL_CARDS === 55`).
+- **2026-09-13 expansion:** +5 more curriculum cards — the **edutainment lineage this
+  game is itself descended from**, closing the graph's strangest gap (it held ~210
+  verified pages on arcades, consoles and hacker culture and **zero** on educational
+  software, its own genre): `reader` (Reader Rabbit, 1984, L7), `gadget` (Gizmos &
+  Gadgets, 1993, L8), `trail` (The Oregon Trail, 1971, L8), `boots` (Rocky's Boots,
+  1982, L12) and `stickybear` (Stickybear Typing, 1985, L13). Citation-verified in
+  `research/educational-software.md` + `research/wiki/pedagogy/*` and
+  `research/wiki/games/*`.
+  **Two editorial constraints are load-bearing here.** (a) **No Oregon Trail card may
+  quote its famous death line** — `died`/`dead` are word-blocklist floor entries and the
+  moment is wrong for a five-year-old regardless; the card is about a game that printed
+  onto paper because it had no screen. (b) The Rocky's Boots card alludes to Warren
+  Robinett hiding his name in a game three years earlier **without naming the
+  `adventure` easter egg**, per `easter-eggs.md` rule 5 (*"eggs are for finding, not
+  telling"*) — a player who already found it gets a private nod; nobody else is spoiled.
+  The Stickybear card describes the 1985 tutor's blue on-screen keyboard that **lit up
+  the next key to press** — verified by extracting and viewing frames from two archived
+  boot videos, not from model memory (journal F28's sibling finding).
+- **Current total: 59 curriculum cards + 1 secret card = 60** (`TOTAL_CARDS === 60`).
 
 Field shape per entry:
 - **`id`** — a stable slug (`'ada-lovelace'`, `'qwerty-keyboard'`, …), the collection key
@@ -151,7 +169,7 @@ scan against what is now a flat array, plus a stale `CARD_LEVELS` list) — it e
 fatally on any invocation. It has since been rewritten for the flat-array/pool model
 (pulls the live `HISTORY_CARDS` array in-page, derives its expected set and the
 "CARD n OF N" check from that data rather than a literal) and re-run in full:
-`docs/screenshots/history-cards/` now holds all **54 pooled cards** as
+`docs/screenshots/history-cards/` now holds all **59 pooled cards** as
 `<level>-<id>.png` (e.g. `13-colossal-cave.png`, `25-hello-world.png`,
 `25-rubber-duck.png`) plus the one secret card as `secret-wargames-joshua.png` — 55
 files total, zero console errors, zero guaranteed-capture failures.

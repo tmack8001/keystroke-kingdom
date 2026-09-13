@@ -143,6 +143,25 @@ export const HISTORY_CARDS = [
   { id: '2600-magazine', level: 20, word: '2600', title: '2600: THE HACKER QUARTERLY', year: '1984',
     fact: "Remember 2600 — the secret musical note that could talk to old phones? Someone named a whole magazine after it, and it's still printed today. Now you know what that number means." },
 
+  // ── Expansion 2026-09-13: the EDUTAINMENT lineage — the floppy-disk era this
+  //    game is itself descended from (research/educational-software.md +
+  //    research/wiki/pedagogy/*, research/wiki/games/*, all citation-verified).
+  //    The graph held ~210 pages on arcades, consoles and hacker culture and
+  //    ZERO on educational software, its own genre. Each word attaches to its
+  //    EARLIEST-typeable level (INV-56). Kid-safety: no Oregon Trail card may
+  //    quote its famous death line — 'died'/'dead' are word-blocklist floor
+  //    entries and the moment is wrong for a five-year-old either way. ──
+  { id: 'reader-rabbit', level: 7, word: 'reader', title: 'READER RABBIT', year: '1984',
+    fact: 'Leslie Grimm built a game that taught children to read before they could read the instructions. Every word here that you can type AND read is that same idea.' },
+  { id: 'gizmos-gadgets', level: 8, word: 'gadget', title: 'GIZMOS & GADGETS', year: '1993',
+    fact: 'Solve a science puzzle, win a machine part, build your own car or plane, then race it. Losing only meant going back and building a better one.' },
+  { id: 'oregon-trail', level: 8, word: 'trail', title: 'THE OREGON TRAIL', year: '1971',
+    fact: 'Three student teachers wrote it for a computer that had no screen at all — it printed the game onto paper, one line at a time. It became the most successful school game ever made.' },
+  { id: 'rockys-boots', level: 12, word: 'boots', title: "ROCKY'S BOOTS", year: '1982',
+    fact: 'A game where seven-year-olds wired up real logic circuits to make a giant boot kick things off a belt. Its programmer had hidden his own name inside a game three years earlier — the first secret ever hidden in one.' },
+  { id: 'stickybear-typing', level: 13, word: 'stickybear', title: 'STICKYBEAR TYPING', year: '1985',
+    fact: 'A bear taught children to type on a blue screen in 1985. It drew a whole keyboard along the bottom and lit up the next key to press — the same idea as the keyboard at the bottom of yours.' },
+
   // ── SECRET cards (level: null) — never injected into any level's pool. Found
   //    ONLY by the curious who type a magic word (see main.js SECRET_PHRASES).
   //    They still count toward the collection total, so "all cards" needs them

@@ -13,7 +13,7 @@
 //
 // ── THE MODEL THIS SCRIPT NOW TARGETS (rebuilt 2026-07-19) ────────────────
 // history-cards.js is no longer a one-card-per-level OBJECT. It is a FLAT
-// ARRAY (js/history-cards.js `HISTORY_CARDS`): 55 entries = 54 POOLED cards
+// ARRAY (js/history-cards.js `HISTORY_CARDS`): 60 entries = 59 POOLED cards
 // (each carrying its EARLIEST-typeable `level`) + 1 SECRET card (`joshua`,
 // `level: null`, `secret: true`). A single level now hides a POOL of several
 // cards, and each play surfaces exactly ONE guaranteed card, chosen by the
@@ -34,7 +34,7 @@
 // localStorage at game start, so writing kk-slots just before the final
 // "start the game" keypress is sufficient — no game code is touched.
 //
-// GUARANTEED, NOT PROBABILISTIC (journal L4): every one of the 54 POOLED
+// GUARANTEED, NOT PROBABILISTIC (journal L4): every one of the 59 POOLED
 // cards MUST produce a screenshot of ITS OWN card, or the script exits
 // non-zero. The expected set is derived from the live data
 // (`HISTORY_CARDS.filter(c => !c.secret)`), never a stale literal.
