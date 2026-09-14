@@ -32,6 +32,17 @@ the exact failure mode Trevor caught (victory-audit 2026-07-12).
 
 ## Layout — "the UI owns the center; the theme owns the frame"
 
+> **⚠️ This is the rule this project breaks most often.** Journal **F30** (2026-09-13):
+> one audit found FOUR levels violating it at once, and they did not look related —
+> Tetris's *whole well* was centred behind the prompt panel and the keyboard guide (the
+> reported symptom was "the stack never accumulates"; the stack was fine, it was
+> invisible), Galaga's formation covered the prompt letter a child must read, and three
+> counters sat under the HUD badge or fell off the canvas. **Centre is the instinctive
+> place to put the good bit, and in this game centre is spoken for.** Before you place
+> anything, ask where the panels are — and if a comment tells you a constraint cannot
+> be met, check whether the thing it calls impossible is actually LOCAL (Galaga's was:
+> "without shrinking sprites game-wide" — the sprite scale is a per-theme const).
+
 Full contract with measured safe-zone fractions: `visual-validation.md` → "The Theme
 Layout Contract". Summary: prompt panel and keyboard guide permanently reserve the
 center; compose focal art in the stage (side margins, top band, gap band ~0.43–0.49H,

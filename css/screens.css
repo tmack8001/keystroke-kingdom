@@ -110,9 +110,17 @@
   margin-bottom: 30px;
 }
 
+/* a11y, 2026-09-13: this is the ONLY instruction on the first screen a child
+   ever reads, and it was on --atari-dim (the game's CHROME grey, shared with
+   hints, subtitles and cabinet captions) — measured at 3.68:1 against the 4.5
+   bar. The global --atari-dim has already been raised once (from #555) and the
+   comments in levels.css show it being patched per-surface since; raising it a
+   third time to rescue one label would dim-wash every other surface that
+   deliberately recedes. So this label is promoted OUT of chrome instead, which
+   is what it always was: it is not a hint, it is the ask. */
 .name-label {
   font-size: 8px;
-  color: var(--atari-dim);
+  color: #cfcfcf;
   margin-bottom: 12px;
   letter-spacing: 2px;
 }

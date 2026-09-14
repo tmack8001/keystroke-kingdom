@@ -111,10 +111,28 @@ function readSurvival() {
 
 function computeLayout() {
   W = canvas.width; H = canvas.height;
-  CELL = Math.min(Math.floor(H * 0.80 / ROWS), Math.floor(W * 0.34 / COLS));
+  // THE WELL LIVES IN THE LEFT MARGIN, not the middle of the screen.
+  //
+  // It used to be centred — `GRID_X = (W - COLS*CELL)/2`, `GRID_Y` likewise —
+  // which at 1280x800 put a 400x640 well at 0.34-0.66W by 0.10-0.90H: straight
+  // behind the prompt panel AND the keyboard guide, the two regions
+  // visual-validation.md RESERVES. Almost the whole well was hidden.
+  //
+  // A theme audit on 2026-09-13 reported the symptom without the cause: "the well
+  // shows a single active piece falling but NEVER shows any locked/stacked blocks
+  // accumulating, even though the LINES counter has advanced." The stack was
+  // there the whole time — `grid`, `lockPiece` and the clear-flash all work. It
+  // was behind the UI. Tetris's signature mechanic was running where nobody could
+  // watch it, which is the exact thing theme-authoring.md's mechanics-fidelity
+  // rule exists to prevent.
+  //
+  // A Tetris well is tall and narrow, so the side margin is not a compromise —
+  // it is the shape the well wants. Cells shrink (40px -> ~24px) and in exchange
+  // the entire well, the stack, the ghost and the line clears become visible.
+  CELL = Math.min(Math.floor(H * 0.62 / ROWS), Math.floor(W * 0.19 / COLS));
   CELL = Math.max(CELL, 16);
-  GRID_X = Math.floor((W - COLS * CELL) / 2);
-  GRID_Y = Math.floor((H - ROWS * CELL) / 2);
+  GRID_X = Math.floor(W * 0.015);
+  GRID_Y = Math.floor(H * 0.24);
   buildSkyline();
 }
 

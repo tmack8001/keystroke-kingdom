@@ -745,13 +745,32 @@ the crop that "proved" clipping had itself sliced the glyphs). Fixed:
   prompt since the game was designed; a new child actually got nothing until their
   first mistake. Built.
 
-**Reported and NOT fixed** (ranked, for a later pass): Sonic (L11) and Donkey Kong
-Country (L14) still score WEAK on mechanics fidelity — both are open findings from
-2026-07-12 and still true; Level 8's Tetris well shows a falling piece but never a
-stack, so the signature mechanic has no visual representation; Level 24's victory is
-thin beside its neighbours; Levels 7 and 10 are near-static mid-play; and a band of
-grey chrome text (`#8a8a8a`) sits at 3.6-4.5:1 against the game's own 4.5 bar,
-including "ENTER YOUR NAME" on the first screen a child sees.
+**Also fixed in the follow-up pass:**
+
+- **The whole Tetris well was behind the UI.** The audit reported the symptom — "shows
+  a falling piece but NEVER any locked/stacked blocks, even though the LINES counter
+  advanced" — and the cause was one line: `GRID_X/GRID_Y = (canvas - grid) / 2`. The
+  well was CENTRED, putting a 400x640 playfield at 0.34-0.66W by 0.10-0.90H, straight
+  behind both the prompt panel and the keyboard guide. The stack, `lockPiece` and the
+  clear-flash all worked the whole time; nobody could see them. Moved into the LEFT
+  MARGIN, which is not a compromise — a Tetris well is tall and narrow, so it is the
+  shape the well wants. Cells 40px → 24px, and in exchange the well, stack, ghost and
+  line clears are all visible.
+- **"ENTER YOUR NAME"** — the only instruction on the first screen a child reads — was
+  on `--atari-dim`, the shared CHROME grey, at 3.68:1. Promoted out of chrome rather
+  than raising the global a third time (it has already gone `#555` → `#8a8a8a`, and
+  `levels.css` carries two comments about patching it per-surface since): dimming every
+  deliberately-receding surface to rescue one label is the wrong trade. It is not a
+  hint, it is the ask.
+
+**Reported and STILL NOT fixed** (ranked, for a later pass): Sonic (L11) and Donkey
+Kong Country (L14) score WEAK on mechanics fidelity — both are open findings from
+2026-07-12 and still true today; Level 24's victory is thin beside its neighbours
+(L21/22/23 all show overt kinetic motion in the same window); Levels 7 and 10 are
+near-static mid-play with the payoff concentrated in `victory()`; and the rest of the
+`--atari-dim` band (select hints, cabinet captions, complete-stat labels) sits at
+3.6-4.5:1 — legible in every frame opened, but below the game's own bar, and the
+audit tool is known to read conservatively there.
 
 ### ✅ The 25 cabinet SCREENS audited against their sources *(2026-09-13)*
 
