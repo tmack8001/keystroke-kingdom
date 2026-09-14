@@ -2004,7 +2004,17 @@ function initKeyboardNotice() {
 // names themselves renames this game rather than getting a second one.
 function ensureGameForBypass() {
   try {
-    if (Slots.getActive()) return;
+    // `getActive()` returns the active slot's INDEX, and **index 0 is falsy**.
+    // Written as `if (Slots.getActive()) return`, this guard failed for slot 0 —
+    // which is every family's FIRST save, i.e. the single most common case in the
+    // game. Confirmed by a playtest lane, 2026-09-13, from a real cold open: name
+    // yourself, then type the documented `joshua` easter egg the game itself
+    // rewards you for finding, and you silently get a SECOND slot with the same
+    // name. On reload the picker shows two identical rows and the cursor defaults
+    // to the empty orphan, so Space resumes the wrong one and the collected card
+    // is gone. Not a punishment in the One Rule sense, but a silent progress fork
+    // a family could neither explain nor undo. Compare against null explicitly.
+    if (Slots.getActive() !== null) return;
     Slots.createSlot(settings.playerName || 'Player One');
   } catch { /* storage refused — the bypass still works, it just won't persist */ }
 }

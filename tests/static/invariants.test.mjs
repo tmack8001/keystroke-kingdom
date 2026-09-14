@@ -389,3 +389,25 @@ test('INV-93: every cabinet\'s era matches the curriculum assignment table\'s ye
   assert.deepStrictEqual(wrong, [],
     'a cabinet is displaying a year the curriculum table does not agree with:\n  ' + wrong.join('\n  '));
 });
+
+// ── INV-94 — a saved game is never silently duplicated ──────────────────────
+// `Slots.getActive()` returns an INDEX or null. Index 0 — the first save every
+// family makes — is FALSY, so `if (Slots.getActive())` silently does nothing for
+// the single most common case in the game. This is a static check because the
+// bug is a *shape* (truthiness where a boundary is meant), and the shape is what
+// must never come back: a playtest reproduced the real consequence in 2026-09-13
+// (type the documented `joshua` egg after naming yourself → a second identical
+// slot, and Space resumes the empty orphan).
+test('INV-94: slot-existence checks compare against null, never truthiness', () => {
+  const main = fs.readFileSync(path.join(REPO, 'js/main.js'), 'utf8');
+  const offenders = [];
+  for (const m of main.matchAll(/^.*getActive\(\).*$/gm)) {
+    const line = m[0];
+    if (/getActive\(\)\s*(!==|===)\s*null/.test(line)) continue;   // correct form
+    if (/^\s*(\/\/|\*)/.test(line)) continue;                       // a comment
+    offenders.push(line.trim());
+  }
+  assert.deepStrictEqual(offenders, [],
+    'getActive() returns a slot INDEX; index 0 is falsy, so it must be compared to null:\n  '
+    + offenders.join('\n  '));
+});

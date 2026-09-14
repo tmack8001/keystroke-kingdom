@@ -107,23 +107,33 @@ function spawnStars() {
 function spawnFormation() {
   bugs = [];
   const W = canvas.width, H = canvas.height;
-  const px = Math.max(2, Math.round(Math.min(W, H) / 220)); // sprite pixel size
+  const px = Math.max(2, Math.round(Math.min(W, H) / 260)); // sprite pixel size
   const bugW = 8 * px;
   const bugH = 8 * px;
   const gapX = bugW * 0.6;
   const gapY = bugH * 0.2;
   const totalW = FORM_COLS * bugW + (FORM_COLS - 1) * gapX;
   const startX = (W - totalW) / 2;
-  // L17: anchor HIGH — formation lives in the top band, clear of the
-  // centered prompt near H*0.5. Stricter pass: startY tightened from 0.14H
-  // to 0.10H and gapY tightened (0.5*bugH -> 0.2*bugH) so the top rows (red,
-  // blue, yellow) sit fully above the prompt panel's reserved top edge
-  // (~0.19H) instead of skimming into it; with 5 rows at this sprite scale,
-  // the bottom two rows (green/white) still graze the panel's top edge — a
-  // 5-row-tall formation cannot fit entirely above 0.19H without shrinking
-  // sprites game-wide, so this is the tightest fit that keeps the formation
-  // faithful (Theme Layout Contract, visual-validation.md).
-  const startY = H * 0.10;
+  // L17 / the Theme Layout Contract: the formation lives in the TOP BAND
+  // (0-0.19H), fully clear of the prompt panel.
+  //
+  // The previous pass got this half-right and said so honestly: it tightened
+  // gapY and startY, then concluded "the bottom two rows still graze the
+  // panel's top edge — a 5-row-tall formation cannot fit entirely above 0.19H
+  // WITHOUT SHRINKING SPRITES game-wide." That last clause was the answer, and
+  // it was not taken: the sprite scale is per-theme (this `px`), not game-wide.
+  //
+  // A theme audit photographed what "graze" actually looked like on 2026-09-13:
+  // the magenta prompt letter was rendering INSIDE the formation, on top of a
+  // magenta bug, and "TYPE THE LETTER" ran straight through the yellow rank.
+  // On Level 4 — where A unlocks and the first readable words appear. The child
+  // could not find the letter they were being asked to type.
+  //
+  // So the sprite shrank (px divisor 220 -> 260) and the formation moved to the
+  // very top. Five ranks now measure ~139px and span 0.015H-0.189H at 1280x800:
+  // entirely above the reserved edge, with all five ranks kept — faithful AND
+  // out of the way, which the earlier pass believed was impossible.
+  const startY = H * 0.015;
 
   for (let row = 0; row < FORM_ROWS; row++) {
     for (let col = 0; col < FORM_COLS; col++) {
@@ -434,7 +444,13 @@ function drawFighter() {
 function drawBeam() {
   if (!beam.active) return;
   const H = canvas.height;
-  const fy = H * 0.86;
+  // The beam used to run all the way to the fighter at 0.86H, which meant it
+  // crossed the KEYBOARD GUIDE's reserved band (0.49-0.81H) every time it fired
+  // — a translucent blue stripe over the key boxes a child is reading. It now
+  // reaches down only as far as the gap band above the guide and fades out
+  // there, which still reads as a beam reaching for the ship without ever
+  // touching the UI. (Theme Layout Contract; found by the 2026-09-13 audit.)
+  const fy = H * 0.46;
   const t = clamp(beam.t, 0, 1);
   // beam brightens in (0..0.3), holds, fades out (0.7..1)
   let intensity;

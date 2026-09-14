@@ -313,11 +313,21 @@ function drawHPBars(W, H) {
   ctx.fillStyle = '#e0e0e0';
   ctx.fillText(enemyHP + ' / ' + maxEnemyHP, Math.round(W * 0.56), by + barH + 10);
 
+  // Journal L28 + the visual-validation.md layout contract, both at once.
+  // (1) textAlign/textBaseline MUST be set explicitly in every draw function that
+  //     renders text — canvas 2D state LEAKS between screens. Measured 2026-09-13:
+  //     this call was inheriting align:'center', baseline:'middle' from a previous
+  //     draw, so an x meant as a LEFT edge was used as a CENTRE and the string's
+  //     first characters fell off the canvas ("EMPIRE 0/25" rendered "PIRE 0/25").
+  // (2) x is now clear of the HUD badge, which visual-validation.md RESERVES at
+  //     ~0.02-0.11W x 0.02-0.07H. The old x = 0.02W sat underneath it.
   ctx.font = '7px "Press Start 2P", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
   ctx.fillStyle = '#00e8a8';
   ctx.shadowColor = '#00e8a8';
   ctx.shadowBlur = 4;
-  ctx.fillText(`HITS ${hits}/${WIN_HITS}`, Math.round(W * 0.02), 14);
+  ctx.fillText(`HITS ${hits}/${WIN_HITS}`, Math.round(W * 0.13), 12);
   ctx.shadowBlur = 0;
 
   const atbW = Math.round(W * 0.14);

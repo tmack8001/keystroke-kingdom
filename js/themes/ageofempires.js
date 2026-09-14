@@ -276,10 +276,20 @@ function drawResources(W, H) {
 
   const pct = totalGathered / WIN_RESOURCES;
   const barW = Math.round(W * 0.18);
-  const bx = Math.round(W * 0.02);
-  const by = 14;
+  // Journal L28 + the visual-validation.md layout contract, both at once.
+  // (1) textAlign/textBaseline MUST be set explicitly in every draw function that
+  //     renders text — canvas 2D state LEAKS between screens. Measured 2026-09-13:
+  //     this call was inheriting align:'center', baseline:'middle' from a previous
+  //     draw, so an x meant as a LEFT edge was used as a CENTRE and the string's
+  //     first characters fell off the canvas ("EMPIRE 0/25" rendered "PIRE 0/25").
+  // (2) x is now clear of the HUD badge, which visual-validation.md RESERVES at
+  //     ~0.02-0.11W x 0.02-0.07H. The old x = 0.02W sat underneath it.
+  const bx = Math.round(W * 0.13);
+  const by = 12;
 
   ctx.font = '7px "Press Start 2P", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
   ctx.fillStyle = '#c8840a';
   ctx.shadowColor = '#c8840a';
   ctx.shadowBlur = 4;
@@ -287,12 +297,12 @@ function drawResources(W, H) {
   ctx.shadowBlur = 0;
 
   ctx.fillStyle = '#201408';
-  ctx.fillRect(bx, by + 5, barW, 8);
+  ctx.fillRect(bx, by + 11, barW, 8);
   ctx.fillStyle = '#c8840a';
-  ctx.fillRect(bx, by + 5, Math.round(barW * pct), 8);
+  ctx.fillRect(bx, by + 11, Math.round(barW * pct), 8);
   ctx.strokeStyle = '#5a3800';
   ctx.lineWidth = 1;
-  ctx.strokeRect(bx + 0.5, by + 5.5, barW - 1, 7);
+  ctx.strokeRect(bx + 0.5, by + 11.5, barW - 1, 7);
 }
 
 function updateParticles() {

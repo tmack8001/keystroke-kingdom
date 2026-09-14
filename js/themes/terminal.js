@@ -232,8 +232,14 @@ function drawTerminalLines(W, H) {
 function drawProgress(W, H) {
   const pct = chars / WIN_CHARS;
   const barW = Math.round(W * 0.18);
-  const bx = Math.round(W * 0.02);
-  const by = 14;
+  // Measured 2026-09-13: the note below is right about baselines and the fix was
+  // real, but it moved the text from y~7-14 to y~14-21 — straight underneath the
+  // HUD badge, which visual-validation.md RESERVES at ~0.02-0.11W x 0.02-0.07H
+  // (y 16-56 at 800px tall). The glyphs were not clipped by the canvas at all;
+  // they were occluded by a DOM panel. Moved clear of the badge, into the top
+  // band's free span between the two HUD corners.
+  const bx = Math.round(W * 0.13);
+  const by = 12;
 
   ctx.font = '7px "Press Start 2P", monospace';
   ctx.textAlign = 'left';   // defensive — see drawTerminalLines note above
@@ -249,15 +255,15 @@ function drawProgress(W, H) {
   ctx.textBaseline = 'alphabetic';
 
   ctx.fillStyle = '#001400';
-  ctx.fillRect(bx, by + 5, barW, 8);
+  ctx.fillRect(bx, by + 11, barW, 8);
   ctx.fillStyle = '#39ff14';
   ctx.shadowColor = '#39ff14';
   ctx.shadowBlur = 3;
-  ctx.fillRect(bx, by + 5, Math.round(barW * pct), 8);
+  ctx.fillRect(bx, by + 11, Math.round(barW * pct), 8);
   ctx.shadowBlur = 0;
   ctx.strokeStyle = '#1a7a0a';
   ctx.lineWidth = 1;
-  ctx.strokeRect(bx + 0.5, by + 5.5, barW - 1, 7);
+  ctx.strokeRect(bx + 0.5, by + 11.5, barW - 1, 7);
 }
 
 // Special binary → HELLO reveal when reaching WIN_CHARS

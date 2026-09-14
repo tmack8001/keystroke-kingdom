@@ -663,6 +663,24 @@ respected exactly as written; and (d) `consoleErrors`.
   LOOKING at a screenshot taken for an unrelated reason. Two tables of
   year-shaped numbers for the same levels is the trap; this test is the guard.
 
+- **INV-94** (L0) **A saved game is never silently duplicated or abandoned.** Any
+  code path that may create a slot must first ask whether an active game already
+  exists, and must ask in a way that is correct for **slot index 0** — the first
+  save every family ever makes. `Slots.getActive()` returns an INDEX (or `null`),
+  so the only correct test is an explicit `!== null`; a truthiness check silently
+  fails for slot 0.
+
+  *Why this exists:* `ensureGameForBypass()` in `js/main.js` guarded with
+  `if (Slots.getActive()) return;`. Index 0 is falsy, so for the most common save
+  in the game the guard did nothing. Reproduced from a real cold open on
+  2026-09-13: name yourself, then type the documented `joshua` easter egg the game
+  itself rewards you for finding, and a SECOND slot with the same name is created
+  and switched to. Reload and the picker shows two identical rows, with the cursor
+  defaulting to the empty orphan — so Space resumes the wrong game and the card you
+  just collected is gone. Not a punishment in the One Rule sense, but a silent
+  progress fork a family could neither explain nor undo. **Falsy-zero is the whole
+  bug class; guard the boundary, not the truthiness.**
+
 ## 6. Findings protocol
 
 `docs/testing/FINDINGS.md` is the ledger. Each entry:
