@@ -184,6 +184,81 @@ export const HISTORY_CARDS = [
     fact: 'A computer named Joshua almost started a war by mistaking it for a game — until it learned the only winning move is not to play. You found its secret name.' },
 ];
 
+// ─── THE HARDWARE wing — station cards, on a SECOND attachment axis ─────────
+//
+// docs/specs/hardware-wing.md §0.3/§5.4. A bonus wing has no levels, so the
+// curriculum's "earliest level whose keys can spell the word" rule (INV-56) has
+// no number to compute and would degenerate anyway — every key is unlocked by
+// the time a wing opens. Station cards therefore attach to a WING + STATION.
+//
+// ⚠️ They live in their OWN array, NOT in HISTORY_CARDS, and that is deliberate.
+// `TOTAL_CARDS` is the denominator the player reads on the slot picker and the
+// "CARD n OF 60" line. Appending wing cards to HISTORY_CARDS would silently make
+// every existing save LESS complete — a number the child already earned getting
+// worse because we shipped a room they have not opened. That is the precise harm
+// Trevor's "existing cards stay, cross-referenced" ruling protects against
+// (spec §0.4), so the two banks stay separate and each keeps its own total.
+//
+// The spec sketched a single list with an `ARCADE_CARDS` filter; two arrays are
+// the same idea with less risk — INV-21 and INV-56 keep testing exactly what
+// they test today, and no existing helper changes behaviour at all.
+//
+// PAIRED, per Trevor 2026-09-14: every station yields a MACHINE card and a
+// COMPONENT card — the part you could have held. The machine card is the museum
+// label; the component card is the lesson, because "hardware" is a word a child
+// learns by being handed one touchable thing at a time.
+export const WING_CARDS = [
+  // ⚠️ EMPTY BY DESIGN AS OF 2026-09-14, and this is not an oversight.
+  //
+  // Every fact on a card a child reads is citation-verified research in
+  // research/wiki/**, never model memory (CLAUDE.md; journal F7 — an overstated
+  // attribution once shipped on a child-facing card; F29 — a source's SILENCE is
+  // not a licence to default). The components this wing wants to card — the Disk
+  // II drive, the RF modulator, the CD-ROM, the sound card, the null-modem cable
+  // — have NO page in the vault yet. Writing them from memory is the one thing
+  // this project has repeatedly been burned by.
+  //
+  // So Phase 1 ships the wing's MECHANISM and its CROSS-REFERENCED arcade cards
+  // (spec §0.4), which are already verified, and the new paired cards land the
+  // moment an `arcade-historian` pass does. `stationCards()` tolerates an empty
+  // pool by construction, so the wing is fully walkable in the meantime.
+  // Tracked in docs/ROADMAP.md.
+];
+
+// The arcade cards a station CROSS-REFERENCES — already collected-or-not in the
+// player's normal save, shown in the wing's gallery so the hardware story reads
+// whole in one place. No card changes owner and no count moves: this is a
+// rendering relationship, not a data one (spec §0.4).
+const STATION_CROSS_REFS = {
+  'apple-iie': ['floppy-disk', 'apple-founded', 'stickybear-typing'],
+  'msdos-pc':  ['intel-486', 'gizmos-gadgets', 'first-gui'],
+};
+
+// The wing's own cards for one station (may be empty — see above).
+export function cardsForStation(wingId, stationId) {
+  return WING_CARDS.filter(c => c.wing === wingId && c.station === stationId);
+}
+
+// The arcade cards this station points at, resolved to card objects. Unknown ids
+// are dropped rather than throwing, so a typo in the table can never break a room.
+export function crossRefCards(stationId) {
+  return (STATION_CROSS_REFS[stationId] || []).map(cardById).filter(Boolean);
+}
+
+// Every card a station shows: its own first, then the arcade ones it references.
+export function stationCards(wingId, stationId) {
+  return cardsForStation(wingId, stationId).concat(crossRefCards(stationId));
+}
+
+// The guaranteed card for one visit to a station — the exact policy
+// pickGuaranteedCard uses for a level (prefer uncollected, then rotate), applied
+// to the station's OWN pool. Cross-referenced cards are never "earned" here:
+// they already belong to the arcade, and handing one over again would award a
+// card the player either already has or has not yet reached honestly.
+export function pickGuaranteedStationCard(wingId, stationId, collectedIds, rotation) {
+  return pickFromPool(cardsForStation(wingId, stationId), collectedIds, rotation);
+}
+
 export const TOTAL_CARDS = HISTORY_CARDS.length;
 
 // All cards (identity export — the collection gallery renders over this).
@@ -197,7 +272,9 @@ export function cardsForLevel(level) {
 }
 
 export function cardById(id) {
-  return HISTORY_CARDS.find(c => c.id === id) || null;
+  return HISTORY_CARDS.find(c => c.id === id)
+      || WING_CARDS.find(c => c.id === id)
+      || null;
 }
 
 // Migration helper for slots.js: the original one-card-per-level model stored
@@ -216,8 +293,14 @@ export function legacyLevelToCardId(level) {
 // Deterministic given (level, collectedIds, rotation) — no Math.random, so the
 // behavior is fully testable and reproducible.
 export function pickGuaranteedCard(level, collectedIds, rotation) {
-  const pool = cardsForLevel(level);
-  if (!pool.length) return null;
+  return pickFromPool(cardsForLevel(level), collectedIds, rotation);
+}
+
+// The policy itself, over any pool — extracted so the wing's station axis uses
+// the SAME rule rather than a second implementation that could drift from it
+// (the levels and the stations must feel identical to collect).
+export function pickFromPool(pool, collectedIds, rotation) {
+  if (!Array.isArray(pool) || !pool.length) return null;
   const collected = new Set(Array.isArray(collectedIds) ? collectedIds : []);
   const rot = Number.isFinite(rotation) ? Math.max(0, Math.floor(rotation)) : 0;
   const uncollected = pool.filter(c => !collected.has(c.id));

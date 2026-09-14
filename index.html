@@ -233,6 +233,21 @@
     <div class="speedway-prompt">PRESS ANY KEY TO GO BACK</div>
   </div>
 </div>
+<!-- THE HARDWARE (docs/specs/hardware-wing.md) — the third bonus wing. Same two
+     states Acts 6 and 7 need from the DOM: warming up, and not built on this
+     build. The wing itself is canvas-drawn by js/hardware/hub.js. -->
+<div class="screen hidden" id="hardware-screen">
+  <div class="speedway-card" id="hardware-loading">
+    <div class="speedway-title">THE HARDWARE</div>
+    <div class="speedway-line">SWITCHING IT ON...</div>
+  </div>
+  <div class="speedway-card hidden" id="hardware-unbuilt">
+    <div class="speedway-title">THE HARDWARE</div>
+    <div class="speedway-line">THIS MACHINE IS STILL BEING BUILT.</div>
+    <div class="speedway-line">COME BACK SOON — THE ARCADE IS WAITING.</div>
+    <div class="speedway-prompt">PRESS ANY KEY TO GO BACK</div>
+  </div>
+</div>
 
 <!-- LEVEL COMPLETE OVERLAY -->
 <div class="complete-overlay hidden" id="complete-overlay">

@@ -1952,6 +1952,85 @@ function returnToArcadeFromSpeedway() {
   renderSelectScreen(state);
 }
 
+// ─── THE HARDWARE — the third bonus wing ────────────────────────────────────
+// Same shape as Act 6 and Act 7, and lazily imported for the same reason: a
+// bonus room must never be able to take the whole game down with it. On static
+// hosting a missing js/hardware/* would abort main.js's module graph at load and
+// brick all 25 levels; loaded on demand, a failure costs one warm card and the
+// player walks back into the arcade (journal F26, security.md rule 6).
+let Hardware = null;
+let hardwareLoading = false;
+let pendingStationId = null;
+
+function enterHardware(stationId) {
+  if (hardwareLoading) return;
+  pendingStationId = stationId || null;
+  stopAll();
+  if (Hardware) { startHardwareHub(); return; }
+  hardwareLoading = true;
+  showHardwareCard('hardware-loading');
+  import('./hardware/hub.js')
+    .then((mod) => {
+      hardwareLoading = false;
+      Hardware = mod;
+      if (state.screen !== 'hardware') return;   // the player already walked out
+      startHardwareHub();
+    })
+    .catch(() => {
+      hardwareLoading = false;
+      if (state.screen !== 'hardware') return;
+      showHardwareCard('hardware-unbuilt');
+    });
+}
+
+function startHardwareHub() {
+  try {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    state.screen = 'hardware';
+    if (typeof Hardware.focusStation === 'function' && pendingStationId) {
+      try { Hardware.focusStation(pendingStationId); } catch { /* never a trap */ }
+    }
+    Hardware.start($('invaders-canvas'), {
+      onExit: returnToArcadeFromHardware,
+      onCard: collectStationCard,
+    });
+  } catch (err) {
+    Hardware = null;
+    showHardwareCard('hardware-unbuilt');
+  }
+}
+
+// A station hands over its guaranteed card the moment the machine wakes. The
+// rotation key is NAMESPACED ("hw:<station>") so it cannot collide with a level
+// key ("13") in the same string-keyed map — which is why this needed no save
+// schema change at all (docs/specs/hardware-wing.md §5.4.2).
+function collectStationCard(stationId) {
+  if (!Hardware || typeof Hardware.guaranteedCardFor !== 'function') return;
+  const key = `hw:${stationId}`;
+  let card = null;
+  try {
+    card = Hardware.guaranteedCardFor(stationId, Slots.collectedIds(), Slots.getCardRotation(key));
+  } catch { card = null; }
+  if (!card) return;          // no station cards authored yet — never an error
+  try {
+    Slots.collectCardId(card.id);
+    Slots.bumpCardRotation(key);
+  } catch { /* a card that can't be saved is never a trap */ }
+}
+
+function showHardwareCard(id) {
+  showScreen('hardware', state);
+  $('hardware-loading').classList.toggle('hidden', id !== 'hardware-loading');
+  $('hardware-unbuilt').classList.toggle('hidden', id !== 'hardware-unbuilt');
+}
+
+function returnToArcadeFromHardware() {
+  if (Hardware) Hardware.stop();
+  focusDoor(state, 'hardware', pendingStationId);
+  showScreen('select', state);
+  renderSelectScreen(state);
+}
+
 // The bonus acts → their wings, keyed by the registry row's id and called with
 // the id of the machine the player picked on that act's wall (null when the act
 // is entered through its door). A third wing is a data row in cabinet-art.js's
@@ -1959,6 +2038,7 @@ function returnToArcadeFromSpeedway() {
 const DOOR_ENTRY = {
   textworld: enterTextWorld,
   speedway: enterSpeedway,
+  hardware: enterHardware,
 };
 
 // ─── Touch-device notice: this cabinet needs a keyboard ───────────────────
@@ -2458,6 +2538,14 @@ document.addEventListener('keydown', (e) => {
       // the "still building it" card ANY key walks back out to the arcade; while
       // it's still loading, Escape does. Never a dead end (the One Rule).
       if (!speedwayLoading || e.key === 'Escape') returnToArcadeFromSpeedway();
+      break;
+
+    case 'hardware':
+      // THE HARDWARE. Same shape as Acts 6 and 7: the hub owns Escape internally
+      // (station → wall → arcade); every other key is the wing's input.
+      e.preventDefault();
+      if (Hardware && Hardware.isActive()) { Hardware.handleKey(e); break; }
+      if (!hardwareLoading || e.key === 'Escape') returnToArcadeFromHardware();
       break;
 
     case 'select':

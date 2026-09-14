@@ -125,6 +125,26 @@ const BACK_WALL_DOORS = [
     door: { art: drawSpeedwayDoor, label: 'THE BACK ROOM', hint: '' },
     cabinets: ['monaco-gp', 'f-zero'],
     unlock: doorUnlocked },
+  { id: 'hardware',
+    num: 8,
+    name: 'THE HARDWARE',
+    // The wall walks the HOUSE, not the calendar (docs/specs/hardware-wing.md
+    // §0.2) — but the era label still reads as a span, so it is derived from the
+    // machines actually standing there, like Act 7's.
+    era: null,
+    door: { art: drawHardwareDoor, label: 'THE HARDWARE', hint: 'HOW IT ALL WORKS' },
+    // These are MACHINES, not cabinets — a home computer is a low thing you SIT
+    // at, and that difference is the observation that started this whole wing
+    // (ROADMAP: "on the cabinet selection they look out of place next to
+    // traditional cabinets"). `machines` draws them from HOME_MACHINES instead
+    // of the cabinet shell, which is the entire fix.
+    machines: ['apple-iie', 'msdos-pc'],
+    // Opens at LEVEL 20, not 25: a wing you READ and EXPLORE may open earlier,
+    // a wing where you MAKE something waits for the full keyboard (Trevor,
+    // 2026-09-13; ROADMAP §2). Level 20 is the game's own "the computer is the
+    // point" beat, which is exactly this wing's subject.
+    unlockLevel: 20,
+    unlock: doorUnlocked },
 ];
 
 // The bonus acts standing open to this player, in back-wall order.
@@ -145,6 +165,20 @@ export function focusedDoor(state) {
 // has at least one thing to select and Space is never a dead key.
 function wingEntries(wing) {
   if (!wing) return [];
+  // A wall of MACHINES (THE HARDWARE) rather than cabinets. Same row shape, but
+  // drawn by the home-machine art so an Apple IIe reads as an Apple IIe and not
+  // as an upright coin-op wearing a costume.
+  const machines = (wing.machines || [])
+    .map(id => ({ id, m: HOME_MACHINES[id] }))
+    .filter(e => e.m);
+  if (machines.length) {
+    return machines.map(({ id, m }) => ({
+      id,
+      label: `${m.label} · ${m.era}`,
+      hint: m.hint,
+      draw: (canvas) => m.art(canvas, 2),
+    }));
+  }
   const cabs = (wing.cabinets || [])
     .map(id => ({ id, cab: WING_CABINETS[id] }))
     .filter(e => e.cab);
@@ -225,6 +259,40 @@ function drawDoorShell(canvas, scale, glowTop, glowBottom, spill) {
   ctx.fillRect(9, 74, 38, 4);
   ctx.globalAlpha = 1;
   return ctx;
+}
+
+// THE HARDWARE — a doorway lit by a workbench lamp, with a machine opened up on
+// the bench behind it. Trevor kept the workbench as FURNITURE while rejecting it
+// as a name ("workbench wouldn't be a good name for kids"), so the bench does the
+// explaining the name refuses to: lids off, a board with chips on it, parts laid
+// out. The door says "the parts you can touch" without using the word.
+function drawHardwareDoor(canvas, scale = 2) {
+  const ctx = drawDoorShell(canvas, scale, '#3aa2d8', '#0d2740', '#7fd4ff');
+
+  ctx.fillStyle = '#f2dc8a';        // the bench lamp's cone, hanging in the doorway
+  ctx.fillRect(26, 14, 4, 3);
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = '#ffeaa0';
+  ctx.fillRect(22, 17, 12, 14);
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = '#5a4630';        // the workbench top
+  ctx.fillRect(18, 52, 20, 3);
+  ctx.fillStyle = '#3a2d1f';
+  ctx.fillRect(18, 55, 20, 2);
+
+  ctx.fillStyle = '#2b6f3f';        // a bare circuit board, chips on it
+  ctx.fillRect(21, 44, 14, 8);
+  ctx.fillStyle = '#12161c';
+  ctx.fillRect(23, 46, 4, 3);
+  ctx.fillRect(29, 46, 4, 3);
+  ctx.fillStyle = '#c9a227';        // gold edge connector
+  ctx.fillRect(21, 51, 14, 1);
+
+  ctx.fillStyle = '#9aa4b2';        // the machine's lid, standing off to one side
+  ctx.fillRect(18, 38, 5, 13);
+  ctx.fillStyle = '#c9ccd6';        // chrome pull handle
+  ctx.fillRect(34, 42, 3, 4);
 }
 
 // Act 6 — a glowing emerald doorway, gold handle, two faint dragon-eyes.
@@ -2204,6 +2272,7 @@ function wingEra(wing) {
   if (wing.era) return wing.era;
   const years = (wing.cabinets || [])
     .map(id => WING_CABINETS[id] && parseInt(WING_CABINETS[id].era, 10))
+    .concat((wing.machines || []).map(id => HOME_MACHINES[id] && parseInt(HOME_MACHINES[id].era, 10)))
     .filter(y => Number.isFinite(y));
   if (!years.length) return '';
   const lo = Math.min(...years), hi = Math.max(...years);
