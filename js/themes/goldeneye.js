@@ -96,6 +96,38 @@ function project(u, v, d, vp, halfW, halfH) {
 
 // ─── A quadrant's top-down floor-plan path (loop of nodes in [-1,1] quad space),
 // distinct per named level. Agents walk these; guards patrol segments of them.
+// ── THE ARENA — one level, four views ───────────────────────────────────────
+// Trevor, 2026-09-14, answering whether depicting the FORMAT is enough:
+//
+//   "it was a local lan with a quadrant split screen and we should be able to see
+//    the players see each other and interact as they explore THEIR LEVEL. Going in
+//    grates, climbing stairs, exploring cells, and silos etc."
+//
+// That is the fidelity point, and it settles the open question: the split-screen
+// LAYOUT is not the mechanic. **All four players are in ONE arena** — that is the
+// entire reason you could see each other, and the entire reason the mode is
+// remembered. Four quadrants each showing a DIFFERENT level was four people
+// playing alone next to each other.
+//
+// So the mission plan is now shared, every quadrant draws all four agents on it,
+// and the path runs through the named features he asked for. Each quadrant keeps
+// its own tint, vanishing point and receding environment — that is the VIEW
+// differing, which is correct, rather than the world differing, which was not.
+const ARENA_NAME = 'FACILITY';
+
+// The shared floor-plan. Each node may carry a FEATURE the agents interact with;
+// `drawFeature` renders it and `poseAt` changes an agent's posture as it passes.
+const ARENA = [
+  { u: -0.62, v: -0.55, feature: 'stairs' },
+  { u:  0.10, v: -0.58, feature: null     },
+  { u:  0.55, v: -0.40, feature: 'silo'   },
+  { u:  0.58, v:  0.18, feature: null     },
+  { u:  0.18, v:  0.52, feature: 'cells'  },
+  { u: -0.30, v:  0.50, feature: null     },
+  { u: -0.64, v:  0.10, feature: 'grate'  },
+];
+const ARENA_PATH = ARENA.map(n => [n.u, n.v]);
+
 function pathFor(style) {
   switch (style) {
     case 'facility':   // tight rectangular corridor loop (the dam interior)
@@ -264,7 +296,7 @@ function drawEnvironment(q, vp, halfW, halfH) {
 function drawMission(qi, rx, ry, rw, rh) {
   const q = QUADRANTS[qi];
   const p = players[qi];
-  const path = pathFor(q.style);
+  const path = ARENA_PATH;          // ONE arena — see the ARENA note above
 
   // Map quad-space [-1,1] to a compact plan box in the OUTER corner of the
   // quadrant, so agents/guards live in the visible stage margin, never center.
@@ -304,10 +336,99 @@ function drawMission(qi, rx, ry, rw, rh) {
   drawGuardCone(gpos.x, gpos.y, g.facing, sx, q.accent, p.sneaking);
   drawGuard(gpos.x, gpos.y, q.accent);
 
-  // ── The agent (P1 = the player). Freezes/crouches when sneaking. ────────────
-  const ag = walkPath(path, p.prog);
-  const am = map(ag.x, ag.y);
-  drawAgent(am.x, am.y, ag.ang, qi === 0, p.sneaking, q.accent);
+  // ── The arena's features: a grate to duck into, stairs to climb, cells to
+  //    creep past, a silo to circle. Named on the plan so the room reads as a
+  //    PLACE the four of them are exploring together, not an abstract loop.
+  ARENA.forEach((nd) => {
+    if (!nd.feature) return;
+    const m = map(nd.u, nd.v);
+    drawFeature(m.x, m.y, nd.feature, q.accent);
+  });
+
+  // ── EVERY player, on the shared plan. This is the whole point: in a real
+  //    split-screen LAN you watch your friend cross YOUR screen. The owner of
+  //    this quadrant is drawn bright and tagged; the other three are dimmer,
+  //    still unmistakably present, each labelled so you know who you just saw.
+  const here = [];
+  players.forEach((op, oi) => {
+    const a = walkPath(path, op.prog);
+    const m = map(a.x, a.y);
+    here.push({ oi, x: m.x, y: m.y });
+    const mine = oi === qi;
+    ctx.globalAlpha = mine ? 1 : 0.55;
+    drawAgent(m.x, m.y, a.ang, mine && qi === 0, op.sneaking,
+              mine ? q.accent : QUADRANTS[oi].accent);
+    if (!mine) {
+      ctx.font = '5px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = hexA(QUADRANTS[oi].accent, 0.8);
+      ctx.fillText(QUADRANTS[oi].id, m.x, m.y - 11);
+      ctx.textAlign = 'left';
+    }
+    ctx.globalAlpha = 1;
+  });
+
+  // ── They INTERACT. When two agents are close on the shared plan, both of
+  //    their screens show it: a link between them and a friendly "!" over each.
+  //    Never a weapon, never a hit — this is spotting a friend across the room,
+  //    which is the part of a LAN night anybody actually remembers.
+  for (let a = 0; a < here.length; a++) {
+    for (let b = a + 1; b < here.length; b++) {
+      const dx = here[a].x - here[b].x, dy = here[a].y - here[b].y;
+      const d = Math.hypot(dx, dy);
+      if (d > sx * 0.42) continue;
+      const glow = 1 - d / (sx * 0.42);
+      ctx.save();
+      ctx.globalAlpha = 0.28 + 0.4 * glow;
+      ctx.strokeStyle = q.accent;
+      ctx.setLineDash([2, 3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(here[a].x, here[a].y);
+      ctx.lineTo(here[b].x, here[b].y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 0.5 + 0.5 * glow;
+      ctx.font = '6px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffe680';
+      ctx.fillText('!', here[a].x, here[a].y - 16);
+      ctx.fillText('!', here[b].x, here[b].y - 16);
+      ctx.restore();
+      ctx.textAlign = 'left';
+    }
+  }
+}
+
+// One arena feature, drawn small and readable at plan scale.
+function drawFeature(x, y, kind, accent) {
+  ctx.save();
+  ctx.strokeStyle = hexA(accent, 0.75);
+  ctx.fillStyle   = hexA(accent, 0.30);
+  ctx.lineWidth = 1;
+  if (kind === 'grate') {                     // a floor grate you duck into
+    ctx.fillRect(x - 6, y - 5, 12, 10);
+    ctx.strokeRect(x - 6.5, y - 5.5, 13, 11);
+    ctx.strokeStyle = hexA(accent, 0.9);
+    for (let i = -4; i <= 4; i += 3) {
+      ctx.beginPath(); ctx.moveTo(x + i, y - 5); ctx.lineTo(x + i, y + 5); ctx.stroke();
+    }
+  } else if (kind === 'stairs') {              // steps climbing away
+    for (let i = 0; i < 4; i++) {
+      ctx.fillRect(x - 7 + i * 3, y + 4 - i * 3, 9 - i, 2);
+      ctx.strokeRect(x - 7.5 + i * 3, y + 3.5 - i * 3, 10 - i, 3);
+    }
+  } else if (kind === 'cells') {               // a row of barred cells
+    for (let i = 0; i < 3; i++) {
+      ctx.strokeRect(x - 9 + i * 7, y - 5, 6, 10);
+      ctx.beginPath(); ctx.moveTo(x - 6 + i * 7, y - 5); ctx.lineTo(x - 6 + i * 7, y + 5); ctx.stroke();
+    }
+  } else if (kind === 'silo') {                // a tall round silo, seen from above
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 // A blocky low-poly agent: torso + head, a small "P1" tint for the player.
@@ -437,9 +558,12 @@ function drawQuadTag(qi, W, H) {
   ctx.font = '8px "Press Start 2P", monospace';
   ctx.fillStyle = hexA(q.accent, 0.95);
   ctx.fillText(q.id, tx, ty);
+  // Was q.name (FACILITY / ARCHIVES / SURFACE / TEMPLE) — four different levels,
+  // which was the bug. All four are in ONE arena now, so the tag names the VIEW
+  // ("YOUR SCREEN") and the arena is named once, in the HUD.
   ctx.font = '5px "Press Start 2P", monospace';
   ctx.fillStyle = hexA(q.accent, 0.6);
-  ctx.fillText(q.name, tx, ty + 9);
+  ctx.fillText(qi === 0 ? 'YOUR SCREEN' : 'SPLIT SCREEN', tx, ty + 9);
   // Gadget tally dots
   ctx.fillStyle = hexA(q.accent, 0.85);
   const target = qi === 0 ? GADGETS_TO_WIN : 5;
@@ -489,6 +613,11 @@ function drawHUD(W, H) {
   ctx.shadowColor = '#d8c840';
   ctx.shadowBlur = 4;
   ctx.fillText(`GADGETS ${players[0].gadgets}/${GADGETS_TO_WIN}`, bx, by);
+  ctx.font = '5px "Press Start 2P", monospace';
+  ctx.fillStyle = '#9a8a40';
+  ctx.fillText(`4-PLAYER · ${ARENA_NAME}`, bx, by - 10);
+  ctx.font = '7px "Press Start 2P", monospace';
+  ctx.fillStyle = '#d8c840';
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#181410';
   ctx.fillRect(bx, by + 5, barW, barH);

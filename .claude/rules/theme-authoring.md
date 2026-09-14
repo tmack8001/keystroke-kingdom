@@ -118,6 +118,18 @@ The screenshot must read as a complete scene *with the panels present* (L29, L17
   Reference: `research/wiki/tech/console-hardware-silhouettes.md`.
 - **Era fidelity** — palette/fidelity per the level's act file
   (`.claude/rules/levels/actN.md`). Faithful recreation over gimmick; no key-glyph puns.
+- **DEPICTING THE FORMAT IS NOT DEPICTING THE MECHANIC** *(Trevor, 2026-09-14)*. Level 17
+  drew GoldenEye's four-quadrant split-screen faithfully — and one audit scored that STRONG
+  while an earlier one scored the same scene WEAK for having "no player characters, no
+  weapons, no visible shooting". Both were looking at the same frames. Trevor's ruling:
+  *"it was a local lan with a quadrant split screen and we should be able to see the players
+  see each other and interact as they explore their level. Going in grates, climbing stairs,
+  exploring cells, and silos etc."*
+  **The split-screen LAYOUT was never the mechanic — being in ONE arena together was.** Four
+  quadrants each showing a DIFFERENT level is four people playing alone next to each other,
+  which is the opposite of what anyone remembers about a LAN night. So the test is not "does
+  the scene look like that game's screen", it is **"is the thing the game was FOR actually
+  happening in it"**. A format is a container; ask what it contained.
 - **Mechanics fidelity, wiki-grounded** (Trevor, 2026-07-12) — the scene must show the
   original game's SIGNATURE MECHANIC actually operating (pieces falling, barrels
   rolling and being jumped, formations diving), judged against the research knowledge

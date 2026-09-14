@@ -811,13 +811,7 @@ every 4th), Tetris was fixed this session, Sonic and DKC were never broken after
 2026-07-18, and Street Fighter II and Out Run were re-scored by lanes with mid-play
 and victory frames.
 
-**One remains open, and it is a JUDGEMENT for Trevor rather than a measurement:
-Level 17 (GoldenEye).** July said "no player characters, no weapons, no visible
-shooting". A 2026-09-13 lane scored it STRONG on the four-quadrant split-screen homage
-alone. Both statements are true — they disagree about whether depicting the **format**
-satisfies `theme-authoring.md`'s "the scene must show the signature mechanic actually
-operating", or whether the **play** (characters, shooting) has to be there. Worth a
-one-line answer before anyone builds to either reading.
+**✅ ALL SEVEN NOW RESOLVED.** The last one, **Level 17 (GoldenEye)**, was a judgement rather than a measurement, and Trevor made it on 2026-09-14: *"we should be able to see the players see each other and interact as they explore their level. Going in grates, climbing stairs, exploring cells, and silos."* **July was right and the later STRONG score was scoring the container.** The theme gave each quadrant a DIFFERENT level, which is four people playing alone beside each other — the opposite of the thing the mode is remembered for. Rebuilt around ONE shared arena: every quadrant draws all four agents with name tags, the path runs through a grate / stairs / cells / a silo, and when two agents meet, both screens show it. The general rule is now in `theme-authoring.md`: **depicting the FORMAT is not depicting the MECHANIC.**
 
 **Reported and STILL NOT fixed** (ranked, for a later pass): Level 24's victory is thin beside its neighbours
 (L21/22/23 all show overt kinetic motion in the same window); Levels 7 and 10 are
