@@ -92,9 +92,11 @@ The screenshot must read as a complete scene *with the panels present* (L29, L17
   (silence filled by default; a cited detail dropped because it was awkward to draw; a rule
   applied inconsistently within one document). Prefer a **restorer's photographs of an
   UNRESTORED machine**; treat replicas, mini-cabinets and later revisions as evidence for
-  *themselves only*. **⚠️ Known exposure: only the PANELS have been checked against
-  photographs. All 25 cabinet SCREENS, and the console silhouettes, are still text-authored
-  and unverified against imagery.**
+  *themselves only*. **✅ The 25 cabinet SCREENS were audited against their wiki pages on 2026-09-13** and four
+  were wrong — Level 4 was drawing **Street Fighter II** on the Galaga cabinet (the game moved
+  to Level 12 years ago; the art never did), Breakout and Space Invaders had invented colours
+  their monochrome-plus-cellophane screens could not produce, and Dragon's Lair had no dragon.
+  See `docs/ROADMAP.md` §3. Level 13 (Myst) remains weak-but-not-wrong.
 - **Draw the platform the game DEBUTED on** *(Trevor, 2026-09-13)*. Many console games later
   got arcade cabinets — *Super Mario Bros.* (NES, 13 Sept 1985) became **VS. Super Mario Bros.**
   (arcade, Feb 1986) — but the debut platform is what this game depicts, because that is where

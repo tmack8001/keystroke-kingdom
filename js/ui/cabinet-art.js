@@ -544,23 +544,30 @@ const CABINET_DATA = {
     era: '1976',
     // Breakout: "rotary knob (paddle controller), horizontal movement only" — NO joystick (research/wiki/games/breakout.md)
     controls: { stick: 'knob',      buttons: 0 },
-    colors: { body: '#1a1a2e', screen: '#000', accent: '#39ff14', trim: '#333' },
+    colors: { body: '#1a1a2e', screen: '#000', accent: '#e0c93a', trim: '#333' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#000';
       ctx.fillRect(x, y, w, h);
-      const brickColors = ['#39ff14', '#2ecc40', '#01ff70', '#7fff00'];
+      // Breakout's screen was MONOCHROME. Every colour you remember came from
+      // "colored cellophane strips overlaid to simulate 4 colors" taped over a
+      // black-and-white CRT (research/wiki/games/breakout.md) — which is why the
+      // colour arrives in horizontal BANDS, one per brick row, and why the paddle
+      // and ball (outside the strips) stay plain white. Drawn as four green rows
+      // until 2026-09-13, which was neither the monochrome truth nor the overlay
+      // one. The TOP row is red on purpose: breaking through it is what halves
+      // the paddle.
+      const bands = ['#d9443a', '#d9443a', '#e08a2e', '#e0c93a'];  // red, red, orange, yellow
       const brickW = Math.floor((w - 4) / 5);
       const brickH = 3;
       for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 5; c++) {
-          ctx.fillStyle = brickColors[r];
+          ctx.fillStyle = bands[r];
           ctx.fillRect(x + 2 + c * brickW, y + 3 + r * (brickH + 2), brickW - 1, brickH);
         }
       }
-      ctx.fillStyle = '#39ff14';
+      ctx.fillStyle = '#f2f2f2';                                    // paddle: plain white
       ctx.fillRect(x + w/2 - 6, y + h - 5, 12, 3);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(x + w/2 - 1, y + h - 12, 3, 3);
+      ctx.fillRect(x + w/2 - 1, y + h - 12, 3, 3);                  // and the ball
     }
   },
   2: {
@@ -575,7 +582,7 @@ const CABINET_DATA = {
     // specifies ("Space Invaders — Taito, 1978") and what the restoration photographs
     // of serial 000871 show. (research/wiki/tech/arcade-control-panels.md)
     controls: { stick: '2way',      buttons: 1 },
-    colors: { body: '#1a1a0e', screen: '#000', accent: '#ffff00', trim: '#444' },
+    colors: { body: '#0e1a0e', screen: '#000', accent: '#3cd25a', trim: '#444' },
     drawScreen(ctx, x, y, w, h) {
       ctx.fillStyle = '#000';
       ctx.fillRect(x, y, w, h);
@@ -590,13 +597,25 @@ const CABINET_DATA = {
         [1,0,1,0,0,0,1,0,1],
         [0,0,0,1,0,1,0,0,0],
       ];
-      ctx.fillStyle = '#ffff00';
+      // The sprites were WHITE. "Black background, white sprites; color achieved
+      // via transparent colored cellophane strips over screen regions
+      // (orange/green)" (research/wiki/games/space-invaders.md). So the invader
+      // is white, and the colour belongs to the STRIPS — orange across the top
+      // where the score and the top rows sit, green across the bottom over the
+      // bases and the player's cannon. Drawn all-yellow until 2026-09-13, which
+      // is a colour the machine could not produce anywhere on its screen.
+      ctx.fillStyle = 'rgba(224,138,46,0.30)';                  // the orange strip
+      ctx.fillRect(x, y, w, 5);
+      ctx.fillStyle = 'rgba(60,210,90,0.30)';                   // the green strip
+      ctx.fillRect(x, y + h - 9, w, 9);
+
+      ctx.fillStyle = '#f2f2f2';
       const ox = x + (w - 9*px)/2;
       const oy = y + (h - 8*px)/2 - 4;
       for (let r = 0; r < invader.length; r++)
         for (let c = 0; c < invader[r].length; c++)
           if (invader[r][c]) ctx.fillRect(ox + c*px, oy + r*px, px, px);
-      ctx.fillStyle = '#ffff00';
+      ctx.fillStyle = '#f2f2f2';                                 // the cannon
       ctx.fillRect(x + w/2 - 3, y + h - 6, 6, 3);
       ctx.fillRect(x + w/2 - 1, y + h - 8, 2, 2);
     }
@@ -637,35 +656,72 @@ const CABINET_DATA = {
     era: '1981',
     // Galaga: "two-way joystick (left/right) plus fire button"
     controls: { stick: '2way',      buttons: 1 },
-    colors: { body: '#1a0a2e', screen: '#000', accent: '#f0f', trim: '#424' },
+    colors: { body: '#0a0a24', screen: '#000', accent: '#ffd23f', trim: '#224' },
+    // ⚠️ THIS CABINET DREW STREET FIGHTER II UNTIL 2026-09-13 — two fighters
+    // facing each other with green and red health bars, on the Galaga cabinet, on
+    // the home row, in 1981. `.claude/rules/levels/act3.md` records exactly why:
+    // "This was originally placed at Level 4, which was wrong — Street Fighter II
+    // belongs in the 90s Basement, not on the home row alongside Pac-Man." The
+    // GAME moved to Level 12. The cabinet ART never did, and nobody looked.
+    //
+    // Galaga's signature mechanic, which theme-authoring.md requires the scene to
+    // show operating, is the TRACTOR BEAM: a boss Galaga captures your ship, and
+    // shooting it free gives you a double-firepower DUAL FIGHTER
+    // (research/wiki/games/galaga.md). That, plus "colorful sprites against a
+    // black starfield, insectoid alien designs in formation", is what this draws.
     drawScreen(ctx, x, y, w, h) {
-      ctx.fillStyle = '#100820';
+      ctx.fillStyle = '#000';
       ctx.fillRect(x, y, w, h);
-      for (let i = 0; i < h; i += 2) {
-        const alpha = i / h * 0.3;
-        ctx.fillStyle = `rgba(128, 0, 255, ${alpha})`;
-        ctx.fillRect(x, y + i, w, 2);
+
+      const star = (sx, sy, c) => { ctx.fillStyle = c; ctx.fillRect(x + sx, y + sy, 1, 1); };
+      [[3,4,'#fff'],[11,2,'#8ad'],[19,7,'#fff'],[27,3,'#fa8'],[34,9,'#fff'],
+       [7,13,'#8ad'],[23,16,'#fff'],[36,19,'#8ad'],[5,22,'#fff'],[30,25,'#fa8'],
+       [15,27,'#fff'],[38,14,'#fff']].forEach(([a,b,c]) => star(a,b,c));
+
+      // one insectoid alien, 5x4, in the arcade's own chunky pixels
+      const bug = (bx, by, body, wing) => {
+        ctx.fillStyle = wing;
+        ctx.fillRect(bx, by + 1, 1, 2); ctx.fillRect(bx + 4, by + 1, 1, 2);
+        ctx.fillStyle = body;
+        ctx.fillRect(bx + 1, by, 3, 3);
+        ctx.fillRect(bx + 2, by + 3, 1, 1);
+      };
+
+      // THE FORMATION — rows of them, which is the thing Galaga looks like
+      for (let c = 0; c < 5; c++) bug(x + 4 + c * 7, y + 3,  '#3fd0ff', '#ffd23f'); // boss row
+      for (let c = 0; c < 5; c++) bug(x + 4 + c * 7, y + 9,  '#e8402a', '#f2f2f2'); // red
+      for (let c = 0; c < 4; c++) bug(x + 8 + c * 7, y + 15, '#ffd23f', '#e8402a'); // yellow
+
+      // THE TRACTOR BEAM. The boss that captures your ship DIVES OUT of formation
+      // first, so it is drawn detached, below the ranks, beaming straight down —
+      // and the beam is composited ADDITIVELY. The first attempt filled a stepped
+      // cone at 30% alpha over black, which renders as an opaque grey pyramid
+      // sitting on the formation: it read as a mountain, not as light. Light adds.
+      const bossX = x + 22, bossY = y + 20;
+      bug(bossX, bossY, '#3fd0ff', '#ffd23f');                     // the diver
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const top = bossY + 4, bot = y + h - 8;
+      for (let yy = top; yy < bot; yy++) {
+        const t = (yy - top) / Math.max(1, bot - top);
+        const half = 1 + Math.round(t * 5);
+        ctx.fillStyle = `rgba(70,140,220,${0.16 - t * 0.06})`;
+        ctx.fillRect(bossX + 2 - half, yy, half * 2 + 1, 1);
+        if (yy % 3 === 0) {                                        // the beam's rungs
+          ctx.fillStyle = `rgba(150,205,255,${0.34 - t * 0.12})`;
+          ctx.fillRect(bossX + 2 - half, yy, half * 2 + 1, 1);
+        }
       }
-      ctx.fillStyle = '#ff6600';
-      ctx.fillRect(x+5, y+h-16, 4, 8);
-      ctx.fillRect(x+4, y+h-18, 6, 3);
-      ctx.fillRect(x+3, y+h-8, 2, 3);
-      ctx.fillRect(x+7, y+h-8, 2, 3);
-      ctx.fillRect(x+9, y+h-14, 4, 2);
-      ctx.fillStyle = '#0088ff';
-      ctx.fillRect(x+w-9, y+h-16, 4, 8);
-      ctx.fillRect(x+w-10, y+h-18, 6, 3);
-      ctx.fillRect(x+w-11, y+h-8, 2, 3);
-      ctx.fillRect(x+w-7, y+h-8, 2, 3);
-      ctx.fillRect(x+w-13, y+h-14, 4, 2);
-      ctx.fillStyle = '#f0f';
-      ctx.fillRect(x+w/2-3, y+h-14, 6, 2);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(x+w/2-1, y+h-15, 2, 4);
-      ctx.fillStyle = '#00ff00';
-      ctx.fillRect(x+3, y+3, 14, 2);
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(x+w-17, y+3, 14, 2);
+      ctx.restore();
+
+      // the player's fighter, caught in it
+      ctx.fillStyle = '#f2f2f2';
+      ctx.fillRect(x + 23, y + h - 7, 2, 5);
+      ctx.fillRect(x + 21, y + h - 4, 6, 2);
+      ctx.fillStyle = '#e8402a';
+      ctx.fillRect(x + 20, y + h - 3, 1, 1);
+      ctx.fillRect(x + 27, y + h - 3, 1, 1);
     }
   },
   5: {
@@ -761,20 +817,43 @@ const CABINET_DATA = {
       ctx.fillRect(x + w - 7, y + 6, 3, 6);
       ctx.fillStyle = '#ffcc00';
       ctx.fillRect(x + w - 6, y + 5, 2, 4);
-      // Dirk (knight) advancing
-      ctx.fillStyle = '#ddaa00';
-      ctx.fillRect(x + w/2 - 3, y + h - 14, 6, 8);
-      ctx.fillRect(x + w/2 - 2, y + h - 18, 4, 4);
-      // Sword
-      ctx.fillStyle = '#ccc';
-      ctx.fillRect(x + w/2 + 3, y + h - 18, 2, 10);
-      // Door ahead
-      ctx.fillStyle = '#440066';
-      ctx.fillRect(x + w - 10, y + 4, 7, 18);
-      ctx.fillStyle = '#cc44ff';
-      ctx.globalAlpha = 0.6;
-      ctx.fillRect(x + w - 9, y + 5, 5, 16);
-      ctx.globalAlpha = 1;
+      // This screen used to be a gold blob, a silver bar and a purple rectangle:
+      // no knight you could see, and no dragon at all. It read as abstract shapes.
+      // The wiki is specific about what this game LOOKS like — "rich jewel-toned
+      // color grading - deep purples, gold torchlight, EMERALD DRAGON SCALES" -
+      // and about what it IS: Dirk the Daring, a sword, and Singe. So the scene is
+      // now the one image everybody keeps of this cabinet: the knight facing the
+      // dragon. (research/wiki/games/dragons-lair.md)
+
+      // Dirk - small, because the dragon should tower over him
+      ctx.fillStyle = '#c8c8d4';                       // helmet
+      ctx.fillRect(x + 10, y + h - 17, 4, 3);
+      ctx.fillStyle = '#2a58c0';                       // tunic
+      ctx.fillRect(x + 9, y + h - 14, 6, 7);
+      ctx.fillStyle = '#c8c8d4';                       // legs
+      ctx.fillRect(x + 10, y + h - 7, 2, 4);
+      ctx.fillRect(x + 13, y + h - 7, 2, 4);
+      ctx.fillStyle = '#e8e8f0';                       // the sword, raised
+      ctx.fillRect(x + 15, y + h - 24, 2, 11);
+      ctx.fillStyle = '#ddaa00';                       // its gold hilt
+      ctx.fillRect(x + 14, y + h - 14, 4, 2);
+
+      // SINGE - emerald, and big enough to be the thing in the room
+      ctx.fillStyle = '#1f7a3d';                       // neck, rising from the right
+      ctx.fillRect(x + 30, y + h - 12, 7, 12);
+      ctx.fillRect(x + 28, y + 12, 8, 10);
+      ctx.fillStyle = '#2aa356';                       // head, pushed toward Dirk
+      ctx.fillRect(x + 22, y + 10, 13, 8);
+      ctx.fillRect(x + 20, y + 13, 4, 4);              // snout
+      ctx.fillStyle = '#7de8a0';                       // lit scales along the brow
+      ctx.fillRect(x + 24, y + 10, 9, 1);
+      ctx.fillStyle = '#ffd23f';                       // the eye
+      ctx.fillRect(x + 26, y + 12, 2, 2);
+      ctx.fillStyle = '#0d3a1e';
+      ctx.fillRect(x + 27, y + 12, 1, 2);
+      ctx.fillStyle = '#e8e8f0';                       // teeth
+      ctx.fillRect(x + 21, y + 17, 1, 2);
+      ctx.fillRect(x + 23, y + 17, 1, 2);
     }
   },
 

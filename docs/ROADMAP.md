@@ -717,6 +717,48 @@ fetch sites are all relative same-origin `/api/*`; `playerName` appears in NO re
   `textContent`, count-only settings row, Escape always exits. An `<img src=x onerror=…>` paste
   reduces to the inert text `imgsrcxonerror`.
 
+### ✅ The 25 cabinet SCREENS audited against their sources *(2026-09-13)*
+
+The standing exposure — *"only the PANELS have been checked against photographs; all 25
+cabinet SCREENS are still text-authored and unverified"* — is now discharged for the whole
+set. Each screen was captured and LOOKED AT beside its wiki page. **Four were wrong, one
+badly.**
+
+1. **Level 4 was drawing STREET FIGHTER II.** Two fighters facing each other with green and
+   red health bars — on the Galaga cabinet, on the home row, in 1981. `levels/act3.md`
+   records the cause in its own words: *"This was originally placed at Level 4, which was
+   wrong — Street Fighter II belongs in the 90s Basement, not on the home row alongside
+   Pac-Man."* **The game moved to Level 12. The cabinet art never did**, and for as long as
+   the project has existed the same game has been on two cabinets — a silent breach of the
+   one-game-per-cabinet rule that no test could see because it is a fact about pixels.
+   Replaced with actual Galaga: a black starfield, three ranks of insectoid aliens in
+   formation, and **the tractor-beam capture** — a boss dived out of formation, beaming down
+   at the player's fighter — which is the signature mechanic `theme-authoring.md` requires
+   the scene to show operating.
+2. **Level 1 Breakout drew four rows of green bricks.** Breakout's screen was monochrome;
+   every colour anyone remembers came from *"colored cellophane strips overlaid to simulate
+   4 colors"* taped over a black-and-white CRT. So the colour arrives in horizontal BANDS,
+   one per row, and the paddle and ball — outside the strips — are plain white. The top row
+   is red, which is the row that halves your paddle.
+3. **Level 2 Space Invaders drew a yellow invader.** *"Black background, white sprites;
+   color achieved via transparent colored cellophane strips over screen regions
+   (orange/green)."* The invader is white; the colour is an orange strip across the top and
+   a green one across the bottom over the cannon. Yellow is a colour that machine could not
+   put anywhere on its screen.
+4. **Level 7 Dragon's Lair was abstract shapes** — a gold blob, a silver bar, a purple
+   rectangle: no visible knight, no dragon. Redrawn as the one image everybody keeps of that
+   cabinet, and the one the wiki describes (*"deep purples, gold torchlight, emerald dragon
+   scales"*): Dirk with his sword raised, facing Singe.
+
+**Still weak but not wrong: Level 13 (Myst).** Its screen is an abstract tan shape where the
+game's iconic image is the island dock or the library. Not a factual error, so not fixed in
+this pass; noted so it is not mistaken for verified.
+
+**The lesson, which is the same one twice in two days:** these were all facts about pixels,
+and the suite cannot see pixels by doctrine (`testing.md` rule 4). The year bug (INV-93) and
+the Street Fighter cabinet were both found by a human-shaped act — taking a screenshot and
+looking at it — during work aimed at something else entirely.
+
 ### Draw Acts 2–4 as the machines the design bible already names *(found 2026-09-13)*
 
 **The select screen contradicts its own design bible on roughly twelve of twenty-five
