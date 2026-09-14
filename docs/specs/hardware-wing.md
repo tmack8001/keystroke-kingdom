@@ -1,6 +1,11 @@
-# THE DEN — the hardware-history wing
-*(working name until 2026-09-14: "The Computer Room")*
+# THE HARDWARE — the wing that teaches what a machine is made of
+*(named 2026-09-14. Working names, both retired: "The Computer Room", then "THE DEN".)*
+
 ## Product spec / ADR — the bonus wing whose cabinets ARE the subject
+
+> **⚠️ RE-FRAMED 2026-09-14, and the re-frame is load-bearing — read §0 before anything else.**
+> This wing was specced as a ROOM (THE DEN) and is now specced as a SUBJECT (THE HARDWARE).
+> Sections written before that date may still argue from the room premise; §0 overrides them.
 
 *Written 2026-09-13 by the `product-manager` lane. Inputs: `docs/ROADMAP.md` §2 "THE COMPUTER
 ROOM (working name)" (Trevor's direction, verbatim), `.claude/rules/product.md` §Content Rating
@@ -21,6 +26,146 @@ live code: `js/history-cards.js`, `js/slots.js`, `js/ui/cabinet-art.js`, `js/ui/
 >
 > *"This is getting into teen/mature content which is fine at this point it is a separate act, but
 > **still shouldn't get into gore, sex or other adult themes**."*
+
+---
+
+---
+
+## 0. The 2026-09-14 decisions — twelve answers, and one re-frame that changed the wing
+
+*Trevor worked the open questions interactively. Ten were answers; two changed what the wing IS.
+Recorded here verbatim-sourced, because §§1–10 below predate them.*
+
+### 0.1 The re-frame: a SUBJECT, not a room
+
+The spec had been hunting for the right room name — Computer Room, then Den, with Attic and
+Office as live alternatives. Trevor killed the premise:
+
+> *"the den analogy isn't working for some of these games which would have been on a PC which
+> likely wasn't in a den but a home office (or wherever computers were in that era — my childhood
+> we had a home office once dial up internet came about)"*
+>
+> *"Maybe we scrap the den and go with The Hardware and use that to teach what hardware means —
+> so all the history cards are about specific hardware and can be related to the game or system
+> at play perhaps."*
+
+**The room name kept failing because the room genuinely kept changing.** No single room ever held
+forty years of home machines: the C64 lived in the LIVING ROOM because it plugged into the
+television; the Apple IIe sat in a den; the beige tower moved to a HOME OFFICE the moment dial-up
+arrived and the machine needed the phone line; then it became a bedroom machine, then a pocket.
+Picking one room meant lying about four decades.
+
+Naming the wing for its **subject** dissolves that, and buys something better: **the wing now has
+something to teach.** A five-year-old does not arrive knowing what "hardware" means. This wing is
+where they learn it — not as a definition, but by being handed one touchable part at a time.
+
+**Precedent, so this is not a special case:** Act 6 (TEXT WORLDS) and Act 7 (SPEEDWAY) are both
+already named for what they contain rather than where they sit. A wing named for its subject is
+the house style, not an exception.
+
+**On the name itself** (Trevor, choosing between THE HARDWARE / THE WORKBENCH / THE MACHINES):
+
+> *"The HARDWARE — And we can still have a workbench with computer parts all over it and open
+> machines — just workbench wouldn't be a good name for kids"*
+
+So: **the wing is THE HARDWARE; the workbench is furniture inside it.** Lids off, boards showing,
+parts on the bench — the set dressing that makes "the parts you can touch" literal, without
+making a nine-letter Amiga-OS pun the door hint a child has to read. Door hint: `HOW IT ALL WORKS`.
+
+**Name collision check — Act 2 is THE COMPUTER WING**, and the two must be distinguishable at the
+back wall. They are, and the hint lines carry it:
+
+| Wing | Hint line | Subject |
+|---|---|---|
+| Act 2 — THE COMPUTER WING | *(existing)* | the games you played |
+| **THE HARDWARE** | `HOW IT ALL WORKS` | **the machines you played them on** |
+
+### 0.2 The spine: order by the room the machine moved into
+
+> *Q: "The machine kept MOVING rooms — living room, den, home office, bedroom, pocket. Is that
+> the wing's spine?"* → **"Yes — order by room."**
+
+The wall walks the house in the order the machine actually migrated through it. This is true, it
+is a story a child can feel, and — the useful part — **it turns the failed room name into
+content.** The reason no room name fit is now the thing the wing is about: the machine came
+closer to you every decade, and ends up in your hand.
+
+### 0.3 The card model: PAIRED — a machine card and a component card
+
+> *Q: "What is a hardware card ABOUT?"* → **"Both, paired."**
+
+Every station yields **two** cards: the machine, and the one part of it that mattered.
+
+| Station | Machine card | Component card — *the part you could hold* |
+|---|---|---|
+| C64 on the family TV | COMMODORE 64 | **THE RF MODULATOR** — how a computer borrowed the television |
+| Apple IIe + Disk II | APPLE IIe | **THE FLOPPY DISK** — the games lived on it |
+| Beige PC, VGA + CD | THE BEIGE TOWER | **THE CD-ROM** — 400 floppies in one disc |
+| Multimedia PC | THE MULTIMEDIA PC | **THE SOUND CARD** — the year computers stopped beeping |
+| Two PCs, one cable | *(the pair itself)* | **THE NULL-MODEM CABLE** — two machines, one game |
+| 56k tower | THE HOME-OFFICE PC | **THE MODEM** — why nobody could phone you |
+| Broadband tower + LCD | THE BROADBAND PC | **THE LCD PANEL** — the desk got its space back |
+
+The machine card is the museum label; **the component card is the lesson.** One is abstract, one
+you could have held in your hand — and holding it is what the word "hardware" means.
+
+*Consequence for §5.4:* the wing's card count roughly doubles from the earlier estimate, and the
+denominator work in §5.7 must be redone against the paired model before Phase 1 ships.
+
+### 0.4 Existing hardware cards STAY — and are cross-referenced
+
+> *Q: "The dozen hardware cards already in the core 25 — do they stay?"* → **"Stay, but
+> cross-referenced."**
+
+`floppy`, `c64`, `386`, `486`, `altair`, `disk`, `intel`, `apple` and the rest **stay exactly
+where they are in the curriculum.** Moving them would take cards away from a child mid-save and
+shrink a number they had already earned — the argument §5.4 makes and this confirms.
+
+**New requirement from the "cross-referenced" half:** the wing's gallery ALSO shows them — greyed,
+tagged *found in the arcade* — so the hardware story reads whole in one place without any card
+changing owner. A card found once is found; the wing shows it, the arcade keeps it. This is a
+gallery-rendering change, **not** a data-model change, and INV-56 is untouched.
+
+### 0.5 Roster changes
+
+| Decision | Ruling |
+|---|---|
+| **The verb** | ✅ **Boot line.** You type `CATALOG` and the machine wakes. The wing is a typing room, not a museum |
+| **The RTS** | ✅ **Warcraft II** — the null-modem cable is a genuine *hardware* beat, and it is the same world as the WoW station that now closes the wall |
+| **The MMOs** | ✅ **BOTH here** — EverQuest *and* World of Warcraft, no reservation *(reverses §5.7's one-per-wing recommendation — see §0.6)* |
+| **Pinball (computer)** | ✅ **3D Pinball / Space Cadet stays** — it came *with* the machine, which is a hardware story |
+| **Pinball Construction Set** | ➡️ **moved to Act 6's maker world.** Trevor: *"could go in the Act 6 maker world"* — software that makes software, sitting beside YOUR OWN WORLD. Better home than this wing |
+| **Epic Pinball / Pinball Fantasies** | ➡️ **reserved for the Server Room arc.** Shareware, BBS and cover-disc distribution is a story about how software *travelled* — that arc's subject, not this one's |
+| **Physical pinball** | ➡️ **its own alley in the arcade.** Trevor chose a real pinball row off the main floor with PHYSICAL tables. A table and a screen are not the same machine, so they do not share a room. Separate proposal — see ROADMAP |
+| **The Sims, RollerCoaster Tycoon** | ➡️ **moved out to the proposed builder room** — see §0.6 |
+| **Server Room terminus** | ⏸️ *"Decide when it's specced."* Recorded only: both MMOs are claimed, so that spec must not plan around them |
+
+### 0.6 Two proposals this spawned (neither blocks Phase 1)
+
+**(a) The world-builder room.** Trevor, on being offered Warcraft II / StarCraft / C&C:
+
+> *"I do like all of these options — maybe since these are all world builder games which is a
+> genre in and of itself a whole room could be devoted to this?"*
+
+He is diagnosing real drift: as specced, this wing had accumulated Warcraft II + RollerCoaster
+Tycoon + The Sims — a **genre cluster inside a hardware wing**, telling two stories at once. The
+builders move out; the network machines stay, because a cable and a modem are hardware.
+
+Candidate roster, **none of which are in the core 25, so nothing is taken from anybody**:
+Populous (1989), Civilization (1991), Theme Park (1994), SimTower/SimAnt, RollerCoaster Tycoon
+(1999), The Sims (2000). ⚠️ **SimCity 2000 (L16) and Age of Empires (L18) STAY in the arcade** —
+the room may *reference* them, never reclaim them.
+
+**(b) Physical pinball alley** (§0.5). Arcades really did have a row of tables down one wall,
+apart from the video cabinets; the knocker solenoid already appears in `research/wiki/games/q-bert.md`.
+
+### 0.7 Still open after this pass
+
+1. **Act number.** Taking `num: 8` as the default and not blocking — it is one registry field.
+   The broader "are running integers right for four parallel wings?" question stays open in
+   ROADMAP §2, and now has two more candidate wings pushing on it (§0.6).
+2. **Fidelity of the late stations** (old Q10) — unchanged: this spec still declines bespoke
+   playable recreations. If one is ever wanted, it becomes its own phase with its own spec.
 
 ---
 
@@ -207,23 +352,36 @@ COMPUTER WING, THE BASEMENT or THE COMMAND CENTER, and the door label can carry 
 organizing idea than a running integer"*) is real and is **not blocked by this wing** — the
 registry stores `num` as data, so a later re-labelling is one edit per row. Q2.
 
-### 5.1 The roster — eight stations, era-ordered, every collision checked
+### 5.1 The roster — seven stations, ordered by the room the machine moved into
 
-The wall is ordered by **the machine's** era, because the machine is the subject. Each station is
-a *machine* first and a *title running on it* second; two stations may be the same broad class of
-PC only if they are genuinely different hardware beats (a 1993 CD-ROM multimedia PC and a 2004
-broadband tower are not the same machine).
+> **⚠️ REPLACED 2026-09-14 (§0.2/§0.5).** The previous table was era-ordered and included The Sims
+> and RollerCoaster Tycoon. The spine is now the machine's **migration through the house**, and the
+> two builders moved out to the proposed builder room.
 
-| # | Station — the machine (the subject) | Year | Running on it | Boot line (the verb) | Keys it needs | Phase |
-|---|---|---|---|---|---|---|
-| 1 | **Commodore 64 + 1541 drive** | 1982 | BASIC itself — no title needed | `LOAD"*",8,1` | Shift, `"`, `*`, `,`, digits → **L24** | 2 |
-| 2 | **Apple IIe + Disk II** | 1983 | **Stickybear Typing** (1985) | `CATALOG` then `RUN` | letters → **L15** | **1** |
-| 3 | **Beige PC, VGA + CD-ROM** | 1993 | **Super Solvers: Gizmos & Gadgets!** (1993) | `DIR` then `GIZMOS` | letters → **L15** | **1** |
-| 4 | **Multimedia PC, sound card + CD** | 1995 | **3D Pinball** (the one that came with the computer) | `WIN` | letters → **L15** | **1** |
-| 5 | **Two PCs joined by a cable** | 1995 | **Warcraft II: Tides of Darkness** | `WAR2` | letters + `2` → **L19** | 2 |
-| 6 | **A late-90s tower** | 1999 | **RollerCoaster Tycoon** | `RCT` | letters → **L15** | 3 |
-| 7 | **A turn-of-century desktop** | 2000 | **The Sims** | `SIMS` | letters → **L15** | 3 |
-| 8 | **A broadband-era tower + LCD** | 2004 | **World of Warcraft** — the terminus | `WOW` | letters → **L15** | 3 |
+The wall walks the house. Each station is a *machine* first and a *title running on it* second —
+and each carries **two** cards (§0.3): the machine, and the part of it you could have held.
+
+| # | Room | Year | The machine (the subject) | Running on it | Boot line | Keys it needs | Phase |
+|---|---|---|---|---|---|---|---|
+| 1 | **THE LIVING ROOM** | 1982 | **Commodore 64 + 1541 drive**, plugged into the family TV | BASIC itself | `LOAD"*",8,1` | Shift `"` `*` `,` digits → **L24** | 2 |
+| 2 | **THE DEN** | 1983 | **Apple IIe + Disk II** | **Stickybear Typing** (1985) | `CATALOG` then `RUN` | letters → **L15** | **1** |
+| 3 | **THE DEN** | 1993 | **Beige PC, VGA + CD-ROM** | **Gizmos & Gadgets!** (1993) | `DIR` then `GIZMOS` | letters → **L15** | **1** |
+| 4 | **THE HOME OFFICE** | 1995 | **Multimedia PC, sound card + CD** | **3D Pinball** (it came with the machine) | `WIN` | letters → **L15** | **1** |
+| 5 | **THE HOME OFFICE** | 1995 | **Two PCs joined by a cable** | **Warcraft II: Tides of Darkness** | `WAR2` | letters + `2` → **L19** | 2 |
+| 6 | **THE HOME OFFICE** | 1999 | **A 56k tower, tying up the phone line** | **EverQuest** | `EQ` | letters → **L15** | 3 |
+| 7 | **THE BEDROOM** | 2004 | **A broadband tower + LCD panel** | **World of Warcraft** — the terminus | `WOW` | letters → **L15** | 3 |
+
+**Why the rooms are the right order, and what the last row is for.** Stations 2→4 are the same
+family of machine moving one room over *because of a cable*: the moment the computer needed the
+phone line, it moved to where the phone was. Stations 6→7 are the same story again, told by the
+modem — dial-up ties up the household's phone, broadband does not, and the machine stops being a
+shared appliance and becomes **yours**, in your room. That migration is the wing's whole argument:
+**the machine came closer to you every decade.** A future station ends it in a pocket.
+
+*Station 1's boot line is the famous fiddly one and that is the point* — `LOAD"*",8,1` is why it
+sits in Phase 2 and lights at L24 despite being the wall's earliest machine. The wall is ordered
+by the house; the **lighting** order is by key closure, and the two deliberately disagree. Honest
+history: the oldest machine had the hardest incantation.
 
 **Arcade-cabinet-rule audit — every title checked against `.claude/rules/levels.md` §"Complete
 Game Assignment Table" (all 25), Act 6's five worlds, and Act 7's registered + planned tracks:**
@@ -239,10 +397,10 @@ Game Assignment Table" (all 25), Act 6's five worlds, and Act 7's registered + p
 | **StarCraft (1998)** | ✅ free | **Declined.** One RTS per wall; 1998 crowds Warcraft II for no new hardware beat; and its subject needs a content-rating read this spec cannot do from memory |
 | **Command & Conquer (1995)** | ✅ free | **Declined.** Same slot as Warcraft II, and its presentation style is the one candidate most likely to collide with §5.6's absolute exclusions. If it is ever wanted, it needs an explicit historian + rating pass first |
 | **Civilization** | ✅ free | **Declined for v1** — a fine wing candidate later, but it adds no hardware beat the wall doesn't already have |
-| **RollerCoaster Tycoon (1999)** | ✅ free | **CHOSEN as the tycoon.** Trevor said "tycoon"; it is a builder with no combat, which is the easiest possible rating read; and its authorship story is a genuine *hardware-era* story (needs historian grounding — §Wiki gaps) |
-| **The Sims (2000)** | ✅ free | **CHOSEN as the sim.** Trevor said "sims"; no collision with SimCity 2000; a builder, not a fighter |
+| **RollerCoaster Tycoon (1999)** | ✅ free | ➡️ **MOVED OUT 2026-09-14** to the proposed builder room (§0.6) — a builder, not a hardware beat |
+| **The Sims (2000)** | ✅ free | ➡️ **MOVED OUT 2026-09-14** to the proposed builder room (§0.6) — a builder, not a hardware beat |
 | **3D Pinball (the Windows one)** | ✅ free — no pinball anywhere in the 25 | **CHOSEN as the pinball.** Deliberately picked over the DOS pinball titles because *the game that came bundled with the computer* is a **hardware** story, which is this wing's subject. ⚠️ Its exact title, publisher and lineage must come from an arcade-historian pass — see §Wiki gaps. Do not write it from memory |
-| **EverQuest (1999)** | ✅ free | **Declined here, deliberately reserved.** ROADMAP §2's "THE SERVER ROOM ARC" is a live, separate proposal about everything going online and names EverQuest as one of its anchors. Taking both MMOs into one wing would strand that arc. **One MMO per wing: WoW here, EverQuest unclaimed** |
+| **EverQuest (1999)** | ✅ free | ⚠️ **REVERSED 2026-09-14 — NOW CHOSEN** (§0.5). Trevor took both MMOs. The original reasoning is kept below because the reversal has a *better* reason than the one it replaces, and it is worth not losing: ~~**Declined here, deliberately reserved.** ROADMAP §2's "THE SERVER ROOM ARC" is a live, separate proposal about everything going online and names EverQuest as one of its anchors. Taking both MMOs into one wing would strand that arc. **One MMO per wing: WoW here, EverQuest unclaimed**~~ — **the flaw:** that argued from spec tidiness, not from the subject. On the *hardware* thesis the two MMOs are a PAIR — EverQuest is the 56k modem and the tied-up phone line, WoW is the always-on broadband machine. Splitting them cut the dial-up→broadband story in half, which is precisely the hardware story this wing exists to tell |
 | **World of Warcraft (2004)** | ✅ free | **CHOSEN as the terminus** (§5.7) |
 | **Stickybear Typing (1985)** | ✅ free | **CHOSEN.** Already wiki-grounded (`research/wiki/pedagogy/stickybear-typing.md`) with media in the vault |
 | **Super Solvers: Gizmos & Gadgets! (1993)** | ✅ free | **CHOSEN.** Already wiki-grounded (`research/wiki/games/gizmos-and-gadgets.md`) |
@@ -809,79 +967,19 @@ cards" to "any card without a numeric `level`." Neither rule weakens.
 
 ---
 
-## 11. Open questions for Trevor
+## 11. Open questions for Trevor — ✅ WORKED THROUGH 2026-09-14
 
-1. ~~**The wing's name.**~~ **✅ DECIDED 2026-09-14 — THE DEN**, door hint `HOME COMPUTERS`.
-   Trevor: *"Computer room's naming can be the Den/Office or Attic. Unless the earlier Computer
-   Wing has a better more resemblanced name."* Of the three:
-   - **THE DEN** — it is where a family's computer actually lived, which is the wing's whole
-     subject, and nothing else in the game is called it.
-   - **THE ATTIC** — evocative for old machines, but it fights Act 4, which `act4.md` already
-     calls *"the top floor"*. The house metaphor is crowded: Act 3 is THE BASEMENT.
-   - **THE OFFICE** — colder than a room a child plays in. It keeps one real claim though, worth
-     recording: Trevor's own Stickybear memory is of *his dad's office computer brought home* —
-     but the machine came home TO the den, and the den is the scene this wing draws.
+**All twelve were answered interactively. The record, with reasoning, is §0.** Two of the answers
+did not pick an option — they rejected the question's premise, and both were right:
 
-   And it resolves the collision that prompted the question: the working name COMPUTER ROOM sat
-   one keypress from Act 2's **THE COMPUTER WING** in the back-wall navigation strip.
-2. **Act number 8, and the numbering question.** The number is genuinely free (the Guild Hall
-   proposal was superseded into this wing and vacated it), so *my recommendation is to take `num:
-   8` and not block on the bigger question*. But this is the fourth parallel wing on a five-act
-   spine, ROADMAP §2 already asks whether running integers are the right idea, and this is the
-   cheapest moment it will ever be to change — `num` is one data field per registry row.
-3. ~~**⚠️ Unlock at Level 20, or keep 25?**~~ **✅ ANSWERED 2026-09-13 — LEVEL 20.**
-   Trevor: *"I think the computer room at level 20 instead of 25 makes sense. We can keep the
-   type/create your world levels after the entire keyboard has been unlocked — where the player
-   can choose where their adventure goes next."*
+- **Q on the wing's name** became *"scrap the den"*: the room analogy was the defect, not the room
+  choice (§0.1).
+- **Q on which RTS** became *"a whole room could be devoted to this"*: the wing was quietly
+  hosting a genre cluster, and the right move was to move the builders out (§0.6).
 
-   **He did not just answer the question, he gave the RULE behind it**, and it is better than
-   the one it replaces. A wing's unlock now depends on **what the wing asks of the player**:
-
-   - **Wings you READ and EXPLORE open earlier.** This one is hardware history; its content is
-     authored, so its key demands are ours to choose. Level 20 is the game's own "the computer
-     is the point" beat.
-   - **Wings where you MAKE something stay at 25.** Act 6's text worlds — above all "YOUR OWN
-     WORLD", the maker — remain the reward for the full keyboard, because that is the point
-     *"where the player can choose where their adventure goes next"*, and choosing your own
-     direction is a graduation, not a waypoint.
-
-   **The gate has been discharged in the right order** (`testing.md` rule 1): `docs/ROADMAP.md`
-   §2's *"Acts 6+ all sit AFTER the full keyboard is learned"* was amended FIRST, with his words
-   quoted, before any code. `doorUnlocked` in `js/ui/cabinet-art.js` becomes per-wing — one
-   registry field, with Acts 6 and 7 keeping their current value so nothing shifts for a player
-   mid-game.
-4. **The verb: is the boot line right?** *My recommendation: yes* — you type `CATALOG` and the
-   Apple IIe wakes up. It makes the wing a typing room rather than a museum, it costs one shared
-   module, and it is what actually happened. The alternative you described — walk up and the
-   machine tells you what it was — is Phase B on its own, and it is a legitimate cheaper wing.
-   Which do you want first?
-5. **The RTS: Warcraft II confirmed?** Age of Empires stays at Level 18 (nothing is swapped).
-   *My recommendation: Warcraft II*, because it is your word, because the modem/LAN beat is a real
-   *hardware* story, and because it rhymes with the WoW terminus. StarCraft and Command & Conquer
-   are both free if you'd rather; C&C in particular would need a content-rating read first.
-6. **The terminus: World of Warcraft here, EverQuest reserved for the Server Room arc?**
-   *My recommendation: yes* — one MMO per wing, and taking both would strand the Server Room
-   proposal before it is specced. And confirm the framing: **the MMO station is a social scene —
-   chat, `/commands`, a group forming — never a combat one.**
-7. **The pinball station.** You asked for computer pinball. *My recommendation is the one that
-   came bundled with the machine*, because "the game that shipped with your computer" is a
-   **hardware** story and this is a hardware wing. The DOS-era pinball titles are the alternative
-   if you'd rather have a game somebody chose to buy. Either way its exact title and lineage come
-   from the historian, not from us.
-8. **Are the hardware cards a *second* set, or a replacement?** This spec assumes **second**: the
-   dozen hardware cards already in the curriculum (`floppy`, `c64`, `386`, `486`, `altair`, `disk`,
-   `intel`, `apple`…) stay exactly where they are, and the wing holds the deeper set. Confirm —
-   the alternative (move them into the wing) would take cards away from a child mid-curriculum,
-   which I would argue hard against.
-9. **Two counters on the slot-picker row, or one?** *My recommendation: two, scoped* — `★ 14 / 60`
-   for the arcade and `▣ 3 / 16` for the wing, the second appearing only once that save has opened
-   the door, so nobody's existing number ever gets worse. The alternative is one blended total,
-   which is simpler to read and quietly makes every existing save look less complete.
-10. **How faithful should the late stations be?** This spec deliberately declines bespoke playable
-    recreations of Warcraft II / RCT / The Sims / WoW (§3 option E) — their signature mechanics are
-    mouse-driven, and the honest scene is the machine running the software. If you want a genuinely
-    playable typed version of one of them, say which one, and it becomes its own phase with its own
-    spec rather than a station.
+**Still open, neither blocking Phase 1** (§0.7): the act number (`num: 8` taken as default), and
+how faithful the late stations should be (unchanged — this spec still declines bespoke playable
+recreations; if one is wanted it becomes its own phase with its own spec).
 
 ---
 
