@@ -284,9 +284,11 @@ export function inspect() {
   };
 }
 
-// Has the lap been completed? (The hub credits a finished track however the player
-// leaves it — the same shape as the text worlds' hasWon.)
-export function hasWon() { return phase === 'pit' || phase === 'finish'; }
+// (There is no `hasWon()` here, unlike the text-world engines. Act 6 needs one
+// because its hub credits completion when the player LEAVES; Act 7 does not,
+// because `Ghost.commitLap` writes the record in `crossTheLine()` the moment the
+// lap finishes. Removed 2026-09-13 with the hub's dead `onComplete` hook — the
+// pair existed only for each other. See js/speedway/hub.js's note.)
 
 function now() {
   return (typeof performance !== 'undefined' && performance.now)

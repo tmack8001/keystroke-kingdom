@@ -786,15 +786,32 @@ photograph, stored and credited in `research/wiki/media/console-hardware-silhoue
   **No vendored byte has landed and none should until Trevor confirms the backend choice (Q10).**
 
 - **Close-out follow-ups from the 2026-09-13 librarian pass:**
-  - **`js/main.js` never passes `onComplete` to `Speedway.start`**, so the hub's `onTrackComplete`
-    credit path is dead code in the shipping game. Not a bug — the ghost record IS the record of
-    play — but it is a wired-for/not-wired gap someone will trip over. One line, in `js/main.js`.
-  - **Cosmetic, Act 7:** the start-line card and pit board draw OUTSIDE the `RESERVED` band and
-    cover the track's right-margin furniture (on Monaco GP they hide the CHARGE rail's caption).
-    The "the engine owns exactly one band" rule holds for the RACING phase only; the other phases
-    need their own scoping.
-  - **Cosmetic, back wall:** with two doors the `▼ THE SPEEDWAY` next-line crowds the unfocused
-    door's `TYPE TO ENTER` hint. Readable now, tighter with a third wing.
+  - ~~**`js/main.js` never passes `onComplete` to `Speedway.start`**~~ **✅ CLOSED 2026-09-13 —
+    by DELETING the hook, not by wiring it.** Investigating it settled the question the note
+    left open: `Ghost.commitLap` already writes the track's record to `kk-slots[i].speedway`
+    from `crossTheLine()` in `track.js` — **the moment the lap finishes, not the moment the
+    player leaves** — so the record is safe on every exit path already. A second credit path
+    would have been redundant, and **dead code that LOOKS wired is worse than an absence**: the
+    next reader assumes completion is tracked through it. Removed `onTrackComplete` and its
+    now-orphaned partner `Track.hasWon()` (the pair existed only for each other), with a note
+    in `hub.js` explaining why Act 7 has no completion hook where Act 6 needs one — Act 6's hub
+    credits on LEAVE, Act 7 records earlier. TF-T1's lesson is honoured by recording sooner,
+    not by a second hook. Speedway integration 17/17 green after.
+  - ~~**Cosmetic, Act 7:** the start-line card and pit board cover the track's right-margin
+    furniture~~ **✅ ALREADY FIXED — the note outlived the fix.** `CARD_SAFE_X = 0.245` in
+    `track.js` exists for precisely this, and its comment names the symptom: *"Monaco GP's
+    CHARGE rail caption used to be sliced in half by the start-line card; that is what this
+    constant exists to prevent."* The per-phase scoping the note asked for is also there
+    (racing/finish draw only inside `RESERVED`; grid/pit draw one centred card kept inside the
+    horizontal safe area). Struck after reading the code and re-racing the track.
+  - ~~**Cosmetic, back wall:** the `▼ THE SPEEDWAY` next-line crowds the door's hint.~~
+    **✅ CLOSED 2026-09-13.** A bonus act's wall is short — one door, or a handful of machines —
+    so its labels end far higher up the screen than a five-cabinet act's, and the ▼ navigation
+    line landed directly under the machine's own hint. Both are small faint grey text, so they
+    read as one block and the eye cannot separate caption from navigation. Fixed with a scoped
+    rule (`.select-cabinets.wing-wall + .select-act-next { margin-top: 34px }`) so only the
+    short walls change and the five-cabinet acts are untouched. The page had the room; it just
+    was not spending it.
   - ~~**`docs/screenshots/capture-cards.js` is broken**~~ **IT IS NOT — CORRECTED TWICE.** Two
     separate doc-audit passes (2026-09-11 and 2026-09-13) reported this script broken. Both were
     wrong, and both times it was verified WORKING by running it (`capture-cards.js L13` → exit 0,

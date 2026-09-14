@@ -344,3 +344,48 @@ test('INV-34: theme contract — all themes export start, stop, keystroke, miss,
     `Theme contract violations found:\n${issues.join('\n')}`
   );
 });
+
+// ── INV-93 — a cabinet's displayed YEAR is the game's release year ───────────
+// Ground truth is the curriculum's own assignment table in
+// `.claude/rules/levels.md`, never cabinet-art.js itself (STRATEGY.md §2).
+//
+// This exists because four of Act 1's five cabinets shipped the wrong year. The
+// wrong values were `.claude/rules/tech.md`'s Era Progression table — the GRAPHICS
+// FIDELITY target per level ("Atari 1977", "NES 1985", "SNES 1991") — not the
+// game's release year. Two tables of year-shaped numbers for the same levels, and
+// `era:` was filled from the wrong one. The select screen read "LEVEL 3 · 1985"
+// under a Pac-Man cabinet for months.
+test('INV-93: every cabinet\'s era matches the curriculum assignment table\'s year', () => {
+  const table = fs.readFileSync(path.join(REPO, '.claude/rules/levels.md'), 'utf8');
+  const art = fs.readFileSync(path.join(REPO, 'js/ui/cabinet-art.js'), 'utf8');
+
+  // "| 3 | The Arcade | S, L | Pac-Man | Namco | 1980 | [act1.md](...) |"
+  const expected = new Map();
+  for (const line of table.split('\n')) {
+    const cells = line.split('|').map((c) => c.trim());
+    if (cells.length < 8) continue;
+    const level = Number(cells[1]);
+    const year = cells[6];
+    if (!Number.isInteger(level) || level < 1 || level > 25) continue;
+    if (!/^\d{4}$/.test(year)) continue;   // L20/L24/L25 are free-form by design
+    expected.set(level, year);
+  }
+  assert.ok(expected.size >= 20,
+    `parsed only ${expected.size} dated rows from levels.md — the table shape changed`);
+
+  // CABINET_DATA[n] = { label, keys, era: 'YYYY', ... }
+  const drawn = new Map();
+  for (const m of art.matchAll(/\n {2}(\d+): \{\n(?:.*\n)*?\s{4}era: '([^']+)',/g)) {
+    drawn.set(Number(m[1]), m[2]);
+  }
+  assert.ok(drawn.size >= 20,
+    `parsed only ${drawn.size} cabinets from cabinet-art.js — CABINET_DATA's shape changed`);
+
+  const wrong = [];
+  for (const [level, year] of expected) {
+    if (!drawn.has(level)) continue;       // a level with no cabinet art yet
+    if (drawn.get(level) !== year) wrong.push(`L${level}: draws ${drawn.get(level)}, table says ${year}`);
+  }
+  assert.deepStrictEqual(wrong, [],
+    'a cabinet is displaying a year the curriculum table does not agree with:\n  ' + wrong.join('\n  '));
+});

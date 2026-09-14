@@ -40,7 +40,16 @@ let animId = null;
 let active = false;
 let mode = 'menu';            // 'menu' | 'track'
 let onExit = null;            // → back to the arcade door
-let onTrackComplete = null;   // (id) → persistence hook, same shape as Act 6's
+// NOTE (2026-09-13): this hub deliberately has NO completion hook, unlike Act 6's.
+// It had one — `options.onComplete`, shaped after `recordTextWorldComplete` — and
+// nothing ever passed it, so the credit path was dead code that LOOKED wired. That
+// is worse than an absence: the next reader assumes completion is tracked through
+// it. It is not, and it does not need to be. `Ghost.commitLap` writes the track's
+// record to `kk-slots[i].speedway` from `crossTheLine()` in track.js — the moment
+// the lap finishes, not the moment the player leaves — so the record is already
+// safe on EVERY exit path, Space off the pit board or Escape alike. The ghost IS
+// the record of play. TF-T1's lesson ("leaving must never silently drop something
+// the player actually did") is honoured by recording earlier, not by a second hook.
 let currentId = null;
 let cursor = 0;
 let tracks = [];
@@ -104,7 +113,6 @@ export function start(cvs, opts = {}) {
     element = null;
   }
   onExit = typeof options.onExit === 'function' ? options.onExit : null;
-  onTrackComplete = typeof options.onComplete === 'function' ? options.onComplete : null;
   const injected = normalizeTracks(options.tracks);
   if (injected) tracks = injected;
   if (!tracks.length) tracks = PLACEHOLDER.slice();
@@ -127,7 +135,6 @@ export function stop() {
   if (Track.isActive()) Track.stopTrack();
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
   onExit = null;
-  onTrackComplete = null;
   currentId = null;
 }
 
@@ -157,10 +164,6 @@ function enterTrack(i) {
 }
 
 function returnToMenu() {
-  // Credit a finished lap however the player leaves it — Space off the pit board OR
-  // Escape. The same lesson Act 6 learned (TF-T1): leaving must never silently drop
-  // something the player actually did.
-  if (currentId && onTrackComplete && Track.hasWon()) onTrackComplete(currentId);
   if (Track.isActive()) Track.stopTrack();
   currentId = null;
   mode = 'menu';

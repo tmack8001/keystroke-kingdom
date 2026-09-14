@@ -6,6 +6,13 @@ const $ = (id) => document.getElementById(id);
 // browser silently falls back. On screen it rendered as a period, so Acts 4 and 5
 // and the Level 20 cabinet had been shipping "1993–." and "1980–." for months.
 // Journal O11 is precisely this trap: screenshot any symbol you render.
+// A cabinet's `era` is the GAME'S RELEASE YEAR, taken from the assignment table in
+// `.claude/rules/levels.md`. It is NOT `.claude/rules/tech.md`'s "Era Progression"
+// table, which lists the GRAPHICS FIDELITY target per level ("Atari 1977",
+// "NES 1985", "SNES 1991"). Those are two tables of year-shaped numbers for the
+// same 25 levels, and Act 1 shipped filled from the wrong one: Breakout read 1977
+// (it is 1976), Space Invaders 1980 (1978), Pac-Man 1985 (1980), Galaga 1991
+// (1981). Fixed 2026-09-13 and pinned by INV-93 in tests/static/invariants.test.mjs.
 const ACTS = [
   { num: 1, name: 'THE ARCADE',          era: '1976–1982', levels: [1, 2, 3, 4, 5]      },
   { num: 2, name: 'THE COMPUTER WING',   era: '1981–1986', levels: [6, 7, 8, 9, 10]     },
@@ -534,7 +541,7 @@ const CABINET_DATA = {
   1: {
     label: 'LEVEL 1',
     keys: 'J F',
-    era: '1977',
+    era: '1976',
     // Breakout: "rotary knob (paddle controller), horizontal movement only" — NO joystick (research/wiki/games/breakout.md)
     controls: { stick: 'knob',      buttons: 0 },
     colors: { body: '#1a1a2e', screen: '#000', accent: '#39ff14', trim: '#333' },
@@ -559,7 +566,7 @@ const CABINET_DATA = {
   2: {
     label: 'LEVEL 2',
     keys: 'D K',
-    era: '1980',
+    era: '1978',
     // Space Invaders: "two-way joystick (left/right) plus fire button" — and WHICH
     // cabinet matters. Museum of the Game: "Joystick: 2-way (left, right) - Left/Right
     // button on the Bally/Midway North American Version." Taito published JP/AS/EU,
@@ -597,7 +604,7 @@ const CABINET_DATA = {
   3: {
     label: 'LEVEL 3',
     keys: 'S L',
-    era: '1985',
+    era: '1980',
     // Pac-Man: "four-way joystick (no diagonals)" — and no buttons at all
     controls: { stick: '4way',      buttons: 0 },
     colors: { body: '#0e1a2e', screen: '#000', accent: '#6cf', trim: '#335' },
@@ -627,7 +634,7 @@ const CABINET_DATA = {
   4: {
     label: 'LEVEL 4',
     keys: 'A ?',
-    era: '1991',
+    era: '1981',
     // Galaga: "two-way joystick (left/right) plus fire button"
     controls: { stick: '2way',      buttons: 1 },
     colors: { body: '#1a0a2e', screen: '#000', accent: '#f0f', trim: '#424' },

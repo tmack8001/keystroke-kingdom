@@ -1117,6 +1117,15 @@
 
 .select-act-next { margin-top: 16px; margin-bottom: 24px; }
 
+/* A BONUS ACT's wall is short — one door, or a handful of machines — so its
+   labels end much higher up the screen than a five-cabinet act's do, and the
+   "▼ ACT 7 — THE SPEEDWAY" line lands right under the machine's own hint. Both
+   are small faint grey text, so they read as one block and the eye cannot tell
+   the machine's caption from the navigation. The page has room to spare here;
+   spend it. (Found 2026-09-13 with two doors on the wall — it only gets worse
+   as wings are added.) */
+.select-cabinets.wing-wall + .select-act-next { margin-top: 34px; }
+
 .select-cabinet {
   display: flex;
   flex-direction: column;

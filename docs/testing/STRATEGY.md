@@ -645,6 +645,24 @@ respected exactly as written; and (d) `consoleErrors`.
   number is retired rather than reused, so nothing dangles. The machines are
   getting their own act instead (docs/ROADMAP.md §2 "The Computer Room").
 
+- **INV-93** (L0) **A cabinet's displayed YEAR is the game's release year, from the
+  curriculum's own assignment table.** Every level whose row in
+  `.claude/rules/levels.md` §"Complete Game Assignment Table" carries a plain
+  four-digit year must have exactly that year as its `era:` in
+  `js/ui/cabinet-art.js`'s `CABINET_DATA`. Levels whose table year is not a plain
+  year (L20 `1960s–∞`, L24/L25 `—`) are exempt and free-form.
+
+  *Why this exists:* four of Act 1's five cabinets shipped the WRONG YEAR —
+  Breakout 1977 (it is 1976), Space Invaders 1980 (1978), Pac-Man 1985 (1980),
+  Galaga 1991 (1981). The values were not random: they are
+  `.claude/rules/tech.md`'s **Era Progression** table, which lists the *graphics
+  fidelity target* per level ("Atari 1977", "NES 1985", "SNES 1991"), not the
+  game's release year. Somebody filled `era:` from the wrong table, Acts 2–5 were
+  later filled correctly from the game years, and the mismatch sat on the select
+  screen reading "LEVEL 3 · 1985" under a Pac-Man cabinet. Found 2026-09-13 by
+  LOOKING at a screenshot taken for an unrelated reason. Two tables of
+  year-shaped numbers for the same levels is the trap; this test is the guard.
+
 ## 6. Findings protocol
 
 `docs/testing/FINDINGS.md` is the ledger. Each entry:
