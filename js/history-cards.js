@@ -124,7 +124,7 @@ export const HISTORY_CARDS = [
     fact: "A club of super-curious teenagers named themselves after a comic-book villain team — then raced to understand the telephone system better than anyone alive, even writing their own how-it-works journals." },
   { id: 'phone-phreaking', level: 9, word: 'whistle', title: 'PHONE PHREAKING', year: '1971',
     fact: "A tiny toy whistle from a cereal box happened to make the exact musical note the phone network listened for. The fellow who noticed later met a young Steve Jobs and helped write one of the first word processors." },
-  { id: 'masters-of-deception', level: 11, word: 'mod', title: 'MASTERS OF DECEPTION', year: '1989',
+  { id: 'masters-of-deception', level: 11, word: 'mod', title: 'MASTERS OF DECEPTION', year: 'LATE 1980s',
     fact: "A rival club of clever kids picked a name just one letter past their competitors' — M for the group after the L. For years the two teams competed to learn the most about how phones and computers worked." },
   { id: 'hacker-ethic', level: 11, word: 'levy', title: 'THE HACKER ETHIC', year: '1984',
     fact: "A writer named Steven Levy spent time with the very first computer tinkerers and wrote down their big idea: being curious and sharing what you learn makes everything better. He called it the Hacker Ethic." },
@@ -154,11 +154,25 @@ export const HISTORY_CARDS = [
   { id: 'reader-rabbit', level: 7, word: 'reader', title: 'READER RABBIT', year: '1984',
     fact: 'Leslie Grimm built a game that taught children to read before they could read the instructions. Every word here that you can type AND read is that same idea.' },
   { id: 'gizmos-gadgets', level: 8, word: 'gadget', title: 'GIZMOS & GADGETS', year: '1993',
-    fact: 'Solve a science puzzle, win a machine part, build your own car or plane, then race it. Losing only meant going back and building a better one.' },
+    // The original ending — "Losing only meant going back and building a better
+    // one" — was cut 2026-09-13 by a card audit. It is not sourced anywhere: the
+    // card's own research page says "no source found confirms the game is
+    // non-punitive... a design INTERPRETATION of the documented rebuild loop, not
+    // a sourced claim about the game's feedback behaviour." It was also the most
+    // flattering possible claim for THIS game's One Rule, which is exactly why it
+    // should have been suspected. Everything below is on the page.
+    fact: 'Solve a science puzzle, win a machine part, build your own car or plane — then race it against a rival named Morty Maxwell.' },
   { id: 'oregon-trail', level: 8, word: 'trail', title: 'THE OREGON TRAIL', year: '1971',
     fact: 'Three student teachers wrote it for a computer that had no screen at all — it printed the game onto paper, one line at a time. It became the most successful school game ever made.' },
   { id: 'rockys-boots', level: 12, word: 'boots', title: "ROCKY'S BOOTS", year: '1982',
-    fact: 'A game where seven-year-olds wired up real logic circuits to make a giant boot kick things off a belt. Its programmer had hidden his own name inside a game three years earlier — the first secret ever hidden in one.' },
+    // Two audit corrections, 2026-09-13. "the first secret ever hidden in one" was
+    // overreach: every source hedges it as "MOST WIDELY CITED as the first"
+    // (warren-robinett.md, easter-egg-culture.md) — the F7 failure class, on a card
+    // a child reads. And "seven-year-olds" was unsourced: the age appears once, in
+    // this project's own prose on the wiki page, never in its cited facts. The
+    // gates are sourced ("logic gates (AND, OR, NOT)... a mechanical boot that
+    // kicks objects off a conveyor belt") and are better copy anyway.
+    fact: 'Children wired real AND, OR and NOT gates into a circuit that made a boot kick things off a belt. Its programmer had hidden his name in a game three years earlier — one of the very first secrets in one.' },
   { id: 'stickybear-typing', level: 13, word: 'stickybear', title: 'STICKYBEAR TYPING', year: '1985',
     fact: 'A bear taught children to type on a blue screen in 1985. It drew a whole keyboard along the bottom and lit up the next key to press — the same idea as the keyboard at the bottom of yours.' },
 
