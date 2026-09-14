@@ -16,9 +16,19 @@
 > the opposite of what this document records.
 >
 > **This document is kept for its RUBRIC and its METHOD, which are good, and as the record
-> of a real moment. Its per-level verdicts are history.** A re-audit against the current
-> build has not been done for the other levels listed WEAK here — so treat every verdict
-> below as *unknown until re-checked*, never as a current finding.
+> of a real moment. Its per-level verdicts are history.**
+>
+> **Status of every WEAK verdict, re-checked 2026-09-13:**
+>
+> | Level | July verdict | Now |
+> |---|---|---|
+> | 3 Pac-Man | "all four ghosts render as the same pale blue" | **FIXED.** Verified personally: outside the frightened window the ghosts are red/pink/cyan/orange, matching the wiki. `GHOST_COLORS` was always correct; the bug was that a power pellet fired on EVERY pattern completion, and early patterns are 1-2 keys, so they were blue almost constantly. `pacman.js` now frightens every 4th completion and says so in a comment. Blue ghosts are correct Pac-Man behaviour *during* that window. |
+> | 8 Tetris | "pieces vanish rather than stack" | **FIXED 2026-09-13.** The stack always worked — the whole well was drawn at dead centre, behind the prompt panel and keyboard guide. Moved to the left margin. Journal F30. |
+> | 11 Sonic | "no speed/motion despite speed being the sourced core pillar" | **FIXED.** Verified personally: spin attack with afterimage trails and speed streaks. Journal F31. |
+> | 14 Donkey Kong Country | "the protagonist sprite does not move at all" | **FIXED.** Verified personally: runs with a lope cycle, bananas, shadow. Journal F31. |
+> | 12 Street Fighter II | "no fight at all, decorative-motion-only" | **Re-scored STRONG** by a 2026-09-13 audit lane with mid-play and victory frames: two fighters, health bars, a FIGHT!/K.O./YOU WIN sequence with a genuine pose change between frames. Not personally re-verified. |
+> | 21 Out Run | "fully static road" | **Re-scored fine** by a 2026-09-13 lane: victory frames show the car driving forward and the sun panning. Not personally re-verified mid-play. |
+> | 17 GoldenEye | "no player characters, no weapons, no visible shooting" | **STILL OPEN, and it is a JUDGEMENT question, not a factual one.** A 2026-09-13 lane scored it STRONG on the strength of the four-quadrant split-screen homage alone. That is a different claim from July's: both can be true. Whether "the signature mechanic is operating" is satisfied by depicting the *format* (split-screen) rather than the *play* (characters shooting) is a call for Trevor, not a measurement. |
 >
 > **Why this warning is this loud:** on 2026-09-13 a fresh audit lane scored Sonic and DKC
 > WEAK from idle-and-victory frames only — it never typed — and then found this document

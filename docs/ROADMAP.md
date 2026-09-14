@@ -802,8 +802,22 @@ journal L20), and the document it cross-checked against,
 was written by commit `9ca6932`, which rewrote **20 theme files** and added the exact
 motion it said was missing. That audit is now marked SUPERSEDED, and the two wiki
 "downstream notes" that had copied its verdicts outward are corrected in place.
-**Every other WEAK verdict in that July document is likewise unverified against the
-current build** — treat them as unknown, not as findings.
+**Every other WEAK verdict in that July document has now been re-checked** and the
+results are tabulated in its supersession banner. Summary: **six of the seven are
+resolved** — Pac-Man's ghosts are red/pink/cyan/orange outside the frightened window
+(the palette was always right; a power pellet fired on EVERY completion and early
+patterns are 1-2 keys, so they were blue almost constantly — `pacman.js` now frightens
+every 4th), Tetris was fixed this session, Sonic and DKC were never broken after
+2026-07-18, and Street Fighter II and Out Run were re-scored by lanes with mid-play
+and victory frames.
+
+**One remains open, and it is a JUDGEMENT for Trevor rather than a measurement:
+Level 17 (GoldenEye).** July said "no player characters, no weapons, no visible
+shooting". A 2026-09-13 lane scored it STRONG on the four-quadrant split-screen homage
+alone. Both statements are true — they disagree about whether depicting the **format**
+satisfies `theme-authoring.md`'s "the scene must show the signature mechanic actually
+operating", or whether the **play** (characters, shooting) has to be there. Worth a
+one-line answer before anyone builds to either reading.
 
 **Reported and STILL NOT fixed** (ranked, for a later pass): Level 24's victory is thin beside its neighbours
 (L21/22/23 all show overt kinetic motion in the same window); Levels 7 and 10 are
