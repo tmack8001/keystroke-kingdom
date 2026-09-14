@@ -688,11 +688,45 @@ respected exactly as written; and (d) `consoleErrors`.
   `selectBypass` (WOPR) escape hatch keeps working for every wing regardless.
 
   *The rule this encodes (Trevor, 2026-09-13):* a wing's gate depends on **what the wing
-  asks of the player**. Wings you READ and EXPLORE may open earlier — THE COMPUTER ROOM
+  asks of the player**. Wings you READ and EXPLORE may open earlier — THE HARDWARE
   opens at **Level 20**, the game's own binary→`HELLO` beat. Wings where you MAKE
   something stay at **25** — Act 6's text worlds, above all "YOUR OWN WORLD", because
   that is the point *"where the player can choose where their adventure goes next"* and
   choosing your own direction is a graduation, not a waypoint.
+
+- **INV-96** (L1) **A bonus wing's cards NEVER change the arcade's denominator.**
+  `TOTAL_CARDS` is the number a player reads as "CARD n OF 60" and on the slot picker's
+  `★ found / total`. Wing cards therefore live in their OWN array (`WING_CARDS` in
+  `js/history-cards.js`), not in `HISTORY_CARDS`, and `TOTAL_CARDS === HISTORY_CARDS.length`
+  keeps meaning exactly what it meant before any wing existed.
+
+  *The harm this prevents, stated plainly:* appending wing cards to the shared bank would
+  make **every existing save less complete the moment we ship a room the player has not
+  opened** — a number the child already earned getting smaller through no act of theirs.
+  That is the same law as `docs/specs/hardware-wing.md` §0.4 (Trevor: existing hardware
+  cards *"stay, but cross-referenced"*) and the same house rule as settings only ever
+  making play safer: **the game's numbers may grow for a player, never shrink under them.**
+
+- **INV-97** (L1) **A station card attaches to a WING + STATION, and can never leak into a
+  level pool.** A bonus wing has no levels, and INV-56's "earliest level whose keys can spell
+  the word" degenerates once every key is unlocked — it would compute a curriculum level for a
+  2004 broadband tower. `cardsForStation(wing, station)` is the second axis;
+  `cardsForLevel(level)` filters `c.level === level` and so excludes station cards by
+  construction, exactly as it already excludes secret cards.
+
+- **INV-98** (L1) **A station's rotation key is namespaced and needs no save-schema change.**
+  `cardRotation` is already a string-keyed map (`bumpCardRotation` writes `String(key)`), so a
+  station rotates on `"hw:<station>"`, which cannot collide with a level key like `"13"`.
+  *Why this is an invariant and not an implementation detail:* it is the property that makes
+  the whole wing a **zero-migration** change — no version bump, and no way for an existing
+  save to be damaged by a room it has never entered.
+
+- **INV-99** (L1/L2) **A bonus wing honours the wrong-keypress contract in its own input
+  path.** THE HARDWARE's boot line is typed outside the 25-level engine, so INV-1..5 do not
+  reach it and it must uphold them itself: a wrong key plays the gentle nudge, the expected
+  character **stays and waits**, nothing advances, and nothing is taken away. There is no
+  timer and no failure state — only not-yet-right. *(`.claude/rules/product.md` §3; this is
+  the easiest rule in the project to lose the moment input leaves `handleGameKey`.)*
 
   **A player mid-game must never see a wing close.** Acts 6 and 7 declare nothing and so
   keep 25; any future change to an EXISTING wing's `unlockLevel` may only ever lower it.
