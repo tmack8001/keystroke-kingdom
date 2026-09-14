@@ -1,5 +1,31 @@
 # Mechanics-Fidelity & Liveness Audit — 2026-07-12
 
+> # ⚠️ SUPERSEDED. DO NOT CITE THIS DOCUMENT'S FINDINGS AS CURRENT.
+>
+> **Every theme this audit scored was rewritten six days after it was written.** Commit
+> `9ca6932` (2026-07-18, "era-progressive theme graphics") substantially rewrote **20
+> theme files** — including every level scored WEAK here: Pac-Man, Tetris, Sonic, Street
+> Fighter II, GoldenEye and Out Run. Sonic gained 399 changed lines, Donkey Kong Country
+> 673, and the diff adds the exact thing this audit said was missing:
+> *"DK RUNS through the world — a weighty knuckle-lope that actually translates"*,
+> `dkVX`, `dkPhase`, `dkBob`.
+>
+> **Re-verified 2026-09-13** by typing 40 keystrokes and capturing time-separated frames:
+> **Level 11's Sonic moves** in a spin attack with afterimage trails and speed streaks,
+> and **Level 14's Kong runs** with a visible lope cycle, bananas and a shadow. Both are
+> the opposite of what this document records.
+>
+> **This document is kept for its RUBRIC and its METHOD, which are good, and as the record
+> of a real moment. Its per-level verdicts are history.** A re-audit against the current
+> build has not been done for the other levels listed WEAK here — so treat every verdict
+> below as *unknown until re-checked*, never as a current finding.
+>
+> **Why this warning is this loud:** on 2026-09-13 a fresh audit lane scored Sonic and DKC
+> WEAK from idle-and-victory frames only — it never typed — and then found this document
+> and cited it as corroboration. A stale finding confirmed a wrong fresh one, and two
+> wrongs read as certainty. Journal **F31**.
+
+
 Read-only scene audit of Levels 1–5, 8, 9, 11, 12, 14–25 (21 levels). **Levels 6, 7, 10, 13
 are EXCLUDED — mid-rework by other agents at audit time (donkeykong.js, dragonlair.js,
 zelda.js, myst.js).** This audit does not touch any js/ or css/ file; it is evidence for

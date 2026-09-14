@@ -46,7 +46,9 @@ charge-up move. The signature mechanic the game is remembered for is exactly wha
 marketing promised: speed itself as the core design pillar, expressed through momentum
 physics and looping, springs-and-slopes level geometry rather than combat.
 
-*Downstream note: this directly explains the liveness audit's Level 11 finding (docs/
+*Downstream note — **⚠️ STALE, corrected 2026-09-13.** The liveness audit this note cites was SUPERSEDED six days after it was written: commit `9ca6932` (2026-07-18) rewrote 20 theme files, and re-verification on 2026-09-13 (40 keystrokes, time-separated frames) shows Sonic moves in a spin attack with afterimage trails and speed streaks. The original note is kept below because the SOURCED MECHANIC it describes is still the right bar — only its claim about our build is wrong. Journal F31.*
+
+*Original note: this directly explained the liveness audit's Level 11 finding (docs/
 validation/liveness-audit-2026-07-12.md) — ring collection is implemented correctly, but
 the wiki's own sourced "core design pillar" is speed/momentum, which our theme currently
 does not visibly depict (Sonic drifts ~25px over 6+ seconds). No history-card text

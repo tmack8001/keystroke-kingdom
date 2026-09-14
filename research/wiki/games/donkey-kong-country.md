@@ -50,7 +50,9 @@ boss fight. The signature mechanic the game is remembered for is the two-charact
 tag-team system layered onto platforming — not just co-op-style switching, but each
 Kong's distinct strength/speed tradeoff being the puzzle the level design is built around.
 
-*Downstream note: this directly explains the liveness audit's Level 14 finding (docs/
+*Downstream note — **⚠️ STALE, corrected 2026-09-13.** The liveness audit this note cites was SUPERSEDED six days after it was written: commit `9ca6932` (2026-07-18) rewrote 20 theme files, and re-verification on 2026-09-13 (40 keystrokes, time-separated frames) shows the Kong runs with a visible lope cycle, bananas and a shadow. The original note is kept below because the SOURCED MECHANIC it describes is still the right bar — only its claim about our build is wrong. Journal F31.*
+
+*Original note: this directly explained the liveness audit's Level 14 finding (docs/
 validation/liveness-audit-2026-07-12.md) — the gorilla-headed character sprite is
 completely static across the sample window, which contradicts the sourced mechanic above
 (DKC is fundamentally about Donkey/Diddy running, jumping, rolling, and swapping). No

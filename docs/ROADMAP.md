@@ -763,9 +763,23 @@ the crop that "proved" clipping had itself sliced the glyphs). Fixed:
   deliberately-receding surface to rescue one label is the wrong trade. It is not a
   hint, it is the ask.
 
-**Reported and STILL NOT fixed** (ranked, for a later pass): Sonic (L11) and Donkey
-Kong Country (L14) score WEAK on mechanics fidelity — both are open findings from
-2026-07-12 and still true today; Level 24's victory is thin beside its neighbours
+**⚠️ TWO OF THE WAVE'S FINDINGS WERE FALSE, and the way they were false matters
+(journal F31).** A lane scored Sonic (L11) and DKC (L14) WEAK and reported them as
+*"PRE-EXISTING, ALREADY-DOCUMENTED open findings... confirmed STILL TRUE today."*
+**Both characters move.** Re-verified by typing 40 keystrokes and capturing
+time-separated frames: Sonic spin-attacks with afterimage trails and speed streaks;
+the Kong runs with a lope cycle, bananas and a shadow. Two independent errors lined up
+and looked like confirmation — the lane sampled only the FIRST PROMPT and the VICTORY
+burst (neither is mid-play, and both themes gate motion on keystrokes by design,
+journal L20), and the document it cross-checked against,
+`docs/validation/liveness-audit-2026-07-12.md`, had been invalidated six days after it
+was written by commit `9ca6932`, which rewrote **20 theme files** and added the exact
+motion it said was missing. That audit is now marked SUPERSEDED, and the two wiki
+"downstream notes" that had copied its verdicts outward are corrected in place.
+**Every other WEAK verdict in that July document is likewise unverified against the
+current build** — treat them as unknown, not as findings.
+
+**Reported and STILL NOT fixed** (ranked, for a later pass): Level 24's victory is thin beside its neighbours
 (L21/22/23 all show overt kinetic motion in the same window); Levels 7 and 10 are
 near-static mid-play with the payoff concentrated in `victory()`; and the rest of the
 `--atari-dim` band (select hints, cabinet captions, complete-stat labels) sits at

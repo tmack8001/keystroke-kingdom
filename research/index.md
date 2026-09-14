@@ -312,5 +312,5 @@ Agents: read this file first, then drill into pages. Schema: [[WIKI]].*
 ## Journal & planning (project memory)
 
 - [[JOURNAL]] — journal schema · [[dashboard]] — live Dataview status board
-- 98 journal entries (0 OPEN) — views: [[learnings]] · [[observations]] · [[failures]]
+- 99 journal entries (0 OPEN) — views: [[learnings]] · [[observations]] · [[failures]]
 - [[ROADMAP]] — *Captured 2026-07-11 at the end of the Act 5 / Free Play / Settings / Graphics build session. Everything below is discussed-and-agreed direction or discovered-and-deferred work. Update this file as items land or change; 

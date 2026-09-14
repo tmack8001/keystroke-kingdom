@@ -20,6 +20,7 @@
 | [[F28-the-playtest-tool-photographed-frames-the-player-never-sees\|F28]] | The playtest tool photographed frames the player never sees — and a working feature looked broken | addressed | high | tooling | 2026-09-13 | 2026-09-13 |
 | [[F29-text-said-what-it-said-and-i-filled-the-silence\|F29]] | A cited source's SILENCE is not a licence to default — three wrong cabinet panels, three different ways | addressed | high | research-integrity | 2026-09-13 | 2026-09-13 |
 | [[F30-the-symptom-was-the-stack-the-cause-was-the-centre\|F30]] | Four defects, one shape — theme art drawn at the centre, where the UI has always lived | addressed | high | graphics | 2026-09-13 | 2026-09-13 |
+| [[F31-a-stale-finding-corroborated-a-wrong-one\|F31]] | A stale finding in the record corroborated a wrong fresh one — and two wrongs read as certainty | addressed | high | agent-process | 2026-09-13 | 2026-09-13 |
 | [[F5-keyboard-preview-had-no-number-row\|F5]] | The keyboard preview had no number row at all | addressed | medium | a11y | 2026-07-11 | 2026-07-11 |
 | [[F8-eniac-six-programmers-list-named-five\|F8]] | The ENIAC "six programmers" list named five people | addressed | medium | research-integrity | 2026-07-11 | 2026-07-11 |
 | [[F10-settings-survival-build-agent-died-twice\|F10]] | The settings/survival build agent died twice | addressed | medium | agent-process | 2026-07-11 | 2026-07-11 |
