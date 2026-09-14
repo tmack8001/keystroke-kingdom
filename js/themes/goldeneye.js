@@ -531,6 +531,81 @@ function shadeCol(hex, mul, a) {
 }
 
 // ─── Split-screen divider lines (ambient — allowed behind the UI panels) ────
+// ── THE SHARED MAP ──────────────────────────────────────────────────────────
+// Trevor, 2026-09-14: "Maybe we introduce a map showing where the players are and
+// to nail home that they are in the same arena — as the player might not pick up
+// on that."
+//
+// He is right, and it is a nice instance of a general trap: the four quadrants DO
+// now render one arena, but the only way to notice is to compare two quadrants and
+// realise the floor-plans match — which is a deduction, and a five-year-old will
+// not make it. A fact the design depends on has to be SHOWN, not inferrable.
+//
+// So: one small map, one copy of the arena, four dots. It sits in the TOP BAND
+// between the two HUD corners (visual-validation.md's stage), which is where an
+// arcade would have put a scoreboard anyway — never over the prompt panel, never
+// over the keyboard guide.
+function drawArenaMap(W, H) {
+  const cx = W * 0.5, cy = H * 0.085;
+  const sx = W * 0.055, sy = H * 0.052;
+  const map = (u, v) => ({ x: cx + u * sx, y: cy + v * sy });
+
+  ctx.save();
+  // A dim plate so the map reads over whatever the quadrants are doing behind it.
+  ctx.fillStyle = 'rgba(6,8,6,0.72)';
+  ctx.fillRect(cx - sx * 0.95, cy - sy * 1.0, sx * 1.9, sy * 2.1);
+  ctx.strokeStyle = 'rgba(216,200,64,0.35)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(cx - sx * 0.95 + 0.5, cy - sy * 1.0 + 0.5, sx * 1.9 - 1, sy * 2.1 - 1);
+
+  // The arena, once.
+  ctx.strokeStyle = 'rgba(216,200,64,0.5)';
+  ctx.beginPath();
+  ARENA_PATH.forEach((nd, i) => {
+    const a = map(nd[0], nd[1]);
+    if (i === 0) ctx.moveTo(a.x, a.y); else ctx.lineTo(a.x, a.y);
+  });
+  ctx.closePath();
+  ctx.stroke();
+
+  // Its features, as the same small marks used on the quadrant plans.
+  ctx.fillStyle = 'rgba(216,200,64,0.55)';
+  ARENA.forEach((nd) => {
+    if (!nd.feature) return;
+    const m = map(nd.u, nd.v);
+    ctx.fillRect(m.x - 2, m.y - 2, 4, 4);
+  });
+
+  // FOUR DOTS, ONE ROOM. Each in its player's colour, each labelled — so the
+  // shared arena is a thing you SEE rather than a thing you work out.
+  players.forEach((op, oi) => {
+    const a = walkPath(ARENA_PATH, op.prog);
+    const m = map(a.x, a.y);
+    const col = QUADRANTS[oi].accent;
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = oi === 0 ? 8 : 3;
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, oi === 0 ? 3.2 : 2.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Stagger above/below: when two players stand together — which is exactly the
+    // moment this map exists to show — their tags landed on top of each other and
+    // rendered "PP2".
+    ctx.font = '5px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(QUADRANTS[oi].id, m.x, m.y + (oi % 2 === 0 ? -5 : 9));
+  });
+
+  ctx.font = '5px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(216,200,64,0.8)';
+  ctx.fillText(`ALL 4 IN ${ARENA_NAME}`, cx, cy + sy * 1.0 - 4);
+  ctx.textAlign = 'left';
+  ctx.restore();
+}
+
 function drawDividers(W, H) {
   ctx.strokeStyle = 'rgba(210, 200, 150, 0.35)';
   ctx.lineWidth = 2;
@@ -761,6 +836,7 @@ function render() {
 
   for (let i = 0; i < QUADRANTS.length; i++) drawQuadrant(i, W, H);
   drawDividers(W, H);
+  drawArenaMap(W, H);
   for (let i = 0; i < QUADRANTS.length; i++) drawQuadTag(i, W, H);
   drawPings();
 

@@ -1,4 +1,5 @@
-# THE COMPUTER ROOM — the hardware-history wing
+# THE DEN — the hardware-history wing
+*(working name until 2026-09-14: "The Computer Room")*
 ## Product spec / ADR — the bonus wing whose cabinets ARE the subject
 
 *Written 2026-09-13 by the `product-manager` lane. Inputs: `docs/ROADMAP.md` §2 "THE COMPUTER
@@ -810,11 +811,19 @@ cards" to "any card without a numeric `level`." Neither rule weakens.
 
 ## 11. Open questions for Trevor
 
-1. **The wing's name.** *My recommendation: **THE DEN***, with the door hint `HOME COMPUTERS`. The
-   working name COMPUTER ROOM collides with Act 2's **THE COMPUTER WING** — a child reading the
-   back-wall navigation strip would see both act names within one keypress of each other. THE DEN
-   is where the family computer actually lived, and nothing else in the game is called it. Keep
-   COMPUTER ROOM if you prefer it and we accept the adjacency.
+1. ~~**The wing's name.**~~ **✅ DECIDED 2026-09-14 — THE DEN**, door hint `HOME COMPUTERS`.
+   Trevor: *"Computer room's naming can be the Den/Office or Attic. Unless the earlier Computer
+   Wing has a better more resemblanced name."* Of the three:
+   - **THE DEN** — it is where a family's computer actually lived, which is the wing's whole
+     subject, and nothing else in the game is called it.
+   - **THE ATTIC** — evocative for old machines, but it fights Act 4, which `act4.md` already
+     calls *"the top floor"*. The house metaphor is crowded: Act 3 is THE BASEMENT.
+   - **THE OFFICE** — colder than a room a child plays in. It keeps one real claim though, worth
+     recording: Trevor's own Stickybear memory is of *his dad's office computer brought home* —
+     but the machine came home TO the den, and the den is the scene this wing draws.
+
+   And it resolves the collision that prompted the question: the working name COMPUTER ROOM sat
+   one keypress from Act 2's **THE COMPUTER WING** in the back-wall navigation strip.
 2. **Act number 8, and the numbering question.** The number is genuinely free (the Guild Hall
    proposal was superseded into this wing and vacated it), so *my recommendation is to take `num:
    8` and not block on the bigger question*. But this is the fourth parallel wing on a five-act
