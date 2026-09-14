@@ -4,7 +4,7 @@ code: [js/ui/cabinet-art.js]
 rules: [.claude/rules/levels.md]
 screenshots: docs/screenshots/acts/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-09-13 (BACK_WALL_DOORS registry + state.doorIndex; act view unchanged)
+verified: 2026-09-13 (console-station cabinet art overhaul + control panels + screen/year fixes — see git log js/ui/cabinet-art.js)
 ---
 
 # Select Screen ("GREETINGS PROFESSOR FALKEN")
@@ -16,24 +16,75 @@ Basement (11-15), Act 4 The Command Center (16-20), Act 5 Full Circle (21-25).
 
 ## Cabinet art system
 
-Two-layer canvas draw, `drawCabinet(canvas, levelNum, scale=2)`:
-- **Shell** (generic, shared): body, marquee, bezel, control panel with a red button
-  + two accent buttons, joystick, speaker grilles, side-edge glow.
-- **Screen** (bespoke per level): `CABINET_DATA[levelNum].drawScreen(ctx, x, y, w, h)`
-  hand-draws that game's iconography in raw canvas primitives at a fixed 56×80
-  internal resolution — e.g. Breakout bricks, a Space Invaders pixel sprite, Q*bert's
-  isometric pyramid, Missile Command's defensive-only "cities never destroyed" scene.
-  Cabinets recreate the real game faithfully — no key-glyph puns (see also
-  [[level-themes]], which follows the same rule for gameplay canvases).
-- **Body set dressing** (optional, added 2026-09-11): after the shell and screen,
-  `drawCabinet` calls `CABINET_DATA[levelNum].drawExtras(ctx, w, h)` if that cabinet
-  defines one — for art on the cabinet BODY rather than its screen. Exactly one
-  cabinet uses it today: **Level 20 (the terminal) carries a rubber duck** on its
-  control panel (`drawRubberDuck`, a 7×8 pixel duck at cabinet-space `39,49`; four
-  fixed colour constants). It is set dressing, never interactive, and — like the rest
-  of the cabinet — renders dark while the level is still a locked silhouette. Catalog
-  entry (and the Level-22 `STUCK? TELL THE DUCK.` hint line that is its other half,
-  which lives in `js/main.js`): [[easter-eggs]].
+`drawCabinet(canvas, levelNum, scale=2)` dispatches on `CABINET_DATA[levelNum].shell`:
+absent (the default) draws an upright **arcade cabinet** (`drawCabinetArt`); `shell:
+'console'` draws a **console/computer station** instead (`drawConsoleStation`, below).
+Both share the same 56×80 internal canvas resolution and the same
+`data.drawScreen(ctx, x, y, w, h)` contract for the game iconography itself.
+
+**Rebuilt 2026-09-13** (journal F29 / `docs/ROADMAP.md` §3): Levels 8–19 were, until
+this wave, drawn as upright arcade cabinets regardless of what the design bible
+(`.claude/rules/levels/act2.md`, `act3.md`, `act4.md`) actually names for that slot —
+an Elektronika 60, an NES-and-wooden-TV, a Genesis, a beige PC, an SNES, a Game Boy
+Pocket, an N64/PlayStation on a 90s plastic CRT. `theme-authoring.md`'s "draw a real
+thing" rule now holds for the select screen, not just gameplay canvases. **Levels 12
+and 20 stay upright arcade cabinets on purpose** (Street Fighter II was a real coin-op;
+the terminal is the room's own machine, not a console) — the shell field is decided
+per level, not "8–19 uniformly."
+
+### Arcade cabinets (`drawCabinetArt`, no `shell` field)
+- **Shell**: body, marquee, bezel, control panel, speaker grilles, side-edge glow.
+- **Screen**: `data.drawScreen` hand-draws the game's iconography — e.g. Breakout
+  bricks, a Space Invaders pixel sprite, Q*bert's isometric pyramid, Missile Command's
+  defensive-only "cities never destroyed" scene.
+- **Per-cabinet control panel** (`data.controls`, e.g. `{ stick, buttons, stickSide?,
+  buttonColor?, buttonShape?, pedals? }`), rendered by `drawControlPanel` — faithful to
+  each cabinet's real panel rather than a shared generic joystick+button block:
+  Breakout is a rotary **knob**, zero buttons (a paddle controller — never a
+  joystick); Pac-Man is a **4-way stick, zero gameplay buttons**; Street Fighter II
+  carries **six** buttons; Missile Command's **trackball sits on the right** with
+  **three wide yellow buttons on the left**; Out Run is a **wheel** with a shifter and
+  **floor pedals** (`data.controls.pedals`, drawn separately from the panel since the
+  cabinet base was overpainting them). A level with no `controls` field falls back to
+  the original generic joystick+button shell.
+- **Body set dressing** (optional, added 2026-09-11): `drawCabinet` calls
+  `CABINET_DATA[levelNum].drawExtras(ctx, w, h)` if that cabinet defines one — art on
+  the cabinet BODY rather than its screen. Exactly one cabinet uses it today:
+  **Level 20 (the terminal) carries a rubber duck** on its control panel
+  (`drawRubberDuck`, a 7×8 pixel duck at cabinet-space `39,49`; four fixed colour
+  constants). It is set dressing, never interactive, and — like the rest of the
+  cabinet — renders dark while the level is still a locked silhouette. Catalog entry
+  (and the Level-22 `STUCK? TELL THE DUCK.` hint line that is its other half, which
+  lives in `js/main.js`): [[easter-eggs]].
+
+### Console/computer stations (`drawConsoleStation`, `shell: 'console'`)
+Levels 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19 (`machine:` names the object —
+`elektronika-60`, `nes`, `genesis`, `pc`, `snes`, `gameboy-pocket`, `n64`,
+`playstation`). Drawn as a small room vignette rather than a cabinet shell: a floor/
+shelf band, and either a TV/monitor/CRT housing (a console plugs into a **television**,
+a computer sits on a **monitor** — `data.machine === 'pc'` distinguishes them) or, for
+the Elektronika 60, a bespoke charcoal-CRT-and-drive-bay chassis. `display: 'crt90s'`
+(Levels 17, 19) swaps the housing to moulded grey 90s plastic instead of the
+wood-veneer television used for the earlier NES/Genesis-era sets (Levels 9–11).
+`data.drawStationScreen(ctx, x, y, w, h)`, if present, paints the station's own
+miniature in place of `drawScreen` — Level 8 is the only user today: the wall machine
+shows the 1984 Elektronika 60's actual TEXT display (BRACKETS forming the falling
+piece), while `js/themes/tetris.js` still plays the familiar coloured-tetromino look —
+two different true things about the same game, reconciled without touching the theme
+file. Cited against photographs, not silhouette notes alone (journal F29):
+`research/wiki/tech/console-hardware-silhouettes.md` §Media.
+
+### Screen and era corrections (2026-09-13)
+Four cabinet **screens** were wrong and are now fixed: **Level 4** was drawing Street
+Fighter II's fighters instead of Galaga (now shows Galaga's alien formation and tractor
+beam); **Breakout (L1)** and **Space Invaders (L2)** had colours their original
+hardware never had (Breakout's CRT was monochrome — colour now arrives via cellophane-
+strip-style horizontal bands per research/wiki/games/breakout.md, not four flat green
+rows; Space Invaders' overlay is corrected to its real Taito-vs-Midway panel per
+`research/` cited in commit `c0a8d72`); **Dragon's Lair (L7)** now draws its dragon,
+previously absent. Separately, four of Act 1's five cabinet **years** were wrong and
+are now fixed to match `.claude/rules/levels/act1.md` (1976/1978/1980/1981/1982) —
+pinned by the new invariant `INV-93`.
 
 ## Lit vs. locked
 
@@ -195,7 +246,16 @@ only, and the door view is a sub-state below them. The current reference frames 
 live in the two wings' own sets, and both were regenerated 2026-09-13 when the registry
 landed: `docs/screenshots/textworlds/door-standalone.png` (GREEN DRAGON focused,
 `capture-textworlds.js door`) and `docs/screenshots/speedway/00-the-speedway-door.png`
-(SPEEDWAY focused, `capture-speedway.js door`). The five `acts/*.png` frames were **not**
-regenerated this pass: the 2026-09-13 `cabinet-art.js` change touched only the back-wall
-registry and the door art — `renderSelectScreen`'s act view, `drawCabinet` and
-`CABINET_DATA` are byte-identical, checked against the diff rather than assumed.
+(SPEEDWAY focused, `capture-speedway.js door`).
+
+**`acts/*.png` are now STALE (flagged 2026-09-13, not regenerated by this pass —
+screenshot regeneration is out of scope for a docs-currency audit).** The note above
+("act view unchanged … `CABINET_DATA` are byte-identical") was true only for the
+BACK_WALL_DOORS-registry commit earlier the same day; later 2026-09-13 commits
+(`d01ce21`, `19228ce`, `781020a`, `f58a1ab`, `8a2672b`, `c0a8d72`, `95ef483`, `97213fa`)
+rebuilt `CABINET_DATA` substantially — console-station shells for Levels 8–11 and
+13–19, per-cabinet control panels, four corrected cabinet screens (L1/L2/L4/L7), and
+corrected Act 1 years. All five `docs/screenshots/acts/*.png` predate this (four from
+Jul 18, one from Sep 11) and no longer depict the cabinet art the code now renders.
+Regenerate with `node docs/screenshots/capture-all.js` (or per-act with `<act-slug>
+--acts-only`) once no other lane is driving a browser against this page's DOM.

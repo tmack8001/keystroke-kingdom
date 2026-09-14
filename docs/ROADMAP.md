@@ -855,12 +855,23 @@ photograph, stored and credited in `research/wiki/media/console-hardware-silhoue
     short walls change and the five-cabinet acts are untouched. The page had the room; it just
     was not spending it.
   - ~~**`docs/screenshots/capture-cards.js` is broken**~~ **IT IS NOT — CORRECTED TWICE.** Two
-    separate doc-audit passes (2026-09-11 and 2026-09-13) reported this script broken. Both were
+    separate doc-audit passes (2026-09-11 and 2026-09-13) reported this script broken — and
+    then a THIRD and FOURTH time in the 2026-09-13 audit wave. All four were
     wrong, and both times it was verified WORKING by running it (`capture-cards.js L13` → exit 0,
     6/6 cards, zero console errors). **The cause of the false report is a COMMENT in the file
     describing the bug that was fixed on 2026-07-28** — read as present tense. The comment has
-    been rewritten to say so explicitly. *Worth generalizing: a comment describing a past failure
+    been rewritten to say so explicitly. *Worth generalizing, now FOUR-FOR-FOUR: a description of a past failure
     is not evidence of a current one, and "I read the code" is not the same claim as "I ran it."*
+    **The fourth instance moved the diagnosis on:** the script's own comment had already been
+    rewritten, so that time the false report came from `docs/features/history-cards.md`, whose
+    paragraph opened *"capture-cards.js **fixed** (2026-07-27/28)"* and then described the old
+    bug at length — and the description is what travelled, not the headline. So the fix is not
+    "reword one comment" but a WRITING RULE: **when documenting a resolved failure, lead with
+    the resolution and the date it was last verified, and mark the history explicitly as
+    history.** That paragraph now opens "WORKS. Do not report it as broken." with the
+    last-verified command and result, and the post-mortem is fenced below it. Same shape as the
+    "do not do X with no do Y beside it" lesson in theme-authoring.md: **the words a reader
+    lands on first are the ones that travel.**
 
 ### ✅ Act 7 "THE SPEEDWAY" — BUILT 2026-09-13 (Phase 0 + Phase 1, five-lane swarm)
 

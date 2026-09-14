@@ -81,12 +81,20 @@ Structurally a sibling of `js/textworld/hub.js`: a small canvas-drawn menu,
 - **In a track.** The hub intercepts `Escape` itself, unconditionally, before
   `Track.handleKey` ever runs — `returnToMenu()`. Every other key goes to the race
   engine.
-- **Crediting a lap however you leave it.** `returnToMenu()` calls
-  `onComplete(trackId)` when `Track.hasWon()` — the same TF-T1 lesson Act 6 learned
-  (leaving must never silently drop something the player actually did). **Note:**
-  `js/main.js` passes only `onExit` today, so this hook is unwired in the shipping
-  game; the record of play is the per-track ghost record (below), not a wing
-  completion flag.
+- **Crediting a lap however you leave it — no completion hook, and deliberately
+  none (removed 2026-09-13).** The hub previously carried an `options.onComplete`
+  hook, shaped after Act 6's `recordTextWorldComplete`, calling it from
+  `returnToMenu()` on `Track.hasWon()`. Nothing ever passed it — `js/main.js` wired
+  only `onExit` — so the credit path was dead code that *looked* wired, which the
+  in-code comment now calls out as worse than an outright absence (the next reader
+  assumes completion is tracked through it). Both `onComplete` and `Track.hasWon()`
+  are now deleted. The TF-T1 lesson (leaving must never silently drop something the
+  player actually did) is honoured differently here than in Act 6: **`Ghost.commitLap`
+  writes the track's record to `kk-slots[i].speedway` inside `crossTheLine()`** the
+  moment a lap actually finishes, not the moment the player leaves — so the record is
+  already safe on every exit path (Space off the pit board, or Escape mid-race) before
+  `returnToMenu()` ever runs. The ghost record IS the record of play; there is no
+  separate wing-completion flag.
 - **The keepsake line** under each track: `never driven — your first lap sets the
   pace`, else `N LAPS   BEST m:ss.t`. Facts only — never a placement, never a
   comparison, and structurally incapable of showing a minus (see INV-83 below).

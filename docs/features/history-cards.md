@@ -1,10 +1,10 @@
 ---
 feature: history-cards
 code: [js/history-cards.js]
-rules: [research/computing-history-moments.md, research/hacker-culture.md]
+rules: [research/computing-history-moments.md, research/hacker-culture.md, research/educational-software.md]
 screenshots: docs/screenshots/history-cards/
 capture: node docs/screenshots/capture-cards.js
-verified: 2026-07-28
+verified: 2026-09-13
 ---
 
 # History Cards
@@ -162,17 +162,31 @@ the rule itself. `docs/screenshots/screens/collection-gallery.png` was regenerat
 now shows both `RUBBER DUCK` and `HELLO WORLD` in full, two-line, no clipping;
 `★ 55 / 55` and zero `scrollHeight` overflow reconfirmed.
 
-**Capture tooling — `capture-cards.js` fixed (2026-07-27/28).** The script was
+**Capture tooling — `capture-cards.js` WORKS. Do not report it as broken.**
+Last verified 2026-09-13: `node docs/screenshots/capture-cards.js` → exit 0,
+59/59 pooled cards captured, secret card captured, zero console errors.
+
+> ⚠️ **This paragraph has caused four false "capture-cards.js is broken" reports**
+> (2026-09-11, 2026-09-13 x2, and again in the 2026-09-13 audit wave). Every one
+> was an agent reading the PAST-TENSE history below as a present-tense defect, and
+> every one was wrong. The same thing happened to a comment inside the script
+> itself, which is why that comment was rewritten too (docs/ROADMAP.md §3).
+> **The general lesson, now four-for-four: a description of a past failure is not
+> evidence of a current one, and "I read it" is not the same claim as "I ran it."**
+> If you are about to report this script broken: run it first.
+
+*History, for context only — all of this was fixed in July 2026.* The script was
 previously broken independent of any content change (its wire-check assumed the
 pre-2026-07-19 object-keyed `HISTORY_CARDS` shape and an object-keyed `Object.keys()`
 scan against what is now a flat array, plus a stale `CARD_LEVELS` list) — it exited
 fatally on any invocation. It has since been rewritten for the flat-array/pool model
 (pulls the live `HISTORY_CARDS` array in-page, derives its expected set and the
 "CARD n OF N" check from that data rather than a literal) and re-run in full:
-`docs/screenshots/history-cards/` now holds all **59 pooled cards** as
+`docs/screenshots/history-cards/` now holds all **59 pooled cards** (+1 secret = 60 files) as
 `<level>-<id>.png` (e.g. `13-colossal-cave.png`, `25-hello-world.png`,
-`25-rubber-duck.png`) plus the one secret card as `secret-wargames-joshua.png` — 55
-files total, zero console errors, zero guaranteed-capture failures.
+`25-rubber-duck.png`) plus the one secret card as `secret-wargames-joshua.png` — 60
+files total (verified 2026-09-13, including the five 2026-09-13 edutainment-lineage
+cards), zero console errors, zero guaranteed-capture failures.
 
 ## Easter egg — the secret WarGames card
 

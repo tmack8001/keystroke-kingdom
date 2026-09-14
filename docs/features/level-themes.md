@@ -70,7 +70,9 @@ review found focal art buried behind the prompt panel.
 
 ## Tetris (Level 8) — the flagship win-gate example, redesigned 2026-07-12
 
-`js/themes/tetris.js` is the most heavily documented theme in-file (852 lines) and the
+`js/themes/tetris.js` is the most heavily documented theme in-file (891 lines as of
+2026-09-13; the file was already 890 lines by 2026-07-18, so the page's prior "852
+lines" figure was stale independent of any 2026-09-13 change) and the
 canonical worked example of the win-gate pitfall. Its win condition is a **conjunction
 with a guaranteed reachable moment**:
 
