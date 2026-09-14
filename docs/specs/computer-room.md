@@ -820,13 +820,27 @@ cards" to "any card without a numeric `level`." Neither rule weakens.
    8` and not block on the bigger question*. But this is the fourth parallel wing on a five-act
    spine, ROADMAP §2 already asks whether running integers are the right idea, and this is the
    cheapest moment it will ever be to change — `num` is one data field per registry row.
-3. **⚠️ Unlock at Level 20, or keep 25 like its siblings?** *My recommendation: **20**, with
-   stations lighting up by key closure as the keyboard completes* (§5.5) — L20's binary → `HELLO`
-   beat is the perfect doorway to a room full of computers, and the museum teaches no keys.
-   **This one needs your sign-off before it is built, not after**, because `docs/ROADMAP.md` §2
-   currently states *"Acts 6+ all sit AFTER the full keyboard is learned."* The doc changes first,
-   then the feature. Saying "keep it at 25" is also a perfectly good answer and makes the build
-   smaller.
+3. ~~**⚠️ Unlock at Level 20, or keep 25?**~~ **✅ ANSWERED 2026-09-13 — LEVEL 20.**
+   Trevor: *"I think the computer room at level 20 instead of 25 makes sense. We can keep the
+   type/create your world levels after the entire keyboard has been unlocked — where the player
+   can choose where their adventure goes next."*
+
+   **He did not just answer the question, he gave the RULE behind it**, and it is better than
+   the one it replaces. A wing's unlock now depends on **what the wing asks of the player**:
+
+   - **Wings you READ and EXPLORE open earlier.** This one is hardware history; its content is
+     authored, so its key demands are ours to choose. Level 20 is the game's own "the computer
+     is the point" beat.
+   - **Wings where you MAKE something stay at 25.** Act 6's text worlds — above all "YOUR OWN
+     WORLD", the maker — remain the reward for the full keyboard, because that is the point
+     *"where the player can choose where their adventure goes next"*, and choosing your own
+     direction is a graduation, not a waypoint.
+
+   **The gate has been discharged in the right order** (`testing.md` rule 1): `docs/ROADMAP.md`
+   §2's *"Acts 6+ all sit AFTER the full keyboard is learned"* was amended FIRST, with his words
+   quoted, before any code. `doorUnlocked` in `js/ui/cabinet-art.js` becomes per-wing — one
+   registry field, with Acts 6 and 7 keeping their current value so nothing shifts for a player
+   mid-game.
 4. **The verb: is the boot line right?** *My recommendation: yes* — you type `CATALOG` and the
    Apple IIe wakes up. It makes the wing a typing room rather than a museum, it costs one shared
    module, and it is what actually happened. The alternative you described — walk up and the

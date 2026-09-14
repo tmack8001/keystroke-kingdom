@@ -457,6 +457,32 @@ already how Act 6's hub works). Worth deciding before a third one is built. Note
 new wing must respect the **arcade-cabinet rule** (one game per cabinet, no franchise reuse) and
 that Acts 6+ all sit AFTER the full keyboard is learned, so they may use any key.
 
+**⚠️ AMENDED 2026-09-13 (Trevor) — a bonus wing's unlock now depends on what the wing
+ASKS OF THE PLAYER, not on a blanket rule.** His decision, in his words:
+
+> *"I think the computer room at level 20 instead of 25 makes sense. We can keep the
+> type/create your world levels after the entire keyboard has been unlocked — where the
+> player can choose where their adventure goes next."*
+
+So the line splits cleanly, and the split is about what the room is FOR:
+
+- **Wings you READ and EXPLORE can open earlier.** THE COMPUTER ROOM is hardware history;
+  its content is authored, so its key demands are ours to choose, and Level 20 is the
+  game's own "the computer is the point" beat (binary → `HELLO`) — the strongest narrative
+  doorway available, and wasted at 25. It also lands exactly where a completionist's
+  supply of new cabinets runs dry.
+- **Wings where you MAKE something stay at Level 25.** Act 6's text worlds — and above all
+  "YOUR OWN WORLD", the maker — remain the reward for the full keyboard. Trevor's framing
+  is the reason: that is the point *"where the player can choose where their adventure
+  goes next"*, and choosing your own direction is a graduation, not a waypoint.
+
+Act 7 (the Speedway) is unaffected and stays where it is.
+
+**Mechanically** this means `doorUnlocked` (a single shared predicate in
+`js/ui/cabinet-art.js`, currently `>= DOOR_UNLOCK_LEVEL` for every wing) becomes
+per-wing: a registry row declares its own unlock level. That is one field, and the two
+existing wings keep their current value, so nothing shifts for a player mid-game.
+
 ---
 
 ## 2b — Mobile & tablet support *(design, 2026-09-12 — Trevor)*
