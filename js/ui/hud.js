@@ -27,9 +27,10 @@ const SMALL_GLYPH_CAPTION = {
   '.': 'PERIOD',
 };
 
-// Injected once so hud.js (the only file this fix may touch) can style the
-// boosted glyphs and their caption without editing css/screens.css, which
-// another agent owns right now.
+// Injected once. (Historical note: this was injected rather than written into
+// css/screens.css because a concurrent agent owned that file at the time. The
+// guide's twin rule, `.key-box-mark`, IS in css/screens.css beside
+// `.key-box-glyph`, which is where it belongs.)
 function ensureSmallGlyphStyles() {
   if ($('kk-small-glyph-styles')) return;
   const style = document.createElement('style');
@@ -43,6 +44,14 @@ function ensureSmallGlyphStyles() {
     .prompt-letter.small-glyph.active {
       /* the mark itself stays the hero — just much bigger, same glow language */
       text-shadow: 0 0 15px var(--level-accent), 0 0 46px color-mix(in srgb, var(--level-accent) 35%, transparent);
+    }
+    .home-row-diagram { display: block; margin: 0 auto; image-rendering: pixelated; }
+    .home-row-caption {
+      margin-top: 8px;
+      font-size: 7px;
+      letter-spacing: 2px;
+      color: #9fdfb4;            /* welcoming, not the nudge red */
+      text-align: center;
     }
     .prompt-caption {
       margin-top: 6px;
@@ -141,6 +150,89 @@ export function showFingerHint(expectedKey) {
   hint.innerHTML = `<div class="finger-hint-text">${label}</div>`;
 }
 
+// ─── The first-prompt home-row diagram ──────────────────────────────────────
+// `.claude/rules/transitions.md` Phase 5 and `levels/onboarding.md` both promise
+// this and have since the game was designed:
+//
+//   "Before the player can press anything, a finger position diagram fades in
+//    gently beneath it — two hands, home row position, J and F highlighted. This
+//    is the ONLY TIME the finger guide appears without being asked for. No other
+//    level, no other prompt, ever shows it proactively. This one moment gets
+//    training wheels because the player has zero context yet."
+//
+// A playtest lane went looking for it on 2026-09-13 and it was not there: at the
+// very first prompt `#finger-hint` is empty, and the first orientation a brand-new
+// five-year-old gets is a TEXT hint after their first MISTAKE. The single most
+// carefully specified ten seconds in the whole design shipped as nothing.
+//
+// Deliberately static and quiet — it "just sits there". No animation, nothing to
+// dismiss, and it cannot steal a keypress. main.js decides when it appears (once,
+// on a brand-new game at Level 1) and clears it on the first correct key.
+export function showHomeRowDiagram() {
+  const host = $('finger-hint');
+  if (!host) return;
+  const W = 236, H = 78;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  c.className = 'home-row-diagram';
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const KEY = 20, GAP = 2, TOP = 6;
+  const left  = ['A', 'S', 'D', 'F'];
+  const right = ['J', 'K', 'L', '?'];
+  const rowW  = 4 * KEY + 3 * GAP;
+  const lx = 10, rx = W - 10 - rowW;
+
+  // The eight home keys, with F and J lit — they are where the hands LAND.
+  const drawRow = (x0, labels, litIndex) => {
+    labels.forEach((ch, i) => {
+      const x = x0 + i * (KEY + GAP);
+      const lit = i === litIndex;
+      ctx.fillStyle = lit ? 'rgba(120,255,160,0.20)' : 'rgba(255,255,255,0.05)';
+      ctx.fillRect(x, TOP, KEY, KEY);
+      ctx.strokeStyle = lit ? '#78ffa0' : '#3a3a3a';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, TOP + 0.5, KEY - 1, KEY - 1);
+      ctx.fillStyle = lit ? '#b8ffcf' : '#7a7a7a';
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ch, x + KEY / 2, TOP + KEY / 2 + 1);
+    });
+  };
+  drawRow(lx, left, 3);    // F is the left index finger
+  drawRow(rx, right, 0);   // J is the right index finger
+
+  // A hand under each row: four fingers reaching up to the four keys, and a
+  // palm. The index finger — the one that matters here — is lit and longer.
+  const drawHand = (x0, litIndex) => {
+    const palmY = TOP + KEY + 16;
+    for (let i = 0; i < 4; i++) {
+      const x = x0 + i * (KEY + GAP) + KEY / 2 - 3;
+      const lit = i === litIndex;
+      const len = lit ? 16 : 11;
+      ctx.fillStyle = lit ? '#78ffa0' : '#4a4a4a';
+      ctx.fillRect(x, palmY - len, 6, len);
+    }
+    ctx.fillStyle = '#4a4a4a';
+    ctx.fillRect(x0 + 2, palmY, rowW - 4, 9);
+  };
+  drawHand(lx, 3);
+  drawHand(rx, 0);
+
+  host.innerHTML = '';
+  host.appendChild(c);
+  // NOT `.finger-hint-text`, which is --nudge-red: that colour belongs to the
+  // response to a MISTAKE. This hint arrives before the child can make one, so
+  // colouring it like an error would make the game's first words to a
+  // five-year-old look like a telling-off.
+  const cap = document.createElement('div');
+  cap.className = 'home-row-caption';
+  cap.textContent = 'REST YOUR FINGERS HERE';   // never an instruction to press
+  host.appendChild(cap);
+}
+
 export function displayKey(k) {
   if (k === ';') return '?';
   if (k === 'Shift') return '⇧';
@@ -158,6 +250,24 @@ export function displayKey(k) {
 // glyphs — these get a smaller font-size class so they fit their box.
 function isGlyphLabel(label) {
   return label.length > 1 || label === '⇧' || label === '␣' || label === '⌫';
+}
+
+// The keyboard guide's twin of SMALL_GLYPH_BOOST. Press Start 2P draws an
+// apostrophe, comma, period and backtick as a ONE-TO-TWO PIXEL speck, so at the
+// key box's normal letter size those four keys read as empty boxes with a bit of
+// dust in them — on exactly the four levels that teach them (13 comma, 14 period,
+// 22 backslash-and-brackets, 23 backtick-and-apostrophe).
+//
+// The fix for this already existed for the PROMPT — `SMALL_GLYPH_BOOST` plus the
+// `.small-glyph` rule, added citing journal O11 ("screenshot any symbol you
+// render"). It was simply never extended to the guide, because `isGlyphLabel`
+// only asks "is this label long or a special glyph?" and these are single
+// characters. An a11y audit photographed the result on 2026-09-13: Level 14's
+// comma is a 2px blob and its period a single dot; Level 23's apostrophe is a
+// single dot. Same set, same reason, opposite direction — `.key-box-glyph`
+// SHRINKS multi-character labels like SHIFT, so the marks need their own class.
+function isSmallMarkLabel(label) {
+  return label.length === 1 && SMALL_GLYPH_BOOST.has(label);
 }
 
 // True ANSI keyboard geometry — the guide is a real keyboard silhouette.
@@ -275,6 +385,7 @@ export function renderKeyboard(level, activeKey, wrongKey, state) {
     else { cls += ' highlight'; label = displayKey(k); }
 
     if (label && isGlyphLabel(label)) cls += ' key-box-glyph';
+    else if (label && isSmallMarkLabel(label)) cls += ' key-box-mark';
     return `<div class="${cls}" style="width:${px(w)}px">${label}</div>`;
   };
 

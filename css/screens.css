@@ -792,6 +792,21 @@
   font-size: 13px;
 }
 
+/* The opposite problem to .key-box-glyph, on the same four keys the prompt
+   already special-cases (hud.js SMALL_GLYPH_BOOST). Press Start 2P renders an
+   apostrophe, comma, period or backtick as a 1-2 PIXEL SPECK, so at the box's
+   normal size those keys read as empty. .key-box-glyph SHRINKS long labels;
+   these need the reverse. Sized so the mark is unmistakable without breaking
+   the key's frame, and nudged up for the marks that sit on the baseline. */
+.key-box-mark {
+  font-size: clamp(16px, calc(var(--key-size, 44px) * 0.52), 24px);
+  line-height: 1;
+}
+
+.key-box.active-key.key-box-mark {
+  font-size: clamp(18px, calc(var(--key-size, 44px) * 0.58), 26px);
+}
+
 
 /* ===== LEVEL COMPLETE ===== */
 

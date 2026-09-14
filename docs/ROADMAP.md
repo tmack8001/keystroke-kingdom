@@ -717,6 +717,42 @@ fetch sites are all relative same-origin `/api/*`; `playerName` appears in NO re
   `textContent`, count-only settings row, Escape always exits. An `<img src=x onerror=…>` paste
   reduces to the inert text `imgsrcxonerror`.
 
+### ✅ Audit-wave fixes — the eight-lane pass *(2026-09-13)*
+
+Eight lanes audited the game; every finding was re-verified against artifacts before
+acting, and **two of their diagnoses were wrong while their findings were right**
+(Level 20's counter was occluded by the HUD badge, not clipped by the canvas — and
+the crop that "proved" clipping had itself sliced the glyphs). Fixed:
+
+- **A family's saved game could silently FORK.** `ensureGameForBypass()` used
+  `if (Slots.getActive())`, and `getActive()` returns a slot INDEX — **index 0 is
+  falsy**, so the guard did nothing for the first save every family makes. Typing the
+  documented `joshua` egg after naming yourself created a second identical slot, and
+  the picker's cursor defaulted to the empty orphan. **INV-94** pins the shape.
+- **Level 4's prompt letter was unreadable** — the Galaga formation covered the prompt
+  panel, rendering the magenta "A" on top of a magenta bug. The previous pass's own
+  comment held the answer it did not take ("without shrinking sprites game-wide" — the
+  sprite scale is per-theme). All five ranks kept, now entirely above 0.19H. Its
+  capture beam no longer crosses the keyboard guide either.
+- **Journal L28 again:** Levels 18/19 never set `textAlign`, inherited `'center'`, and
+  rendered "EMPIRE 0/25" as "PIRE 0/25". Measured with a `fillText` probe.
+- **Punctuation keys were 1-2 pixel specks** in the keyboard guide (apostrophe, comma,
+  period, backtick) on the four levels that teach them. The fix already existed for the
+  PROMPT (`SMALL_GLYPH_BOOST`); `isGlyphLabel()` never consulted it, and
+  `.key-box-glyph` SHRINKS labels, so the marks needed their own class.
+- **The one unprompted hint in the whole game did not exist.** `transitions.md` Phase 5
+  and `onboarding.md` have promised a two-hand home-row diagram at the very first
+  prompt since the game was designed; a new child actually got nothing until their
+  first mistake. Built.
+
+**Reported and NOT fixed** (ranked, for a later pass): Sonic (L11) and Donkey Kong
+Country (L14) still score WEAK on mechanics fidelity — both are open findings from
+2026-07-12 and still true; Level 8's Tetris well shows a falling piece but never a
+stack, so the signature mechanic has no visual representation; Level 24's victory is
+thin beside its neighbours; Levels 7 and 10 are near-static mid-play; and a band of
+grey chrome text (`#8a8a8a`) sits at 3.6-4.5:1 against the game's own 4.5 bar,
+including "ENTER YOUR NAME" on the first screen a child sees.
+
 ### ✅ The 25 cabinet SCREENS audited against their sources *(2026-09-13)*
 
 The standing exposure — *"only the PANELS have been checked against photographs; all 25

@@ -1,6 +1,6 @@
 import * as Audio from './audio.js';
 import { LEVELS, FINGER_MAP } from './levels.js';
-import { updateHUD, showFingerHint, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter } from './ui/hud.js';
+import { updateHUD, showFingerHint, showHomeRowDiagram, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter } from './ui/hud.js';
 import { showScreen, applyLevelTheme, renderReadyScreen, renderSlotsScreen, renderCollectionScreen, createStars } from './ui/screens.js';
 import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked, focusedDoor, focusedWingEntry, focusDoor, clearDoorFocus } from './ui/cabinet-art.js';
 import { Themes, activeTheme, stopAll } from './themes/index.js';
@@ -1515,6 +1515,23 @@ function startGame() {
   const firstPattern = getNextPattern();
   renderPrompt(state, level, firstPattern);
   startSurvivalPatternTimer(firstPattern);
+
+  // THE ONE UNPROMPTED HINT IN THE WHOLE GAME (transitions.md Phase 5,
+  // levels/onboarding.md §Design Rules). It is shown exactly once — at Level 1,
+  // on a game that has never completed Level 1 — because "the player has zero
+  // context yet". Every other hint in this game answers a mistake; this one
+  // arrives before the child can make one.
+  //
+  // The latch needs NO new storage, matching the eighth-key confession's trick
+  // (js/main.js) of deriving a first-time flag from progress that is already
+  // recorded: once Level 1 has ever been completed on this save, the diagram
+  // never appears again — including on a replay, which is correct, because a
+  // player replaying Level 1 is by definition no longer contextless.
+  if (!state.freePlay && state.level === 1) {
+    let firstEver = false;
+    try { firstEver = !getProgress().completed['1']; } catch { firstEver = false; }
+    if (firstEver) showHomeRowDiagram();
+  }
 
   stopAll();
   const theme = activeTheme(state.level);

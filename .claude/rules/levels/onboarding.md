@@ -61,7 +61,15 @@ At Level 1, only one cabinet is lit. The rest are dark silhouettes — no labels
 - **Name entry is optional in one keypress.** Never trap a kid in a form.
 - **The arcade is never explained.** No "here's how to play" screen. The visual design carries it.
 - **The cold open is shown exactly once.** The drama of first arrival is preserved; returning players skip straight to the slot picker ("CHOOSE YOUR GAME").
-- **The first finger guide is the only unprompted hint in the whole game.** Every other hint appears only after a wrong keypress. This exception is intentional — the player has zero context at the very first prompt and needs a single orientation moment.
+- **The first finger guide is the only unprompted hint in the whole game.** *(Built
+  2026-09-13 — it had been specified since the game was designed and was never
+  implemented. A playtest lane went looking for it and found `#finger-hint` empty at
+  the very first prompt: the first orientation a brand-new five-year-old got was a
+  TEXT hint after their first MISTAKE. `showHomeRowDiagram()` in `js/ui/hud.js` now
+  draws two hands on the home row with F and J lit, shown once at Level 1 on a save
+  that has never completed Level 1 — a latch derived from existing progress, so no
+  new storage. Its caption is deliberately NOT `--nudge-red`: that colour answers a
+  mistake, and this hint arrives before the child can make one.)* Every other hint appears only after a wrong keypress. This exception is intentional — the player has zero context at the very first prompt and needs a single orientation moment.
 - **"INSERT COIN" does nothing.** It's set dressing. Don't wire it to anything.
 - **Space confirms/advances everywhere except the name field.** On title, ready, the slot picker, and level-flow screens, Space is the primary quick-advance key by design — *"unlike enter/return the spacebar is where the thumbs rest continually, making it quick to advance"* (Trevor, 2026-07-13). Name entry alone requires Return, because Space is itself typeable there (multi-word names like the PLAYER ONE default).
 
