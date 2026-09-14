@@ -71,9 +71,26 @@ function firstUnlockedAtOrBelow(state, levels, levelNum) {
 // Navigation can never strand the cursor (the One Rule): ↑ from the first bonus
 // act always walks back up into Act 5, ↓ stops at the last act, ←/→ walk the
 // wall, and Escape leaves the select screen entirely from anywhere.
+// A WING'S UNLOCK DEPENDS ON WHAT THE WING ASKS OF THE PLAYER (Trevor, 2026-09-13):
+//
+//   "I think the computer room at level 20 instead of 25 makes sense. We can keep
+//    the type/create your world levels after the entire keyboard has been unlocked
+//    — where the player can choose where their adventure goes next."
+//
+// So this is no longer one number for every wing. A wing you READ and EXPLORE may
+// open earlier; a wing where you MAKE something stays at 25, because that is the
+// point "where the player can choose where their adventure goes next", and choosing
+// your own direction is a graduation rather than a waypoint.
+//
+// 25 remains the DEFAULT, so a registry row that says nothing behaves exactly as
+// before — Acts 6 and 7 are byte-identical in behaviour and nothing shifts for a
+// player mid-game. (docs/ROADMAP.md §2's "Acts 6+ all sit AFTER the full keyboard
+// is learned" was amended FIRST, with his sign-off, before this line moved —
+// testing.md rule 1.)
 const DOOR_UNLOCK_LEVEL = 25;
-function doorUnlocked(state) {
-  return !!state.selectBypass || (state.maxUnlockedLevel || 1) >= DOOR_UNLOCK_LEVEL;
+function doorUnlocked(state, wing) {
+  const need = (wing && Number.isFinite(wing.unlockLevel)) ? wing.unlockLevel : DOOR_UNLOCK_LEVEL;
+  return !!state.selectBypass || (state.maxUnlockedLevel || 1) >= need;
 }
 
 // One row per bonus act. `cabinets` lists the machines standing on that act's
@@ -112,7 +129,7 @@ const BACK_WALL_DOORS = [
 
 // The bonus acts standing open to this player, in back-wall order.
 function availableDoors(state) {
-  return BACK_WALL_DOORS.filter(d => d.unlock(state));
+  return BACK_WALL_DOORS.filter(d => d.unlock(state, d));
 }
 
 // The bonus act the cursor is standing in, or null if it's still among the 25

@@ -28,7 +28,9 @@ let entryChars = [];   // characters of the word currently assembling into #1
 let totalTyped = 0;    // cumulative correct keys — drives the win gate
 let flashTimer = 0;    // extra flash when an uppercase (shift) char lands
 let flashPeak = 6;
-let slideT = 0;        // victory: #1 slot locks in
+let slideT = 0;        // victory: #1 slot locks in (0..1)
+let bannerT = 0;       // victory: "NEW HIGH SCORE" banner fade-in (0..1)
+let gildIdx = -1;      // victory: how many letters of the name have gilded
 let sparkle = 0;
 let frame = 0;
 
@@ -66,6 +68,8 @@ function init() {
   flashTimer = 0;
   flashPeak = 6;
   slideT = 0;
+  bannerT = 0;
+  gildIdx = -1;
   sparkle = 0;
   frame = 0;
   entryPulse = 0;
@@ -231,6 +235,25 @@ function drawTitle(W, H) {
   ctx.shadowBlur = 14 + Math.sin(frame * 0.05) * 3;
   // TOP BAND (< 0.188H), clear of both HUD corners.
   ctx.fillText('HIGH SCORES', W / 2, Math.round(H * 0.10));
+
+  // VICTORY banner — the thing an arcade actually says when your name goes up.
+  // Lives in the TOP BAND between the HUD corners (visual-validation.md), never
+  // over the prompt panel, and fades in only after the row has begun to settle.
+  if (victoryMode && bannerT > 0) {
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const pop = 1 + 0.10 * (1 - bannerT);
+    ctx.translate(W / 2, Math.round(H * 0.145));
+    ctx.scale(pop, pop);
+    ctx.font = `${Math.max(10, Math.floor(W * 0.013))}px "Press Start 2P", monospace`;
+    ctx.fillStyle = `rgba(255,251,224,${bannerT})`;
+    ctx.shadowColor = '#ffd84a';
+    ctx.shadowBlur = 18 * bannerT;
+    ctx.fillText('NEW HIGH SCORE', 0, 0);
+    ctx.restore();
+    ctx.shadowBlur = 0;
+  }
   ctx.shadowBlur = 0;
   ctx.textAlign = 'left';
 }
@@ -339,7 +362,29 @@ function drawChampionName(x, y, fontSize, blinkOn) {
 
   if (showName) {
     const cursor = blinkOn && !victoryMode ? '_' : '';
-    ctx.fillText(entryName() + cursor, 0, 0);
+    const nm = entryName();
+    if (!victoryMode) {
+      ctx.fillText(nm + cursor, 0, 0);
+    } else {
+      // VICTORY: the name locks into the #1 slot and gilds one letter at a time
+      // — the arcade's "your initials going up on the board" moment, stretched to
+      // a whole name because on this level the child typed a whole name.
+      // Travel is deliberately short: the name enters from just left of its slot,
+      // NOT from off-screen. A long slide crossed the rank number and rendered
+      // "1Eniac" for the first few frames — the board has a column for the rank
+      // and the name must not drive through it.
+      const slide = (1 - easeOutBack(Math.min(1, slideT / 0.45))) * -fontSize * 1.6;
+      ctx.translate(slide, 0);
+      let cx = 0;
+      for (let i = 0; i < nm.length; i++) {
+        const lit = i <= gildIdx;
+        ctx.fillStyle   = lit ? '#fffbe0' : '#bfa96a';
+        ctx.shadowColor = lit ? '#ffd84a' : '#7a6420';
+        ctx.shadowBlur  = lit ? 20 : 4;
+        ctx.fillText(nm[i], cx, 0);
+        cx += ctx.measureText(nm[i]).width;
+      }
+    }
   } else {
     // Empty champion slot: blinking placeholder inviting the player in.
     ctx.fillStyle = blinkOn ? '#fff2a8' : 'rgba(255,242,168,0.25)';
@@ -424,7 +469,20 @@ function render() {
 
   if (flashTimer > 0) flashTimer--;
   if (entryPulse < 1) entryPulse = Math.min(1, entryPulse + 0.09);
-  if (victoryMode && slideT < 1) slideT += 0.05;
+  if (victoryMode) {
+    if (slideT < 1) slideT += 0.022;          // the row slides in and settles
+    if (slideT > 0.35 && bannerT < 1) bannerT = Math.min(1, bannerT + 0.045);
+    // Gild the name one letter at a time, and fire a burst as each lands — the
+    // arcade's own "your initials going up on the board" beat, stretched to a
+    // whole name. Bursts are staged, not one-and-done.
+    const nm = entryName();
+    const want = Math.floor(Math.max(0, slideT - 0.3) / 0.7 * nm.length);
+    while (gildIdx < want - 1 && gildIdx < nm.length - 1) {
+      gildIdx++;
+      const W = canvas.width, H = canvas.height;
+      spawnBurst(Math.round(W * 0.07 + gildIdx * W * 0.016), Math.round(H * 0.20), true);
+    }
+  }
 
   animId = requestAnimationFrame(render);
 }
@@ -491,14 +549,30 @@ export function patternComplete() {
   return done;
 }
 
+// THE RITUAL THIS LEVEL IS ABOUT. Level 24 is the one where a child types their
+// OWN NAME in capitals, and the arcade's answer to that has one correct shape:
+// the name locks into the #1 slot and the board celebrates it.
+//
+// What was here before: victoryMode flipped the score to 99999, the cursor hid,
+// ONE sparkle burst fired in a corner, and `slideT` ramped 0->1 while NOTHING
+// read it. An audit scored the window as differing "only in ambient star-twinkle
+// and a slow glow-pulse" — technically not dead air, but well under the bar
+// theme-authoring.md sets ("a distinct, era-faithful celebration... styled on the
+// real game's own win moment"), and far below its own neighbours: L21's car
+// drives off, L22's 28 cubes rainbow-cycle, L23 blooms fireworks.
+//
+// It also returned nothing, so the engine fell back to a fixed 4000ms hold and
+// the card landed whenever it landed. It now declares its length, so the LEVEL
+// COMPLETE card arrives exactly as the name finishes gilding.
+const VICTORY_MS = 3600;
 export function victory() {
   victoryMode = true;
-  slideT = 0;
-  sparkle = 90;
+  slideT = 0;            // now actually drives the lock-in (see drawBoard)
+  sparkle = 150;
   everTyped = true;
-  const W = canvas ? canvas.width : 0;
-  const H = canvas ? canvas.height : 0;
-  spawnBurst(Math.round(W * 0.10), Math.round(H * 0.20), true);
+  bannerT = 0;
+  gildIdx = -1;
+  return VICTORY_MS;
 }
 
 window.addEventListener('resize', () => {

@@ -681,6 +681,22 @@ respected exactly as written; and (d) `consoleErrors`.
   progress fork a family could neither explain nor undo. **Falsy-zero is the whole
   bug class; guard the boundary, not the truthiness.**
 
+- **INV-95** (L1/L2) **A bonus wing's unlock level is declared per wing, and 25 is the
+  default.** `doorUnlocked(state, wing)` in `js/ui/cabinet-art.js` reads the wing's own
+  `unlockLevel` when it declares one and falls back to `DOOR_UNLOCK_LEVEL` (25)
+  otherwise, so a registry row that says nothing behaves exactly as it did before. The
+  `selectBypass` (WOPR) escape hatch keeps working for every wing regardless.
+
+  *The rule this encodes (Trevor, 2026-09-13):* a wing's gate depends on **what the wing
+  asks of the player**. Wings you READ and EXPLORE may open earlier — THE COMPUTER ROOM
+  opens at **Level 20**, the game's own binary→`HELLO` beat. Wings where you MAKE
+  something stay at **25** — Act 6's text worlds, above all "YOUR OWN WORLD", because
+  that is the point *"where the player can choose where their adventure goes next"* and
+  choosing your own direction is a graduation, not a waypoint.
+
+  **A player mid-game must never see a wing close.** Acts 6 and 7 declare nothing and so
+  keep 25; any future change to an EXISTING wing's `unlockLevel` may only ever lower it.
+
 ## 6. Findings protocol
 
 `docs/testing/FINDINGS.md` is the ledger. Each entry:
