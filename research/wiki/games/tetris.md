@@ -3,7 +3,7 @@ title: Tetris
 type: entity
 tags: [video-game-history, game, computer, history-card, cabinet]
 level: 8
-sources: 6
+sources: 7
 verified: 2026-07-11
 ---
 
@@ -35,7 +35,16 @@ after [[dragons-lair]]'s cinematic lavishness.
 - Nintendo's first and only Tetris release in this era: the Game Boy version — Japan June
   14, 1989; North America July 31, 1989; Europe September 28, 1990 — via license with
   Bullet-Proof Software, not a Nintendo-original creation.
-- Visual style: minimalist geometric design — a rectangular well/matrix with 7 distinct
+- **The 1984 original had NO GRAPHICS AT ALL.** *"Because the Elektronika 60 had no graphical
+  interface, Pajitnov modeled the field and pieces using spaces and brackets"* — the well and
+  every tetromino were **typed characters** on a monochrome terminal. He wrote it in **Pascal
+  in about three weeks**, then spent over two months porting it to the IBM PC in Turbo Pascal
+  with Dmitry Pavlovsky and Vadim Gerasimov. The Elektronika 60 was **a Russian clone of the
+  PDP-11**. *(This is the single most on-theme fact in the wiki for this project: the level
+  that teaches T and Y sits on a machine where the game itself was made of typed characters —
+  and it is why the Level 8 station's screen is drawn as brackets, not coloured blocks.
+  `js/ui/cabinet-art.js` `drawStationScreen`.)*
+- Visual style (from the IBM PC port onward): minimalist geometric design — a rectangular well/matrix with 7 distinct
   tetromino shapes (I, O, T, S, Z, J, L), each a distinct color. No characters, no
   narrative.
 - Iconic: the "Korobeiniki" Russian folk theme became globally iconic via Nintendo's 1989
@@ -52,3 +61,4 @@ after [[dragons-lair]]'s cinematic lavishness.
 4. [Tetris — Museum of the Game / Killer List of Videogames](https://www.arcade-museum.com/Videogame/tetris) — lists the Atari Games cabinet as 1988 (the title-screen date), the source of the discrepancy above.
 5. [Tetris (Game Boy video game) — Wikipedia](https://en.wikipedia.org/wiki/Tetris_(Game_Boy_video_game)) — Nintendo's first Tetris release: Japan June 14 1989, North America July 31 1989, Europe September 28 1990.
 6. [Game Developer / Gamasutra — "Games Law History: the Tetris Saga"](https://www.gamedeveloper.com/game-platforms/games-law-history-the-tetris-saga) — explains the Stein/Mirrorsoft/Atari/Sega/Nintendo licensing chain.
+7. [Tetris — Wikipedia (raw wikitext)](https://en.wikipedia.org/w/index.php?title=Tetris&action=raw) — "Because the Elektronika 60 had no graphical interface, Pajitnov modeled the field and pieces using spaces and brackets" (cited there to Sheff & Eddy 1999, p.299); Pascal in about three weeks then a two-month IBM PC port with Pavlovsky and Gerasimov; the Elektronika 60 as a PDP-11 clone at the Dorodnitsyn Computing Center. **[fetched]**

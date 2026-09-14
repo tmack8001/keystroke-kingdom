@@ -2,7 +2,7 @@
 title: Console hardware silhouettes — drawing the machine instead of a cabinet
 type: concept
 tags: [video-game-history, hardware, cabinet, act7, act2, theme-authoring]
-sources: 14
+sources: 15
 verified: 2026-09-13
 ---
 
@@ -183,6 +183,25 @@ stand."* **Photograph-verified 2026-09-13.**
   SCPH-1001 is the same industrial design and the same grey; where a claim depends on port or
   badge detail rather than shape and colour, source the NA unit.
 
+### Elektronika 60 (USSR, early 1980s) — draw as a terminal, not a PC
+
+The machine [[tetris]] was created on, and the honest object for Level 8 —
+`.claude/rules/levels/act2.md` says *"a computer running the original."* A **Russian clone of
+the PDP-11**, at the Dorodnitsyn Computing Center. **Photograph-verified 2026-09-13.**
+
+- **Nothing here is beige.** The palette is **charcoal and pale bone-grey**, with a small red
+  lamp — unmistakably not a western desktop, which is the whole point of drawing it.
+- **A small, deep CRT in a charcoal bezel**, notably boxy, with a **red indicator on its right
+  cheek**.
+- It sits on a **pale grey chassis** carrying a dark control strip with small pale buttons.
+- **A separate pale keyboard slab** below, and **stacked drive bays** to one side.
+- **Silhouette at 56×80:** three pale-grey horizontal slabs (chassis, keyboard) under a dark
+  boxy tube, with one red pixel. The charcoal-and-bone palette does the identifying.
+- **What is ON the screen matters as much as the machine:** the original had **no graphical
+  interface**, so Tetris was drawn with **spaces and brackets** — typed characters on a
+  monochrome phosphor. Draw text, never coloured tetrominoes. (The coloured-block look belongs
+  to the IBM PC port and everything after it.)
+
 ### Apple II / Apple IIe (1977–1986, beige) — draw at 8-bit
 
 The machine [[stickybear]] actually ran on, and therefore the honest object for any
@@ -312,6 +331,16 @@ Reference photographs, stored in the vault so the drawing claims above stay audi
 - **Licence:** Public domain
 - **Retrieved:** 2026-09-13
 
+### `elektronika-60.jpg`
+![An Elektronika 60 setup: a small deep charcoal CRT with a red lamp sitting on a pale grey chassis, a pale keyboard slab below it, and two stacked drive bays alongside](../media/console-hardware-silhouettes/elektronika-60.jpg)
+- **Shows:** the charcoal-and-bone palette, the boxy tube with its red lamp, the chassis
+  control strip, the pale keyboard and the drive bays — everything the Level 8 station is
+  drawn from.
+- **Source:** [File:ArmSCII 02, First Armenian Computer - Electronika 60.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ArmSCII_02,_First_Armenian_Computer_-_Electronika_60.jpg)
+- **Author:** Vahram Mekhitarian
+- **Licence:** CC BY-SA 3.0
+- **Retrieved:** 2026-09-13
+
 ### `beige-desktop-pc-monitor-on-top.jpg`
 ![A beige horizontal desktop PC with the CRT monitor sitting on top of the case and the keyboard in front, drive slots on the case's front face](../media/console-hardware-silhouettes/beige-desktop-pc-monitor-on-top.jpg)
 - **Shows:** the form this section describes — horizontal case, monitor on top, keyboard in
@@ -372,3 +401,4 @@ as a historical term of art — treat it as an authoring shorthand, not a fact.*
 12. [File:Game-Boy-Pocket-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Game-Boy-Pocket-FL.jpg) — Evan-Amos, public domain. The Game Boy Pocket named in act3.md. **[image viewed]**
 13. [File:Nintendo-64-Console-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nintendo-64-Console-FL.jpg) — Evan-Amos, public domain. Four front controller ports. **[image viewed]**
 14. [File:PlayStation-SCPH-1000-with-Controller.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:PlayStation-SCPH-1000-with-Controller.jpg) — Evan-Amos, public domain. Confirms the original PlayStation is grey. **[image viewed]**
+15. [File:ArmSCII 02, First Armenian Computer - Electronika 60.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ArmSCII_02,_First_Armenian_Computer_-_Electronika_60.jpg) — Vahram Mekhitarian, CC BY-SA 3.0. The reference for the Level 8 station. **[image viewed]**

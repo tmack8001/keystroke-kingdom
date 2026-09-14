@@ -740,7 +740,7 @@ drawn, not just the text silhouette notes — text-only produced three wrong pan
 afternoon. Store the reference in `research/wiki/media/` with its licence (research/WIKI.md
 §Media). Gaps still to source: **Genesis, Game Boy Pocket, N64, a wooden-cabinet TV.**
 
-**✅ ACTS 2 AND 3 DONE 2026-09-13.** L9 + L10 NES under a wooden TV, L11 Genesis, L13 a beige
+**✅ ACTS 2, 3 AND 4 DONE 2026-09-13 — the sweep is complete.** L9 + L10 NES under a wooden TV, L11 Genesis, L13 a beige
 PC on a **monitor** (a console plugs into a television; a computer has a monitor — drawing
 Myst's 1993 CD-ROM on wood veneer was the first thing that looked wrong once they were on
 screen together), L14 SNES with its two purple switches, L15 a Game Boy Pocket on its stand.
@@ -751,13 +751,20 @@ photograph, stored and credited in `research/wiki/media/console-hardware-silhoue
 
 **STILL OPEN — two, both deliberate:**
 
-1. **L8 Tetris — a genuine research gap, not an oversight.** `act2.md` says *"a computer
-   running the original"*, and the original is a **1984 Electronika 60** in the USSR — not a
-   beige western desktop. No photograph of one has been sourced, and `levels.md` separately
-   credits the *Game Boy* version (1989), so even the intended object is ambiguous. It keeps
-   its arcade cabinet until someone decides which machine it is and finds a picture of it.
-   **Do not fudge this with the beige PC.**
-2. **Act 4 (L16–20) — needs a decision, not just drawing.** The games are console and PC
+1. ~~**L8 Tetris — a genuine research gap.**~~ **✅ CLOSED 2026-09-13, and it turned into the
+   best station in the act.** The debut machine is a **1984 Elektronika 60**, a Russian
+   PDP-11 clone at the Dorodnitsyn Computing Center — charcoal and bone-grey with a red lamp,
+   nothing beige, nothing western. A photograph was found (CC BY-SA 3.0, stored and credited).
+   **And the screen is the find:** *"Because the Elektronika 60 had no graphical interface,
+   Pajitnov modeled the field and pieces using spaces and brackets"* (Sheff & Eddy 1999 p.299).
+   The original Tetris was **typed characters**. So the Level 8 station shows a well built out
+   of brackets on a monochrome phosphor — on the level that teaches **T and Y**. The coloured
+   tetrominoes belong to the IBM PC port and everything after, and the level the player
+   actually plays keeps them; `drawStationScreen` lets the wall show the 1984 truth without
+   touching `js/themes/tetris.js`.
+2. ~~**Act 4 (L16–20) — needs a decision.**~~ **✅ DECIDED AND BUILT 2026-09-13** — Trevor's
+   client/server framing; see `.claude/rules/levels/act4.md` §"The machines in this room".
+   Original note: **Act 4 (L16–20) — needs a decision, not just drawing.** The games are console and PC
    titles (SimCity 2000 PC, GoldenEye N64, Age of Empires PC, Final Fantasy VII PS1), and the
    N64, PlayStation and PC machines are already drawn and photograph-sourced. But **Act 4's
    premise is a late-90s SERVER ROOM**, not a living room, so a console on a domestic TV may

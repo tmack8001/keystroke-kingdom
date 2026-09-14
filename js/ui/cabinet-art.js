@@ -773,6 +773,38 @@ const CABINET_DATA = {
 
   8: {
     label: 'LEVEL 8',
+    // act2.md: "A computer running the original." The original is a 1984
+    // Elektronika 60 — a Russian PDP-11 clone at the Dorodnitsyn Computing Center
+    // — NOT a beige western desktop, and not the 1989 Game Boy (a separate
+    // licence, five years later). Debut platform wins: theme-authoring.md
+    // "Draw the platform the game DEBUTED on".
+    shell: 'console', machine: 'elektronika-60',
+    // "Because the Elektronika 60 had no graphical interface, Pajitnov modeled
+    // the field and pieces using spaces and brackets" (Sheff & Eddy 1999 p.299,
+    // via research/wiki/games/tetris.md). So the machine on the wall shows TEXT.
+    // The level the player plays keeps the game's iconic coloured tetrominoes —
+    // two different true things, and `drawStationScreen` is how the wall shows
+    // the first without touching js/themes/tetris.js.
+    drawStationScreen(ctx, x, y, w, h) {
+      ctx.fillStyle = '#0b0f0b';  ctx.fillRect(x, y, w, h);       // monochrome phosphor
+      // Six columns, not eight: at three pixels a "[]" collapses into a solid
+      // block and the one fact worth showing is lost. Four pixels is the floor
+      // at which the two uprights and the cap still read as a bracket pair.
+      const COLS = 6, ROWS = 4;
+      const cw = Math.floor(w / COLS), ch = Math.floor(h / ROWS);
+      const ox = x + Math.floor((w - cw * COLS) / 2);
+      const oy = y + Math.floor((h - ch * ROWS) / 2);
+      const cell = (cx, cy) => {                                   // one "[]" pair
+        const px = ox + cx * cw, py = oy + cy * ch;
+        ctx.fillRect(px, py, 1, ch - 1);                           // [
+        ctx.fillRect(px + cw - 2, py, 1, ch - 1);                  // ]
+        ctx.fillRect(px, py, cw - 1, 1);
+      };
+      ctx.fillStyle = '#39d353';
+      for (let r = 0; r < ROWS; r++) { cell(0, r); cell(COLS - 1, r); }   // the well's walls
+      [[1,3],[2,3],[3,3],[4,3],[1,2],[4,2]].forEach(([c, r]) => cell(c, r));  // a ragged stack
+      [[2,0],[3,0],[2,1]].forEach(([c, r]) => cell(c, r));                 // a piece, falling
+    },
     keys: 'T Y',
     era: '1984',
     colors: { body: '#000820', screen: '#000', accent: '#00ffff', trim: '#003355' },
@@ -1692,6 +1724,11 @@ function drawCabinetArt(canvas, data, scale = 2) {
 // silhouette notes alone. NES reference and licence:
 // research/wiki/tech/console-hardware-silhouettes.md §Media.
 function drawConsoleStation(canvas, data, scale = 2) {
+  // A station may paint its own miniature screen. Level 8 needs this: the machine
+  // on the wall is the 1984 original, whose display was TEXT, while the level the
+  // player actually plays is the game's iconic coloured-tetromino look. Two
+  // different true things; `drawStationScreen` lets the wall show the first
+  // without touching js/themes/tetris.js.
   const w = 56, h = 80;
   canvas.width = w;
   canvas.height = h;
@@ -1704,6 +1741,35 @@ function drawConsoleStation(canvas, data, scale = 2) {
   ctx.fillStyle = '#2b2016';  ctx.fillRect(0, 62, w, 18);     // the floor/shelf
   ctx.fillStyle = '#171009';  ctx.fillRect(0, 68, w, 12);
 
+  if (data.machine === 'elektronika-60') {
+    // A Russian PDP-11 clone at the Dorodnitsyn Computing Center — a small deep
+    // charcoal CRT with a red lamp on its right cheek, sitting on a pale grey
+    // chassis, a pale keyboard slab below, drive bays alongside. Nothing beige,
+    // nothing western. Photograph: research/wiki/media/.../elektronika-60.jpg
+    ctx.fillStyle = '#3a3d42';  ctx.fillRect(12, 4, 34, 26);     // charcoal CRT shell
+    ctx.fillStyle = '#2a2c30';  ctx.fillRect(12, 28, 34, 3);
+    ctx.fillStyle = '#101014';  ctx.fillRect(15, 7, 28, 19);     // the bezel well
+    ctx.save();
+    ctx.beginPath(); ctx.rect(15, 7, 28, 19); ctx.clip();         // nothing escapes the tube
+    (data.drawStationScreen || data.drawScreen)(ctx, 16, 8, 26, 17);
+    ctx.restore();
+    ctx.fillStyle = '#c8202a';  ctx.fillRect(43, 12, 2, 2);      // the red lamp
+    ctx.fillStyle = '#b9b7ae';  ctx.fillRect(10, 31, 38, 8);     // pale chassis
+    ctx.fillStyle = '#8f8d85';  ctx.fillRect(10, 37, 38, 2);
+    ctx.fillStyle = '#2e3034';  ctx.fillRect(34, 33, 12, 3);     // its control strip
+    ctx.fillStyle = '#c8c6bd';
+    for (let i = 0; i < 4; i++) ctx.fillRect(35 + i * 3, 34, 2, 1);
+    ctx.fillStyle = '#26282c';  ctx.fillRect(4, 24, 12, 15);     // two drive bays
+    ctx.fillStyle = '#b9b7ae';
+    ctx.fillRect(6, 27, 8, 4);
+    ctx.fillRect(6, 33, 8, 4);
+    ctx.fillStyle = '#cfcdc4';  ctx.fillRect(10, 43, 38, 8);     // the pale keyboard
+    ctx.fillStyle = '#9b998f';  ctx.fillRect(10, 49, 38, 2);
+    ctx.fillStyle = '#7e7c74';
+    for (let r = 0; r < 2; r++)
+      for (let c = 0; c < 11; c++) ctx.fillRect(12 + c * 3, 44 + r * 3, 2, 2);
+    return;
+  }
   const handheld = data.machine === 'gameboy-pocket';
   if (!handheld) {
     // A console plugs into a TELEVISION; a computer has a MONITOR. Drawing Myst's
@@ -1718,7 +1784,7 @@ function drawConsoleStation(canvas, data, scale = 2) {
       ctx.fillStyle = '#6e7076';  ctx.fillRect(4, 3, 48, 44);   // plastic shell
       ctx.fillStyle = '#4e5056';  ctx.fillRect(4, 42, 48, 5);
       ctx.fillStyle = '#15151a';  ctx.fillRect(7, 6, 42, 33);   // the bezel well
-      data.drawScreen(ctx, 9, 8, 38, 29);
+      (data.drawStationScreen || data.drawScreen)(ctx, 9, 8, 38, 29);
       ctx.fillStyle = '#42444a';                                 // speaker grille
       for (let i = 0; i < 4; i++) ctx.fillRect(42, 41 + i, 7, 1);
       ctx.fillStyle = '#3ad06a';  ctx.fillRect(8, 43, 2, 2);     // power lamp
@@ -1727,7 +1793,7 @@ function drawConsoleStation(canvas, data, scale = 2) {
       ctx.fillStyle = '#cec5ac';  ctx.fillRect(6, 3, 44, 42);  // beige plastic monitor
       ctx.fillStyle = '#9b9480';  ctx.fillRect(6, 42, 44, 3);
       ctx.fillStyle = '#14141b';  ctx.fillRect(9, 6, 38, 33);  // the bezel well
-      data.drawScreen(ctx, 11, 8, 34, 29);
+      (data.drawStationScreen || data.drawScreen)(ctx, 11, 8, 34, 29);
       ctx.fillStyle = '#b5ad98';  ctx.fillRect(24, 45, 8, 5);  // stand
       ctx.fillRect(20, 49, 16, 2);
     } else {
@@ -1735,7 +1801,7 @@ function drawConsoleStation(canvas, data, scale = 2) {
       ctx.fillStyle = '#6b4a2a';  ctx.fillRect(4, 3, 48, 44);  // veneer cabinet
       ctx.fillStyle = '#4a3320';  ctx.fillRect(4, 43, 48, 4);  // shadowed underside
       ctx.fillStyle = '#1a1a20';  ctx.fillRect(7, 6, 42, 34);  // the bezel well
-      data.drawScreen(ctx, 9, 8, 38, 30);                      // the game itself
+      (data.drawStationScreen || data.drawScreen)(ctx, 9, 8, 38, 30);   // the game itself
       ctx.fillStyle = '#c8a26a';                               // two tuning knobs
       ctx.fillRect(50, 12, 3, 4);
       ctx.fillRect(50, 20, 3, 4);
