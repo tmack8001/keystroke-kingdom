@@ -124,6 +124,56 @@ citation pass specifically:
 
 ## Unsourceable / weakly-sourced items
 
+### 🔎 OPEN LEAD — a named source exists, and it has NOT been verified (2026-09-14)
+
+**Status: LEAD, not evidence. Nothing from this block may reach a card until it is fetched.**
+
+The project owner supplied a specific citation for the second-line claim that three lanes had
+failed to source:
+
+- **[Multiple-Family Phone Lines: A Post-Postwar U.S. Trend — The New York Times, 26 December 1995](https://www.nytimes.com/1995/12/26/us/multiple-family-phone-lines-a-post-postwar-us-trend.html)**
+  *(supplied by the project owner; **NOT FETCHED** — see below)*
+
+The accompanying summary asserts, among other things, that by 1995 the share of U.S. households
+with more than one phone line **"nearly doubled in a single year to reach 16 percent,"** driven
+substantially by home offices, dial-up modems and early online services, and skewed toward more
+affluent households.
+
+**If that is accurate it settles the question**, and in exactly the hedged form the owner himself
+proposed: a **growth** claim with a number, not a prevalence claim — 16% is a minority, and
+"nearly doubled in a year" is precisely *"became more of a thing."* It would also be a period
+primary source, which is stronger than the FCC statistical series this page went looking for.
+
+**Why it is not written up yet — three independent verification failures, all this session:**
+1. `nytimes.com` cannot be fetched by the available tooling.
+2. `web.archive.org` cannot be fetched by the available tooling either, so the capture could not
+   be reached that way.
+3. The session's WebSearch budget was fully exhausted (200/200), so no corroborating source could
+   be searched for.
+
+**And one reason for positive caution about the SUMMARY, distinct from the article:** the summary
+as supplied carries the hallmarks of a generated answer — bracketed inline citation markers, an
+unprompted "(Note: if you meant party lines…)" aside, and, for that aside, **a Facebook post cited
+as a source**. The article itself may well be exactly what it claims; the *numbers attributed to
+it* are the part that has not been checked, and a precise figure ("nearly doubled", "16 percent")
+is the easiest thing for a generated summary to garble. This project has been burned by a
+plausible-sounding number before — see [[computing-history-moments]] on the invented "1979 pinball
+NOVICE/EXPERT switch," which survived a whole design document before a citation pass killed it.
+
+**What closes this lead** — any ONE of:
+- a session with WebSearch budget, to corroborate the 16% figure from a second source;
+- tooling that can reach `nytimes.com` or an archived capture;
+- the article text, or confirmation of the two figures, from someone with access.
+
+**Until then the page's card-ready facts use only the fully-sourced version** — that the telephone
+and the internet wanted the same wire and only one could have it at a time, which V.92's "Modem on
+Hold" corroborates because a standards body built a fix for it.
+
+*(Separately: **party lines** — several households sharing one physical line, common from the late
+1800s into the mid-20th century — are a genuinely different phenomenon from a household buying a
+second line, and were also raised alongside this lead. They are not this page's subject, but they
+are a good future card in their own right and would need their own sourcing pass.)*
+
 - No anecdotal/journalistic source (e.g. a first-person "growing up with dial-up"
   retrospective) was obtained this session — WebSearch, which would normally surface
   this kind of established-journalism piece, was unavailable (shared session budget
