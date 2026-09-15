@@ -1,4 +1,18 @@
 # Roadmap & Outstanding Work
+
+> ## ⏳ IN FLIGHT — wave of 2026-09-14 (three lanes)
+>
+> *Left per `.claude/rules/swarm-playbook.md` §7 so a session that ends mid-wave leaves a trail.*
+>
+> | Lane | Agent | Owns | Goal |
+> |---|---|---|---|
+> | A | `arcade-historian` | NEW `research/wiki/tech/*` component pages | The 7 components THE HARDWARE's exclusive cards need — Disk II drive, RF modulator, CD-ROM, sound card, null-modem cable, LCD panel, the home modem. Each page ends with `## Card-ready facts` |
+> | B | `arcade-historian` | `research/wiki/tech/console-hardware-silhouettes.md` + its media vault | Photograph-grounded DRAWING REFERENCES for the five remaining machines (C64+1541 on a TV, 1995 multimedia PC, two PCs and a cable, 56k tower, broadband tower + LCD) |
+> | C | `product-manager` | NEW `docs/specs/act-exclusive-cards.md` | Trevor: *"add act exclusive cards to uncover and discover in the other acts that would encourage additional play be[yond] a single play"* — the design, explicitly licensed to reject the premise if an act axis is only a relabelling of the level axis |
+>
+> **⚠️ SELF-INVALIDATING:** if no strikethroughs or results appear under this block, reconciliation
+> was missed — check `git status` and the lanes' own files before assuming nothing happened.
+
 ## Keystroke Kingdom — living backlog
 
 *Captured 2026-07-11 at the end of the Act 5 / Free Play / Settings / Graphics build session.
