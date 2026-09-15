@@ -1,24 +1,15 @@
-# THE ROOM'S OWN CARDS — act-exclusive collection, and the reward Levels 1–3 have never had
+# THE ROOM'S OWN CARDS — an act-exclusive card layer that opens when the keyboard does
 
+## Product spec / ADR — a third card bank, unlocked by the full keyboard, played in Free Play
 
-> **⚠️ INV NUMBERS RE-BASED 2026-09-14.** This spec proposed `INV-100…` while it was being
-> written; `docs/testing/STRATEGY.md` landed INV-94..99 in the meantime and a sibling spec
-> claimed the same block, so two unbuilt specs were proposing different meanings for the same
-> numbers. Candidates here are now **INV-120..127**, a reserved block. The rule that prevents a
-> third collision: **STRATEGY.md §5 is the only authority for a LANDED number, and an unbuilt
-> spec reserves a block far above it rather than taking the next free integer** — because
-> "next free" is a race between every spec in flight.
-
-
-## Product spec / ADR — a second, act-scoped card bank on the existing collection loop
-
-*Written 2026-09-14 by the `product-manager` lane. Inputs: Trevor's direction (below), the live
-code (`js/history-cards.js`, `js/slots.js`, `js/main.js`, `js/ui/screens.js`, `js/ui/cabinet-art.js`),
-`docs/specs/hardware-wing.md` §0.3/§0.4/§5.4 (the wing card model Trevor is responding to),
-`docs/testing/STRATEGY.md` §5 (INV-20/21/22/56/57/58, and the freshly-landed INV-94..99),
-`.claude/rules/easter-eggs.md` (the hidden layer and its design rules),
-`.claude/rules/product.md` §History Cards + §Word Bank Principle. Every distribution number below
-was **measured from the bank, not recalled** — the commands are quoted so they can be re-run.*
+*Written 2026-09-14 by the `product-manager` lane. **Revised the same day** after Trevor inverted
+the spec's central constraint — see §0, which overrides anything below it that still argues from the
+first draft. Inputs: the live code (`js/history-cards.js`, `js/slots.js`, `js/main.js`,
+`js/freeplay.js`, `js/ui/screens.js`, `js/ui/cabinet-art.js`), `docs/specs/hardware-wing.md`
+§0.3/§0.4/§5.4 (the sibling bank), `docs/testing/STRATEGY.md` §5 (INV-20/21/22/56/57/58, INV-94..100),
+`.claude/rules/easter-eggs.md`, `.claude/rules/product.md` §History Cards / §Word Bank Principle /
+§Content Rating, `.claude/rules/levels.md` §Milestones. Every distribution number below was
+**measured from the bank, not recalled**.*
 
 **Trevor's direction, verbatim:**
 
@@ -27,65 +18,138 @@ was **measured from the bank, not recalled** — the commands are quoted so they
 >
 > *"Let's also run some to add act exclusive cards to uncover and discover in the other acts that
 > would encourage additional play behind a single play."*
+>
+> **(the revision)** *"Guess we could just introduce act/wing/phase cards after the entire keyboard
+> is unlocked instead of going back to all the prior ones so it stays next to typing the card
+> title."*
+
+---
+
+## 0. The inversion — what changed, and why the discarded design's measurement must outlive it
+
+The first draft of this spec accepted one concession and flagged it as its single biggest risk:
+**act cards would not be typed.** The reasoning was forced, and it is worth stating so the reversal
+is legible:
+
+> Levels 1–3 cannot spell anything — J F D K S L has no vowel, and `product.md`'s Word Bank
+> Principle makes those levels deliberately wordless. A card is discovered by typing its word.
+> Therefore a card at Level 1 is structurally impossible. To reach the three cabinets a beginner
+> replays most, the draft **freed act cards from the typing ritual** and awarded them on a replay
+> win instead, with a `FOUND IN THE ARCADE` label doing the work of explaining a card nobody typed.
+
+**Trevor inverted the constraint rather than paying that price:** don't reach back into the early
+levels at all — **open the whole act-card layer once the keyboard is complete.** At that point every
+key exists, every act card's word is typeable, and the discovery stays exactly what it has always
+been: *you type the word, you get the story.*
+
+**This is better than either proposal, and for four reasons that are not merely "it is simpler":**
+
+1. **It removes the risk instead of mitigating it.** The draft's mitigation was framing — a label
+   explaining away a ritual that had been broken. There is now no ritual to explain away.
+2. **It makes the full keyboard a REWARD, which is the game's entire thesis.** *"Typing unlocks the
+   world"* (`product.md` §5). A child genuinely could not read Act 1's story while she was in Act 1
+   — she did not have the letters. Now she does, and the history opens up. That is the same beat as
+   the Mystery Cabinet and Level 20's binary→`HELLO`, told once more, at the exact moment the
+   keyboard completes.
+3. **It kills the hardest part of the build.** No second guaranteed-card slot, no already-won replay
+   latch, no non-typed award path, no `FOUND IN THE ARCADE` framing. Levels 1–3 are not touched at
+   all, which retires the Word Bank Principle risk entirely rather than arguing around it.
+4. **It dissolves the era-mismatch finding as a side effect** — see below, because that finding is
+   the most valuable thing the discarded draft produced and it must not be thrown out with it.
+
+### 0.1 The measurement that motivated everything, and still does
+
+The reason an act axis is not merely a relabelling of the level axis — a Level 8 card is already
+Act-2-exclusive by transitivity — is this, measured from the bank:
+
+```
+cards per level  L1..L25:  0 0 0 2 2 | 3 2 6 4 2 | 5 6 7 2 2 | 1 2 2 1 3 | 1 1 1 2 2
+cards per act:            Act 1 = 4 · Act 2 = 17 · Act 3 = 22 · Act 4 = 9 · Act 5 = 7
+card year inside its act's own era:   Act1 0/4 · Act2 3/17 · Act3 0/22 · Act4 2/9 · Act5 2/7
+                                      → 7 of 59 overall
+```
+
+**Only 7 of 59 level-attached cards fall inside their own act's era. Act 1 scores 0/4; Act 3 scores
+0/22.** The 1979 arcade holds no card about arcades; the 1991–96 basement holds cards dated 1947,
+1966, 1969, 1976 and 1977. This is not an authoring failure — it is what INV-56 *does*: it
+distributes cards by **spelling**, not by subject or era. `phrack` (a 1985 hacker zine) sits on the
+Myst cabinet because its letters happen to close at Level 13.
+
+**Trevor's gate solves this more cleanly than the discarded design did.** The draft escaped the
+spelling constraint by abandoning typing. The gate escapes it by **abolishing the constraint**:
+once every letter is unlocked, spelling stops selecting *which act a card lands in*, so an act card
+can simply be about the act it belongs to. Same outcome, ritual intact.
+
+### 0.2 What the inversion costs, stated honestly
+
+One thing genuinely goes away and does not come back: **a beginner at Levels 1–3 still gets no
+card.** The draft's best consequence was that the second play of Breakout paid something. It
+doesn't now. What a beginner gets instead is the promise — the layer is announced at the milestone
+that unlocks it — and the game's existing answer for the early levels remains what it always was:
+the cabinets themselves, the celebrations, and the first real word at Level 4.
+
+**That gap is real and it is separately fixable.** Levels 1–3 can hold a card whose moment word is a
+**pattern** rather than a word — Level 1's own documented content is *"j, f, jf, fj"*, and the bank
+already contains non-word card words (`\o/`, `386`, `56k`, `1969`). A card attached to the token
+`jf`, about the two raised bumps under her index fingers, asks her to type exactly what Level 1
+already asks her to type. **It is out of scope here** (it is a level card on the existing axis, not
+an act card) and is listed as a ROADMAP follow-up in §8, not as part of this feature.
 
 ---
 
 ## 1. Recommendation
 
-**Build it — and build it as a second, act-scoped card bank that is awarded for REPLAYING a level
-you have already won, never for typing a word.** That one constraint is what makes this more than
-a relabelling, and it is the whole design. I was asked to be sceptical about whether an "act axis"
-merely renames the level axis, and for most of what an act card could be, it does. But three
-measurements say there is a real, structural hole underneath the request, and an act-scoped bank
-is the only thing shaped to fill it:
+**Build a third card bank, `ACT_CARDS`, with four cards per act; unlock the whole layer at Level 15
+— the game's own FULL KEYBOARD UNLOCKED milestone; and make Free Play the surface where those cards
+are typed and found.** Everything else in the design follows from those three choices, and the third
+one is not a preference — it is the only solution the existing game admits.
 
-- **Levels 1, 2 and 3 hold zero cards and always will.** A card is discovered by typing its word;
-  J F D K S L has no vowel; the Word Bank Principle says those levels are deliberately wordless.
-  So the collect-them-all loop Trevor loves **does not exist for a brand-new player until their
-  fourth cabinet** — at exactly the three cabinets a five-year-old will replay more than any other.
-- **The reward is inverted relative to where a beginner spends time.** Act 1 has **4** cards across
-  five levels; Act 3 has **22**. The fluent player is swimming; the beginner is dry.
-- **The card bank is era-scrambled relative to its own rooms, by construction. Only 7 of 59
-  level-attached cards fall inside their act's era — Act 1 scores 0/4 and Act 3 scores 0/22.**
-  The 1979 arcade holds no card about arcades; the 1991–96 basement holds cards dated 1947, 1966,
-  1969, 1976 and 1977. This is not an authoring failure, it is what INV-56 *does*: it distributes
-  cards by **spelling**, not by subject or era. `phrack` (a 1985 hacker zine) sits on the Myst
-  cabinet because its letters happen to close at Level 13.
+**The gate: Level 15, flat, for the whole layer.** `.claude/rules/levels.md` names two candidate
+milestones and the wording decides it: Level 15 is *"FULL KEYBOARD UNLOCKED"* (all 26 letters + core
+punctuation, every letter key lighting at once); Level 25 is *"Full keyboard **mastered**."* Trevor
+said *"after the entire keyboard is **unlocked**."* Beyond the wording, L15 is the better gate on
+merit: a layer whose whole purpose is to **drive replay** needs game left to live in, and at L15
+there are ten cabinets and three fully-unlocked acts of Free Play ahead, whereas a reward that
+arrives at L25 arrives when the game is over. L15 is also an act boundary and the moment the
+staircase rises — the game is already saying *the world just got bigger* right there.
 
-An act-scoped card is not bound by INV-56, so it can be **about the room it is found in** and can
-be awarded **where no word can be spelled**. Those are two things the level axis structurally
-cannot do, and together they are the feature.
+**I considered and rejected a per-card gate** (a card unlocks when its own word becomes typeable —
+"INV-56 applied honestly"). It is elegant on paper and buys nothing here: Free Play hands out the
+**full keyboard regardless of progress** (`FREEPLAY_KEYS`, `js/freeplay.js`), so a per-card rule
+would gate nothing a player could actually feel, while adding per-card machinery and a second
+unlock concept. **One flat gate plus one content rule is strictly better:** every act card's word
+must be typeable with Level 15's cumulative closure — **lowercase letters plus `;` `,` `.` `/`, and
+nothing else.** No digits, no capitals, no space, no hyphen or apostrophe (those are Levels 21–25).
+That is an authoring constraint on twenty brand-new cards, it costs the historian essentially
+nothing, and it makes the gate exceptionless and testable (INV-123). Note what it excludes: a word
+like `wi-fi` could not be an act card. `quarter`, `marquee`, `shareware`, `cursor` all can.
 
-**The mechanism, in one sentence:** when you win a level *you have already won before*, and that
-level's own card pool holds nothing new for this save, the level-complete overlay hands you one
-of that **act's** exclusive cards instead of the duplicate it hands you today.
+**The surface: Free Play, at the cabinet whose act owns the card.** Trevor's *"instead of going back
+to all the prior ones"* rules out replaying Act 1's curriculum levels — and it turns out that
+**replaying them would not work anyway.** After Level 15, the curriculum cabinets still hand you
+their own restricted key sets: Level 1 is still `{j, f}`. So an Act 1 card can never be typed at
+Act 1's curriculum cabinet, at any point in the game, ever. **Free Play is the only place in
+Keystroke Kingdom where an Act 1 cabinet and a complete keyboard exist at the same time.** Trevor's
+two constraints — *typeable word* and *don't go back* — have exactly one solution in the game as
+built, and it is already shipped: press `F` on the select screen, pick the cabinet, play it with the
+whole keyboard. That is not going back; it is the victory lap.
 
-That sentence is doing four jobs at once, and each one is deliberate:
-- It is **literally "beyond a single play"** — the trigger is the replay itself.
-- It **costs nothing from the one-guaranteed-card-per-play budget.** Today, replaying an exhausted
-  level pays you a card you already own. This replaces a wasted reward with a new one. The number
-  of NEW cards per play stays exactly ≤ 1 and INV-22/INV-58 are untouched.
-- It **needs no typed word**, so Levels 1–3 become the *fastest* door into Act 1's set. The second
-  play of Breakout pays a card. That single consequence justifies the feature.
-- It **needs no save-schema change at all** — the "have I won this before" latch is
-  `getProgress().completed[level]` read at level start, and rotation reuses the existing
-  string-keyed `cardRotation` map under `"act:1"` (the same zero-migration trick INV-98 blesses).
+**And it fixes a real gap while it is there.** Free Play today awards **no cards at all** — the card
+path is switched off by `!state.freePlay` guards in `js/main.js` (the reveal at ~1041, the
+`cardPending` win gate at ~862). It is the game's one built-in replay surface and it pays nothing.
+This gives it the reward it has never had, and the act scope falls out for free, because **the
+cabinet you choose is the act.**
 
-**Do this first, and separately: also commission the three or four cards the level axis is simply
-missing.** Levels 1–3 and the five one-card levels (16, 19, 21, 22, 23) are content gaps, not
-architecture gaps, and §4 gives them their own verdict. A Level 1 card whose moment word is the
-*pattern* `jf` — the two little raised bumps your index fingers are resting on right now — is true,
-era-perfect, costs no new mechanism, and does not smuggle a word into a wordless level. It is
-worth doing on its own merits, and it does **not** substitute for this spec: one card is a card,
-not a loop.
+**One requirement that is not optional: the layer must announce itself once.** Free Play is a toggle
+behind `F` on the select screen; a layer that lives only there could go unseen forever. At the
+FULL KEYBOARD UNLOCKED milestone, the completion card carries one extra line telling the player a
+new set of cards has opened and where to find them — once per save, latched exactly like the
+eighth-key confession (`!getProgress().completed['15']`, read before this play is recorded). A
+reward announcement at a celebration point, never a nag, never mid-flow (§6.4).
 
-**What I recommend against**, plainly, because it is the most tempting reading of "uncover and
-discover": **do not make act cards hidden.** A card that is counted on a shelf and hidden behind a
-secret is not a delight, it is an obligation — the child can see a `???` she has no way to reach.
-The hidden layer (`easter-eggs.md`) is excellent *because* nothing counts it. Keep counted cards
-findable by playing, and keep secrets uncounted. §4 argues this at length and names the real,
-separate gap the orchestrator correctly identified (there is no **keyboard-reachable** discovery
-egg — the moth is mouse-only) as a follow-on egg proposal, not as this feature.
+**Still recommended against, unchanged from the first draft:** do not hide act cards behind secrets
+(§5.6). A counted `???` a child cannot reach is an obligation, not a delight; the hidden layer is
+excellent *because* nothing counts it.
 
 ---
 
@@ -93,166 +157,136 @@ egg — the moth is mouse-only) as a follow-on egg proposal, not as this feature
 
 **What a player experiences today, concretely.**
 
-A five-year-old opens Level 1. She types `j`, `f`, `jf`, `fj`. She wins. The overlay says LEVEL
-COMPLETE and shows her time, accuracy, streak and keys. There is no card. She plays it again,
-because it is the cabinet she can actually do. There is no card. She plays it eleven more times
-across a fortnight. There is never a card. She has watched her dad get cards; the slot picker
-shows a `★` next to his game and nothing next to hers.
+A player finishes Level 15. Every letter key lights at once — the game's biggest milestone short of
+the ending. Then Act 4 begins and nothing about the preceding fifteen cabinets is any different than
+it was. The full keyboard, in practice, buys numbers.
 
-At Level 4 she finally gets one (`ada`, 1843). At Level 5 another (`hal`, 1968). Then Act 1 is out
-of cards forever: it holds four, and two of them are about a countess and a film.
+She goes back to Breakout out of affection. Level 1 gives her `{j, f}` and no card — it never had
+one. She toggles Free Play and plays Breakout with the whole keyboard, typing real sentences, which
+is genuinely lovely — and receives nothing for it, because Free Play is excluded from the collection
+by design.
 
-Meanwhile a fluent player at Level 13 has **seven** cards waiting on one cabinet, and Level 13
-alone holds more cards than the entire first act.
+Meanwhile the collection she is being invited to complete is shaped like this: Act 1 holds **4**
+cards across five cabinets; Act 3 holds **22**, seven of them on Level 13 alone. And of the 59
+level-attached cards, **7** are about the era of the room they were found in (§0.1). The 1979 arcade
+— the game's own setting, its cover art, the thing the whole first act is *about* — has never been
+the subject of a single card, because none of its vocabulary can be spelled early enough to qualify.
 
-And a third thing, quieter but structural: **the arcade the game is set in is the one subject the
-cards never cover.** There is no card about the coin slot, the marquee, attract mode, or why a high
-score only gets three letters — because none of those words can be spelled early, and by the time
-they can, the cabinets are somewhere else.
-
-Three sentences, three measurements:
-
-```
-$ node -e "import('./js/history-cards.js').then(m=>{…})"
-cards per level  L1..L25:  0 0 0 2 2 | 3 2 6 4 2 | 5 6 7 2 2 | 1 2 2 1 3 | 1 1 1 2 2
-cards per act:            Act 1 = 4 · Act 2 = 17 · Act 3 = 22 · Act 4 = 9 · Act 5 = 7
-card year inside its act's era:  Act1 0/4 · Act2 3/17 · Act3 0/22 · Act4 2/9 · Act5 2/7  (7/59 overall)
-```
+Three problems, one shape: **the game's best subject matter is locked out by an orthographic rule,
+and its one replay surface pays nothing.**
 
 ---
 
 ## 3. Option space
 
-Every real alternative, including doing nothing. "Effort" is builder-days for the mechanism only;
-card content is a separate `arcade-historian` cost in every row that needs it.
+The mechanism is now settled by Trevor's inversion. The live decisions are **the gate** and **the
+surface**, so the option space is over those. Row A is retained because "do nothing" is always a
+real option.
+
+### 3.1 The gate
 
 | # | Option | Reach | Cost to the player | Risk | Effort | Reversible? |
 |---|---|---|---|---|---|---|
-| **A** | **Do nothing.** Keep one bank, one axis | every player | the three gaps above persist | none | none | n/a |
-| **B** | **Author more LEVEL cards** into the thin levels (16/19/21/22/23) and pattern-token cards into 1–3 | every player | none | low — but the era-scramble stays, and L1's `{j,f}` ceiling caps it at ~1 card | 0 mechanism + historian | trivially |
-| **C** | **Per-act SHELVES in the gallery over the existing 60** — no new cards, just scoped counters | anyone who opens the gallery | none | none | ~0.5 day | trivially |
-| **D** | **★ ACT-EXCLUSIVE BANK, awarded on a replay win** *(recommended)* | anyone who replays any level | none | low — additive array, no schema change | ~1.5 days + historian | delete the array contents → byte-identical |
-| **E** | Act bank, awarded in a **second** guaranteed card slot (two cards per play) | every player | dilutes "picked up off the arcade floor"; doubles global collection rate; touches the win gate | **high** — INV-22/58 are the invariants every winability proof rests on | ~3 days | hard |
-| **F** | Act bank, awarded only once a level's **own** pool is exhausted, **typed** like a normal card | mid/late players | Act 1's ceiling is A S D F G H J K L ; — the act that needs it most gets the worst vocabulary | medium — re-imports the exact orthography-over-subject defect it exists to fix | ~2 days + hard historian | yes |
-| **G** | Act bank as **hidden secrets** (magic word / a glinting object per act) | only the curious | a counted `???` with no path is an obligation; the moth precedent is mouse-only | medium | ~2 days | yes |
-| **H** | Act bank collected from a **glinting object on the act's row of the select screen** | anyone who looks | none | medium — `navigateWithinAct` walks `act.levels` by level number; a non-level focus target is a real refactor | ~3 days | yes |
-| **I** | **Act CAPSTONE**: one card per act, awarded for collecting that act's whole level pool | completionists | genuine completionist pressure; 5 cards total; unreachable in Act 3 (22 cards) for most children | medium | ~1 day | yes |
+| **A** | **Do nothing.** One bank, one axis | every player | the three gaps in §2 persist | none | none | n/a |
+| **G1** | **★ Flat gate at Level 15** — FULL KEYBOARD UNLOCKED *(recommended)* | everyone who finishes Act 3 | none | low | one constant + one milestone line | delete `ACT_CARDS` contents |
+| **G2** | Flat gate at Level 25 | only players who finish | arrives when the game is over — a replay layer with nothing left to replay into | low | same | yes |
+| **G3** | Per-card gate (a card unlocks when its own word is typeable) | varies per card | none | medium — two unlock concepts, and it gates nothing in practice because Free Play always grants the full keyboard | per-card closure machinery | yes |
+| **G4** | Gate on the bonus-wing constant (`DOOR_UNLOCK_LEVEL = 25`) | as G2 | as G2 | low | none | yes |
 
-**Reading of the table.** **A** leaves a measured hole. **B** and **C** are both real wins that cost
-almost nothing and should ship regardless — but neither creates a *loop*: B adds a handful of
-one-shot cards, C adds no cards at all. **E** is the obvious reading of "more cards" and is the one
-to refuse: the exactly-one-guaranteed-card-per-play property is load-bearing for the win gate and
-for the feeling that a card is special. **F** is the obvious reading of "act cards" and quietly
-re-imports the defect (Act 1's whole vocabulary would be home-row words). **G** is the obvious
-reading of "uncover and discover" and is the one that can actually hurt a child. **H** is the best
-*version* of discovery and is the right Phase 3 if Trevor wants it — but it is twice the cost for a
-smaller effect than D. **I** is charming and is the only option that can create pressure.
+**G1 wins.** Trevor's word was *"unlocked"*, which is L15's own milestone name (L25's is
+*"mastered"*); a replay layer needs runway, and L15 leaves ten cabinets and three fully-unlocked
+acts of it; and one flat number plus one content rule (letters + `; , . /`) is exceptionless and
+testable, where G3 is per-card machinery buying a distinction Free Play erases anyway.
 
-**D wins because it is the only option that is simultaneously: a loop, not a one-shot; free of the
-per-play budget; free of the orthography ceiling; free of any schema change; and invisible to a
-player who never replays anything.**
+### 3.2 The surface — where an act card is typed
+
+| # | Option | Reach | Cost to the player | Risk | Effort | Reversible? |
+|---|---|---|---|---|---|---|
+| **S1** | **★ Free Play, at a cabinet in that act** *(recommended)* | anyone who presses `F` | none | medium — the layer is invisible unless announced (mitigated, §6.4) | ~1.5 days | yes |
+| **S2** | The curriculum level itself, after L15 | — | **impossible.** Level 1 still hands you `{j, f}` after L15; an Act 1 word can never be typed there | — | — | — |
+| **S3** | Any level you happen to be playing, once the layer is open | every player | the act becomes a label on a card rather than a place — back to the relabelling the whole spec exists to avoid | low | ~1 day | yes |
+| **S4** | Level 25 / the endgame only | finishers | every act card comes from one cabinet, which destroys *"drives replay to each set of games"* | low | ~1 day | yes |
+| **S5** | A new dedicated room or a playable gallery | everyone | a whole new surface, new art, new navigation — the opposite of "kills the hardest part of the build" | high | ~1 week+ | costly |
+
+**S1 wins, and S2's impossibility is the argument.** Trevor's two constraints intersect in exactly
+one existing surface. S3 and S4 both survive the constraints and both destroy the point: S3 makes
+the act a label, S4 makes it a single cabinet. S1 preserves *"replay behavior to each set of
+games"* literally — to finish Act 1's shelf you play Act 1's cabinets.
 
 ---
 
 ## 4. Per-surface verdict
 
-These surfaces have genuinely different risk profiles. One blanket answer over them would be a
-failure, so each gets its own.
+Different surfaces, different risk profiles; one blanket answer over them would be a failure.
 
-### 4.1 Acts 1–5 (the curriculum) — ✅ BUILD, and Act 1 first
+### 4.1 Acts 1–5 (the curriculum) — ✅ BUILD, four cards each, Act 1 first
 
-**Verdict: yes, four act-exclusive cards per act, twenty in total, Act 1 shipping first.**
+**Verdict: four act-exclusive cards per act, twenty total; Act 1 ships first; then Acts 2 and 3;
+then Acts 4 and 5.**
 
-*Was asked to argue Act-1-first both ways.* **Against:** Act 5 is the thinnest per-level (L21, L22,
-L23 hold exactly one card each, so a single visit exhausts each of them and a returning player at
-the end of the game gets nothing new at three consecutive cabinets); a player who has reached Act 5
-has demonstrated they care about the collection, so the reward lands on a proven audience; and Act
-5's subject (the keys themselves) is the best-researched of the five. **For:** Act 1 is not thin,
-it is **absent** — there is a difference between a loop that runs out and a loop that has never
-started, and only one of those can teach a child that cards exist at all. Act 1 is the
-habit-forming act; it is where a beginner's play hours actually go; its act cards would arrive on
-the **second** play of the **first** cabinet, which is the earliest any reward in this game can
-possibly land; and it is the act whose subject is the game's own setting, which is the single most
-on-theme body of content the card bank has never touched. **Act 1 first.** Act 5 second, for the
-reasons above, which are real.
+**The phase order changed from the first draft because the gate changed it.** The draft shipped Act
+1 then Act 5. Under the L15 gate, a player who has just unlocked the layer has Acts 1, 2 and 3
+fully unlocked and Free-Playable, and **cannot reach Act 4 or Act 5's cabinets at all** — those
+cards would be `???` on a shelf for another ten levels. So the immediately-playable acts go first.
 
-### 4.2 Levels 1–3 specifically — ✅ BUILD, and ALSO commission one pattern-token card each
+Act 1 still leads, and the reasons are stronger under the new gate than the old one: it is the act
+whose subject is the game's own setting, it is the act that measures **0/4** on era-match, and it is
+the act with the fewest cards of the five. It is also the most emotionally correct place for this
+layer to begin — the first room, re-read with a grown-up keyboard.
 
-**Verdict: two independent things, and they must not be confused with each other.**
+### 4.2 Levels 1–3 — ⏸️ OUT OF SCOPE, and the gap is named rather than hidden
 
-The act bank is the *loop* at Levels 1–3, and it works there precisely because it needs no word.
+**Verdict: not addressed by this feature, by design (§0.2).** The `jf` pattern-token card remains a
+good, cheap, separate idea on the **level** axis. It is a ROADMAP follow-up (§8), not part of this
+spec, and it is not a substitute for anything here.
 
-Separately, and cheaply: **a card whose moment word is a PATTERN is not a violation of the Word
-Bank Principle.** Level 1's own documented content is *"j, f, jf, fj — rhythm and repetition only"*;
-a card attached to the token `jf` asks the child to type exactly what Level 1 already asks her to
-type. The precedent is already in the bank — `\o/`, `386`, `56k`, `1969` and `1970` are all card
-words that are not words. The obvious subject is **the two raised bumps on F and J**, which is
-true, tactile, era-appropriate, and is literally under her fingers at that moment.
+### 4.3 The one-card levels (16, 19, 21, 22, 23) — ✅ AUTHOR MORE LEVEL CARDS, separately
 
-**But do not force it.** Commission the historian to *attempt* one pattern-token card for each of
-L1 / L2 / L3 and accept that only L1 may be findable — a source's silence is not a licence to
-invent (journal F29). A single card per level is a card, not a loop; it does not replace §4.1.
+**Verdict: a content gap on the existing axis.** A pool of one means `pickFromPool` returns the same
+card on every later visit forever. Two more each restores the rotation the rest of the game has.
+Ordinary historian work, no spec needed. Listed so it is not forgotten.
 
-### 4.3 The one-card levels (16, 19, 21, 22, 23) — ✅ AUTHOR MORE LEVEL CARDS
+### 4.4 Free Play — ✅ THIS IS THE SURFACE, and it gains a reward it never had
 
-**Verdict: a content gap, not an architecture gap. Fix it with level cards.** A pool of one means
-`pickFromPool` hands back the same card on every subsequent visit forever. Two more cards each
-would restore the rotation the rest of the game has. This is ordinary historian work against the
-existing axis and needs no spec. (It is listed here so it is not forgotten, not because it belongs
-to this feature.)
+**Verdict: extend Free Play with a card path, and nothing else about it changes.** WPM stays
+displayed and never enforced (INV-37); no failure state is introduced; the session stays
+completable at any pace. The card is guaranteed within the session exactly as it is in a curriculum
+level, so it can never be missed (§6.3).
 
-### 4.4 Act 6 — THE TEXT WORLDS — ⏸️ DEFER, and say why
+### 4.5 Act 6 · Act 7 · THE HARDWARE — ⏸️ / ✋ unchanged from the first draft
 
-**Verdict: no cards in this change.** Act 6 already has the replay loop this spec is trying to
-build: every riddle creature carries a **rotating riddle pool** (`js/textworld/riddles.js`, `_ri`
-advances per open — "different each time"), and the IM-friend remembers you across launches. It is
-the one wing that is not short of reasons to return. If it ever gets cards they should attach on
-the **wing/world** axis (`WING_CARDS`, the hardware wing's shape), not the act axis, because a
-world is a place you visit rather than a level you win. Its own small spec, later.
+- **Act 6 (TEXT WORLDS) — defer.** It already has this loop: every riddle creature carries a
+  rotating pool (`js/textworld/riddles.js`, `_ri` advances per open) and the IM-friend remembers
+  you across launches. If it ever gets cards they attach on the **wing/world** axis.
+- **Act 7 (THE SPEEDWAY) — defer, but note the blocker is gone.** `docs/specs/act7-speed-racing.md`
+  §5.7 refused cards *solely* because they *"would inflate the '★ found / total' denominator."*
+  Scoped denominators (now INV-96/INV-100) dissolve that. Speedway also already has a replay loop —
+  the ghost car and the lap record.
+- **THE HARDWARE — do not touch.** `WING_CARDS` + `(wing, station)` + paired machine/component
+  cards is already ruled and already built. `ACT_CARDS` is a **third sibling** of it and
+  `HISTORY_CARDS`, built the same way for the same reason, and must never merge with either.
 
-### 4.5 Act 7 — THE SPEEDWAY — ⏸️ DEFER, but note the blocker is now gone
+### 4.6 The hidden layer (easter eggs) — ❌ DO NOT PUT ACT CARDS THERE
 
-**Verdict: no cards in this change, and the reason it declined them no longer holds.**
-`docs/specs/act7-speed-racing.md` §5.7 refused cards solely because they *"would inflate the
-'★ found / total' denominator."* Scoped denominators (§5.4 here, and INV-96 as landed) dissolve
-that objection. Speedway also already has a replay loop — the ghost car and the lap record. When
-someone specs its cards, they attach on the wing/track axis. Not here.
+**Verdict unchanged, and the reason survives the inversion intact.** A `???` in the gallery is a
+safe invitation because there is always a path — play that act's cabinet in Free Play. The moment a
+**counted** card is reachable only by knowing a secret, the `???` becomes something the child can
+see and cannot get, and the gallery stops being a tease and becomes a scoreboard of her ignorance.
+That is completionist pressure, which `product.md` §1 forbids.
 
-### 4.6 THE HARDWARE wing — ✋ DO NOT TOUCH, it is already decided
+The one precedent pointing the other way should not be extended: the WarGames `joshua` card *is*
+counted and *is* secret. One unreachable-by-play card in sixty is a curiosity; five — one per act —
+would leave **every act shelf permanently incomplete** for a child who does not read a wiki.
 
-**Verdict: out of scope, by design.** `WING_CARDS` + `(wing, station)` + paired machine/component
-cards is already ruled and already built (empty pending an `arcade-historian` pass). The act bank
-in this spec is a **third sibling** of `HISTORY_CARDS` and `WING_CARDS`, built the same way for the
-same reason, and it must not merge with either.
+**The real gap the orchestrator named is real and is a different feature.** `easter-eggs.md` records
+it: *"the moth is mouse-only, which sits oddly in a keyboard-first game."* A keyboard-reachable
+discovery egg is worth building — as an **uncounted egg**, in that layer, with its own proposal.
 
-### 4.7 The hidden layer (easter eggs) — ❌ DO NOT PUT ACT CARDS THERE
+### 4.7 The slot picker's `★` counter — ⚠️ LEAVE IT
 
-**Verdict: keep counted cards findable by playing, and keep secrets uncounted.** This is the
-"uncover and discover" question, answered with a reason rather than a preference.
-
-A `???` silhouette in the gallery is already a discovery invitation, and it is a *safe* one,
-because there is always a path: replay the cabinet. The moment a counted card is reachable only by
-knowing a secret, the `???` becomes a thing the child can see and cannot get, and the gallery stops
-being a tease and starts being a scoreboard of her ignorance. That is completionist pressure, and
-`product.md` §1 forbids it.
-
-**There is one precedent pointing the other way and it should not be extended:** the WarGames
-`joshua` card *is* counted, and is findable only by typing a magic word. One unreachable-by-play
-card in sixty is a curiosity. Five — one per act — would make **every act shelf permanently
-incomplete** for a child who does not read a wiki.
-
-**The real gap the orchestrator named is real, and it is a different feature.** `easter-eggs.md`
-records it as an open question: *"the moth is mouse-only, which sits oddly in a keyboard-first
-game."* A **keyboard-reachable discovery egg** is genuinely missing and genuinely worth building —
-as an **uncounted egg**, in `easter-eggs.md`'s own layer, with its own proposal. Folding it into a
-counted collection would spoil both.
-
-### 4.8 The slot picker's `★` counter — ⚠️ LEAVE IT, and note what I found
-
-**Verdict: unchanged in this spec — but there is a live latent defect next door, reported in §8.**
 The picker renders `'★ ' + slot.cardsFound` with **no denominator** (`js/ui/screens.js:108`,
-`js/slots.js:291`), so it cannot regress: the number only grows. The docs describe it as
-`★ 14 / 60`; the code does not. Left alone.
+`js/slots.js:291`), so it cannot regress — the number only grows. The docs describe it as
+`★ 14 / 60`; the code does not. Unchanged here.
 
 ---
 
@@ -260,113 +294,118 @@ The picker renders `'★ ' + slot.cardsFound` with **no denominator** (`js/ui/sc
 
 ### 5.0 Where it slots in
 
-Three files, one new array, no new module, no new screen, no new key, no storage schema change.
+Four files, one new array, no new module, no new screen, no new key, **no save-schema change**.
 
 | File | Change |
 |---|---|
-| `js/history-cards.js` | new exported `ACT_CARDS` array + `cardsForAct(act)` + `pickGuaranteedActCard(act, collected, rot)` (delegating to the existing `pickFromPool`) + `actCollectedCount(collectedIds)` / `ARCADE_CARD_IDS` for scoped counting |
-| `js/main.js` | choose `state.actCard` beside `state.currentCard` in the same block (~line 1402); render it in the overlay's existing `#history-card` element (~line 1040) |
+| `js/history-cards.js` | new exported `ACT_CARDS` + `cardsForAct(act)` + `pickGuaranteedActCard(act, collected, rot)` (delegating to the existing `pickFromPool`) + `actCardIds()` for scoped counting |
+| `js/main.js` | in a Free Play session, choose and inject the act card beside the existing card block (~1402/1414); extend the `cardPending` gate (~862) and the reveal (~1041) to the Free Play case; the one-time L15 announcement (~1019, beside the eighth-key confession) |
 | `js/ui/screens.js` | `renderCollectionScreen` grows per-act shelves below the existing grid |
+| `js/freeplay.js` | unchanged — the act card is injected by the engine, exactly as a curriculum card is |
 
 ### 5.1 The data shape — a third sibling, not a third system
 
 ```js
 // js/history-cards.js — a THIRD bank, parallel to HISTORY_CARDS and WING_CARDS,
-// for exactly the reason WING_CARDS is separate (INV-96): TOTAL_CARDS is the
-// number the player reads, and it may never move under a save.
+// separate for exactly the reason WING_CARDS is separate (INV-96): TOTAL_CARDS is
+// a number the player has already earned, and it may never move under a save.
 export const ACT_CARDS = [
-  { id: 'the-quarter', act: 1, word: 'quarter', title: '…', year: '…', fact: '…' },
+  { id: 'attract-mode', act: 1, word: 'attract', title: '…', year: '…', fact: '…' },
   …
 ];
 ```
 
 `act` is an integer 1–5 matching `ACTS[].num` in `js/ui/cabinet-art.js`. There is **no `level`
-field**, so `cardsForLevel()` — which filters `c.level === level` over `HISTORY_CARDS` only — cannot
-return one by two independent mechanisms. INV-56 does not apply and is not amended. INV-57's
-generalized form ("no card without a numeric level enters a level pool") already covers it.
+field**, so `cardsForLevel()` — which filters `c.level === level` over `HISTORY_CARDS` only —
+cannot return one, by two independent mechanisms. **INV-56 is neither applied to act cards nor
+amended for them**; INV-57's generalized form ("no card without a numeric level enters a level
+pool") already covers them.
 
-`word` is a **display label**, not a typed token. It is what the gallery cell prints
-(`renderCollectionScreen` uses `card.word.toUpperCase()`), and it must still be unique across all
-three banks so that a future reader — and INV-97 — never sees two cards claiming one word.
+`word` is a real, typed moment word, subject to the L15 closure rule in §5.2, and must be unique
+across all three banks so no typed pattern can ever glint against two cards (INV-122).
 
-### 5.2 The trigger — the replay itself
+### 5.2 The gate and the content rule
 
-At level start, in the same block that resolves `state.currentCard` (`js/main.js` ~1402):
+**The layer is available to a save once Level 15 is recorded complete** (`getProgress().completed['15']`),
+with the WOPR/`selectBypass` escape hatch making it available as it does everything else. Before
+that: `pickGuaranteedActCard` is never called, no act card is injected, revealed or counted, and no
+act shelf renders.
+
+**Every act card's word must be typeable with Level 15's cumulative key closure** — lowercase
+letters `a–z` plus `;` `,` `.` `/`. No digits, no capitals, no space, no hyphen, no apostrophe, no
+backtick. Derived by the same closure construction as INV-20/INV-56, never a hardcoded character
+list (INV-123). This is what makes one flat gate exceptionless.
+
+### 5.3 The loop — a Free Play session at a cabinet in that act
+
+Free Play keeps `state.level` (the chosen cabinet) and swaps in a full-keyboard level object
+(`buildFreePlayLevel`, `js/main.js` ~296). The act follows from the cabinet:
+`act = ACTS.find(a => a.levels.includes(state.level)).num`.
+
+At session start, in the same block that resolves `state.currentCard`:
 
 ```
-isReplay   = !!getProgress().completed[String(level)]      // read BEFORE this play is recorded
-levelCard  = pickGuaranteedCard(level, collectedIds, rot)  // unchanged
-levelCardIsNew = levelCard && !collectedIds.includes(levelCard.id)
-
-state.actCard = (!freePlay && isReplay && !levelCardIsNew)
-  ? pickGuaranteedActCard(actOf(level), collectedIds, getCardRotation('act:' + actOf(level)))
+state.actCard = (state.freePlay && actLayerUnlocked())
+  ? pickGuaranteedActCard(actOf(state.level), Slots.collectedIds(),
+                          Slots.getCardRotation('act:' + actOf(state.level)))
   : null
 ```
 
-Four properties fall out of that, and each is deliberate:
+and, when non-null, its word is spliced into `state.patterns` exactly as a curriculum card word is —
+early enough to precede the earliest possible win — with the **Free Play win gate extended to wait
+for it**, the direct analogue of `cardPending`. Typing it glints gold mid-play through the existing
+`patternMatchesCard` path; the card is revealed on the FREE PLAY COMPLETE overlay in the existing
+`#history-card` element; award is `Slots.collectCardId(card.id)` (idempotent, drives the NEW! tag)
+plus `Slots.bumpCardRotation('act:' + act)`.
 
-1. **The normal case is byte-identical to today.** A first play, or any play where the level still
-   has a card you do not own, changes nothing at all.
-2. **`isReplay` needs no storage.** `completed[level]` is already persisted and is read *before*
-   this play is recorded — the same latch pattern as the eighth-key confession
-   (`!getProgress().completed['20']`, `js/main.js` ~1020).
-3. **Rotation reuses the existing string-keyed map.** `bumpCardRotation('act:1')` writes key
-   `"act:1"`, which cannot collide with a level key `"13"` — the property INV-98 already blesses,
-   and the reason this is a zero-migration change.
-4. **Levels 1–3 qualify.** Their pool is empty, so `levelCardIsNew` is false on every play; the
-   second win of Level 1 pays an Act 1 card. This is the point of the whole spec.
+**Four properties fall out, each deliberate:**
 
-The act card is **chosen at level start and awarded at level complete**, and — this matters — it is
-awarded **regardless of `state.cardWordTyped`**, because there is no word to type. Its award is
-otherwise identical: `Slots.collectCardId(card.id)` (idempotent, drives the NEW! tag) and
-`Slots.bumpCardRotation('act:' + n)`.
-
-**No engine change.** The act card is never spliced into `state.patterns`, never gates the win
-(`cardPending` is untouched), and never glints mid-play (`patternMatchesCard` runs only against
-`state.currentCard`). Free Play is excluded exactly as level cards are. A survival game-over awards
-nothing, exactly as today.
-
-### 5.3 The reveal — the same element, one extra line
-
-The overlay's existing `#history-card` block renders it, with two differences:
-
-- a line above the title naming where it came from: **`FOUND IN THE ARCADE · ACT 1 · THE ARCADE`**
-  (act name from `ACTS`), so the child is told plainly that this is the room's card and not the
-  cabinet's;
-- the count line reads its **own scope** — `ACT 1 CARD 2 OF 4` — never `CARD n OF 60`.
-
-All of it is fixed literal data rendered with `textContent`, exactly as today (§6).
+1. **The curriculum path is untouched.** Every `!state.freePlay` guard that exists today still
+   guards the same thing. A curriculum level behaves byte-identically.
+2. **Exactly one card per session survives.** A Free Play session awards at most one card, from one
+   bank; there is no second slot and no blending (INV-126).
+3. **Rotation reuses the existing string-keyed map.** `"act:1"` cannot collide with a level key
+   (`"13"`) or a station key (`"hw:apple-iie"`) — the property INV-98 already blesses, and the
+   reason this is a zero-migration change.
+4. **Acts 4 and 5 come online by themselves.** Free Play can only be started at an **unlocked**
+   cabinet (`isLevelLocked` already prevents the cursor landing on a dark one), so Act 4's and Act
+   5's shelves fill as the player earns those cabinets — the existing grammar, no new rule.
 
 ### 5.4 The denominator — the hard constraint, and exactly how it holds
 
-**The rule: `HISTORY_CARDS` is not touched, so nothing a player has ever seen can shrink.**
+**`HISTORY_CARDS` is not touched, so nothing a player has ever seen can shrink.**
 
 | Surface | Today | After |
 |---|---|---|
 | Slot picker | `★ 14` (no denominator) | **unchanged** |
-| Gallery header | `★ 14 / 60` over `allCards()` | **unchanged** — still over `HISTORY_CARDS` only |
-| Level-complete, level card | `CARD 14 OF 60` | **unchanged in value**, but see the defect in §8 |
-| Level-complete, act card | *(did not exist)* | `ACT 1 CARD 2 OF 4` |
+| Gallery header | `★ 14 / 60` over `allCards()` | **unchanged** — still `HISTORY_CARDS` only |
+| Level-complete, level card | `CARD 14 OF 60`, bank-scoped per INV-100 | **unchanged** |
+| Free Play complete, act card | *(no card at all today)* | `ACT 1 CARD 2 OF 4` |
 | Gallery, act shelves | *(did not exist)* | `ACT 1 · THE ARCADE   ◆ 2 / 4` |
 
 Three glyphs, three scopes, and **no blended number is ever printed**: `★` sums to
-`HISTORY_CARDS.length`, `◆` sums to `ACT_CARDS.length`, `▣` is the wing's. A save that has never
-replayed anything renders an identical UI to one built with `ACT_CARDS` emptied — which is INV-120,
-and is also the revert plan.
+`HISTORY_CARDS.length`, `◆` to `ACT_CARDS.length`, `▣` is the wing's. A save that has not completed
+Level 15 renders an identical UI to one built with `ACT_CARDS` emptied — INV-120, which is also the
+revert plan.
 
-**An act's shelf appears only once that save has completed at least one level in that act**
-(derived from existing `completed`, no new storage), mirroring the wing-shelf rule. A child who has
-never reached Act 4 is never shown four `???` she cannot explain.
+**An act's shelf appears once the layer is unlocked AND at least one cabinet in that act is
+unlocked**, so a player is never shown four `???` at a wall she cannot reach yet — the same rule
+`hardware-wing.md` §5.4.4 adopted for the same reason.
+
+*(The `CARD 63 OF 60` defect the first draft found — `Slots.collectedCount()` counting across all
+banks while the overlay printed it against `TOTAL_CARDS` — is **fixed and landed as INV-100**. This
+spec depends on that fix and adds no new counting path of its own.)*
 
 ### 5.5 How many, and what they are ABOUT
 
 **Four per act, uniform, twenty total.** Uniformity is a feature: every shelf reads `◆ n / 4`, the
-same size everywhere, small enough to finish in an afternoon and small enough to be a real research
-ask. Four is also roughly the number of replays a child gives one cabinet before moving on.
+same size everywhere, small enough to finish in an afternoon of Free Play and small enough to be a
+real research ask.
 
 **Each act's theme is the ERA OF ITS OWN ROOM — the thing the level axis measurably cannot do
-(7/59).** Each is also distinct from the level bank's existing themes (people and inventions;
-1970s–80s phreak/hacker culture; the edutainment lineage).
+(7/59).** Each is distinct from the level bank's existing themes (people and inventions; 1970s–80s
+phreak/hacker culture; the edutainment lineage). ⚠️ Every candidate word below must satisfy §5.2's
+closure rule — letters plus `; , . /` only.
 
 | Act | Room / era | **Theme** | Candidate subjects | Grounding today |
 |---|---|---|---|---|
@@ -377,56 +416,64 @@ ask. Four is also roughly the number of replays a child gives one cabinet before
 | **5** | FULL CIRCLE, 1980–now | **The keys themselves, and where writing came from** | Shift, which once physically shifted the carriage · Return, which once returned one · the cursor · Backspace and the correcting ribbon · the word processor | `wiki/tech/qwerty-keyboard.md` ✓, `wiki/culture/the-eighth-key.md` ✓ — the rest **need a pass** |
 
 ⚠️ **Collision guard: the RF modulator, the floppy/Disk II, the CD-ROM, the sound card and the
-null-modem cable belong to THE HARDWARE wing** (`docs/specs/hardware-wing.md` §0.3). Act 2 and Act
-3 take the *software-and-culture* side of their eras precisely so the two banks never tell the same
-story twice.
+null-modem cable belong to THE HARDWARE wing** (`hardware-wing.md` §0.3). Acts 2 and 3 take the
+*software-and-culture* side of their eras precisely so the two banks never tell the same story
+twice.
 
 **I am not writing these cards.** Every one is a historical claim on a card a child reads, so every
 one goes to the **`arcade-historian`** agent (CLAUDE.md: *"Never write research prose from model
-memory"*; journal F7, F29). The shopping list above is the brief.
+memory"*; journal F7, F29). A subject that cannot be sourced is **dropped, never invented** — a
+shelf of three is fine.
 
-### 5.6 Reading level — Acts 1–3 are read by, or to, a child still learning to read
+**Reading level — a constraint the gate retired.** The first draft required Act 1's cards to be
+≤ 120 characters because a beginner would read them at Level 1. Under the L15 gate **nobody reads an
+act card before completing Act 3**, so all twenty may use the existing bank's norm (measured:
+105–211 characters, median 163). One more cost the inversion removed.
 
-Measured: existing card `fact` strings run 105–211 characters, median 163. That ceiling is fine at
-Level 20 and wrong at Level 1.
+### 5.6 The announcement — once, at the milestone, never a nag
 
-- **Act 1: ≤ 120 characters**, at most two sentences, early-reader vocabulary, one idea per card.
-- **Acts 2–3: ≤ 150 characters.**
-- **Acts 4–5: the existing ceiling (≤ ~200).**
+At the FULL KEYBOARD UNLOCKED completion (Level 15), the completion card carries one extra line
+naming the new layer and where it lives. Once per save, latched off `!getProgress().completed['15']`
+read **before** this play is recorded — the exact pattern the eighth-key confession already uses
+(`js/main.js` ~1019), so no storage field is added and a replay never re-fires it.
 
-The card's `word` label follows the same rule: Act 1's labels should be words a beginning reader can
-recognise on sight (`quarter`, `marquee` is already a stretch — prefer `coin`, `glass`, `screen`).
+It arrives **at a celebration, not during play** (`product.md` §2: big moments at natural pause
+points), it is a reward announcement rather than a task, and missing it costs nothing — the gallery
+shelves are there regardless.
 
 ---
 
 ## 6. Safety & privacy
 
-**`/security-review` is NOT required for this change as specced, and here is the chain it inherits
-and why nothing new is introduced.**
+**`/security-review` is NOT required for this change as specced.** The chain it inherits, and why
+nothing new is introduced:
 
 - **No free-text input.** Act card content is fixed literal data committed in `js/history-cards.js`,
   authored by the historian, reviewed in the diff. It never passes through a user, a model, or the
   network.
 - **No new DOM sink.** The reveal reuses `#history-card`'s existing elements via `textContent`
-  (security.md rules 1–2: *"`innerHTML` is for fixed data only"*; card text is already fixed data
-  and already uses `textContent`). The gallery's cells are built with `createElement` +
-  `textContent` today and stay that way.
+  (security.md rules 1–2: *"`innerHTML` is for fixed data only"*). Gallery cells are already built
+  with `createElement` + `textContent` and stay that way.
 - **No storage-schema change.** `Slots.collectCardId` stores an id in the existing per-slot `cards`
   array; `bumpCardRotation('act:1')` writes into the existing string-keyed `cardRotation` map, which
-  `normalizeSlot` already accepts as any object (security.md rule 4 — localStorage is untrusted and
-  is normalized field-by-field; nothing about that changes).
-- **No LLM surface, no network call** (security.md rule 6). Act cards exist identically on the
-  published static host, with no `/api/*` dependency.
-- **PII floor untouched** (rule 8). Act cards store card **ids**, which are gameplay data.
+  `normalizeSlot` already accepts as any object (rule 4 — localStorage is untrusted and normalized
+  field-by-field; unchanged).
+- **The pattern-stream boundary is unchanged** (rule 3). An act card's word is fixed literal data
+  tokenized by the existing `wordToTokens`, exactly as every curriculum card word is. No free text
+  reaches the engine.
+- **No LLM surface, no network call** (rule 6). Act cards behave identically on the published static
+  host; nothing here depends on `/api/*`.
+- **PII floor untouched** (rule 8). Act cards store card **ids** — gameplay data.
 
-**What WOULD trigger a review**, so it is written down before someone reaches for it: adopting
-Option **H** (a select-screen pickup target — new input path), or generating any act-card text.
+**What WOULD trigger a review**, written down before someone reaches for it: any new input path
+(e.g. a select-screen pickup target), or any act-card text becoming generated rather than authored.
 
 **Content rating.** `product.md` §Content Rating binds: Acts 1–5 are core curriculum and stay
-early-reader. Act 3's *warez/shareware* subject must be framed with the bank's existing
-**"curiosity, not crime"** editorial move, and every act-card `word` and `fact` is checked against
-`js/word-blocklist.json`'s floor (exact word plus generated inflections, security.md rule 7). The
-floor is never lowered by anything here.
+early-reader in tone. Act 3's shareware/warez subject uses the bank's existing **"curiosity, not
+crime"** editorial move — and the legal half of that story (shareware, the free first episode, the
+cover disc, the demoscene) is both the safer and the better one. Every act-card `word` and `fact` is
+checked against `js/word-blocklist.json`'s floor (exact word plus generated inflections, rule 7).
+The floor is never lowered by anything here.
 
 ---
 
@@ -434,176 +481,169 @@ floor is never lowered by anything here.
 
 This spec explicitly does **not**:
 
-1. **Change `HISTORY_CARDS`, `TOTAL_CARDS`, INV-21, INV-56, or the earliest-typeable rule.** Not
-   one existing card moves, and no existing number changes.
-2. **Add a second guaranteed card per play.** Exactly one card per play stays true (option E,
-   refused).
-3. **Put a word in Levels 1–3, or inject anything into their pattern stream.** The Word Bank
-   Principle is untouched: act cards are not typed.
-4. **Touch the engine, the win gate, `cardPending`, the mid-play glint, or Free Play.**
-5. **Build a select-screen pickup, a glinting object, or any new navigation target** (option H,
-   deferred).
-6. **Hide any counted card behind a secret** (option G, refused).
-7. **Add cards to Act 6, Act 7, or THE HARDWARE wing** (§4.4–4.6).
-8. **Change the slot picker.**
-9. **Write any card fact.** That is the historian's, not the builder's and not mine.
-10. **Add an "act complete" capstone card** (option I, refused — it is the only proposal here that
-    could create pressure).
+1. **Change `HISTORY_CARDS`, `TOTAL_CARDS`, INV-21, INV-56, or the earliest-typeable rule.** Not one
+   existing card moves; no existing number changes.
+2. **Award a non-typed card.** Superseded by §0. Every act card is typed, glinted and revealed
+   exactly like a curriculum card.
+3. **Award anything for replaying a curriculum level** (the discarded already-won latch).
+4. **Touch Levels 1–3, the Word Bank Principle, or any curriculum level's pattern stream, win gate
+   or key set.**
+5. **Add a second guaranteed card to any session.** Exactly one card per session, from one bank.
+6. **Build a select-screen pickup, a glinting object, or any new navigation target.**
+7. **Hide any counted card behind a secret** (§4.6).
+8. **Add cards to Act 6, Act 7, or THE HARDWARE wing** (§4.5).
+9. **Change the slot picker, or introduce any blended denominator.**
+10. **Write any card fact.** That is the historian's, not the builder's and not mine.
+11. **Change anything else about Free Play** — WPM stays displayed and never enforced; no failure
+    state is introduced; a session remains completable at any pace.
 
 ---
 
 ## 8. Risks & residual risk
 
-**A live latent defect found while writing this — report it whether or not this spec ships.**
-`js/main.js:1048` prints `` `CARD ${Slots.collectedCount()} OF ${TOTAL_CARDS}` ``, and
-`Slots.collectedCount()` counts **every** id in the slot's `cards` array, across all banks
-(`js/slots.js:390`). `collectStationCard()` (`js/main.js` ~2016) already writes station-card ids
-into that same array. So **the moment `WING_CARDS` is populated, a player who collects station
-cards and then wins a level will see `CARD 63 OF 60`.** It is masked today only because
-`WING_CARDS` is empty by design. This spec must fix it regardless — the level-complete line has to
-count `collectedIds ∩ HISTORY_CARDS ids` — and that fix is INV-121. **It is a one-line-class bug
-that would have shipped with the hardware wing's first card.**
-
 | Risk | Severity | Mitigation | Residual |
 |---|---|---|---|
-| An act card feels like a lesser card because nothing was typed for it | medium | the `FOUND IN THE ARCADE · ACT n` line frames it as a *different kind of thing* (a room souvenir), not a worse one; the reveal animation is identical | real — only a playtest can settle it (§9 Phase 1 gate) |
-| Two numbers (`★` and `◆`) confuse a child | low | never printed together in one line; each shelf owns one glyph | small |
-| Act cards arrive too fast in Act 1 (four replays of L1 exhausts the act) | low | four is deliberately small; if it reads as too fast, grow the act pool — that is content, not mechanism | tunable |
-| The historian cannot source four era-matched subjects for Act 1 | medium | Act 1's subjects are the best-documented objects in arcade history; but if a subject is unsourceable it is **dropped, never invented** (F29) — a shelf of 3 is fine | accepted |
-| Act 3's warez/shareware subject drifts toward "how to pirate" | medium | "curiosity, not crime" framing; the shareware/cover-disc/demoscene angle is the *legal* half of that story and is the better one anyway | accepted |
-| An INV number collision with `docs/specs/hardware-wing.md` §10 | **certain, see §10** | that spec's §10 still proposes INV-94..105 against a catalog that has already landed INV-94..99 with *different content* | must be re-based by whoever lands second |
-| A replay that the player abandons still "counts" | none | the act card is awarded only on a WIN, like every other card | none |
+| **The layer is never found, because Free Play is a toggle behind `F`** | **high — the main risk now** | the one-time announcement at the FULL KEYBOARD UNLOCKED milestone (§5.6); the act shelves in the gallery, which a player already visits | real — a playtest must confirm a player who has not read this doc finds it |
+| Beginners at Levels 1–3 still get nothing | medium | named honestly (§0.2), not hidden; the `jf` pattern card is a separate ROADMAP item | accepted, by Trevor's ruling |
+| A reward at L15 arrives while five acts of cards are still `???` | low | shelves appear only for acts with an unlocked cabinet (§5.4); the rest arrive as the cabinets do | small |
+| The historian cannot source four era-matched subjects for Act 1 under the letters-only rule | medium | Act 1's objects are the best-documented in arcade history; an unsourceable subject is **dropped, never invented** (F29) | accepted |
+| Act 3's theme drifts toward "how to pirate" | medium | "curiosity, not crime"; shareware/cover-disc/demoscene is the legal and better half | open question §10.4 |
+| Free Play's win gate gains a new pending condition and could hang a session | **high if wrong** | the gate is the direct analogue of `cardPending`, whose word is injected before the earliest possible win; the engine refills its pool infinitely, so the gate is structurally reachable | must be proven by a real won session, not a unit test (INV-125) |
+| "phase" turns out to mean a scope this spec does not model | low | flagged as open question §10.3 rather than guessed | open |
+
+**Follow-ups this spec does not own** (for `docs/ROADMAP.md`): the `jf` / L2 / L3 pattern-token
+level cards (§4.2); more level cards for L16, L19, L21, L22, L23 (§4.3); a keyboard-reachable
+**uncounted** easter egg (§4.6); act/wing cards for Act 6 and Act 7 once someone specs their axes.
 
 ---
 
 ## 9. Phased rollout
 
 Each phase is independently shippable and independently revertible. Every phase ends with a real
-play, twice, per `.claude/rules/playtest.md` — first run and second run are different programs, and
-**this feature only exists on the second run**, which makes it the single easiest feature in the
-game to "verify" without ever seeing.
+play, twice, per `.claude/rules/playtest.md` — and note that **this feature is invisible on a save
+that has not completed Level 15**, so a playtest must seed or earn that state deliberately or it
+will verify nothing.
 
-**Phase 0 — the counting fix (ship on its own, today).** Scope the level-complete count line to the
-arcade bank (§8). Fixes a latent `CARD 63 OF 60` that is already armed. INV-121. ~1 hour.
+**Phase 1 — mechanism + ACT 1 (4 cards) + the announcement.** `ACT_CARDS`, `cardsForAct`,
+`pickGuaranteedActCard`, the L15 gate, the Free Play injection + win gate + reveal, the gallery
+shelf, the milestone line. Historian pass for Act 1's four subjects **first** — the mechanism may be
+built against placeholder ids, but **no placeholder card text ever reaches a build a child could
+open.**
+*Playtest gate:* complete Level 15 and read the announcement; toggle Free Play on a Level 1 cabinet
+and win the session (the word is typed, glints, and the card reveals `ACT 1 CARD 1 OF 4`); do it
+three more times to collect the shelf; open the gallery and look; then a `--fresh` save and confirm
+a player below Level 15 sees nothing new anywhere.
 
-**Phase 1 — mechanism + ACT 1 (4 cards).** `ACT_CARDS`, `cardsForAct`, `pickGuaranteedActCard`,
-the trigger, the reveal, the gallery shelf. Historian pass for Act 1's four subjects first — the
-mechanism can be built against placeholder ids, but **no placeholder card text ever reaches a
-build a child could open.**
-*Playtest gate:* win Level 1 (no card), win it again (an Act 1 card), win it twice more, then open
-the gallery and look at the shelf; then `--fresh` and confirm a brand-new save sees nothing new.
+**Phase 2 — ACTS 2 and 3 (8 cards).** Content only, zero mechanism change. These are the acts a
+freshly-gated player can actually reach.
 
-**Phase 2 — ACT 5 (4 cards).** Content only; zero mechanism change. Proves the mechanism is content
--driven, and pays the three one-card cabinets at the end of the game.
-
-**Phase 3 — ACTS 2, 3, 4 (12 cards).** Content only, one act per historian pass.
-
-**Phase 4 (optional, only if Trevor wants it) — the select-screen pickup** (option H), which turns
-the award into an actual *discovery* rather than a reveal. Independent, later, and gated on
-`/security-review` because it adds an input path.
-
-**Not in any phase, tracked separately:** the missing level cards (§4.2, §4.3) and a
-keyboard-reachable *uncounted* egg (§4.7).
+**Phase 3 — ACTS 4 and 5 (8 cards).** Content only; their shelves light as those cabinets unlock.
 
 ---
 
 ## 10. Acceptance criteria — candidate invariants
 
-Written so `test-engineer` can implement them directly. **I claim INV-120..107.**
+Written so `test-engineer` can implement them directly. **Claiming INV-120..127**, per the
+orchestrator's re-base. Each cites its design source (`.claude/rules/testing.md`).
 
-> ⚠️ **Numbering conflict, flagged not resolved:** `docs/testing/STRATEGY.md` §5 already defines
-> INV-94..99 (landed 2026-09-14). `docs/specs/hardware-wing.md` §10 still proposes a *different*
-> INV-94..105 block written before that landed. Whichever of these two specs is implemented second
-> must re-base its numbers against the catalog. This is the orchestrator's call, not mine.
-
-- **INV-120** (L1) **Act cards are invisible to a save that has not replayed anything.** With
-  `ACT_CARDS` populated, a save whose `completed` map is empty renders an identical slot-picker
-  counter, an identical gallery header, an identical gallery grid and an identical level-complete
-  denominator to the same save with `ACT_CARDS` emptied. `TOTAL_CARDS === HISTORY_CARDS.length`
-  still holds, and no act shelf is rendered for an act in which no level has been completed.
-  *(product.md §1 — a child never leaves a session feeling less capable; INV-96, the same law that
-  keeps `WING_CARDS` separate; this spec §5.4.)*
-- **INV-121** (L1) **Every printed card count is scoped to its own bank.** The level-complete
-  denominator for a level card counts only collected ids that exist in `HISTORY_CARDS`; for an act
-  card it counts only ids in that act's `ACT_CARDS` subset; the gallery header counts only
-  `HISTORY_CARDS`. No printed `n OF m` can ever have `n > m`, for any combination of collected
-  level, act, secret and station cards. *(§8 — `Slots.collectedCount()` counts across all banks and
-  is already armed to print `CARD 63 OF 60` the moment `WING_CARDS` is non-empty.)*
-- **INV-122** (L1) **A card belongs to exactly one bank, and ids and words are globally unique.**
-  No id appears in more than one of `HISTORY_CARDS` / `ACT_CARDS` / `WING_CARDS`; no `word` appears
-  in more than one (case-insensitively, after token normalization); every `ACT_CARDS` entry has an
-  integer `act` matching an `ACTS[].num`, has **no** `level`, `secret`, `wing` or `station` field,
-  and carries non-empty `word`/`title`/`year`/`fact`. *(generalizes INV-97; `Slots.collectCardId`
-  stores ids in ONE per-slot set and `cardById` searches multiple arrays, so a duplicate id is
-  silent data corruption.)*
-- **INV-123** (L1) **No act card can ever reach a level pool or the pattern stream.**
-  `cardsForLevel(level)` returns no `ACT_CARDS` entry for any level 1–25; no act card's word is
-  ever spliced into `state.patterns`; `state.cardWordTyped` and the win gate (`cardPending`) are
-  never influenced by an act card. INV-56 is neither applied to nor amended for act cards.
-  *(INV-57 generalized — "no card without a numeric level enters a level pool"; §5.1, §5.2.)*
-- **INV-124** (L1/L2) **The act card is the replay reward, and only ever replaces a duplicate.**
-  An act card is offered only when all three hold: the level was already recorded complete for this
-  save **before** this play, the level's own pool yields no card the save does not already own, and
-  the act holds an act card this save does not own. It is never offered in Free Play, never on a
-  survival game-over, and never on a level's first win. When it is not offered, every observable
-  output of the play is byte-identical to the behaviour with `ACT_CARDS` removed. *(Trevor,
-  2026-09-14: *"encourage additional play beyond a single play"*; §5.2.)*
-- **INV-125** (L1) **Exactly one card per play survives.** For any level, any save state and any
-  rotation counter, a single play awards at most one NEW card and the level-complete overlay
-  displays at most one card. `pickGuaranteedActCard` delegates to the same `pickFromPool` as
-  `pickGuaranteedCard`, so it returns exactly one card for a non-empty act pool and `null` for an
-  empty one, prefers an id not in `collectedIds`, and cycles deterministically with the rotation
-  counter (no `Math.random`) — a four-card act is fully collectable across four qualifying replays.
-  *(INV-22 and INV-58, preserved verbatim; §5.2. Two copies of a guarantee is how guarantees rot.)*
-- **INV-126** (L1) **Act rotation needs no save-schema change.** The act rotation counter is stored
-  under the string key `"act:<n>"` in the existing `cardRotation` map, cannot collide with a level
-  key (`"13"`) or a station key (`"hw:<id>"`), survives `normalizeSlot` unchanged, and a save
-  written before this feature loads with no migration, no version bump and no data loss; a corrupt
-  or hostile `cardRotation` value degrades to rotation 0 without throwing. *(INV-98, the same
-  property, applied to a third axis; security.md rule 4.)*
-- **INV-127** (L1) **Act-card content honours the floor and the reading level.** Every act card's
-  `word` and `fact` passes `js/word-blocklist.json`'s floor (exact word plus generated inflections,
-  per security.md rule 7); no act card lowers, bypasses or re-implements that floor; and every Act
-  1 `fact` is ≤ 120 characters, every Act 2–3 `fact` ≤ 150, every Act 4–5 `fact` ≤ 200.
-  *(product.md §Content Rating — *"a wing may never lower it"*; §5.6; the existing bank measures
-  105–211 characters, median 163.)*
+- **INV-120** (L1) **Act cards are invisible to a save that has not unlocked the layer, and no
+  existing number moves.** With `ACT_CARDS` populated, a save that has not completed Level 15
+  renders an identical slot-picker counter, gallery header, gallery grid and level-complete
+  denominator to the same save with `ACT_CARDS` emptied; no act shelf is rendered; and
+  `TOTAL_CARDS === HISTORY_CARDS.length` still holds. *(product.md §1 — a child never leaves a
+  session feeling less capable; INV-96/INV-100, the law that keeps `WING_CARDS` separate; §5.4.)*
+- **INV-121** (L1/L2) **The act-card layer unlocks at the FULL KEYBOARD UNLOCKED milestone.** No act
+  card can be picked, injected, revealed or counted, and no act shelf renders, until the save has
+  recorded Level 15 complete (the `selectBypass`/WOPR hatch excepted, as for every other gate). The
+  unlock level is a single declared constant, not a scatter of literals, and an act's shelf appears
+  only when that act has at least one unlocked cabinet. *(Trevor, 2026-09-14: *"after the entire
+  keyboard is unlocked"*; `.claude/rules/levels.md` §Milestones — Level 15 finish, *"FULL KEYBOARD
+  UNLOCKED"*; §5.2.)*
+- **INV-122** (L1) **A card belongs to exactly one bank; ids and words are globally unique.** No id
+  appears in more than one of `HISTORY_CARDS` / `ACT_CARDS` / `WING_CARDS`; no `word` appears in more
+  than one (case-insensitively, after token normalization); every `ACT_CARDS` entry has an integer
+  `act` matching an `ACTS[].num`, has **no** `level`, `secret`, `wing` or `station` field, and
+  carries non-empty `word`/`title`/`year`/`fact`. *(generalizes INV-97; `Slots.collectCardId` stores
+  ids in ONE per-slot set and `cardById` searches multiple arrays, so a duplicate id is silent data
+  corruption, and a duplicate word would glint ambiguously.)*
+- **INV-123** (L1) **Every act card's word is typeable at the gate.** For every card in `ACT_CARDS`,
+  every token of `wordToTokens(card.word)` lies within the cumulative unlocked-key closure at Level
+  15 — lowercase letters plus `;` `,` `.` `/` — derived by the same closure construction as
+  INV-20/INV-56 (an uppercase letter would require Shift at L24; a space would require Space at
+  L25; a hyphen L21; an apostrophe L23), never a hardcoded character list. This is what makes one
+  flat gate exceptionless. *(§5.2; the same closure machinery INV-56 already owns.)*
+- **INV-124** (L1) **No act card can reach a curriculum level.** `cardsForLevel(level)` returns no
+  `ACT_CARDS` entry for any level 1–25; no act card's word is injected into a non-Free-Play session;
+  and `state.currentCard`, `cardPending`, the mid-play glint and the level-complete reveal behave
+  byte-identically in every curriculum level to their behaviour with `ACT_CARDS` removed. INV-56 is
+  neither applied to nor amended for act cards. *(INV-57 generalized — "no card without a numeric
+  level enters a level pool"; §5.1, §5.3.)*
+- **INV-125** (L2) **Free Play is the surface, and Free Play's One Rule floor holds.** When the
+  layer is unlocked, a Free Play session at a cabinet in act *N* injects exactly one act card word
+  from act *N*'s pool, the session cannot end before that word has appeared (the Free Play analogue
+  of INV-22), typing it awards the card, and **the session is still winnable at every EXPERIENCE
+  tier and at every word-length setting** — proven by an actually-won session, never by reading the
+  code. No failure state, timer, life or score is introduced; WPM remains displayed and never
+  enforced (INV-37); the wrong-keypress contract is the engine's own and is unchanged. *(CLAUDE.md
+  §The One Rule; product.md §Free Play; §5.3 — a gate that can hang a session is the highest-severity
+  risk in §8.)*
+- **INV-126** (L1) **Exactly one card per session, deterministically rotated, on a namespaced key.**
+  A Free Play session awards at most one NEW card and displays at most one card.
+  `pickGuaranteedActCard` delegates to the same `pickFromPool` as `pickGuaranteedCard`, so it returns
+  exactly one card for a non-empty act pool and `null` for an empty one, prefers an id not in
+  `collectedIds`, and cycles deterministically with the rotation counter (no `Math.random`) — a
+  four-card act is fully collectable across four sessions at that act's cabinets. The counter is
+  stored under `"act:<n>"` in the existing `cardRotation` map, cannot collide with a level key
+  (`"13"`) or a station key (`"hw:<id>"`), survives `normalizeSlot` unchanged, and a pre-feature
+  save loads with no migration, no version bump and no data loss; a corrupt or hostile value
+  degrades to rotation 0 without throwing. *(INV-22/INV-58 preserved verbatim — two copies of a
+  guarantee is how guarantees rot; INV-98, the same zero-schema property on a third axis;
+  security.md rule 4.)*
+- **INV-127** (L1) **Act-card content honours the safety floor.** Every act card's `word` and `fact`
+  passes `js/word-blocklist.json`'s floor (exact word plus generated inflections, per security.md
+  rule 7); no act card lowers, bypasses or re-implements that floor; and every `fact` is within the
+  existing bank's length norm (≤ 211 characters, the measured maximum today). *(product.md §Content
+  Rating — *"a wing may never lower it"*; §5.5–5.6.)*
 
 ---
 
 ## 11. Open questions for Trevor
 
-1. **Four cards per act, or more in Act 1?** Four is uniform and finishable. Act 1 is where a
-   beginner lives and could carry six. *(My call if you don't want to make it: four everywhere, and
-   grow Act 1 if a playtest says it empties too fast.)*
-2. **Act 1 first, or Act 5 first?** I argue Act 1 (§4.1) — the loop is *absent* there, not thin —
-   but Act 5's three one-card cabinets are the sharper single complaint from a player who has
-   finished the game.
-3. **Is a non-typed card acceptable to you?** This is the one real concession in the design. Every
-   existing card is *"you typed this word, here is its story."* An act card is *"you came back,
-   here is something about this room."* The alternative (Option F, typed) forces Act 1's cards to be
-   spelled out of A S D F G H J K L ; — which reimports the exact defect the feature exists to fix.
-   **If you would rather keep the typed ritual absolutely, say so and this becomes Option F with a
-   much weaker Act 1 and nothing at all for Levels 1–3.**
-4. **The Level 1 pattern card (`jf` → the raised bumps on F and J).** It is a card whose word is a
-   *pattern*, not a word, so it does not break the Word Bank Principle — but it does put a card at
-   Level 1 for the first time. Yes?
-5. **Does "uncover and discover" mean you want the select-screen pickup (Option H)** — a glinting
-   thing on the act's row that you walk the cursor onto and take — or is the reveal at level
-   complete enough? H is a real discovery and roughly doubles the build. I recommend shipping
-   without it and adding it only if the reveal feels flat in play.
-6. **Act 3's theme touches shareware, cover discs and the warez scene.** The legal half
-   (shareware, the free first episode, the demoscene) is the better story and the safer one. Do you
-   want the warez/BBS-distribution half in a core curriculum act at all, or does it belong to the
-   Server Room arc?
-7. **Act 6 and Act 7 get no cards in this change** (§4.4–4.5). Both already have replay loops
-   (riddle rotation; the ghost car). Agreed, or do you want them carded too?
+1. **Level 15 or Level 25?** I chose **15** (§1, §3.1): your word was *"unlocked"*, which is L15's
+   own milestone name — L25's is *"mastered"* — and a replay layer needs game left to live in. If
+   you meant the literal last key (Space and Backspace at L25), say so and only the gate constant
+   changes.
+2. **Is Free Play the right home?** It is the only place in the game where an Act 1 cabinet and a
+   complete keyboard coexist (§3.2), and it currently pays nothing for replaying it. But it is a
+   toggle behind `F`, which is why the milestone announcement is not optional — **and it is the
+   biggest remaining risk in the spec** (§8). Are you happy for the act-card layer to be the reason
+   a player learns Free Play exists?
+3. **"act/wing/phase" — what is a PHASE?** You named three scopes. Wings already have their own bank
+   (`WING_CARDS`, the `(wing, station)` axis). *"Phase"* has at least three readings and I am not
+   guessing: (a) a synonym for act; (b) the five-act arcs as distinct from the bonus wings; (c)
+   something else entirely — a stage of the curriculum, or of a wing. **Working assumption until you
+   say otherwise: act = the five curriculum acts, wing = the bonus wings (already served), phase =
+   a synonym for act.** If phase is a real third scope it is a fourth bank and its own spec.
+4. **Act 3's theme touches shareware, cover discs and the warez scene.** The legal half (shareware,
+   the free first episode, the demoscene) is both the better story and the safer one under
+   §Content Rating. Do you want the warez/BBS-distribution half in a core curriculum act at all, or
+   does it belong to the Server Room arc?
+5. **Four cards per act, or more?** Four is uniform and finishable in an afternoon of Free Play.
+   Act 1 is the thinnest act in the game and could carry six. *(My call if you don't want to make
+   it: four everywhere, grow Act 1 if a playtest says its shelf empties too fast.)*
+6. **Act 6 and Act 7 get no cards in this change** (§4.5). Both already have replay loops (riddle
+   rotation; the ghost car). Agreed, or do you want them carded too?
+7. **The Levels 1–3 gap is now unaddressed** (§0.2). The separate `jf` pattern-token card — a card
+   whose moment word is a *pattern*, not a word, so it does not break the Word Bank Principle — would
+   put a card at Level 1 for the first time. Worth a ROADMAP item?
 
 ---
 
-*Related: `docs/specs/hardware-wing.md` §0.3/§0.4/§5.4 (the sibling bank, and the argument this
-spec reuses) · `docs/specs/act7-speed-racing.md` §5.7 (the denominator objection this dissolves) ·
-`docs/testing/STRATEGY.md` §5 (INV-20/21/22/56/57/58, INV-94..99) · `.claude/rules/product.md`
-§History Cards, §Word Bank Principle, §Content Rating · `.claude/rules/easter-eggs.md` (the
-uncounted layer, and its open keyboard-reachability question) · `.claude/rules/security.md` rules
-1/2/4/7/8 · `.claude/rules/playtest.md` §The Second Run · `js/history-cards.js` ·
+*Related: `docs/specs/hardware-wing.md` §0.3/§0.4/§5.4 (the sibling bank, and the argument this spec
+reuses) · `docs/specs/act7-speed-racing.md` §5.7 (the denominator objection this dissolves) ·
+`docs/testing/STRATEGY.md` §5 (INV-20/21/22/37/56/57/58, INV-94..100) · `.claude/rules/product.md`
+§History Cards, §Free Play, §Word Bank Principle, §Content Rating · `.claude/rules/levels.md`
+§Milestones (Level 15 — FULL KEYBOARD UNLOCKED) · `.claude/rules/easter-eggs.md` (the uncounted
+layer, and its open keyboard-reachability question) · `.claude/rules/security.md` rules 1/2/3/4/7/8 ·
+`.claude/rules/playtest.md` §The Second Run · `js/history-cards.js` · `js/freeplay.js` ·
 `js/slots.js` · `js/main.js` · `js/ui/screens.js`.*
