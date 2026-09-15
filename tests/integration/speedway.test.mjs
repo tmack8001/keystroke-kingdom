@@ -140,14 +140,27 @@ function assertNothingForbidden(drawn, where) {
 
 async function toSpeedwayDoor(page, baseUrl) {
   await toSelect(page, baseUrl);
-  // ↓ past the last act lands on the first back-wall door; each further ↓ walks
-  // along the back wall (js/ui/cabinet-art.js navigateAct, which stops at the
-  // last door). Confirm which door is focused from the DOM the door view itself
-  // renders — never from a state variable.
-  for (let i = 0; i < 8; i++) {
+  // ↓ walks off the end of the 25 cabinets and along the back wall of bonus
+  // acts. Walk until the act LABEL says THE SPEEDWAY, rather than pressing a
+  // fixed number of times and assuming where it lands.
+  //
+  // ⚠️ It used to press ↓ exactly 8 times, which worked only because Act 7 was
+  // the LAST act on the wall — an implementation accident, not a design clause
+  // (testing.md rule 4: no implementation coupling). Adding THE HARDWARE as
+  // Act 8 walked one door too far and took this whole file's 20+ tests down
+  // with it, none of which have anything to do with where Act 7 sits. A test
+  // should fail when its OWN subject breaks, not when a neighbour is added.
+  for (let i = 0; i < 14; i++) {
+    const label = await page.evaluate(() => {
+      const el = document.getElementById('select-act-label');
+      return el ? el.textContent : '';
+    });
+    if (/THE SPEEDWAY/.test(label)) break;
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(70);
   }
+  // Confirm which door is focused from the DOM the door view itself renders —
+  // never from a state variable.
   return page.evaluate(() => {
     const el = document.querySelector('.select-door.selected');
     return el ? el.dataset.door : null;
@@ -292,7 +305,7 @@ async function driveLap(page, hooks = {}) {
 // ════════════════════════════════════════════════════════════════════════════
 
 describe('INV-86 — the back wall opens on THE SPEEDWAY, and no state in the wing traps the player (spec §5.0/§5.1; mirrors Act 6\'s INV-46)', () => {
-  test('walking down past the last act reaches the SPEEDWAY door', { timeout: T }, async () => {
+  test('walking down the back wall reaches the SPEEDWAY door', { timeout: T }, async () => {
     const g = await startGame();
     try {
       await installDrawRecorder(g.page);
