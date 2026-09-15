@@ -234,6 +234,86 @@ const STATION_CROSS_REFS = {
   'msdos-pc':  ['intel-486', 'gizmos-gadgets', 'first-gui'],
 };
 
+// ─── THE ACT CARDS — a THIRD bank, unlocked by the keyboard itself ──────────
+//
+// docs/specs/act-exclusive-cards.md. Trevor, 2026-09-14:
+//
+//   "Guess we could just introduce act/wing/phase cards after the entire keyboard
+//    is unlocked instead of going back to all the prior ones so it stays next to
+//    typing the card title."
+//
+// THE PROBLEM THIS SOLVES, measured rather than assumed: only **7 of 59** level
+// cards have a year inside their own act's era (Act 1: 0/4, Act 3: 0/22). INV-56
+// attaches a card to the earliest level whose keys can SPELL its word, so
+// `phrack` (1985) sits on the Myst cabinet because its letters close at L13. The
+// curriculum's cards are distributed by spelling, not by subject.
+//
+// An earlier draft escaped that by making act cards NON-TYPED, which bought a
+// Level 1 card at the cost of the ritual the whole collection rests on — you type
+// the word, you get the story. Trevor inverted it instead: don't reach back, wait
+// until the keyboard is complete. Then every act-card word is typeable and the
+// spelling constraint is not escaped, it is ABOLISHED.
+//
+// THE GATE IS LEVEL 15, and the number is verified from js/levels.js rather than
+// assumed: cumulative closure there is exactly 30 keys — all 26 letters plus
+// `; , . /`. That is the milestone the curriculum itself calls FULL KEYBOARD
+// UNLOCKED, and it leaves ten cabinets of runway for a layer whose whole purpose
+// is replay.
+//
+// CONTENT RULE, which the gate makes exceptionless: every act-card word must be
+// spellable from those 30 keys — lowercase letters and `; , . /` only. No digits,
+// no capitals, no space, no hyphen, no apostrophe. So `quarter`, `marquee` and
+// `attract` are legal act words; `wi-fi` and `IBM` are not.
+export const ACT_CARD_UNLOCK_LEVEL = 15;
+
+// The keys a player holds at the gate — the authority for what an act word may
+// use. Derived intent, not a copy of engine state: if the curriculum ever moves a
+// key, the test that pins this fails loudly rather than the content going wrong.
+const ACT_WORD_KEYS = new Set('abcdefghijklmnopqrstuvwxyz;,./'.split(''));
+
+export function actWordIsTypeable(word) {
+  return typeof word === 'string' && word.length > 0
+    && word.split('').every(ch => ACT_WORD_KEYS.has(ch));
+}
+
+export const ACT_CARDS = [
+  // ⚠️ EMPTY BY DESIGN AS OF 2026-09-14 — same reason as WING_CARDS above.
+  //
+  // The subjects are chosen (spec §5.5) and are deliberately about the ROOM
+  // rather than about whatever the keys happened to spell — Act 1 takes the
+  // quarter and the coin door, the marquee, attract mode, the three-letter high
+  // score. Not one of them is researched yet, and `research/wiki/` has only
+  // partial coverage (`tech/arcade-control-panels.md`).
+  //
+  // Every fact on a card a child reads is citation-verified research, never model
+  // memory (journal F7, F29). The mechanism ships now; the facts land when an
+  // arcade-historian pass does. `cardsForAct` tolerates an empty bank by
+  // construction, so nothing here is reachable-but-broken in the meantime.
+];
+
+// The act a level belongs to. Five acts of five levels — the one place this
+// mapping is written down for the card layer.
+export function actOfLevel(level) {
+  const n = Number(level);
+  if (!Number.isFinite(n) || n < 1 || n > 25) return null;
+  return Math.floor((n - 1) / 5) + 1;
+}
+
+export function cardsForAct(act) {
+  return ACT_CARDS.filter(c => c.act === act);
+}
+
+// Whether this save has earned the act-card layer at all. Derived from progress
+// the game already stores — no new field, no migration (the INV-98 trick again).
+export function actCardsUnlocked(furthestLevel) {
+  const n = Number(furthestLevel);
+  return Number.isFinite(n) && n >= ACT_CARD_UNLOCK_LEVEL;
+}
+
+export function pickGuaranteedActCard(act, collectedIds, rotation) {
+  return pickFromPool(cardsForAct(act), collectedIds, rotation);
+}
+
 // Which BANK a card id belongs to, and how many of that bank a save has found.
 //
 // ⚠️ This exists because of a real latent bug, found by a design lane reading the
@@ -256,6 +336,7 @@ const STATION_CROSS_REFS = {
 export function bankOf(id) {
   if (HISTORY_CARDS.some(c => c.id === id)) return 'arcade';
   if (WING_CARDS.some(c => c.id === id)) return 'wing';
+  if (ACT_CARDS.some(c => c.id === id)) return 'act';
   return null;
 }
 
@@ -264,7 +345,7 @@ export function bankOf(id) {
 // rather than counted — a stale save must never read as MORE complete than the
 // bank it is counted against (security.md rule 4: localStorage is untrusted).
 export function bankProgress(bank, collectedIds) {
-  const pool = bank === 'wing' ? WING_CARDS : HISTORY_CARDS;
+  const pool = bank === 'wing' ? WING_CARDS : bank === 'act' ? ACT_CARDS : HISTORY_CARDS;
   const ids = new Set(Array.isArray(collectedIds) ? collectedIds : []);
   let found = 0;
   for (const c of pool) if (ids.has(c.id)) found += 1;
@@ -311,6 +392,7 @@ export function cardsForLevel(level) {
 export function cardById(id) {
   return HISTORY_CARDS.find(c => c.id === id)
       || WING_CARDS.find(c => c.id === id)
+      || ACT_CARDS.find(c => c.id === id)
       || null;
 }
 

@@ -10,7 +10,7 @@ import * as Basement from './basement.js';
 import * as CommandCenter from './commandcenter.js';
 import * as FullCircle from './fullcircle.js';
 import { FREEPLAY_KEYS, buildFreePlayPatterns } from './freeplay.js';
-import { TOTAL_CARDS, bankOf, bankProgress, wordToTokens, patternMatchesCard, cardsForLevel, cardById, allCards, pickGuaranteedCard } from './history-cards.js';
+import { TOTAL_CARDS, ACT_CARD_UNLOCK_LEVEL, bankOf, bankProgress, actOfLevel, actCardsUnlocked, pickGuaranteedActCard, wordToTokens, patternMatchesCard, cardsForLevel, cardById, allCards, pickGuaranteedCard } from './history-cards.js';
 import { assembleCoda, pickKeyboardStory, buildStoryPool } from './keyboard-story.js';
 import { prefetchKeyboardStories, takeKeyboardStories } from './keyboard-story-gen.js';
 import { addGeneratedStories } from './keyboard-story-cache.js';
@@ -859,9 +859,14 @@ function handleGameKey(e) {
         : Math.ceil(level.intro.length * getWinRatio());
       // If this level hides a history card, the level can't end until its
       // moment word has been typed — the card is earned, never missable.
-      const cardPending = !state.freePlay
-        && state.currentCard
-        && !state.cardWordTyped;
+      // An act card is guaranteed on the same terms as a level card: the session
+      // cannot end until its word has been typed. ⚠️ This is the one change in
+      // the feature that could HANG a session, which would be a One Rule
+      // violation — so the gate is only ever armed when a card was actually
+      // chosen AND its word was actually spliced into the pattern stream, and
+      // getNextPattern() refills the pool infinitely so the word always comes
+      // round again. An empty ACT_CARDS bank arms nothing at all.
+      const cardPending = state.currentCard && !state.cardWordTyped;
       // Likewise, if this is the level where the player's name first becomes
       // spellable, the level can't end until they've completed their name —
       // the golden Name Moment is guaranteed, never missable (same guarantee
@@ -975,6 +980,46 @@ function handleGameKey(e) {
 // user-influenced string (security.md rules 1-2). Styled inline because this is
 // an engine-owned one-off, and with a full-opacity muted colour rather than
 // element opacity (journal L2/F3 — opacity halves every contrast ratio).
+// The act-card layer, announced exactly once at the milestone that grants it.
+//
+// The design lane called this non-negotiable and it is right: the layer lives
+// behind Free Play's `F` toggle, so without a single line here a player can own
+// a whole collection and never learn it exists. A hidden layer nobody finds
+// rewards nobody — and unlike the magic words and the moth (which are free to
+// miss because nothing counts them), this one has a COUNTER, and a counted
+// `???` with no path to it is an obligation rather than a delight (product.md §1).
+//
+// Text, not a modal, not a pause: it rides the LEVEL COMPLETE card the player is
+// already reading, and the level flow is untouched.
+const ACT_LAYER_REVEAL = 'EVERY LETTER IS YOURS NOW.\nSOME STORIES WERE WAITING FOR ALL OF THEM.\nPRESS F AT THE ARCADE.';
+
+function renderActLayerReveal(show) {
+  const existing = $('act-layer-reveal');
+  if (existing) existing.remove();
+  if (!show) return;
+  const modal = document.querySelector('.complete-modal');
+  const prompt = $('complete-prompt');
+  if (!modal || !prompt) return;
+  const el = document.createElement('div');
+  el.id = 'act-layer-reveal';
+  // Fixed literal, set as text — never a DOM sink, and nothing here is
+  // user-influenced (security.md rules 1–2).
+  el.textContent = ACT_LAYER_REVEAL;
+  el.style.cssText = [
+    'margin:22px auto 24px',
+    'white-space:pre-line',
+    'font-size:8px',
+    'line-height:2.2',
+    'letter-spacing:1px',
+    // Warm gold — the collection's own colour (the card glint), not the green
+    // the eighth-key confession uses, so the two one-time reveals never read as
+    // the same voice. Full-opacity colour, never element opacity (journal L2/F3).
+    'color:#f2c14e',
+    'text-shadow:0 0 6px rgba(242,193,78,0.45)',
+  ].join(';');
+  modal.insertBefore(el, prompt);
+}
+
 function renderEighthKeyConfession(show) {
   const existing = $('eighth-key-confession');
   if (existing) existing.remove();
@@ -1016,6 +1061,16 @@ function showLevelComplete() {
   // level's completed flag, read before recordLevelComplete writes it below),
   // so it needs no new persisted field and is naturally per-saved-game: a
   // replay never re-fires it, and another family member's game gets its own.
+  // The act layer lives behind Free Play's `F` toggle, so a player could own it
+  // and never know. It announces itself exactly once, at the milestone that
+  // grants it. Latch DERIVED from progress read before recordLevelComplete
+  // writes it — no new field, per-saved-game, never re-fires on a replay
+  // (the eighth-key confession pattern).
+  const actLayerReveal = !state.freePlay
+    && state.level === ACT_CARD_UNLOCK_LEVEL
+    && !getProgress().completed[String(ACT_CARD_UNLOCK_LEVEL)];
+  renderActLayerReveal(actLayerReveal);
+
   const eighthKeyReveal = !state.freePlay
     && state.level === 20
     && !getProgress().completed['20'];
@@ -1038,7 +1093,12 @@ function showLevelComplete() {
   // History card reveal — never shown in free play (curriculum-only feature).
   // Not every level hides one; that's what makes finding them special.
   const historyCard = $('history-card');
-  const card = !state.freePlay ? state.currentCard : null;
+  // In Free Play only an ACT card reveals — the curriculum's own cards stay a
+  // curriculum-only reward, exactly as before (they are earned by the level that
+  // teaches their keys, and handing them out in Free Play would cheapen that).
+  const card = state.freePlay
+    ? (state.currentCard && bankOf(state.currentCard.id) === 'act' ? state.currentCard : null)
+    : state.currentCard;
   if (card && state.cardWordTyped) {
     const isNew = Slots.collectCardId(card.id);
     $('history-card-word').textContent = card.word.toUpperCase();
@@ -1411,6 +1471,29 @@ function startGame() {
   // driving the Skulltula-style collection loop.
   state.cardWordTyped = false;
   state.currentCard = null;
+  // ── ACT CARDS (docs/specs/act-exclusive-cards.md) ────────────────────────
+  // The act layer lives in FREE PLAY, and that is forced rather than chosen:
+  // after Level 15 the curriculum cabinets STILL hand out their own restricted
+  // key sets — Level 1 is `{j, f}` forever — so an Act 1 word can never be typed
+  // at Act 1's curriculum cabinet. Free Play is the only place in the game where
+  // an Act 1 cabinet and a complete keyboard exist at the same time, which is
+  // exactly what Trevor's "after the entire keyboard is unlocked" requires. It
+  // also pays the one replay surface that currently pays nothing.
+  //
+  // The cabinet you picked IS the act, so no new selection concept is needed.
+  if (state.freePlay && actCardsUnlocked(getProgress().furthestLevel)) {
+    const act = actOfLevel(state.level);
+    const key = `act:${act}`;
+    const chosenAct = act
+      ? pickGuaranteedActCard(act, Slots.collectedIds(), Slots.getCardRotation(key))
+      : null;
+    if (chosenAct) {
+      state.currentCard = chosenAct;
+      Slots.bumpCardRotation(key);
+      const pattern = wordToTokens(chosenAct.word);
+      state.patterns.splice(Math.min(2, state.patterns.length), 0, pattern);
+    }
+  }
   if (!state.freePlay) {
     const chosen = pickGuaranteedCard(
       state.level, Slots.collectedIds(), Slots.getCardRotation(state.level));

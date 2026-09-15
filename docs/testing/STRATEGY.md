@@ -748,6 +748,24 @@ respected exactly as written; and (d) `consoleErrors`.
   A collected id the build no longer knows is ignored rather than counted, so a stale save can
   never read as more complete than the bank it is counted against (security.md rule 4).
 
+- **INV-101** (L1) **The act-card layer is gated at Level 15, and its key set is DERIVED from the
+  curriculum rather than copied.** `ACT_CARD_UNLOCK_LEVEL` is 15 — the milestone the curriculum
+  itself names FULL KEYBOARD UNLOCKED — and the cumulative closure there is exactly **30 keys:
+  a–z plus `; , . /`** (verified against `js/levels.js`, never asserted from memory). If the
+  curriculum ever moves a key, the test fails loudly rather than the content silently going wrong.
+
+- **INV-102** (L0 — the One Rule) **⚠️ AN ACT CARD CAN NEVER HANG A SESSION.** Every act-card word
+  must be spellable from the gate level's key set. This is not a cosmetic rule: an act card **arms
+  a win gate** — the session cannot end until its word is typed — so a word containing a key the
+  player does not yet have could *never* be typed, and the level would simply never finish. That is
+  a direct violation of *"the game should only ever stop a player's flow with joy, never with
+  punishment."*
+
+  The guard is `actWordIsTypeable`, enforced over the whole bank by a test rather than by review.
+  An empty bank arms nothing, so the layer is provably inert until content lands. **This is the
+  same class as journal F23 — Level 8 once shipped unwinnable because nothing had ever tried to win
+  it** — and it is caught here by construction instead of by a child who cannot finish.
+
 ### ⚠️ Reserving INV numbers while a spec is unbuilt
 
 Two specs in flight on the same day both proposed `INV-100..105`, for entirely different clauses,
