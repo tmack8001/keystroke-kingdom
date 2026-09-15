@@ -1,9 +1,9 @@
 ---
 title: Console hardware silhouettes — drawing the machine instead of a cabinet
 type: concept
-tags: [video-game-history, hardware, cabinet, act7, act2, theme-authoring]
-sources: 15
-verified: 2026-09-13
+tags: [video-game-history, hardware, cabinet, act7, act2, theme-authoring, hardware-wing, commodore-64, lan-party, dialup-modem, broadband]
+sources: 36
+verified: 2026-09-14
 ---
 
 When a Keystroke Kingdom station is a **console or PC game**, the honest object to draw is **the
@@ -26,9 +26,17 @@ specific object per level: *"The NES in the center of the room"* (L9 Super Mario
 (L8 Tetris), *"A computer running the first great CD-ROM game"* (L13 Myst), *"A Game Boy Pocket
 on a backlit stand"* (L15 Pokémon). Act 7 can simply use the same grammar.
 
+**The Hardware wing (added 2026-09-14)** extends that same grammar past the arcade and the
+console shelf into the PC itself: a proposed bonus wing tracing the home computer from the living
+room (Commodore 64 plugged straight into the family TV) through the CD-ROM/sound-card "multimedia
+PC" and the two-machine LAN link, to the dial-up 56k tower and finally the 2003–04 broadband/LCD
+desk. See "The Hardware wing — five more stations" below for the five new stations; each follows
+the same drawing-reference format as the console entries above.
+
 Related: [[home-games-in-cabinets]] · [[nintendo-vs-system]] · [[nes-hardware]] ·
 [[mario-kart]] · [[gran-turismo]] · [[excitebike]] · [[need-for-speed-underground]] · [[f1-25]] ·
-[[sixteen-bit-era]] · [[early-3d-era]] · `.claude/rules/theme-authoring.md`
+[[sixteen-bit-era]] · [[early-3d-era]] · [[commodore-64]] · [[56k-modem]] · [[dialup-modem]] ·
+`.claude/rules/theme-authoring.md`
 
 ## Which machine to draw: the one it DEBUTED on
 
@@ -262,6 +270,232 @@ and pedal rigs**, and force feedback is a documented consumer technology from th
 (`research/racing-games-by-era.md` §11). A wheel clamped to a desk in front of a monitor is a
 real object and a safe thing to draw.
 
+## The Hardware wing — five more stations (2026-09-14)
+
+*Added for a proposed bonus wing (**THE HARDWARE**) tracing the home computer from the living
+room through the LAN era to always-on broadband. **Tooling note, stated plainly rather than
+silently worked around:** this research pass had no download/binary-write tool available — every
+photograph below was found and its licence verified live via WebFetch, but the bytes could not be
+committed to the vault this session. Every entry uses the schema's **"Looked at, not stored"**
+form (WIKI.md §Media) rather than a false claim of storage. A follow-up pass with a fetch-capable
+tool can download the exact files named below (all confirmed freely licensed) into
+`wiki/media/console-hardware-silhouettes/` without repeating this research.*
+
+### Commodore 64 + 1541 disk drive, on a family television (1982) — draw at 8-bit
+
+The "living room" machine — no dedicated monitor required, no separate keyboard, no tower.
+Everything lives in one low wedge, exactly like the Apple IIe above but a different silhouette
+and a different route to the screen.
+
+- **The case is a "breadbin"** — c64-wiki.com (a domain-canonical fan wiki, the reference of
+  record for Commodore hardware the way DoomWiki is for id software games) describes the
+  prototype case, shared with its predecessor the VIC-20, as *"a brown breadbox with black keys
+  and brighter function keys."* Commodore's own case colour is more precisely a warm
+  putty/tan-brown than a true "beige" — do not draw it Apple-IIe beige; draw it a shade browner
+  and boxier, with darker, near-black keycaps and a lighter run of function keys (F1–F8, doubled
+  via Shift) along the right edge.
+- **It plugs directly into a television — no external box needed.** Wikipedia's main C64 article
+  is explicit: *"The C64 had a built-in RF modulator and thus could be plugged into any television
+  set."* This is a real and useful contrast with the VIC-20 one generation earlier, whose own
+  Wikipedia article says Commodore "did not include an RF modulator inside the computer's case
+  because of FCC regulations" and shipped a separate external modulator box instead — so **draw a
+  single coax lead running from the back of the C64 straight to the television's antenna
+  terminals**, not a separate switch box sitting between them. (A composite/S-video option to a
+  dedicated monitor like the Commodore 1702 existed too, but the TV-plug scene is the "living
+  room" one this station wants.)
+- **The 1541 disk drive sits beside it** — a separate beige box, "almost as deep as the computer
+  is wide" (Wikipedia, `Commodore 64 hardware`-adjacent text), with a horizontal 5¼-inch floppy
+  slot. Early 1982–83 units were off-white to match the VIC-20; **from 1983 the 1541 switched to
+  the beige that matches the C64** — draw the matched-beige version for an "1982" living-room
+  scene only if the scene is understood to be slightly later, or draw the earlier off-white unit
+  for strict 1982 accuracy. It connects by a **grey ribbon-style serial cable with round DIN
+  connectors**, daisy-chainable so more than one drive could share a single port on the computer.
+  Early spring-eject drives earned the nickname "Toaster Drive" because stuck disks needed prying
+  out with a knife — a fun, sourced, non-punishing detail if a caption is ever wanted.
+- **Silhouette at 56×80:** a low brown-tan wedge with three short rows of dark keycaps and a
+  lighter function-key column on the right; a single thin cable arcing from its back to a boxy CRT
+  television (not a dedicated monitor — a real 1979–82-style wood-veneer or dark-plastic family
+  TV, per [[console-hardware-silhouettes]]'s own Act 2 vocabulary); a beige box with a horizontal
+  slot sitting to the wedge's right, joined by a short grey DIN cable.
+- **Do not draw:** a beige-grey Apple-style case (that is the IIe, a different machine, above); an
+  external RF switch box between computer and TV (the C64's modulator is internal); a modern
+  "C64 Mini" or "TheC64" reissue (a later revision, evidence for itself only, per WIKI.md §Media).
+  **Draw instead:** the brown breadbin plugged straight into a real family television by one coax
+  lead, the 1541 alongside it on its own cable.
+
+### A multimedia PC, 1995 — draw at VGA/early-CD-ROM fidelity
+
+The distinguishing move from the "period beige PC" station already on this page is **the case
+shape itself, not a new colour**: that section's defining arrangement was a *horizontal* desktop
+case with the CRT sitting on top of it. By 1995 that arrangement was already dated.
+
+- **It is a tower now, not a horizontal desktop box.** Wikipedia's `Tower case` article, citing a
+  contemporary *PC Week* piece, states plainly: *"The transition in dominance from horizontal
+  desktop computers to towers was mostly complete by 1994."* So the monitor no longer sits ON the
+  case — **the tower stands on the floor or beside the desk, and the monitor sits on the desk by
+  itself**, the single biggest silhouette change between this station and the 1993 one.
+- **CD-ROM and a sound card become standard equipment right at this date.** Wikipedia's
+  `Compaq Presario` article — the dominant home-PC brand of the moment, launched August 1993 —
+  states: *"Later models produced after September 1995 came with a CD-ROM drive and sound card as
+  standard equipment."* That is the exact hinge the 1995 station should dramatize: draw the
+  tower's front face with **an exposed horizontal CD-ROM drive bay** (a tray slot, plus a
+  floppy-drive slot below or beside it) in addition to the 3.5″ floppy the 1993 station already
+  has — the sound card itself is internal and invisible, so the CD-ROM bay is what visually says
+  "multimedia" now.
+- **External speakers, mounted to the monitor rather than freestanding.** The same Compaq Presario
+  article, describing the following year's 1X25 monitor line: *"All of these monitors came with
+  JBL Pro speakers which could be mounted to the sides of the monitors."* A pair of small
+  rectangular speaker boxes clipped to the monitor's outer edges is a more period-specific detail
+  than two loose speakers sitting on the desk, and it is directly sourced.
+- **Silhouette at 56×80:** a beige tower standing upright beside a beige monitor that now sits
+  directly on the desk (not stacked); a horizontal slot near the top of the tower's front face for
+  the CD-ROM tray, a narrower slot below it for the floppy; two small speaker boxes flanking the
+  monitor. Same beige as the 1993 station — the differences are the tower silhouette, the second
+  drive slot, and the monitor standing free.
+- **Do not draw:** the CRT-on-top horizontal case (that is the 1993 station, and drawing it here
+  erases the one distinguishing fact this station exists to show); a smoked-black "rocket ship"
+  tower with beveled drive-bay covers (that is Compaq's *Series 2*, 1996–98 — one generation
+  later, per the same Wikipedia article — a later revision, not this one). **Draw instead:** a
+  plain beige tower, boxier and less styled, exactly matching the "transition just happened"
+  moment Wikipedia dates to 1994–95.
+- **Reference photograph (not stored, licence-verified):** [File:Compaq Presario 4110 1996.jpg
+  — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Compaq_Presario_4110_1996.jpg),
+  author "Glad nicke3," released into the public domain. One year later than 1995, so it verifies
+  the tower *form factor* the same way the existing Packard Bell photo verifies the 1993 station's
+  form and not its exact model — name the caveat if this image is ever used as the direct drawing
+  reference.
+
+### Two PCs joined by a cable (1995) — draw the connector, not a diagram
+
+What a two-PC LAN link actually looked like on a desk or floor was a **coaxial cable strung
+between two BNC T-connectors**, one plugged into the back of each machine's network card.
+
+- **10BASE2 ("thinnet") was the small-network standard of the moment, and Wikipedia says so in
+  exactly these terms:** *"10BASE2 uses thin coaxial cable terminated with BNC connectors... No
+  hub is required as with 10BASE-T, so the hardware cost was minimal... ideal for a small network
+  of two or three machines, perhaps in a home where easily concealed wiring was an advantage."*
+  That is the two-PC scene precisely: no separate networking box on the desk at all, just the
+  cable itself, each end capped with a **T-shaped BNC connector** and the two unused arms of the
+  outermost T's closed off with a small cylindrical **50 Ω terminator cap**.
+- **The card that makes this possible sits in the back of each tower** — a Realtek RTL8019-based
+  ISA network card of the exact period, photographed on Commons, is captioned *"a transitional
+  network card with both BNC 'Thinnet' (left) and Twisted pair (right) connectors"* — a single
+  expansion-card bracket with two different round/socket connectors side by side, the BNC one
+  round and metal, the twisted-pair one a small plastic modular jack. Only the BNC side is in use
+  for a straight two-machine link.
+- **The older, simpler alternative is a null-modem serial cable** — Wikipedia's `Null modem`
+  article: *"Null modem cables were a popular method for transferring data between... early
+  personal computers,"* and on the Amiga specifically "was a common way of playing multiplayer
+  games between two machines." No card at all is needed for this option — just a cable running
+  from one PC's rear DB9/DB25 serial port to the other's. This is the right choice to draw if the
+  scene wants to feel more improvised/bedroom than networked/office; 10BASE2 is the right choice
+  if it wants to feel like a genuine two-node LAN.
+- **The cultural anchor for why two PCs got cabled together at all in 1993–95 is Doom.**
+  Wikipedia's Doom (1993) article: *"Multiplayer was initially only playable over local
+  networks,"* and *"within hours of Doom's release, university networks began banning Doom
+  multiplayer games"* — corroborating (without itself supplying a photograph) that this exact
+  cabled-together arrangement is what a whole generation associates with "playing a game
+  together" on two separate machines, years before the word "LAN party" was common currency.
+- **Silhouette/scene at 56×80:** two beige towers, each with a short black coax stub exiting a
+  BNC T-piece on its rear expansion bracket; a single cable running along the floor or desk
+  between them; a small grey cylinder capping each unused T-arm. Skip the diagrammatic "network
+  cloud" imagery entirely — the honest object is a literal wire on the floor between two desks.
+- **Do not draw:** a modern Ethernet switch/hub or router (10BASE2's whole point was that none was
+  needed for two or three machines — drawing one contradicts the sourced fact); a wireless
+  connection of any kind (this era predates consumer Wi-Fi — see the Act 4 accuracy guard already
+  on this wiki, and note it applies here too). **Draw instead:** the bare coax-and-T-connector
+  link, or the simpler serial null-modem cable if the scene wants to read as more improvised.
+- **Reference photographs (not stored, licences verified):**
+  [File:Network card.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Network_card.jpg)
+  (CC BY-SA 3.0 / GFDL, author "Nixdorf") — the ISA card with its BNC-and-twisted-pair bracket;
+  [File:BNC Tee connector, with Ethernet cable connected-92166.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BNC_Tee_connector,_with_Ethernet_cable_connected-92166.jpg)
+  (CC BY-SA 4.0, author Raimond Spekking) — the T-connector itself, a modern photo of an
+  unchanged standardized part, cited for the object's shape rather than as a period scene.
+
+### A 56k-modem home tower, 1999 — draw at late-90s beige-tower fidelity
+
+Builds on [[56k-modem]] and [[dialup-modem]] (which cover the V.90 standard and the handshake
+sound) with the one thing neither covers: **what the box looked like.**
+
+- **Two real options existed, and both are worth naming rather than picking one silently.** An
+  **external modem** was a separate beige box on the desk with its own power brick and a row of
+  **status LEDs on the front** — Wikimedia Commons' own file for a US Robotics 56K unit is
+  captioned by its uploader as showing *"LED indicator lights and labeled controls on its front
+  panel"* on a beige case. An **internal modem** was a plain expansion card inside the tower,
+  invisible except for two small RJ11 phone jacks on the back bracket — Wikipedia's `Softmodem`
+  article notes that *"In 1997, the AC'97 standard for computer audio would introduce channels for
+  modem use, making software modem technology common in PCs,"* which is consistent with internal
+  cards becoming the default in pre-built OEM towers by 1999 even though this source does not
+  give an exact market-share number — **state that as "internal became the OEM default, external
+  boxes remained a common separate purchase," not as a precisely-quantified split.**
+- **The external box is the more recognisable object to draw**, precisely because its blinking
+  lights were the visible half of the handshake sound [[dialup-modem]] already documents — a
+  child (or a parent) watching the lights flicker in sequence while the modem screeches is the
+  whole cultural memory in one frame.
+- **Silhouette at 56×80 (external option):** a low beige rectangular box, wider than tall, with a
+  horizontal row of small coloured LED dots along its front face and a short phone cord (not a
+  network cable — this is a phone line, RJ11 not RJ45) trailing off one side toward the wall.
+- **Silhouette detail (internal option):** the beige tower from the multimedia-PC station above,
+  unchanged in silhouette, with one addition on the back bracket cluster: two small round RJ11
+  jacks (labelled, where legible, LINE and PHONE) — nothing else about the tower changes.
+- **Do not draw:** a modern USB modem dongle or a router with multiple antennas (both are 2000s+
+  broadband objects, wrong era entirely — see the broadband station below for what that looks
+  like); a modem with a visible coax cable (that is the broadband/cable-modem station, next).
+  **Draw instead:** the beige LED box on a phone cord, or the same beige tower with two small
+  RJ11 jacks added to its back panel.
+- **Reference photograph (not stored, licence-verified):**
+  [File:US Robotics 56K Modem Front.JPG — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:US_Robotics_56K_Modem_Front.JPG)
+  (dual GFDL/CC BY 3.0, author Xiaowei) — beige case, front LED row, exactly the object described
+  above.
+
+### A broadband tower with an LCD panel, 2004 — draw at flat-panel fidelity
+
+The desk genuinely gets its space back here, and the fact is dated precisely enough to use as
+this station's headline detail.
+
+- **2003 is the sourced hinge year.** Wikipedia's `Computer monitor` article: *"In 2003, LCDs
+  outsold CRTs for the first time, becoming the primary technology used for computer monitors."*
+  A 2004 desk is therefore drawn the year AFTER the LCD crossover — this is the first of this
+  page's stations where the flat panel is the *typical* choice rather than the exotic one.
+- **The proportions are the whole visual story.** Wikipedia's `Cathode-ray_tube` article explains
+  why the CRT it replaces was so deep: *"The depth of a CRT is related to its screen size"* — the
+  electron gun has to physically fit inside the tube's neck, so a CRT of a given screen width is
+  nearly as deep as it is wide. An LCD of the same era has no electron gun at all: draw it as a
+  genuinely **thin flat rectangle** (a few inches deep including its stand) beside the squat,
+  cube-like CRT box the 1993/1995 stations both draw — the contrast between the two silhouettes,
+  side by side, is more informative than either drawn alone.
+  **Do not invent an exact millimetre figure** for the 2004 panel's thinness (no period-specific
+  depth measurement was sourced this pass) — draw the contrast qualitatively: CRT deep-and-boxy,
+  LCD thin-and-flat.
+- **The tower itself does not need to change from the 1999 station** — a beige (by 2004,
+  increasingly light-grey or off-white) tower is still period-correct; the LCD panel and the
+  broadband box are what date the scene, not the case.
+- **Broadband replaced the phone-line modem with an always-on box with its own LEDs, on a coax or
+  phone-DSL line rather than a standard phone jack.** A period cable-modem photograph on Commons
+  (uploaded 2007, one Serbian Thomson unit) is described by its uploader as *"a rectangular
+  beige/cream-coloured housing with status LED indicators visible on the front panel"* — visually
+  a close cousin of the external 56k box above, but fed by a thicker coaxial cable rather than a
+  thin phone cord, and always lit rather than dialling.
+- **Silhouette at 56×80:** a light beige/grey tower; beside it, a genuinely thin flat rectangle on
+  a small stand (the LCD) rather than a deep cube (the CRT it replaced); a small beige box with
+  LEDs and a thick coax lead sitting near the tower, no phone cord in sight.
+- **Do not draw:** a widescreen ultra-thin monitor (that is a 2010s+ revision, per the LCD-vs-CRT
+  crossover source above being specifically about the *2003* transition, not a later one); a
+  wireless router with visible antennas (broadband in 2004 was still commonly a wired Ethernet
+  drop to one PC before Wi-Fi routers were the default home object — treat a wireless antenna
+  detail as **[unverified]** for this exact date rather than drawing it). **Draw instead:** the
+  boxy beige/cream wired broadband modem with its LED row and thick coax lead.
+- **Reference photographs (not stored, licences verified):**
+  [File:Acer AL1715.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Acer_AL1715.jpg)
+  (CC BY-SA 3.0 / GFDL, author Sheep221) — a beige-bezelled flat LCD panel; the photograph itself
+  is dated 2007 and this pass could not confirm the AL1715 model's exact release year, so treat it
+  as **form-factor evidence only** (thick plastic bezel, rectangular flat panel), not as a
+  2004-dated object;
+  [File:Thomson cable modem 20070224.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thomson_cable_modem_20070224.jpg)
+  (dual GFDL/CC BY-SA 3.0, author Maduixa) — same caveat: photographed 2007, three years after
+  this station's date, verifying the general beige-box-with-LEDs form rather than a specific 2004
+  model.
+
 ## Media
 
 Reference photographs, stored in the vault so the drawing claims above stay auditable
@@ -388,11 +622,27 @@ as a historical term of art — treat it as an authoring shorthand, not a fact.*
 
 ## Unsourceable / weakly-sourced items
 
-- **Period PC towers, monitors and modern sim rigs** — no description sourced this pass. Flagged
-  above; needs a follow-up pass before anyone draws one from feel.
+- **Period PC towers, monitors and modern sim rigs** — the 1995/1999/2004 tower and monitor gap is
+  now closed above (2026-09-14 pass); **the modern sim rig remains open.**
 - **Nintendo 64, GameCube, Xbox and Game Boy hardware appearance** — not researched here. The
   Game Boy Pocket already appears in `.claude/rules/levels/act3.md` as design intent, but this
   wiki carries **no sourced physical description** of it.
+- **No image bytes were stored this pass (2026-09-14)** — the session had no download-capable
+  tool. Every Hardware-wing photograph above is cited with a live-verified URL and licence but
+  sits as a "Looked at, not stored" entry rather than a committed file in
+  `wiki/media/console-hardware-silhouettes/`. A follow-up pass with a fetch tool can download the
+  eight named files (all confirmed freely licensed: 2× Evan-Amos public domain, 2× GFDL/CC BY-SA
+  public-domain-adjacent, 4× CC BY-SA 3.0/4.0) without repeating the research.
+- **Internal-vs-external 56k modem prevalence in homes by 1999** — supported directionally (AC'97,
+  1997, made softmodems "common in PCs" per Wikipedia) but **no market-share number was found**.
+  Stated in the text above as a qualitative claim only, deliberately not quantified.
+- **The Acer AL1715 LCD monitor's exact release year** and **the Thomson cable modem's exact
+  model year** — both reference photographs are dated 2007 by upload metadata; neither page gave
+  an original product-release year. Both are cited as **form-factor evidence only** for the 2004
+  station, with the gap stated explicitly in each entry above — not smoothed over.
+- **Whether a 2004 home broadband connection commonly had a wireless router with visible antennas**
+  — not sourced either way this pass. Treated as **[unverified]** and excluded from the "draw
+  this" guidance rather than assumed.
 7. [Apple IIe — Wikipedia (raw wikitext)](https://en.wikipedia.org/w/index.php?title=Apple_IIe&action=raw) — the 1984 case revision as "dyed plastic mold in a slightly darker beige" with "darker keycaps (small black lettering, versus large white print)"; the January 1987 "Platinum IIe" colour change to light grey; the recessed metal ID badges showing the Apple logo with "//e". **[fetched]**
 8. [File:Iie-system.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Iie-system.jpg) and [File:Old packard bell pc.jpg](https://commons.wikimedia.org/wiki/File:Old_packard_bell_pc.jpg) — the two reference photographs, stored in this vault under `wiki/media/console-hardware-silhouettes/` with their licences. Every silhouette detail above was read off these frames. **[images viewed]**
 9. [File:NES-Console-Set.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:NES-Console-Set.jpg) — Evan-Amos's public-domain hardware photography; the reference for the Level 9 console station. **[image viewed]**
@@ -402,3 +652,34 @@ as a historical term of art — treat it as an authoring shorthand, not a fact.*
 13. [File:Nintendo-64-Console-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Nintendo-64-Console-FL.jpg) — Evan-Amos, public domain. Four front controller ports. **[image viewed]**
 14. [File:PlayStation-SCPH-1000-with-Controller.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:PlayStation-SCPH-1000-with-Controller.jpg) — Evan-Amos, public domain. Confirms the original PlayStation is grey. **[image viewed]**
 15. [File:ArmSCII 02, First Armenian Computer - Electronika 60.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ArmSCII_02,_First_Armenian_Computer_-_Electronika_60.jpg) — Vahram Mekhitarian, CC BY-SA 3.0. The reference for the Level 8 station. **[image viewed]**
+
+## References — The Hardware wing (2026-09-14 pass)
+
+*Five new stations, researched with no WebSearch budget available this session (used entirely by
+a prior task in the same session) — every citation below is a direct WebFetch of a live page,
+verified to resolve and to actually support the claim it's attached to, per the arcade-historian
+"no URLs from memory" rule. No image bytes could be committed this pass (no download-capable tool
+was available); every photograph is cited as "Looked at, not stored" per WIKI.md §Media, with its
+licence confirmed live on its own Commons file page.*
+
+16. [Commodore 64 — Wikipedia](https://en.wikipedia.org/wiki/Commodore_64) — "The C64 had a built-in RF modulator and thus could be plugged into any television set"; composite and S-Video output options for a dedicated monitor (e.g. the Commodore 1702). **[fetched]**
+17. [Commodore VIC-20 — Wikipedia](https://en.wikipedia.org/wiki/Commodore_VIC-20) — contrast case: "Commodore did not include an RF modulator inside the computer's case because of FCC regulations. It can either be attached to a dedicated monitor or a TV set using the external modulator included with the computer" — the C64's built-in modulator (ref 16) is the generational change from this. **[fetched]**
+18. [Commodore 1541 — Wikipedia](https://en.wikipedia.org/wiki/Commodore_1541) — 1982–83 off-white case matching the VIC-20, switching to beige matching the C64 "in 1983"; DIN-connector serial daisy-chain; the "Toaster Drive" spring-eject nickname; drive depth "almost as deep as the computer is wide." **[fetched]**
+19. [Commodore 64 — c64-wiki.com](https://www.c64-wiki.com/wiki/Commodore_64) — domain-canonical Commodore fan wiki (DoomWiki-class reference of record for this hardware): "a brown breadbox with black keys and brighter function keys"; the built-in "TV-connector (HF-Modulator-Output)" — corroborates ref 16's built-in-modulator claim from an independent source. **[fetched]**
+20. [File:Commodore-64-Computer-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Commodore-64-Computer-FL.jpg) — Evan-Amos, public domain (photographed 2011/2017). Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+21. [File:Commodore-64-1541-Floppy-Drive-01.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Commodore-64-1541-Floppy-Drive-01.jpg) — Evan-Amos, public domain (photographed 2018). Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+22. [Tower case — Wikipedia](https://en.wikipedia.org/wiki/Tower_case) — citing a period *PC Week* article: "The transition in dominance from horizontal desktop computers to towers was mostly complete by 1994" — the sourced hinge fact distinguishing the 1995 multimedia-PC station from the existing 1993 horizontal-case station. **[fetched]**
+23. [Compaq Presario — Wikipedia](https://en.wikipedia.org/wiki/Compaq_Presario) — "Later models produced after September 1995 came with a CD-ROM drive and sound card as standard equipment"; 1996 1X25-series monitors shipped with "JBL Pro speakers which could be mounted to the sides of the monitors"; the Presario line launched August 1993; the Series 2 (1996–98) "rocket ship" smoked-black-bezel towers are a later, distinct design — flagged as such, not drawn for 1995. **[fetched]**
+24. [File:Compaq Presario 4110 1996.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Compaq_Presario_4110_1996.jpg) — public domain (author "Glad nicke3"). One year later than the 1995 target date; verifies tower form only. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+25. [10BASE2 — Wikipedia](https://en.wikipedia.org/wiki/10BASE2) — thin coaxial cable terminated with BNC T-connectors, 50 Ω terminator caps, "no hub is required," "ideal for a small network of two or three machines, perhaps in a home where easily concealed wiring was an advantage" — the direct source for the two-PCs-joined-by-a-cable station. **[fetched]**
+26. [Null modem — Wikipedia](https://en.wikipedia.org/wiki/Null_modem) — "Null modem cables were a popular method for transferring data between the early personal computers from the 1980s to the early 1990s"; on the Amiga, "a common way of playing multiplayer games between two machines" — the simpler, card-free alternative connection method. **[fetched]**
+27. [Doom (1993 video game) — Wikipedia](https://en.wikipedia.org/wiki/Doom_(1993_video_game)) — "Multiplayer was initially only playable over local networks"; "within hours of Doom's release, university networks began banning Doom multiplayer games" — cultural corroboration that two-PC cabled play was a real, dated (1993) practice, not an invented scene. **[fetched]**
+28. [Network interface controller — Wikipedia](https://en.wikipedia.org/wiki/Network_interface_controller) — describes "A 1990s Ethernet network interface card that connects to the motherboard via the now-obsolete ISA bus... features both a BNC connector (left) for use in (now obsolete) 10BASE2 networks" alongside an 8P8C twisted-pair connector — the combo-card silhouette drawn on the back of each tower. **[fetched]**
+29. [File:Network card.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Network_card.jpg) — dual GFDL / CC BY-SA 3.0 (author "Nixdorf"): "a transitional network card with both BNC 'Thinnet' (left) and Twisted pair (right) connectors," Realtek RTL8019-based ISA card. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+30. [File:BNC Tee connector, with Ethernet cable connected-92166.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BNC_Tee_connector,_with_Ethernet_cable_connected-92166.jpg) — CC BY-SA 4.0 (author Raimond Spekking, 2018). A modern photo of an unchanged standardized part — cited for the T-connector's shape, not as a period scene. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+31. [Softmodem — Wikipedia](https://en.wikipedia.org/wiki/Softmodem) — "In 1997, the AC'97 standard for computer audio would introduce channels for modem use, making software modem technology common in PCs" — supports internal cards becoming the OEM-tower default by 1999, though no exact internal-vs-external market-share figure was found. **[fetched]**
+32. [File:US Robotics 56K Modem Front.JPG — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:US_Robotics_56K_Modem_Front.JPG) — dual GFDL / CC BY 3.0 (author Xiaowei, 2008): "beige-colored modem unit featuring LED indicator lights and labeled controls on its front panel." Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+33. [Computer monitor — Wikipedia](https://en.wikipedia.org/wiki/Computer_monitor) — "In 2003, LCDs outsold CRTs for the first time, becoming the primary technology used for computer monitors" — the sourced hinge year for the 2004 broadband station's flat-panel monitor. **[fetched]**
+34. [Cathode-ray tube — Wikipedia](https://en.wikipedia.org/wiki/Cathode-ray_tube) — "The depth of a CRT is related to its screen size," standard 90° deflection for computer monitors — the sourced reason a CRT reads as a deep box next to a thin LCD. **[fetched]**
+35. [File:Acer AL1715.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Acer_AL1715.jpg) — dual CC BY-SA 3.0 / GFDL (author Sheep221, photographed 2007): beige-bezelled flat LCD panel. Model's exact release year not confirmed this pass — cited for form factor only. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+36. [File:Thomson cable modem 20070224.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thomson_cable_modem_20070224.jpg) — dual GFDL / CC BY-SA 3.0 (author Maduixa, photographed 2007): "rectangular beige/cream-coloured housing with status LED indicators visible on the front panel." Three years later than the 2004 target date — cited for form factor only. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**

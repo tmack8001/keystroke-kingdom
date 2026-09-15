@@ -110,3 +110,43 @@ describe('INV-99 — the wing declares a walkable wall and an honest era', () =>
     }));
   });
 });
+
+describe('INV-100 — the card counter is scoped to the card\'s own bank', () => {
+  test('a save holding wing-card ids can never make the arcade counter exceed its total', async () => {
+    const { bankProgress, HISTORY_CARDS, TOTAL_CARDS } = await import('../../js/history-cards.js');
+    // The exact shape of the latent bug: collection is ONE flat id list across all
+    // banks, so a save can legitimately hold more ids than the arcade bank has cards.
+    // Counting that list against TOTAL_CARDS printed "CARD 63 OF 60".
+    const everyArcadeId = HISTORY_CARDS.map(c => c.id);
+    const save = everyArcadeId.concat(['hw:disk-ii', 'hw:rf-modulator', 'hw:cd-rom']);
+    const arcade = bankProgress('arcade', save);
+    assert.equal(arcade.total, TOTAL_CARDS);
+    assert.equal(arcade.found, TOTAL_CARDS, 'every arcade card found');
+    assert.ok(arcade.found <= arcade.total, 'the numerator can NEVER exceed the denominator');
+  });
+
+  test('bankOf routes an id to the bank that owns it, and nowhere for an unknown id', async () => {
+    const { bankOf, HISTORY_CARDS, WING_CARDS } = await import('../../js/history-cards.js');
+    assert.equal(bankOf(HISTORY_CARDS[0].id), 'arcade');
+    if (WING_CARDS.length) assert.equal(bankOf(WING_CARDS[0].id), 'wing');
+    assert.equal(bankOf('no-such-card-id'), null);
+  });
+
+  test('a collected id the build no longer knows is ignored, never counted', async () => {
+    const { bankProgress } = await import('../../js/history-cards.js');
+    // security.md rule 4 — localStorage is untrusted. A card removed in a later
+    // build must not let a stale save read as more complete than the bank.
+    const p = bankProgress('arcade', ['card-that-no-longer-exists', 'floppy-disk']);
+    assert.equal(p.found, 1);
+    assert.ok(p.found <= p.total);
+  });
+
+  test('bankProgress tolerates garbage without throwing', async () => {
+    const { bankProgress } = await import('../../js/history-cards.js');
+    for (const junk of [null, undefined, 'nope', 42, {}]) {
+      const p = bankProgress('arcade', junk);
+      assert.equal(p.found, 0);
+      assert.equal(typeof p.total, 'number');
+    }
+  });
+});

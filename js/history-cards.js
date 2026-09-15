@@ -234,6 +234,43 @@ const STATION_CROSS_REFS = {
   'msdos-pc':  ['intel-486', 'gizmos-gadgets', 'first-gui'],
 };
 
+// Which BANK a card id belongs to, and how many of that bank a save has found.
+//
+// ⚠️ This exists because of a real latent bug, found by a design lane reading the
+// code rather than by any test — including the INV-96 test that was written to
+// guard exactly this area and missed it.
+//
+// `Slots.collectedCount()` counts EVERY id in the save's `cards` array, across
+// all banks, because collection is stored as a flat id list (which is the right
+// storage model). The level-complete card reveal printed that total against
+// `TOTAL_CARDS`, which is the ARCADE bank only. `collectStationCard()` writes
+// station ids into the same list — so the moment `WING_CARDS` stops being empty,
+// a player who collects station cards and then wins a level reads:
+//
+//     CARD 63 OF 60
+//
+// INV-96 guarded the DENOMINATOR (the banks stay separate) and I never guarded
+// the NUMERATOR. The counter has to be scoped to the same bank as the card being
+// revealed, which is also the better feature: the line now tells the player WHICH
+// collection they just advanced, which is the whole point of per-wing sets.
+export function bankOf(id) {
+  if (HISTORY_CARDS.some(c => c.id === id)) return 'arcade';
+  if (WING_CARDS.some(c => c.id === id)) return 'wing';
+  return null;
+}
+
+// How many of `bank` this save has collected, and how many there are in total.
+// Ids the game no longer knows (a card removed in a later build) are ignored
+// rather than counted — a stale save must never read as MORE complete than the
+// bank it is counted against (security.md rule 4: localStorage is untrusted).
+export function bankProgress(bank, collectedIds) {
+  const pool = bank === 'wing' ? WING_CARDS : HISTORY_CARDS;
+  const ids = new Set(Array.isArray(collectedIds) ? collectedIds : []);
+  let found = 0;
+  for (const c of pool) if (ids.has(c.id)) found += 1;
+  return { found, total: pool.length };
+}
+
 // The wing's own cards for one station (may be empty — see above).
 export function cardsForStation(wingId, stationId) {
   return WING_CARDS.filter(c => c.wing === wingId && c.station === stationId);

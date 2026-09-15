@@ -10,7 +10,7 @@ import * as Basement from './basement.js';
 import * as CommandCenter from './commandcenter.js';
 import * as FullCircle from './fullcircle.js';
 import { FREEPLAY_KEYS, buildFreePlayPatterns } from './freeplay.js';
-import { TOTAL_CARDS, wordToTokens, patternMatchesCard, cardsForLevel, cardById, allCards, pickGuaranteedCard } from './history-cards.js';
+import { TOTAL_CARDS, bankOf, bankProgress, wordToTokens, patternMatchesCard, cardsForLevel, cardById, allCards, pickGuaranteedCard } from './history-cards.js';
 import { assembleCoda, pickKeyboardStory, buildStoryPool } from './keyboard-story.js';
 import { prefetchKeyboardStories, takeKeyboardStories } from './keyboard-story-gen.js';
 import { addGeneratedStories } from './keyboard-story-cache.js';
@@ -1045,7 +1045,11 @@ function showLevelComplete() {
     $('history-card-title').textContent = card.title;
     $('history-card-year').textContent = card.year;
     $('history-card-fact').textContent = card.fact;
-    $('history-card-count').textContent = `CARD ${Slots.collectedCount()} OF ${TOTAL_CARDS}`;
+    // Scoped to the card's OWN bank — see bankOf/bankProgress in history-cards.js.
+    // An unscoped count against the arcade total reads "CARD 63 OF 60" as soon as
+    // any bonus-wing card exists.
+    const prog = bankProgress(bankOf(card.id) === 'wing' ? 'wing' : 'arcade', Slots.collectedIds());
+    $('history-card-count').textContent = `CARD ${prog.found} OF ${prog.total}`;
     $('history-card-new').classList.toggle('hidden', !isNew);
     historyCard.classList.remove('hidden');
   } else {

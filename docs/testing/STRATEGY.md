@@ -728,6 +728,34 @@ respected exactly as written; and (d) `consoleErrors`.
   timer and no failure state — only not-yet-right. *(`.claude/rules/product.md` §3; this is
   the easiest rule in the project to lose the moment input leaves `handleGameKey`.)*
 
+- **INV-100** (L1) **The card counter is scoped to the card's own BANK.** The level-complete
+  reveal prints `CARD <found> OF <total>` against the bank the revealed card belongs to
+  (`bankOf`/`bankProgress` in `js/history-cards.js`), never a raw collected-id count against the
+  arcade total.
+
+  *The bug this closes, which shipped latent and was found by a design lane READING the code —
+  not by a test, and specifically not by INV-96, which was written to guard this exact area:*
+  collection is stored as one flat id list across all banks (the right storage model), and
+  `Slots.collectedCount()` counts all of it. The reveal printed that against `TOTAL_CARDS`, which
+  is arcade-only. The moment `WING_CARDS` stops being empty, a player who collects station cards
+  and then wins a level reads **`CARD 63 OF 60`**.
+
+  **INV-96 guarded the DENOMINATOR and nobody guarded the NUMERATOR.** That is the transferable
+  lesson: a test that pins a data model does not thereby pin what the player READS. Scoping is
+  also the better feature — the line now tells the player which collection they just advanced,
+  which is the entire point of per-wing and per-act sets.
+
+  A collected id the build no longer knows is ignored rather than counted, so a stale save can
+  never read as more complete than the bank it is counted against (security.md rule 4).
+
+### ⚠️ Reserving INV numbers while a spec is unbuilt
+
+Two specs in flight on the same day both proposed `INV-100..105`, for entirely different clauses,
+because each took "the next free integer" at the moment it was written. **A landed number is
+assigned here in §5 and nowhere else; an unbuilt spec reserves a BLOCK far above the current high
+water mark** (THE HARDWARE holds 110–115, act-exclusive cards 120–127) and re-bases into §5 when it
+is actually built. "Next free" is a race between every spec in flight, and the loser is silent.
+
   **A player mid-game must never see a wing close.** Acts 6 and 7 declare nothing and so
   keep 25; any future change to an EXISTING wing's `unlockLevel` may only ever lower it.
 

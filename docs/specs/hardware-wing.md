@@ -1,6 +1,16 @@
 # THE HARDWARE — the wing that teaches what a machine is made of
 *(named 2026-09-14. Working names, both retired: "The Computer Room", then "THE DEN".)*
 
+
+> **⚠️ INV NUMBERS RE-BASED 2026-09-14.** This spec proposed `INV-100…` while it was being
+> written; `docs/testing/STRATEGY.md` landed INV-94..99 in the meantime and a sibling spec
+> claimed the same block, so two unbuilt specs were proposing different meanings for the same
+> numbers. Candidates here are now **INV-110..115**, a reserved block. The rule that prevents a
+> third collision: **STRATEGY.md §5 is the only authority for a LANDED number, and an unbuilt
+> spec reserves a block far above it rather than taking the next free integer** — because
+> "next free" is a race between every spec in flight.
+
+
 ## Product spec / ADR — the bonus wing whose cabinets ARE the subject
 
 > **⚠️ RE-FRAMED 2026-09-14, and the re-frame is load-bearing — read §0 before anything else.**
@@ -833,8 +843,8 @@ This wing explicitly does **not**:
 | **INV-56's amendment is read as a weakening** and a later card lands in the wrong pool | high | Amend the *scope* clause in STRATEGY.md §5 and generalize INV-57 in the same edit; add INV-94 (exactly one attachment axis) so a mis-authored card fails a test rather than silently pooling | Low, and the invariant is cheap |
 | **The sacred wrong-keypress contract is re-implemented in `station.js` and drifts** | high | Tests cite INV-1..5 directly through the station loop, as Act 6 and Act 7 both had to | **Real, and now structural**: this is the *third* implementation of one contract. Worth a standing note that a fourth wing should extract it |
 | **Four of eight stations have no historical grounding whatsoever** | **high** | Historian pass is a hard gate per station; no plaque or card copy is written by a builder | Real until the pass lands. Phase 1 is chosen to be the three with the most grounding |
-| **A wrong machine is drawn** (F29 again, with the machine as the subject) | high | Photograph in the vault before any drawing; INV-103 makes the media reference a *data requirement* of a station row | Low if the gate holds; catastrophic for a card's meaning if it doesn't |
-| **The content line is crossed incrementally** — a battle scene that "just shows units" grows | medium | §5.6's concrete exclusions + the never-word lint + INV-102; the RTS and MMO scenes are specified as *building and grouping*, never *fighting* | Real. Art is not lint-checkable; this needs a human look, per `.claude/rules/playtest.md` |
+| **A wrong machine is drawn** (F29 again, with the machine as the subject) | high | Photograph in the vault before any drawing; INV-113 makes the media reference a *data requirement* of a station row | Low if the gate holds; catastrophic for a card's meaning if it doesn't |
+| **The content line is crossed incrementally** — a battle scene that "just shows units" grows | medium | §5.6's concrete exclusions + the never-word lint + INV-112; the RTS and MMO scenes are specified as *building and grouping*, never *fighting* | Real. Art is not lint-checkable; this needs a human look, per `.claude/rules/playtest.md` |
 | **The L20 unlock contradicts a documented assumption** | medium | Doc first, then feature (§5.5, Q3). The fallback (gate at 25) is a one-line registry change | None if the order is respected; a constitution/codebase disagreement if it isn't |
 | **The wing reads as a repetitive row of beige boxes** | medium | The wall is ordered by *machine*, each station is a different hardware beat, and the boot lines differ by 22 years of history. Verify by **looking**, twice (`playtest.md`) | Real. The four late stations are the risk; they are Phase 3 for this reason |
 | **"Walk up and read a plaque" is not enough to bring a child back** | medium | The boot verb + the guaranteed rotating card (a station with N cards takes ~N visits, the proven Skulltula loop) | Real, and the honest answer is: watch Oona's second visit specifically |
@@ -926,37 +936,37 @@ cards" to "any card without a numeric `level`." Neither rule weakens.
   no wrong key ever un-boots a machine, reverses progress through a boot line, or resets any
   counter. (CLAUDE.md §Wrong Keypress Behavior; product.md §3; the same re-implementation trap as
   INV-77.)
-- **INV-100** (L2) **Nothing in the wing can be failed, timed, or lost.** No station starts a
+- **INV-110** (L2) **Nothing in the wing can be failed, timed, or lost.** No station starts a
   timer, countdown, score, life, placement, queue or wait; no station can reach a state from which
   it cannot be completed; every station completes by typing alone at any rate whatsoever; and a
   station left idle for an arbitrary period is exactly where it was. No survival wrapper is ever
   started in this wing. (CLAUDE.md §The One Rule; product.md §1.)
-- **INV-101** (L2) **Anti-trap: Escape always makes progress toward the arcade.** From every state
+- **INV-111** (L2) **Anti-trap: Escape always makes progress toward the arcade.** From every state
   in the wing — a boot prompt, a plaque, a vignette, the hub — Escape alone reaches station → hub
   → arcade, landing the cursor back on the machine it came through, and there is no state from
   which it fails. A card whose moment word was typed is awarded on the way out, however the player
   leaves. (mirrors Act 6's INV-46 and Act 7's INV-86; TF-T1 — leaving must never silently drop what
   the player did.)
-- **INV-102** (L1) **The wing enforces the safety floor and never lowers it, and its own
+- **INV-112** (L1) **The wing enforces the safety floor and never lowers it, and its own
   never-words are absent.** Every word in every station pool, and every authored string in the
   wing, is checked against `js/word-blocklist.json`'s floor (exact word plus its generated
   inflections, per security.md rule 7) and against this wing's never-word list (`kill`, `dead`,
   `die`, `blood`, `corpse`, `slay`, `raid`, `loot`, `boss`); no floor entry is removed, weakened or
   bypassed by anything in the wing. (product.md §Content Rating — *"a wing may never lower it"*;
   security.md rule 7.)
-- **INV-103** (L0/L1) **Every station draws a real, photograph-grounded machine — and never an
+- **INV-113** (L0/L1) **Every station draws a real, photograph-grounded machine — and never an
   arcade cabinet.** Each station row declares a `source` wiki page and a `media` path under
   `research/wiki/media/**`; both exist, and the media file carries the required Source/Licence/
   Retrieved credit block that `wiki-search.mjs --lint` enforces. No station's draw function renders
   the shared upright-cabinet shell. (theme-authoring.md §"Cabinet art is faithful… DRAW A REAL
   THING"; journal F29; research/WIKI.md §Media.)
-- **INV-104** (L1) **The arcade-cabinet rule, mechanized.** No title appears twice across the whole
+- **INV-114** (L1) **The arcade-cabinet rule, mechanized.** No title appears twice across the whole
   game: the 25-level assignment table in `.claude/rules/levels.md`, Act 6's worlds, Act 7's track
   registry and this wing's station registry together contain no duplicated title, and no wing
   station's title matches any level's `label` in `CABINET_DATA`. (CLAUDE.md §Arcade Cabinet Rule —
   *"one game per cabinet, no reuse"*; this is the first time that rule has been testable rather
   than checked by hand.)
-- **INV-105** (L0/L1) **The wing is lazily imported, network-free, and cannot brick the game.**
+- **INV-115** (L0/L1) **The wing is lazily imported, network-free, and cannot brick the game.**
   `js/main.js` reaches `js/computerroom/*` only through a dynamic `import()` with static string
   specifiers; a failed import costs one warm "still being built" card that any key walks out of,
   and all 25 levels remain playable; every module in the subtree is reachable by
