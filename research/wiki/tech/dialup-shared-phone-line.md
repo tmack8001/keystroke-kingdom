@@ -124,55 +124,60 @@ citation pass specifically:
 
 ## Unsourceable / weakly-sourced items
 
-### 🔎 OPEN LEAD — a named source exists, and it has NOT been verified (2026-09-14)
+### ✅ RESOLVED — the second-line question, closed 2026-09-14
 
-**Status: LEAD, not evidence. Nothing from this block may reach a card until it is fetched.**
-
-The project owner supplied a specific citation for the second-line claim that three lanes had
-failed to source:
+*Three research lanes failed to source this and each correctly left it out. The project owner
+then supplied the citation and, asked directly, confirmed the article says what was attributed
+to it.*
 
 - **[Multiple-Family Phone Lines: A Post-Postwar U.S. Trend — The New York Times, 26 December 1995](https://www.nytimes.com/1995/12/26/us/multiple-family-phone-lines-a-post-postwar-us-trend.html)**
-  *(supplied by the project owner; **NOT FETCHED** — see below)*
+  — **[confirmed by the project owner, who has access; NOT fetchable by the research tooling]**
 
-The accompanying summary asserts, among other things, that by 1995 the share of U.S. households
-with more than one phone line **"nearly doubled in a single year to reach 16 percent,"** driven
-substantially by home offices, dial-up modems and early online services, and skewed toward more
-affluent households.
+**Source status, stated precisely rather than rounded up.** This is not `[fetched]`: `nytimes.com`
+and `web.archive.org` are both unreachable by the available tooling and the session's search budget
+was exhausted, so no agent has read it. It is a **named, dated, specific article whose contents a
+human with access has confirmed** — which is a real and citable status, and a stronger one than the
+three lanes' "could not source," but it is not the same as a fetched page and is labelled so. A
+later pass with working search should corroborate the 16% figure from a second source.
 
-**If that is accurate it settles the question**, and in exactly the hedged form the owner himself
-proposed: a **growth** claim with a number, not a prevalence claim — 16% is a minority, and
-"nearly doubled in a year" is precisely *"became more of a thing."* It would also be a period
-primary source, which is stronger than the FCC statistical series this page went looking for.
+**What the article establishes:**
+- By 1995 the share of U.S. households with **more than one phone line nearly doubled in a single
+  year, to 16 percent.**
+- The drivers named are **plural**: home offices, computer dial-up modems, and early online
+  services. Dial-up is one cause among several — **not** the sole cause.
+- Multiple-line households **skewed toward more affluent families**, the extra line being an extra
+  monthly bill.
 
-**Why it is not written up yet — three independent verification failures, all this session:**
-1. `nytimes.com` cannot be fetched by the available tooling.
-2. `web.archive.org` cannot be fetched by the available tooling either, so the capture could not
-   be reached that way.
-3. The session's WebSearch budget was fully exhausted (200/200), so no corroborating source could
-   be searched for.
+**⚠️ THE QUANTIFIER IS THE WHOLE POINT, AND IT MUST REACH THE CARD INTACT.** 16 percent means
+**most households did not** have a second line. The correct word is **"some families"** — never
+"families", never "everyone", never an unqualified "people did this". This matters twice over:
 
-**And one reason for positive caution about the SUMMARY, distinct from the article:** the summary
-as supplied carries the hallmarks of a generated answer — bracketed inline citation markers, an
-unprompted "(Note: if you meant party lines…)" aside, and, for that aside, **a Facebook post cited
-as a source**. The article itself may well be exactly what it claims; the *numbers attributed to
-it* are the part that has not been checked, and a precise figure ("nearly doubled", "16 percent")
-is the easiest thing for a generated summary to garble. This project has been burned by a
-plausible-sounding number before — see [[computing-history-moments]] on the invented "1979 pinball
-NOVICE/EXPERT switch," which survived a whole design document before a citation pass killed it.
+1. **Accuracy.** The original claim was cut precisely for being a prevalence claim without data.
+   The data, now that we have it, says the prevalence was low and *rising fast*. A card that
+   flattens "16%, nearly doubled" into "families got a second line" would re-commit the original
+   error while holding a citation, which is worse than having none.
+2. **Kindness, given who reads it.** The affluence skew is not a footnote for a children's game.
+   A card implying every family bought a second phone line is read by children whose families
+   could not have. "Some families" is both the accurate quantifier and the humane one — and it
+   costs the card nothing, because the interesting fact was never "everyone did it", it was
+   *that anyone had to*.
 
-**What closes this lead** — any ONE of:
-- a session with WebSearch budget, to corroborate the 16% figure from a second source;
-- tooling that can reach `nytimes.com` or an archived capture;
-- the article text, or confirmation of the two figures, from someone with access.
+**On the lived anecdote** *(the project owner's family did buy a second line because of his own
+internet use on the home computer)*: this is the lovely human confirmation of the mechanism the
+article describes, and it is **deliberately not cited**. One household is not evidence of a trend —
+and note the direction of the risk here is the useful one: a vivid personal memory generalises
+*upward* ("we did this" → "families did this") exactly where the data says 84% did not. The
+anecdote is why this card is worth having; the article is why it can be written.
 
-**Until then the page's card-ready facts use only the fully-sourced version** — that the telephone
-and the internet wanted the same wire and only one could have it at a time, which V.92's "Modem on
-Hold" corroborates because a standards body built a fix for it.
+## Card-ready facts
 
-*(Separately: **party lines** — several households sharing one physical line, common from the late
-1800s into the mid-20th century — are a genuinely different phenomenon from a household buying a
-second line, and were also raised alongside this lead. They are not this page's subject, but they
-are a good future card in their own right and would need their own sourcing pass.)*
+1. *"When you went on the internet, the telephone stopped working. They both needed the same
+   wire, and only one could use it at a time."* — fully sourced on this page; corroborated by
+   V.92's "Modem on Hold", a fix a standards body built because the problem was real.
+2. *"Some families bought a SECOND phone line, just so someone could still answer the phone while
+   somebody else was online."* — NYT 1995 (above). Note the quantifier: **some**.
+3. *"In one year, twice as many homes had two phone lines. Still only about one in six."* —
+   NYT 1995. The "one in six" is what keeps the card honest.
 
 - No anecdotal/journalistic source (e.g. a first-person "growing up with dial-up"
   retrospective) was obtained this session — WebSearch, which would normally surface
