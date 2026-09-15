@@ -2,7 +2,7 @@
 title: The LCD Panel
 type: concept
 tags: [computing-history, hardware, display, proposed-content]
-sources: 2
+sources: 3
 verified: 2026-09-14
 ---
 
@@ -40,6 +40,20 @@ rather than a repeated assumption.
   LCDs as having replaced CRTs "in nearly all applications" only by "the late 2000s to
   the early 2010s," and separately notes that LCD *televisions* (a related but
   distinct product category) first outsold CRT TVs in worldwide sales in Q4 2007.
+- **Independent trade-press corroboration of the underlying decline, if not the exact
+  2003 figure.** PCTechGuide.com (a long-running UK PC-hardware reference site) gives
+  concrete industry numbers for the CRT side of the same story: CRT monitor revenues
+  "peaked at a high of approaching $20 billion in 1999" and were "forecast to plunge to
+  about half that figure by 2007." It identifies **summer 2001** as the moment the
+  industry itself treated as the turning point — citing, in the same few months, the
+  Philips/LG Electronics CRT-manufacturing merger, Apple shipping its entire computer
+  line with LCD monitors, and Hitachi closing its roughly $500-million-a-year CRT
+  business, quoting Hitachi's own statement that "there are no prospects for growth of
+  the monitor CRT market." **This source does not itself state the year 2003** or use
+  the word "outsold" — it is cited here for the independent, numbers-backed picture of
+  a CRT market that was visibly collapsing from 2001 onward, which is consistent with
+  (and lends real-world texture to) the 2003 crossover date above rather than
+  confirming that exact figure a second time.
 
 ## Card-ready facts
 
@@ -62,6 +76,13 @@ rather than a repeated assumption.
    applications, and the separate Q4 2007 LCD-TV-outsells-CRT-TV data point (a
    different product category, cited only for corroborating context, not conflated
    with the computer-monitor figure above). **[fetched]**
+3. [CRT Monitors — PCTechGuide.com](https://www.pctechguide.com/crt-monitors) —
+   independent UK PC-hardware trade-press reference; the $20-billion-1999-peak
+   revenue figure, the summer-2001 Philips/LG merger + Apple all-LCD + Hitachi
+   plant-closure turning point, and the Hitachi "no prospects for growth" quote.
+   Does not itself state the 2003 crossover year — cited for independent corroboration
+   of the broader CRT-decline narrative, not as a second source for that specific
+   figure. **[fetched]**
 
 ## See also
 
@@ -71,11 +92,24 @@ PC set dressing.
 [[cd-rom-drive]] — another proposed-wing "HARDWARE" component from the same
 early-1990s-to-2000s span.
 
+## Corrections from citation pass (2026-09-14)
+
+None — no existing claim was found to be wrong. Added an independent trade-press
+source (PCTechGuide.com) that corroborates the CRT-decline narrative with real
+industry figures, though it does not itself confirm the precise 2003 crossover year.
+
 ## Unsourceable / weakly-sourced items
 
-- No institutional (e.g. Computer History Museum, Smithsonian) or industry-analyst
-  source was obtained this session for the 2003 crossover date — a Britannica attempt
-  returned 403 Forbidden, and WebSearch (which would normally be used to find a
-  display-industry report) was unavailable this session. The claim currently rests on
-  one well-corroborated Wikipedia article plus one supporting Wikipedia article; a
-  follow-up pass should try to add a non-Wikipedia source.
+- No institutional (e.g. Computer History Museum, Smithsonian) or display-industry
+  analyst report (e.g. DisplaySearch/IHS) with the **exact 2003 LCD-outsold-CRT
+  figure** was obtained this session. Wikipedia's own footnote for that sentence
+  points to the same PCTechGuide.com "CRT Monitors" page cited above — but the live
+  page as fetched this session (and its archived 2011 snapshot, which Claude Code's
+  WebFetch tool could not reach at web.archive.org) does not actually contain the word
+  "2003" or the word "outsold" in the content retrieved; it stops at "by 2001 the
+  writing was clearly on the wall" and a 2007 revenue forecast. So Wikipedia's own
+  citation for its most load-bearing sentence could not be independently confirmed
+  this session — treat the 2003 date as Wikipedia-sourced only, not
+  doubly-corroborated, until a follow-up pass can reach the archived version of that
+  page or find an industry-analyst report (DisplaySearch/IHS Markit) directly.
+  WebSearch was unavailable this session (shared budget exhausted).

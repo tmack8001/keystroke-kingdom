@@ -602,6 +602,82 @@ not a console generation, and no 1990s console was marketed as 24-bit. Used as T
 above. Worth saying plainly so nobody writes "the 24-bit era" on a history card.* **[unverified]
 as a historical term of art — treat it as an authoring shorthand, not a fact.**
 
+
+---
+
+## Stored reference photographs — THE HARDWARE wing (added 2026-09-14)
+
+*Fetched from Wikimedia Commons, licence re-verified per file via the Commons API before any byte
+was committed (this repo is public; anything committed here is published), resized to 1000px on the
+long edge per [[WIKI]] §Media, and **opened and looked at** — the `Shows:` lines below describe what
+is in the frame, not what an uploader's caption said about it.*
+
+### `commodore-64-breadbin.jpg`
+![A Commodore 64 breadbin seen from a front-right three-quarter angle: warm putty-beige case, dark brown keycaps, the rainbow stripe beside the Commodore 64 badge, a 2x4 block of function keys at the right, power LED top-right, ports along the right flank](../media/console-hardware-silhouettes/commodore-64-breadbin.jpg)
+- **Shows:** the C64 station's case colour, key colour and badge — the three things a drawing gets wrong from text alone. The keys are **dark brown**, not black; the case is a warm putty, not grey.
+- **Source:** [File:Commodore-64-Computer-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Commodore-64-Computer-FL.jpg)
+- **Author:** Evan-Amos
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-14
+
+### `commodore-1541-disk-drive.jpg`
+![A Commodore 1541 floppy drive: a beige box roughly the depth of the computer itself, a horizontal 5.25-inch slot with a latch lever, indicator LEDs to the left of the slot](../media/console-hardware-silhouettes/commodore-1541-disk-drive.jpg)
+- **Shows:** the drive that sits beside the C64 — its proportions relative to the computer, and the latch lever a child would have turned.
+- **Source:** [File:Commodore-64-1541-Floppy-Drive-01.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Commodore-64-1541-Floppy-Drive-01.jpg)
+- **Author:** Evan-Amos
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-14
+
+### `multimedia-pc-tower-1996.jpg`
+![A mid-1990s consumer PC tower in beige, upright, with a CD-ROM tray and floppy slot stacked in the upper bay area](../media/console-hardware-silhouettes/multimedia-pc-tower-1996.jpg)
+- **Shows:** the 1995 multimedia-PC station's tower form and drive-bay stack. ⚠️ Dated 1996, one year after the station's target — cited for FORM ONLY, not as a date reference.
+- **Source:** [File:Compaq Presario 4110 1996.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Compaq_Presario_4110_1996.jpg)
+- **Author:** Glad nicke3
+- **Licence:** Public domain
+- **Retrieved:** 2026-09-14
+
+### `isa-network-card-bnc-and-twisted-pair.jpg`
+![A 1990s ISA network card: a long green PCB with a metal bracket carrying a round BNC connector at one end and a modular twisted-pair jack beside it](../media/console-hardware-silhouettes/isa-network-card-bnc-and-twisted-pair.jpg)
+- **Shows:** the card in the back of each tower for the two-PCs station — the BNC (round, metal) and twisted-pair (plastic jack) connectors side by side on one bracket. Only the BNC side is in use for a straight two-machine link.
+- **Source:** [File:Network card.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Network_card.jpg)
+- **Author:** Nixdorf
+- **Licence:** CC BY-SA 3.0 / GFDL
+- **Retrieved:** 2026-09-14
+
+### `bnc-tee-connector.jpg`
+![A chrome BNC T-connector photographed close up, black coaxial cable with moulded strain-relief boots entering both in-line arms, the perpendicular stub pointing toward the viewer](../media/console-hardware-silhouettes/bnc-tee-connector.jpg)
+- **Shows:** the connector at the heart of the two-PCs station. It is **chrome**, not grey. The perpendicular stub is what plugs into the network card; the two in-line arms take cable — and at the END of a two-machine run, one of those arms carries a terminator cap instead.
+- **Source:** [File:BNC Tee connector, with Ethernet cable connected-92166.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BNC_Tee_connector,_with_Ethernet_cable_connected-92166.jpg)
+- **Author:** Raimond Spekking (2018)
+- **Licence:** CC BY-SA 4.0
+- **Retrieved:** 2026-09-14
+- **⚠️ Caveat:** a modern photo of a standardised part whose shape has not changed — cited for the object, never as a period scene.
+
+### `us-robotics-56k-external-modem.jpg`
+![An external desktop modem: a low beige wedge-shaped box with a row of small labelled LED indicators along its front face](../media/console-hardware-silhouettes/us-robotics-56k-external-modem.jpg)
+- **Shows:** the external-modem option for the 56k-tower station — the row of blinking lights is the recognisable feature.
+- **Source:** [File:US Robotics 56K Modem Front.JPG — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:US_Robotics_56K_Modem_Front.JPG)
+- **Author:** Xiaowei (2008)
+- **Licence:** CC BY 3.0 / GFDL
+- **Retrieved:** 2026-09-14
+
+### `thomson-cable-modem.jpg`
+![A small cream-coloured rectangular cable modem standing on end, status LEDs down the front face](../media/console-hardware-silhouettes/thomson-cable-modem.jpg)
+- **Shows:** the broadband box for the 2004 station. ⚠️ Photographed 2007 and the model's release year is unconfirmed — cited for FORM ONLY.
+- **Source:** [File:Thomson cable modem 20070224.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thomson_cable_modem_20070224.jpg)
+- **Author:** Maduixa (2007)
+- **Licence:** CC BY-SA 3.0 / GFDL
+- **Retrieved:** 2026-09-14
+
+### `acer-al1715-lcd-panel.jpg`
+![A flat LCD monitor on a slim stand, shallow front-to-back compared with a CRT, bezel surrounding a 4:3 panel](../media/console-hardware-silhouettes/acer-al1715-lcd-panel.jpg)
+- **Shows:** the 2004 station's flat panel — the depth difference against a CRT is the visual story of that station ("the desk got its space back").
+- **Source:** [File:Acer AL1715.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Acer_AL1715.jpg)
+- **Author:** Sheep221 (2007)
+- **Licence:** CC BY-SA 3.0 / GFDL
+- **Retrieved:** 2026-09-14
+- **⚠️ Caveat:** the model's exact release year was not confirmed — cited for form factor only.
+
 ## References
 
 1. [Nintendo Entertainment System — Wikipedia](https://en.wikipedia.org/wiki/Nintendo_Entertainment_System) — the NES's "two-tone gray color scheme with a black stripe and red lettering"; the "front-loading, zero insertion force slot modeled after a videocassette recorder"; two seven-pin controller ports; the deliberate consumer-electronics (not toy) positioning; the Famicom's "predominantly white plastic with a dark red trim," top-loading slot and hardwired controllers in moulded pockets; Famicom 15 July 1983, NES 18 October 1985 test market / 27 September 1986 nationwide. **[fetched]**
@@ -627,12 +703,16 @@ as a historical term of art — treat it as an authoring shorthand, not a fact.*
 - **Nintendo 64, GameCube, Xbox and Game Boy hardware appearance** — not researched here. The
   Game Boy Pocket already appears in `.claude/rules/levels/act3.md` as design intent, but this
   wiki carries **no sourced physical description** of it.
-- **No image bytes were stored this pass (2026-09-14)** — the session had no download-capable
-  tool. Every Hardware-wing photograph above is cited with a live-verified URL and licence but
-  sits as a "Looked at, not stored" entry rather than a committed file in
-  `wiki/media/console-hardware-silhouettes/`. A follow-up pass with a fetch tool can download the
-  eight named files (all confirmed freely licensed: 2× Evan-Amos public domain, 2× GFDL/CC BY-SA
-  public-domain-adjacent, 4× CC BY-SA 3.0/4.0) without repeating the research.
+- **~~No image bytes were stored this pass (2026-09-14)~~ — RESOLVED the same day.** The research
+  lane had no download-capable tool, so it licence-verified eight photographs and cited each as
+  "Looked at, not stored" rather than claiming a file it had not written — the honest call. The
+  orchestrator then fetched all eight from Wikimedia Commons (licence re-checked per file via the
+  Commons API before any byte was committed, since this repo is public and anything committed is
+  published), resized each to 1000px on the long edge per WIKI.md §Media, and **opened them**.
+  Total vault: 17 files, 1.24 MB. Two details are now confirmed by LOOKING rather than by an
+  uploader's caption: the C64's keys are **dark brown** against a warm putty case, with the
+  rainbow stripe beside the badge and the function keys in a 2×4 block at the right; and the BNC
+  T-piece is **chrome**, not grey, on black coax with a moulded strain-relief boot.
 - **Internal-vs-external 56k modem prevalence in homes by 1999** — supported directionally (AC'97,
   1997, made softmodems "common in PCs" per Wikipedia) but **no market-share number was found**.
   Stated in the text above as a qualitative claim only, deliberately not quantified.
@@ -666,20 +746,20 @@ licence confirmed live on its own Commons file page.*
 17. [Commodore VIC-20 — Wikipedia](https://en.wikipedia.org/wiki/Commodore_VIC-20) — contrast case: "Commodore did not include an RF modulator inside the computer's case because of FCC regulations. It can either be attached to a dedicated monitor or a TV set using the external modulator included with the computer" — the C64's built-in modulator (ref 16) is the generational change from this. **[fetched]**
 18. [Commodore 1541 — Wikipedia](https://en.wikipedia.org/wiki/Commodore_1541) — 1982–83 off-white case matching the VIC-20, switching to beige matching the C64 "in 1983"; DIN-connector serial daisy-chain; the "Toaster Drive" spring-eject nickname; drive depth "almost as deep as the computer is wide." **[fetched]**
 19. [Commodore 64 — c64-wiki.com](https://www.c64-wiki.com/wiki/Commodore_64) — domain-canonical Commodore fan wiki (DoomWiki-class reference of record for this hardware): "a brown breadbox with black keys and brighter function keys"; the built-in "TV-connector (HF-Modulator-Output)" — corroborates ref 16's built-in-modulator claim from an independent source. **[fetched]**
-20. [File:Commodore-64-Computer-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Commodore-64-Computer-FL.jpg) — Evan-Amos, public domain (photographed 2011/2017). Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
-21. [File:Commodore-64-1541-Floppy-Drive-01.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Commodore-64-1541-Floppy-Drive-01.jpg) — Evan-Amos, public domain (photographed 2018). Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+20. [File:Commodore-64-Computer-FL.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Commodore-64-Computer-FL.jpg) — Evan-Amos, public domain (photographed 2011/2017). **Stored in the vault 2026-09-14** as `../media/console-hardware-silhouettes/commodore-64-breadbin.jpg` (Public domain, Evan-Amos), resized to 1000px on the long edge per WIKI.md §Media.
+21. [File:Commodore-64-1541-Floppy-Drive-01.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Commodore-64-1541-Floppy-Drive-01.jpg) — Evan-Amos, public domain (photographed 2018). **Stored in the vault 2026-09-14** as `../media/console-hardware-silhouettes/commodore-1541-disk-drive.jpg` (Public domain, Evan-Amos), resized to 1000px on the long edge per WIKI.md §Media.
 22. [Tower case — Wikipedia](https://en.wikipedia.org/wiki/Tower_case) — citing a period *PC Week* article: "The transition in dominance from horizontal desktop computers to towers was mostly complete by 1994" — the sourced hinge fact distinguishing the 1995 multimedia-PC station from the existing 1993 horizontal-case station. **[fetched]**
 23. [Compaq Presario — Wikipedia](https://en.wikipedia.org/wiki/Compaq_Presario) — "Later models produced after September 1995 came with a CD-ROM drive and sound card as standard equipment"; 1996 1X25-series monitors shipped with "JBL Pro speakers which could be mounted to the sides of the monitors"; the Presario line launched August 1993; the Series 2 (1996–98) "rocket ship" smoked-black-bezel towers are a later, distinct design — flagged as such, not drawn for 1995. **[fetched]**
-24. [File:Compaq Presario 4110 1996.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Compaq_Presario_4110_1996.jpg) — public domain (author "Glad nicke3"). One year later than the 1995 target date; verifies tower form only. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+24. [File:Compaq Presario 4110 1996.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Compaq_Presario_4110_1996.jpg) — public domain (author "Glad nicke3"). One year later than the 1995 target date; verifies tower form only. **Stored in the vault 2026-09-14** as `../media/console-hardware-silhouettes/multimedia-pc-tower-1996.jpg` (Public domain, Glad nicke3), resized to 1000px on the long edge per WIKI.md §Media.
 25. [10BASE2 — Wikipedia](https://en.wikipedia.org/wiki/10BASE2) — thin coaxial cable terminated with BNC T-connectors, 50 Ω terminator caps, "no hub is required," "ideal for a small network of two or three machines, perhaps in a home where easily concealed wiring was an advantage" — the direct source for the two-PCs-joined-by-a-cable station. **[fetched]**
 26. [Null modem — Wikipedia](https://en.wikipedia.org/wiki/Null_modem) — "Null modem cables were a popular method for transferring data between the early personal computers from the 1980s to the early 1990s"; on the Amiga, "a common way of playing multiplayer games between two machines" — the simpler, card-free alternative connection method. **[fetched]**
 27. [Doom (1993 video game) — Wikipedia](https://en.wikipedia.org/wiki/Doom_(1993_video_game)) — "Multiplayer was initially only playable over local networks"; "within hours of Doom's release, university networks began banning Doom multiplayer games" — cultural corroboration that two-PC cabled play was a real, dated (1993) practice, not an invented scene. **[fetched]**
 28. [Network interface controller — Wikipedia](https://en.wikipedia.org/wiki/Network_interface_controller) — describes "A 1990s Ethernet network interface card that connects to the motherboard via the now-obsolete ISA bus... features both a BNC connector (left) for use in (now obsolete) 10BASE2 networks" alongside an 8P8C twisted-pair connector — the combo-card silhouette drawn on the back of each tower. **[fetched]**
-29. [File:Network card.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Network_card.jpg) — dual GFDL / CC BY-SA 3.0 (author "Nixdorf"): "a transitional network card with both BNC 'Thinnet' (left) and Twisted pair (right) connectors," Realtek RTL8019-based ISA card. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
-30. [File:BNC Tee connector, with Ethernet cable connected-92166.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BNC_Tee_connector,_with_Ethernet_cable_connected-92166.jpg) — CC BY-SA 4.0 (author Raimond Spekking, 2018). A modern photo of an unchanged standardized part — cited for the T-connector's shape, not as a period scene. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+29. [File:Network card.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Network_card.jpg) — dual GFDL / CC BY-SA 3.0 (author "Nixdorf"): "a transitional network card with both BNC 'Thinnet' (left) and Twisted pair (right) connectors," Realtek RTL8019-based ISA card. **Stored in the vault 2026-09-14** as `../media/console-hardware-silhouettes/isa-network-card-bnc-and-twisted-pair.jpg` (CC BY-SA 3.0 / GFDL, Nixdorf), resized to 1000px on the long edge per WIKI.md §Media.
+30. [File:BNC Tee connector, with Ethernet cable connected-92166.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:BNC_Tee_connector,_with_Ethernet_cable_connected-92166.jpg) — CC BY-SA 4.0 (author Raimond Spekking, 2018). A modern photo of an unchanged standardized part — cited for the T-connector's shape, not as a period scene. **Stored in the vault 2026-09-14** as `../media/console-hardware-silhouettes/bnc-tee-connector.jpg` (CC BY-SA 4.0, Raimond Spekking), resized to 1000px on the long edge per WIKI.md §Media.
 31. [Softmodem — Wikipedia](https://en.wikipedia.org/wiki/Softmodem) — "In 1997, the AC'97 standard for computer audio would introduce channels for modem use, making software modem technology common in PCs" — supports internal cards becoming the OEM-tower default by 1999, though no exact internal-vs-external market-share figure was found. **[fetched]**
-32. [File:US Robotics 56K Modem Front.JPG — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:US_Robotics_56K_Modem_Front.JPG) — dual GFDL / CC BY 3.0 (author Xiaowei, 2008): "beige-colored modem unit featuring LED indicator lights and labeled controls on its front panel." Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+32. [File:US Robotics 56K Modem Front.JPG — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:US_Robotics_56K_Modem_Front.JPG) — dual GFDL / CC BY 3.0 (author Xiaowei, 2008): "beige-colored modem unit featuring LED indicator lights and labeled controls on its front panel." **Stored in the vault 2026-09-14** as `../media/console-hardware-silhouettes/us-robotics-56k-external-modem.jpg` (CC BY 3.0 / GFDL, Xiaowei), resized to 1000px on the long edge per WIKI.md §Media.
 33. [Computer monitor — Wikipedia](https://en.wikipedia.org/wiki/Computer_monitor) — "In 2003, LCDs outsold CRTs for the first time, becoming the primary technology used for computer monitors" — the sourced hinge year for the 2004 broadband station's flat-panel monitor. **[fetched]**
 34. [Cathode-ray tube — Wikipedia](https://en.wikipedia.org/wiki/Cathode-ray_tube) — "The depth of a CRT is related to its screen size," standard 90° deflection for computer monitors — the sourced reason a CRT reads as a deep box next to a thin LCD. **[fetched]**
-35. [File:Acer AL1715.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Acer_AL1715.jpg) — dual CC BY-SA 3.0 / GFDL (author Sheep221, photographed 2007): beige-bezelled flat LCD panel. Model's exact release year not confirmed this pass — cited for form factor only. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
-36. [File:Thomson cable modem 20070224.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thomson_cable_modem_20070224.jpg) — dual GFDL / CC BY-SA 3.0 (author Maduixa, photographed 2007): "rectangular beige/cream-coloured housing with status LED indicators visible on the front panel." Three years later than the 2004 target date — cited for form factor only. Looked at, not stored this pass. **[described via Commons metadata, not pixel-viewed]**
+35. [File:Acer AL1715.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Acer_AL1715.jpg) — dual CC BY-SA 3.0 / GFDL (author Sheep221, photographed 2007): beige-bezelled flat LCD panel. Model's exact release year not confirmed this pass — cited for form factor only. **Stored in the vault 2026-09-14** as `../media/console-hardware-silhouettes/acer-al1715-lcd-panel.jpg` (CC BY-SA 3.0 / GFDL, Sheep221), resized to 1000px on the long edge per WIKI.md §Media.
+36. [File:Thomson cable modem 20070224.jpg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Thomson_cable_modem_20070224.jpg) — dual GFDL / CC BY-SA 3.0 (author Maduixa, photographed 2007): "rectangular beige/cream-coloured housing with status LED indicators visible on the front panel." Three years later than the 2004 target date — cited for form factor only. **Stored in the vault 2026-09-14** as `../media/console-hardware-silhouettes/thomson-cable-modem.jpg` (CC BY-SA 3.0 / GFDL, Maduixa), resized to 1000px on the long edge per WIKI.md §Media.

@@ -2,7 +2,7 @@
 title: The RF Modulator
 type: concept
 tags: [computing-history, hardware, television, proposed-content]
-sources: 4
+sources: 5
 verified: 2026-09-14
 ---
 
@@ -40,20 +40,36 @@ contrasting case.
   equivalent to S-Video — for Commodore's own 1702 monitor, a step up in sharpness
   over either RF or plain composite.
 - **The original Apple II (1977) did NOT ship with an RF modulator, and Apple did not
-  sell one.** Wikipedia's Apple II article is explicit: the machine had built-in
-  composite video output "suitable for display on a TV monitor, or on a regular TV
-  set by way of a **separate, third-party** RF modulator" — the modulator itself was
-  a customer-sourced accessory, not an Apple part. (A specific third-party example,
-  the "Sup'R'Mod," is named on Wikipedia's own RF modulator page, though without its
-  own citation there — noted, not leaned on.)
-- **The Apple IIe (1983) is a murkier case, and this page says so rather than
-  guessing.** A hardware spec line on Wikipedia's Apple IIe article lists "RF
+  sell one — now corroborated by a second, non-Wikipedia source.** Wikipedia's Apple
+  II article is explicit: the machine had built-in composite video output "suitable
+  for display on a TV monitor, or on a regular TV set by way of a **separate,
+  third-party** RF modulator." apple2history.org (Steven Weyhrich's long-running Apple
+  II history — already this wiki's reference for [[disk-ii-drive]]) independently
+  confirms and names the actual product: *"Most new Apple II owners simply purchased
+  the M&R Sup'R'Mod to display video on their color TV,"* describing it as a small
+  board that "attached to two pins sticking up from the back rear of the motherboard,
+  near the video output jack," while *"those who bought a proper NTSC computer monitor
+  did not need to bother with the RF modulator."* This resolves the "noted, not leaned
+  on" Sup'R'Mod mention from Wikipedia's RF modulator article into a directly-sourced,
+  named product with independent corroboration.
+- **The Apple IIc (1984) is a useful contrast, and clean evidence Apple's practice
+  changed by model.** The same apple2history.org series, its IIc chapter: *"Included
+  with the original IIc was an RF modulator that allowed it to be connected to a
+  standard television (for color games)."* So across three Apple II-family machines,
+  the pattern is NOT uniform: the 1977 Apple II needed a third-party purchase, the
+  1984 IIc shipped with one in the box.
+- **The Apple IIe (1983) is a murkier case, and this page still says so rather than
+  guessing — apple2history.org's own IIe chapter was checked this pass and does not
+  resolve it either.** A hardware spec line on Wikipedia's Apple IIe article lists "RF
   modulation output (4-pin Molex)" among the machine's connectors — but a 4-pin Molex
   header reads more like an internal connector point for an *optional* add-in RF
   modulator card than a plug-and-play "works on any TV out of the box" feature the
-  way the C64's is described. No source fetched this session confirms whether a IIe
-  bought off the shelf came with a modulator attached, versus needing the same kind
-  of third-party or optional-card solution its 1977 predecessor did.
+  way the C64's is described. apple2history.org's IIe chapter (fetched this pass)
+  discusses the machine's 80-column display and memory architecture in detail but does
+  not mention TV output, RF modulation, or the Sup'R'Mod at all — a real gap in this
+  source, not a confirmation either way. **The IIe sits temporally between the
+  bring-your-own-modulator 1977 II and the modulator-included 1984 IIc, and no source
+  fetched across two sessions says which side of that line it falls on.**
 
 ### The "living room" framing — what's sourced and what's inference
 
@@ -103,21 +119,57 @@ precise about the line:
 4. [Apple IIe — Wikipedia](https://en.wikipedia.org/wiki/Apple_IIe) — the "RF
    modulation output (4-pin Molex)" spec line this page flags as ambiguous rather than
    conclusive. **[fetched]**
+5. [The Apple II History — apple2history.org](https://www.apple2history.org/history/ah04/)
+   (Chapter 4, the original Apple II) and its
+   [IIc chapter](https://www.apple2history.org/history/ah08/) — **non-Wikipedia**;
+   Steven Weyhrich's long-running enthusiast/community reference (also cited on
+   [[disk-ii-drive]]). Names the Sup'R'Mod directly ("Most new Apple II owners simply
+   purchased the M&R Sup'R'Mod to display video on their color TV") and independently
+   corroborates the third-party/no-modulator-in-box status of the 1977 machine; its IIc
+   chapter states the 1984 IIc *did* ship with an RF modulator included, giving a
+   real, sourced contrast across the II-family lineup. Its IIe chapter
+   (`ah07`) was also checked this pass and does **not** mention RF modulation either
+   way — cited as a checked-and-inconclusive source, not a supporting one, for the IIe
+   specifically. **[fetched]**
 
 ## See also
 
 [[commodore-64]] — Level 17 history card, the "best-selling computer" moment.
 [[console-hardware-silhouettes]] — the Apple IIe's physical silhouette (monitor sitting
 on top of the machine) that this page's contrast depends on.
+[[disk-ii-drive]] — another wiki page independently citing apple2history.org.
+
+## Corrections from citation pass (2026-09-14)
+
+- No existing claim was found to be wrong. Added apple2history.org as a second,
+  non-Wikipedia source, which independently corroborates the Apple II (1977)
+  third-party-modulator claim and names the actual product (Sup'R'Mod) that
+  Wikipedia's RF modulator page mentioned without its own citation. Also added the
+  Apple IIc's included-modulator status as a genuine, sourced contrast point.
+- **The Apple IIe ambiguity is NOT resolved** — see "The facts" and the item below.
+  The IIe's own apple2history.org chapter was checked directly this pass and turned
+  out not to cover RF/TV output at all, which is itself worth recording (a source that
+  was checked and came back silent, not a source that was never tried).
 
 ## Unsourceable / weakly-sourced items
 
-- Whether a retail Apple IIe shipped with any form of RF modulator — genuinely
-  unclear from the one spec line found this session (see "The facts" above).
+- **Whether a retail Apple IIe shipped with any form of RF modulator remains
+  genuinely unclear after two citation passes.** This session specifically went
+  looking for a manual or museum record to settle it (per the task brief) and did not
+  find one: apple2history.org's dedicated IIe chapter does not mention RF output at
+  all, and no manual, museum record, or Apple documentation was reachable this
+  session (an archive.org IIe reference-manual URL guess 404'd; Computer History
+  Museum's collection search returned an unrelated 1964 IBM manual for a guessed
+  object ID, confirming that guessing catalog IDs without a working search tool is not
+  a viable path). Leave the ambiguity flagged on any IIe-era card rather than picking
+  a side.
 - The specific "lived in the living room vs. the den/office" cultural claim — flagged
   above as this project's inference, not a sourced fact. If this becomes a card, do
-  not present it as documented history.
-- No non-Wikipedia (institutional or journalistic) source was found this session
-  corroborating either machine's video-output story; WebSearch was unavailable and
-  several guessed institutional URLs (Britannica, Computer History Museum) returned
-  403/no-match. A follow-up pass with search available should try to add one.
+  not present it as documented history. Not investigated further this pass, per the
+  task brief's instruction not to let a familiar-sounding memory back in without a
+  real source.
+- WebSearch was unavailable for this entire session (shared budget exhausted across
+  concurrent lanes); further progress on the IIe question would benefit from a
+  follow-up pass once search is available again — try Apple's own IIe Reference
+  Manual (commonly archived) or a Computer History Museum object record found via
+  search rather than a guessed catalog ID.

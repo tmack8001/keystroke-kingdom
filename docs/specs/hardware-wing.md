@@ -112,7 +112,7 @@ Every station yields **two** cards: the machine, and the one part of it that mat
 | Apple IIe + Disk II | APPLE IIe | **THE FLOPPY DISK** — the games lived on it |
 | Beige PC, VGA + CD | THE BEIGE TOWER | **THE CD-ROM** — 400 floppies in one disc |
 | Multimedia PC | THE MULTIMEDIA PC | **THE SOUND CARD** — the year computers stopped beeping |
-| Two PCs, one cable | *(the pair itself)* | **THE NULL-MODEM CABLE** — two machines, one game |
+| Two PCs, one cable | *(the pair itself)* | **THE NETWORK CARD + BNC COAX** — two machines, one game *(⚠️ corrected 2026-09-14: this said THE NULL-MODEM CABLE. Two independent research lanes found that wrong for a mid-90s PC — the sourced method is **10BASE2 thinnet**, coax between BNC T-connectors, documented as "ideal for a small network of two or three machines, perhaps in a home". A null-modem cable is serial, 1980s–early-90s, and its sourced gaming use is the Amiga. See [[console-hardware-silhouettes]] and [[null-modem-cable]].)* |
 | 56k tower | THE HOME-OFFICE PC | **THE MODEM** — why nobody could phone you |
 | Broadband tower + LCD | THE BROADBAND PC | **THE LCD PANEL** — the desk got its space back |
 

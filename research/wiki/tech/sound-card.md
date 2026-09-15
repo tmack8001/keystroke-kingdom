@@ -89,11 +89,21 @@ way the machines they depict originally were).
 [[audio]] *(docs/features page)* — this game's own procedural-WebAudio sound, an
 apt parallel to the PC-speaker era this page describes.
 
+## Corrections from citation pass (2026-09-14)
+
+None — no existing claim was found to be wrong. Added Creative's own corporate-history
+page as a third, non-Wikipedia reference (a company timeline that corroborates rather
+than duplicates the two Wikipedia sources).
+
 ## Unsourceable / weakly-sourced items
 
-- No non-Wikipedia source was obtained this session (WebSearch was unavailable; an
-  Ars Technica retro-audio piece and a Computer History Museum 1989 timeline page were
-  both tried and either failed to fetch or didn't cover this topic). Two Wikipedia
-  articles that directly corroborate each other's dates and figures is the strongest
-  citation achieved this session — a follow-up with search available should add an
-  institutional or journalism source.
+- A precise, non-Wikipedia source for the exact **1989 Sound Blaster release date**
+  and the **"top-selling expansion card within a year"** figure was still not obtained
+  this session — WebSearch was exhausted (shared session budget) and Computer History
+  Museum's 1987/1989 timeline pages were checked directly and do not mention sound
+  cards at all. The Creative Technology corporate page (added above) corroborates the
+  company/timeline context but does not itself state the exact figures. An Ars
+  Technica retro-audio piece was attempted in an earlier session and failed to fetch;
+  a follow-up pass with a working search budget should retry a period trade-press
+  source (e.g. a 1989–1990 *PC Magazine* or *Computer Gaming World* review) for the
+  release date and sales-figure claims specifically.

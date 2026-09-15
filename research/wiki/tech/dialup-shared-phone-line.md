@@ -2,7 +2,7 @@
 title: The Modem and the Shared Phone Line
 type: concept
 tags: [computing-history, hardware, internet-history, proposed-content]
-sources: 3
+sources: 4
 verified: 2026-09-14
 ---
 
@@ -46,7 +46,13 @@ speed number.
   *"This allows the connection to be temporarily severed and then reconnected,
   reducing the possibility of dropped connections."* That a whole feature of a formal
   international standard was built to soften this exact friction is itself evidence of
-  how common and disruptive the underlying household problem was.
+  how common and disruptive the underlying household problem was. **The finalization
+  date is independently confirmed at the source** — the ITU's own recommendation
+  index page for V.92 lists it as **"V.92 (11/00)"**, i.e. approved November 2000,
+  matching the Wikipedia date exactly. (The ITU's index page is a bare document list
+  and does not itself describe the "Modem on Hold" feature in the content retrieved
+  this session — cited here specifically to confirm the date from the standards body
+  itself, not as a second source for the feature description.)
 - **What this page does not (yet) establish:** no source fetched this session gives a
   first-person or journalistic account of the specific "someone picked up the phone
   and knocked me offline" household scene, or names when/how commonly US households
@@ -63,6 +69,15 @@ speed number.
 2. *"This was such a common problem that in the year 2000, modem makers built a
    special feature just to let a phone call interrupt the internet — and then pick
    the connection back up."* — supports: Wikipedia V.92 [fetched] ("Modem on Hold").
+3. *"The internet and the telephone wanted the same wire, and only one could have it
+   at a time — so some families solved it by getting the house a second phone line
+   just for the computer."* — the safe version of the "second line" idea: it names
+   the second line as one real, sourced way the underlying conflict was resolved
+   (Wikipedia's Dial-up Internet access article itself uses the phrase "without
+   having a second phone line" when contrasting dial-up against broadband, so the
+   concept is directly sourced) **without** claiming how common it was or that the
+   internet was its sole cause — see "Testing a market-growth reframe" below for why
+   that stronger version is not yet supportable.
 
 ## References
 
@@ -77,6 +92,11 @@ speed number.
 3. [V.92 — Wikipedia](https://en.wikipedia.org/wiki/V.92) — the November 2000 standard
    date and the "Modem on Hold" (MOH) feature description, framed explicitly around
    call-waiting interruptions and reducing dropped connections. **[fetched]**
+4. [ITU-T Recommendation V.92 — International Telecommunication Union](https://www.itu.int/rec/T-REC-V.92) —
+   **non-Wikipedia, standards-body primary source** (top of this project's source
+   hierarchy). Lists "V.92 (11/00)" — independently confirming the November 2000
+   finalization date from the standards body itself, rather than repeating
+   Wikipedia's figure. **[fetched]**
 
 ## See also
 
@@ -87,17 +107,61 @@ following-generation standard that added Modem on Hold.
 
 ## Corrections from this pass (2026-09-14)
 
-None — this is a new page, not a revision of existing content. Logged here per the
-doc-format convention rather than left blank.
+No existing claim was found to be wrong. Two things worth recording from this
+citation pass specifically:
+- Added the ITU-T's own V.92 recommendation index as a fourth, non-Wikipedia,
+  standards-body reference — independently confirming the November 2000 date rather
+  than merely repeating it.
+- **A fact-check finding, not a correction:** Wikipedia's Dial-up Internet access
+  article states the core "can't use the phone while online" claim in its main text
+  with **no footnote attached** (verified by inspecting the article's citation
+  markers directly this pass). The claim is basic, well-understood analog-telephony
+  behavior (one line, one call at a time) rather than a contestable historical
+  figure, and it is independently corroborated by the *reason* V.92's "Modem on Hold"
+  feature exists at all (a standards-body-confirmed real feature, solving a real
+  problem) — but readers should know the specific sentence itself is Wikipedia's own
+  uncited prose, not a citation trail that terminates in a primary source.
 
 ## Unsourceable / weakly-sourced items
 
 - No anecdotal/journalistic source (e.g. a first-person "growing up with dial-up"
   retrospective) was obtained this session — WebSearch, which would normally surface
-  this kind of established-journalism piece, was unavailable. The three references
-  above are all encyclopedic/technical rather than narrative; a follow-up pass with
+  this kind of established-journalism piece, was unavailable (shared session budget
+  exhausted) and a direct FCC dial-up-modems URL guess returned 403. The four references
+  above are all encyclopedic/technical/standards-body rather than narrative; a follow-up pass with
   search available should look for one warmer, story-driven source to round this out.
-- The "second phone line" household purchase, as a widely-adopted response, is not
-  directly sourced this session — it's a very commonly repeated detail in dial-up-era
-  recollection but is not asserted here as a verified fact; it does not appear in the
-  "Card-ready facts" above for that reason.
+- **Testing a market-growth reframe (2026-09-14, mid-session direction from the
+  project owner) — still unsourced, still excluded.** The original prevalence claim
+  ("households commonly got a second line") was correctly cut by the previous pass
+  for lacking survey data. A narrower, more defensible reframe was proposed this
+  session: not that most households got a second line, but that *residential
+  additional/second lines grew as a market category during the dial-up years, and
+  that growth is associated with (not solely caused by) home internet use* — the kind
+  of claim telephone regulators historically tracked as its own statistical series.
+  This session specifically went looking for that series and could not reach it:
+  - **FCC** — both `fcc.gov/reports-research/reports/trends-telephone-service` and
+    `fcc.gov/economics-analytics/industry-analysis-division/trends-telephone-service`
+    returned 403 Forbidden; a guessed direct PDF path for the "Trends in Telephone
+    Service" report series (`transition.fcc.gov/.../trend699.pdf`) 404'd — the real
+    filenames could not be discovered without a working search tool.
+  - **NTIA** ("Falling Through the Net" series) — `ntia.gov/legacy/ntiahome/fttn99/`
+    failed with a TLS certificate error on this tool (both `http://` and `https://`),
+    not a content failure — the document may well exist and be reachable by a browser
+    or a different fetch path.
+  - **US Census Bureau** — a guessed report URL 404'd.
+  - **Wikipedia** — Dial-up Internet access, Telephone line, Plain old telephone
+    service, and Local exchange carrier were all checked directly; none give
+    second-line growth figures or an internet-use attribution. (Dial-up Internet
+    access does use the phrase "a second phone line" once, already cited above, but
+    as a description of the concept, not as a statistic about its adoption.)
+  **Conclusion: the market-growth claim is not sourced this session either, and per
+  the task's own instruction, it stays OUT of "Card-ready facts."** The one-line
+  reason for this — "the internet and the telephone wanted the same wire, and only
+  one could have it at a time" — is fully sourced already (the phone-line-exclusivity
+  fact plus V.92's Modem on Hold, both above) and is used as fact #3 instead, without
+  reaching for the unsupported growth/causation claim. A follow-up pass with a working
+  search budget should try the FCC's "Trends in Telephone Service" PDF series by name
+  (year-by-year reports were published annually through the early 2000s) or NTIA's
+  "Falling Through the Net" series via a browser-equivalent fetch path, since a
+  genuine regulatory data series specifically tracking residential additional lines
+  is very likely to exist — this session's tool just could not reach it.
