@@ -766,6 +766,81 @@ respected exactly as written; and (d) `consoleErrors`.
   same class as journal F23 — Level 8 once shipped unwinnable because nothing had ever tried to win
   it** — and it is caught here by construction instead of by a child who cannot finish.
 
+- **INV-103** (L1/L2) **A card the player EARNS is a card the player SEES — and it is credited
+  before it is shown.** THE HARDWARE shipped with the earning half wired and no reveal at all:
+  `wakeUp()` wrote the card id into the save and drew nothing, so a player collected cards they
+  never read. That is not a small omission — the whole collection rests on one ritual, *you type
+  the word and you get the story*, and a silently-banked card keeps the bookkeeping while dropping
+  the reward.
+
+  Two clauses, and the ORDER is the load-bearing part: the card is written to the save **when the
+  machine wakes**, and revealed **when the player leaves** (`docs/specs/hardware-wing.md` §Phase D).
+  Crediting must never depend on the player sitting through a presentation — Escape out of the
+  reveal and the card is still yours. That is Act 6's **TF-T1** lesson (*leaving must never silently
+  drop something the player actually did*) applied one wing later.
+
+  *Why this could not have been caught by the suite that existed:* every gate was green. The data
+  model was right, the rotation was right, the save was right. **Nothing had ever LOOKED at the
+  screen** — the same shape as journal **F23** (Level 8 shipped unwinnable because nothing tried to
+  win it) and **F26** (the published build shipped broken because nothing tried to load it). The
+  wing also had no `scripts/playtest.mjs` target, which is why nobody looked; it has one now.
+
+- **INV-104** (L1) **A wing bank only ever cards a BUILT station, and never retells a
+  cross-referenced card's story.** Two rules with the same root: a wing bank's denominator is a
+  promise to the player.
+
+  **(a) Only built stations.** `js/hardware/stations.js` ships 2 of the spec's 7. A card for an
+  unbuilt station would raise `bankProgress('wing').total` with a `???` the player has no route to
+  — a counted obligation with no path, which `product.md` §1 refuses. (The five remaining
+  components ARE researched; their rows wait on their stations, not on research.)
+
+  **(b) No story told twice.** `STATION_CROSS_REFS` already shows the arcade's `floppy-disk` card at
+  the Apple IIe — that card is the 1971 IBM *medium*. The wing's own card is the 1978 Apple *drive*,
+  a different object with a different story. The two banks exist precisely so the same fact is never
+  carded twice, and `research/wiki/tech/disk-ii-drive.md` says so in as many words.
+
+- **INV-105** (L0 — safety) **THE SAFETY FLOOR COVERS THE CURRICULUM TOO, not only generated content.**
+  No token in any `js/levels.js` `pool` or `intro` entry may be a word on the `js/word-blocklist.json`
+  floor.
+
+  *Why this exists:* `.claude/rules/security.md` rule 7 says the floor is *"the single definition every
+  path enforces"* and *"the immovable FLOOR every consumer enforces."* On 2026-09-15 a roadmap audit
+  found that was **not true of the hand-curated curriculum**, which is the one path nobody had ever
+  checked: Level 6 shipped `dead`, Level 7 `drug`, Level 17 `gun47` — all three on the 53-word floor,
+  and all three typed by a five-year-old as ordinary lesson content. Act 7's own `js/speedway/words.js`
+  already listed `dead` on its NEVER list, so the generated side excluded a word the curriculum served.
+
+  **Trevor's ruling (2026-09-15): *"Dead, drug and gun47 aren't curriculum content."*** All three
+  removed; pools were 42/44/31 so winnability is untouched.
+
+  The transferable point is about how the gap survived: every blocklist test asserted that *generated*
+  words are filtered, because generation was the path that felt risky. The hand-written list felt safe
+  precisely because a human wrote it — which is exactly why nothing was checking it. **A safety floor
+  that is only enforced where you expected danger is not a floor.**
+
+- **INV-106** (L1/L2) **EVERY COLLECTABLE CARD IS DISPLAYABLE.** For a save holding every card, the
+  union of the collection gallery's shelves contains every id in
+  `HISTORY_CARDS ∪ WING_CARDS ∪ ACT_CARDS`, each exactly once. No shelf's numerator or denominator
+  ever counts a card from another shelf (`bankProgress` is the oracle for whole-bank shelves). A shelf
+  renders only when its cards are **reachable** for that save — the wing's own `unlockLevel`,
+  `ACT_CARD_UNLOCK_LEVEL` plus that act's first cabinet — **or** when the save already holds one of
+  them. Unfound cards render as `???` on every shelf.
+
+  *Sources:* `product.md` §History Cards (*"a browsable collection gallery… still-locked ones shown as
+  `???`"*); `product.md` §1 (a counted obligation with no route); `hardware-wing.md` §5.4.4 and
+  `act-exclusive-cards.md` §5.4 (scoped denominators).
+
+  **This generalises INV-100 from the reveal overlay to the gallery**, and it exists because the
+  narrower version was not enough. INV-100 fixed `CARD 63 OF 60` on the level-complete card; the
+  *gallery* then shipped with the same mismatch one layer up and nobody noticed for two days: it
+  rendered `allCards()` → `HISTORY_CARDS` only, while the slot picker's ★ counted every id across all
+  three banks. Eight cards were earned, counted, and browsable nowhere — a child could earn THE APPLE
+  IIe and never see it again. **Fixing a mismatch at one surface is not fixing the mismatch.**
+
+  ⚠️ **Numbering note:** proposed as "INV-101/102 (next free)" — both were already taken (the act-card
+  gate and the act-card hang guard). This is exactly the race §"Reserving INV numbers" below warns
+  about; §5 is the only authority for a landed number.
+
 ### ⚠️ Reserving INV numbers while a spec is unbuilt
 
 Two specs in flight on the same day both proposed `INV-100..105`, for entirely different clauses,

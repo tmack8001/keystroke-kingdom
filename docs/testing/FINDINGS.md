@@ -256,6 +256,39 @@ contain both label literals. Static test now exempts a line containing both
   now use the quoted-glob form (`node --test "tests/<layer>/*.test.mjs"`), verified
   green. (Node 26 treats a bare directory positional as a module entry point.)
 
+### TF-A1 — An act card made a Free Play session UNWINNABLE (One Rule violation)
+
+- **Invariant:** INV-102 (`docs/testing/STRATEGY.md` §5 — *"AN ACT CARD CAN NEVER HANG A
+  SESSION"*); `product.md` §The One Rule — *"the game should only ever stop a player's flow
+  with joy, never with punishment."*
+- **Status:** FIXED 2026-09-15, same session the defect became reachable.
+- **Defect:** `js/main.js` sets the "moment word was typed" latch behind
+  `if (!state.freePlay && !state.cardWordTyped)`. That guard was correct for years — only
+  curriculum levels had cards, so Free Play had no moment word to latch. The act-card layer
+  (2026-09-14) then made **Free Play the one surface that serves a card**, and the win gate
+  (`cardPending = state.currentCard && !state.cardWordTyped`) carries **no** free-play
+  exclusion. So with a non-empty `ACT_CARDS`: `currentCard` is set, the latch can never fire,
+  `cardPending` stays true forever, and **the session can never be won.** No timer, no
+  failure message, nothing on screen — a child types sentences until an adult closes the tab.
+  The same latch also gates the card REVEAL (`if (card && state.cardWordTyped)`), so the card
+  would never have been shown either.
+- **Repro:** `tests/integration/act-cards.test.mjs` → *"the session completes — the act gate
+  is satisfiable in real play"*. Before the fix it recorded **the act word arriving correctly
+  as the third pattern and then 250+ further sentences with no completion**, hitting the
+  harness cap.
+- **Fix:** drop the `!state.freePlay` half of the guard. `currentCard` is only ever set in
+  Free Play when an act card was chosen (the curriculum picker is itself `!state.freePlay`-
+  guarded), so the card's identity is sufficient and the surface check was redundant as well
+  as harmful.
+- **Why nothing caught it:** the layer shipped with an EMPTY `ACT_CARDS`, and an empty bank
+  arms no gate — so every hazard the invariant names was **unobservable until content
+  existed**. `make test-fast`, `make test-integration` and `static-host-check` were all green
+  on both sides of the defect. This is journal **F23** (Level 8 shipped unwinnable because
+  nothing had ever tried to win it) in a new costume, with one extra twist worth keeping:
+  **a feature-flagged-off-by-emptiness hazard is not a hazard that was avoided, only one that
+  was deferred to whoever writes the content.** The transferable rule: *the moment a bank,
+  registry or table stops being empty is a moment that needs a play, not a re-run.*
+
 ## Driver follow-ups (tests/helpers/game-driver.mjs — tracked in ROADMAP §3)
 - Concurrency flake: under `--test-concurrency=3`, 4 tests failed (null prompt
   tokens at winLevel start; continue-screen asserts catching title-screen) that are

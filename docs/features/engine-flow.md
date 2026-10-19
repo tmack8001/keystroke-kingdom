@@ -95,12 +95,27 @@ added 2026-09-11 — see "Level 24" below — and is always false on every other
 **Except on Level 25**, where reaching this normal target launches the "MY STORY"
 coda instead of ending the level; the level then ends only once the whole coda has been
 typed. `cardPending` is
-`!freePlay && state.currentCard && !state.cardWordTyped` — the "exactly one guaranteed
+`state.currentCard && !state.cardWordTyped` — the "exactly one guaranteed
 card per play" invariant is unchanged by the 2026-07-19 history-cards rebuild (a level
 may now hide a *pool* of several cards, but `pickGuaranteedCard()` still resolves the
 pool down to exactly one card, stashed as `state.currentCard`, before the level starts —
 see [[history-cards]]). See "Level 25 finale — the walk-the-keyboard coda" below for the
 Level 25 exception and its own guaranteed-completion gate.
+
+**⚠️ `cardPending` carries NO `!freePlay` exclusion, and until 2026-09-14 this was
+harmless by omission** (`state.currentCard` was structurally always `null` in Free Play,
+since only curriculum levels had cards). The [[history-cards]] act-card layer made Free
+Play the one surface that serves a card (`startGame()`'s `actCardSpliced` branch, gated
+on `actCardsUnlocked(furthestLevel)`), which meant the mid-play detection latch's OLD
+`!state.freePlay` guard (removed in the same fix) would have kept `cardPending` true
+forever in a Free Play session with an act card active — no timer, no failure message,
+just a session that could never end. **Found and fixed 2026-09-15** — see `docs/testing/
+FINDINGS.md` **TF-A1** and `docs/testing/STRATEGY.md` **INV-102** ("an act card can
+never hang a session"), and `tests/integration/act-cards.test.mjs`. Verified live: a
+Free Play session on an ACT_CARDS-unlocked save (`furthestLevel >= 15`) now completes
+normally and reveals its act card (`FREE PLAY COMPLETE` panel, e.g. `QUARTER · THE COIN
+DOOR · CARD 1 OF 4`) — see [[hardware-wing]]'s sibling capture for the same reveal shape
+in the wing, and [[free-play]] for the panel itself.
 
 **Wrong key**: `state.mistakes[expected]++`, `streak = 0`, theme's `miss()` fires,
 `Audio.wrong()`, gentle 300ms `.wrong` flash — **the letter never advances**. This is

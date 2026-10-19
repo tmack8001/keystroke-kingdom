@@ -128,9 +128,23 @@ against the lost report. Distinguish "work lost" from "report lost".
    `.git/claude-impacted-files`; the doc-currency Stop hook nags if you forget) —
    it refreshes the impacted `docs/features/` pages + their screenshot sets, then
    clear the manifest (`: > .git/claude-impacted-files`).
-3. Reconcile `docs/ROADMAP.md`: strike completed items WITH results; add every
-   surviving issue from agent reports as explicit follow-ups (nothing lives only in a
-   transcript). Update CLAUDE.md quick-map if features changed.
+3. Reconcile the roadmap — ⚠️ **the rule CHANGED 2026-09-16; "strike it with results" is what
+   created the problem.** The backlog is now two files with one discipline: **an item lives in
+   exactly ONE of them.**
+   - **`docs/ROADMAP.md` is the LIVE backlog — open work only, present tense. A ✅ in it is a bug.**
+     When you finish something you do **not** tick it here; you DELETE it from here.
+   - **`docs/roadmap-history.md` is APPEND-ONLY history — past tense.** Append a dated record of
+     what landed. Never rewrite an entry there to describe today.
+   - Add every surviving issue from agent reports to the LIVE file as an explicit follow-up, with
+     the evidence (`path:line`) that it is real. Nothing lives only in a transcript.
+   - Update the CLAUDE.md quick-map if features changed — **and check its counts**, which go stale
+     faster than anything else in the repo.
+
+   *Why this changed:* a five-lane audit of the old single 1765-line file found the same defect
+   repeatedly — an item's status asserted in two non-adjacent places, with the newest statement not
+   being the lowest, so reading top-down and bottom-up gave opposite answers. Striking-in-place is
+   what accumulated that: the ✅ was almost always honest, and the prose underneath it was left in
+   live present tense. **If you append a ✅ anywhere, past-tense the sentence above it.**
 4. Journal genuinely new lessons (`node scripts/wiki-search.mjs --journal` for next
    IDs; `--index` to regenerate views). Mark addressed entries' frontmatter.
 5. Nothing is committed until Trevor reviews. If a reference artifact needs refreshing

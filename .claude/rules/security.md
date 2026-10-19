@@ -110,6 +110,51 @@ HTML, shell, or JavaScript.
    to the outbound content (`sanitizeAvoidList`: same charset/length/safety chain, count
    capped). Winnability never depends on generation or the cache — the static bank is
    always appended (INV-64/INV-67).
+   **⚠️ THE FLOOR COVERS THE HAND-WRITTEN CURRICULUM TOO — added 2026-09-15, because it did not.**
+   This rule has always said the floor is *"the single definition every path enforces"* and *"the
+   immovable FLOOR every consumer enforces."* A roadmap audit found that was false for the one path
+   nobody had ever checked: `js/levels.js` shipped **Level 6 `dead`, Level 7 `drug`, Level 17 `gun47`**
+   — all on the 53-word floor, all typed by a five-year-old as ordinary lesson content. Act 7's own
+   `js/speedway/words.js` already listed `dead` on its NEVER list, so the *generated* side was excluding
+   a word the *curriculum* served. Trevor: *"Dead, drug and gun47 aren't curriculum content."* All three
+   removed (pools were 42/44/31; winnability untouched) and **`INV-105` now greps the whole curriculum
+   against the floor on every `make test-fast`.**
+
+   *The reason the gap survived is worth keeping:* every blocklist test guarded a GENERATED path,
+   because generation is what felt risky. The hand-written list felt safe precisely because a human
+   wrote it — which is exactly why nothing was checking it. **A safety floor enforced only where you
+   expected danger is not a floor.**
+
+   **⚠️ WHAT THE PARENT'S LIST COVERS — and the one thing it deliberately cannot (2026-09-16).**
+   The settings screen used to promise *"WORDS YOU ADD HERE NEVER APPEAR IN THE GAME."* That was
+   false, and the roadmap audit caught it. It is now true of everything it claims, because the
+   claim was narrowed to what can actually be delivered:
+
+   | Surface | Floor | Parent's words |
+   |---|---|---|
+   | Generated words (`js/wordgen.js`) | ✓ | ✓ |
+   | L25 coda stories (`js/keyboard-story.js`) | ✓ | ✓ |
+   | IM-friend replies (`js/chat.js`) | ✓ (server `chatOutputOK`) | ✓ **added 2026-09-16** |
+   | Hand-written curriculum (`js/levels.js`) | ✓ (INV-105) | ✗ **by design — see below** |
+
+   **The IM-friend gap was an oversight and is fixed.** It must be enforced CLIENT-side and nowhere
+   else: the parent's words are `settings.blockedWords` and rule 6 keeps them **100% local, never
+   sent to any endpoint**, so the server structurally cannot check them. A hit is treated as the
+   documented model-unavailable signal, so the friend takes its normal nap — never an error, never
+   a stall.
+
+   **The curriculum exclusion is NOT an oversight, and this is the load-bearing part.** A parent's
+   list is additive and unvalidated against the curriculum. If a parent blocks `dad`, honouring it
+   literally would strip a Level 4 word — and enough such blocks could leave a level unwinnable.
+   **The One Rule outranks the promise:** *"the game should only ever stop a player's flow with joy,
+   never with punishment."* A level a child cannot finish because of a setting is the purest
+   violation available. Generated content is different precisely because dropping a word there costs
+   nothing — the pool refills.
+
+   So the honest split is: **the parent's list governs everything the game WRITES; the floor governs
+   everything the game SHIPS.** The hand-written lessons are curated by a human and gated by INV-105
+   against the floor, which is the right instrument for content that cannot be dropped on demand.
+
    *Single-source blocklist + additive parent control (Trevor, 2026-07-28):* the
    kid-safety word blocklist is defined in ONE file, `js/word-blocklist.json`, read by
    BOTH languages — the Go server embeds+unmarshals it (`loadChatWordBlocklist` →

@@ -1,5 +1,32 @@
 # THE ROOM'S OWN CARDS — an act-exclusive card layer that opens when the keyboard does
 
+> ## ✅ ACT 1 BUILT 2026-09-15 — and building it found a One Rule violation
+>
+> **Act 1's four cards are written** (`act1-quarter`, `act1-marquee`, `act1-attract`,
+> `act1-initials`), all sourced to **Atari's own service manuals on the Internet Archive**,
+> mostly the manual for *Breakout* — Level 1's own cabinet. Research:
+> `research/wiki/tech/{arcade-coin-door, arcade-marquee, attract-mode}.md`,
+> `research/wiki/culture/high-score-initials.md`.
+>
+> **⚠️ THE LAYER WAS UNWINNABLE AS SHIPPED, and §5.5's "the mechanism ships now, the facts
+> land later" is what hid it.** `js/main.js` latched the moment-word-typed flag behind
+> `!state.freePlay` — correct for years, because only curriculum levels had cards — while the
+> win gate had no such exclusion. With a non-empty bank the gate armed and never cleared, so a
+> Free Play session **could not be finished**. Every suite was green on both sides of it,
+> because *an empty bank arms nothing*. See `docs/testing/FINDINGS.md` **TF-A1**.
+>
+> The transferable lesson for the rest of this spec: **shipping a mechanism with an empty bank
+> does not de-risk it, it defers the risk onto whoever writes the first content.** Acts 2–5
+> should each be authored together with a play of the surface they arm, not with a test run.
+>
+> Also found and fixed while authoring: the act word was **spliced twice** (the act branch and
+> the generic card-injection block both acted on `state.currentCard`), and the level-complete
+> counter scoped an act card to the **arcade** bank.
+>
+> **Outstanding: Acts 2–5, sixteen cards.** §5.5's uniformity ("every shelf reads ◆ n / 4") does
+> not hold until they land.
+
+
 ## Product spec / ADR — a third card bank, unlocked by the full keyboard, played in Free Play
 
 *Written 2026-09-14 by the `product-manager` lane. **Revised the same day** after Trevor inverted
@@ -509,7 +536,7 @@ This spec explicitly does **not**:
 | The historian cannot source four era-matched subjects for Act 1 under the letters-only rule | medium | Act 1's objects are the best-documented in arcade history; an unsourceable subject is **dropped, never invented** (F29) | accepted |
 | Act 3's theme drifts toward "how to pirate" | medium | "curiosity, not crime"; shareware/cover-disc/demoscene is the legal and better half | open question §10.4 |
 | Free Play's win gate gains a new pending condition and could hang a session | **high if wrong** | the gate is the direct analogue of `cardPending`, whose word is injected before the earliest possible win; the engine refills its pool infinitely, so the gate is structurally reachable | must be proven by a real won session, not a unit test (INV-125) |
-| "phase" turns out to mean a scope this spec does not model | low | flagged as open question §10.3 rather than guessed | open |
+| ~~"phase" turns out to mean a scope this spec does not model~~ | low | **✅ CLOSED 2026-09-16 — "phase" is a synonym for act.** Not guessed: the working assumption was put to Trevor with the alternative (a fourth bank + its own spec) and he took the synonym reading. | closed |
 
 **Follow-ups this spec does not own** (for `docs/ROADMAP.md`): the `jf` / L2 / L3 pattern-token
 level cards (§4.2); more level cards for L16, L19, L21, L22, L23 (§4.3); a keyboard-reachable

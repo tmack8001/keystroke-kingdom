@@ -1,4 +1,30 @@
 # THE HARDWARE — the wing that teaches what a machine is made of
+
+> ## ✅ PHASE 1'S CARDS BUILT 2026-09-15 — both stations, both halves of the pair
+>
+> `WING_CARDS` holds **4**: `hw-disk-ii` + `hw-apple-iie` at the Apple IIe, `hw-cd-rom` +
+> `hw-mpc-badge` at the MS-DOS PC. Both stations' rotations rotate, verified by playing each
+> twice (`node scripts/playtest.mjs --at=hardware:<station> --laps=2`).
+>
+> **§Phase D's reveal did not exist and has been built.** `wakeUp()` wrote the card id into the
+> save and drew nothing, so a player collected cards they never read. `drawCard()` in
+> `js/hardware/hub.js` now shows the card when they leave the station, on canvas, echoing the
+> DOM `.history-card`'s palette, tilt and drop-in. Crediting still happens at wake, so Escaping
+> out never loses the card (Act 6's TF-T1).
+>
+> **⚠️ §0.3's table is amended twice by what the research actually supported:**
+> - The Apple IIe's component card is **THE DISK II DRIVE (1978)**, not "THE FLOPPY DISK" — the
+>   floppy *medium* (1971, IBM) is already the arcade bank's `floppy-disk` card and is
+>   cross-referenced at this very station. Two banks exist so a fact is never carded twice.
+> - The beige tower's machine card is **THE MPC BADGE**, not "THE BEIGE TOWER". A generic beige
+>   1993 box is a category, not a product; nothing fetchable says anything true about it, and
+>   the research page says so explicitly. ⚠️ **Whoever builds station 4 must decide who owns the
+>   name "THE MULTIMEDIA PC"** — §0.3 assigns it there, and this card is adjacent to it.
+>
+> The remaining five components ARE researched but deliberately **not carded**: their stations
+> are not built, and a card for an unbuilt station raises the bank's denominator with a `???`
+> the player has no route to (**INV-104**).
+
 *(named 2026-09-14. Working names, both retired: "The Computer Room", then "THE DEN".)*
 
 
@@ -324,8 +350,24 @@ registry row, and a `DOOR_ENTRY` map in `js/main.js`. Its own header states the 
 
 So:
 
+> **⚠️ SUPERSEDED BY WHAT SHIPPED (2026-09-14). The tree below is the PROPOSAL; read it as
+> intent, not as a map.** The built wing is flatter, because Phase 1 has two stations and no
+> vignettes, so the per-station modules and the shared `station.js` loop had nothing to hold
+> yet. What exists:
+>
+> ```
+> js/hardware/
+>   hub.js        # the room AND the station loop — boot prompt → wake → card. Both, for now.
+>   stations.js   # the registry: one row per machine, data only (no per-station modules yet)
+> ```
+>
+> Also renamed: the `js/main.js` screen case is **`'hardware'`**, not `'computerroom'`, and the
+> wing's cards live in `js/history-cards.js` `WING_CARDS` (the "optional `cards.js`" branch below
+> was not taken — one bank file, three banks). `words.js` waits on Phase C. Split `station.js`
+> out of `hub.js` when the third station lands, not before.
+
 ```
-js/computerroom/
+js/hardware/                       # ← PROPOSED shape, for when the wing grows
   hub.js          # the station chooser — sibling of speedway/hub.js + textworld/hub.js
   station.js      # THE shared loop: boot prompt → plaque → optional vignette → card.
                   # Every station shares it. The sacred contracts are re-honored HERE.
@@ -336,11 +378,11 @@ js/computerroom/
   cards.js        # (optional) the wing's card ids, if not held in js/history-cards.js
 ```
 
-`js/main.js` gains a `'computerroom'` screen case that is a byte-for-byte analogue of the
-`'speedway'` case, including the **lazy `import()`** — that pattern is not optional and its
-reasoning is already written down in `docs/features/speedway.md`: on a static host a missing
-`js/computerroom/*` in a *static* import would abort `main.js`'s module graph and brick all 25
-levels. Loaded on demand, a failure costs one warm "still being built" card that any key walks out
+`js/main.js` gains a `'hardware'` screen case *(specced as `'computerroom'`; renamed with the
+wing)* that is a byte-for-byte analogue of the `'speedway'` case, including the **lazy
+`import()`** — that pattern is not optional and its reasoning is already written down in
+`docs/features/speedway.md`: on a static host a missing `js/hardware/*` in a *static* import
+would abort `main.js`'s module graph and brick all 25 levels. Loaded on demand, a failure costs one warm "still being built" card that any key walks out
 of. The import specifiers stay static strings so `scripts/static-host-check.mjs` still crawls the
 subtree.
 
@@ -348,13 +390,19 @@ subtree.
 and `drawBeigePC` become `WING_CABINETS` rows keyed by station id. `HOME_MACHINES` itself is
 deleted in the same change — leaving it behind is how dead art accumulates a second time.
 
-**Wing name — recommendation: THE DEN.** "THE COMPUTER ROOM" is the working name and it has one
+**Wing name — ✅ RESOLVED: Trevor named it THE HARDWARE** (2026-09-14), which took neither
+option below. The reasoning survives because the *defect* it identifies is real and still
+binding on any future wing name — but note that **"THE DEN" remains correct as a ROOM name** and
+is live in `js/hardware/stations.js` (`room: 'THE DEN'`) for both Phase 1 machines. The wing is a
+SUBJECT; the rooms inside it are still rooms. Original recommendation, now historical:
+
+~~**Wing name — recommendation: THE DEN.**~~ "THE COMPUTER ROOM" is the working name and it has one
 real defect: **Act 2 is already called THE COMPUTER WING**, and a player walking the back wall
 would see `ACT 2 · THE COMPUTER WING` and `ACT 8 · THE COMPUTER ROOM` in the same navigation
 strip. That is a confusing pair for a child reading act names off a screen. **THE DEN** is where
 the family computer actually lived, it is warm, it is one syllable, it does not collide with THE
 COMPUTER WING, THE BASEMENT or THE COMMAND CENTER, and the door label can carry the subject:
-`THE DEN` / hint `HOME COMPUTERS`. Trevor's call — Q1.
+`THE DEN` / hint `HOME COMPUTERS`. ~~Trevor's call — Q1.~~ **Answered: THE HARDWARE / `HOW IT ALL WORKS`.**
 
 **Act number: 8.** The number is free: ROADMAP §2's "Act 8(?) — The Guild Hall" is marked
 **SUPERSEDED** and folded into this wing, which vacated it. The broader numbering question
@@ -430,7 +478,7 @@ honest history: the oldest machine had the hardest incantation.
 
 ### 5.2 The loop — one module, every station, and the verb is the boot line
 
-`js/computerroom/station.js` runs four phases. A station supplies only a data row, a
+`js/hardware/station.js` *(shipped: this loop lives in `hub.js` until a third station earns the split)* runs four phases. A station supplies only a data row, a
 `drawMachine()` and a `drawScreen()`.
 
 **Phase A — BOOT (typed).** The machine is dark: no power LED, a single `▮`. The boot line
@@ -967,7 +1015,7 @@ cards" to "any card without a numeric `level`." Neither rule weakens.
   *"one game per cabinet, no reuse"*; this is the first time that rule has been testable rather
   than checked by hand.)
 - **INV-115** (L0/L1) **The wing is lazily imported, network-free, and cannot brick the game.**
-  `js/main.js` reaches `js/computerroom/*` only through a dynamic `import()` with static string
+  `js/main.js` reaches `js/hardware/*` only through a dynamic `import()` with static string
   specifiers; a failed import costs one warm "still being built" card that any key walks out of,
   and all 25 levels remain playable; every module in the subtree is reachable by
   `scripts/static-host-check.mjs` in **both** host shapes; and no code path in the wing issues any

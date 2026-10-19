@@ -5,6 +5,38 @@ product-manager agent. Evidence base: `research/in-browser-llm.md` (every techni
 claim there is live-cited with a 2026-09-11 fetch date). No game code was written for
 this spec — research + spec only, by Trevor's explicit scope call.*
 
+> ## ⚠️ FACT CORRECTION — 2026-09-18. The hardware bar in §3 was wrong.
+>
+> *Trevor, reading the requirements line in this spec: "Browser LLM — do we really need
+> that much ram to be able to use the built in chrome Gemini nano model insane." He was
+> right to push, and the answer is **no**.*
+>
+> **Chrome requires >4 GB VRAM — OR — 16 GB RAM + 4 cores. It is a disjunction. This spec
+> recorded it as a conjunction ("**>4 GB VRAM**, 16 GB RAM, 4+ cores, and **≥22 GB free
+> disk**"), which is not what the page says and never was.** Chrome's verbatim text is
+> *"**GPU or CPU**: Built-in models can run with GPU or CPU."* An ordinary 16 GB
+> integrated-graphics laptop — or a 16 GB Apple-silicon Mac — clears the bar on the CPU
+> clause alone, with no discrete GPU. The 22 GB figure is **free-disk headroom for
+> provisioning**, not memory and not the model's size (Chrome: *"Built-in models should
+> be significantly smaller"*).
+>
+> **This was our transcription error, not a relaxation by Google** — the source pages
+> were last updated 2026-08-26 and 2025-05-20, both *before* the 2026-09-11 research
+> pass. Re-verified 2026-09-18 across three Chrome pages that carry the block word for
+> word. Everything else in §3 re-verified **unchanged**: Chrome 148 web-stable, the four
+> availability states, the platform exclusions, Mozilla **negative**, WebKit **oppose**,
+> no lighter model tier or cheaper task API. Full evidence and citations:
+> `research/in-browser-llm.md` §Requirements, §Download-time vs run-time, §Is there a
+> lighter path.
+>
+> **What this does and does not change.** It does **not** change §1's recommendation,
+> which rests on opportunity cost (the public build is 60 commits behind; no player has
+> seen this year's work) and on §4.2's chat verdict, neither of which is affected by a
+> hardware figure. It **does** materially change the §8 "almost nobody qualifies" risk —
+> the addressable population is larger than this spec assumed, probably much larger — so
+> **if the decision is ever revisited, it must be revisited on the corrected number.**
+> §3 and §8 are corrected below; §1 is left exactly as written.
+
 ---
 
 ## 1. Recommendation
@@ -74,16 +106,35 @@ Facts driving the table (all cited in `research/in-browser-llm.md`):
   nothing. Measured against the audience that can actually play — desktop, plus
   tablet-with-keyboard, which the Prompt API's Chromebook-Plus support partially covers —
   reach is materially better than the traffic figure implies.
-  **The real gate is the hardware conjunction WITHIN desktop** (next bullet), and nobody has
-  measured it for this audience. That is precisely what Phase 0 exists to answer, and it is
-  the only number that should drive the build/don't-build decision.
-- Hardware gate: **>4 GB VRAM**, 16 GB RAM, 4+ cores, and **≥22 GB free disk** on the
-  Chrome profile volume; the model is deleted if free space later drops under 10 GB.
+  ~~**The real gate is the hardware conjunction WITHIN desktop**~~ **[corrected
+  2026-09-18: there is no hardware *conjunction*; it is a disjunction, and it is far more
+  permissive than this spec assumed — see the banner. The real gate within desktop is
+  BROWSER SHARE (Chrome/Chromium only, indefinitely), with hardware a secondary filter.]**
+  Nobody has measured either for this audience. That is precisely what Phase 0 exists to
+  answer, and it is the only number that should drive the build/don't-build decision.
+- Hardware gate **[corrected 2026-09-18 — see the banner above]**: Chrome's text is
+  *"**GPU or CPU**: Built-in models can run with GPU or CPU."* — **either** *"strictly
+  more than 4 GB of VRAM"* **OR** *"16 GB of RAM or more and 4 CPU cores or more."* Plus
+  **≥22 GB free disk** on the Chrome profile volume (a provisioning headroom rule, not a
+  memory or model-size figure); the model is deleted if free space later drops under
+  10 GB. Audio input would require a GPU — text generation, our only use case, does not.
+  Chrome's user-facing help page states the same gate far more loosely still: *"Minimum
+  free disk space: 20GB (approximate). Sufficient device performance."*
+- **No lighter path exists within the API family [verified 2026-09-18].** Summarizer,
+  Writer, Rewriter and Proofreader publish the *identical* requirements block because
+  they share one foundation model; there is no smaller model tier and no quota-limited
+  mode. Only Translator and Language Detector use lower-bar *expert* models, and they
+  cannot generate vocabulary.
 - The model is **~4 GB** (The Register: ~4.27 GB for desktop v3Nano). Chrome's own docs
   decline to state a number.
 - Users and admins can turn it off entirely (Settings → System → On-device AI;
   `GenAILocalFoundationalModelSettings`), which deletes the files and blocks re-download.
 - **Mozilla is negative and WebKit opposes.** Firefox and Safari are not coming.
+  **Re-verified 2026-09-18, both unchanged** — `mozilla/standards-positions#1213`
+  (`position: negative`, last updated 2026-05-09) and `WebKit/standards-positions#495`
+  (`position: oppose`, last updated 2026-05-27); MDN still shows "Limited availability"
+  and "opposed by two browser vendor(s)". A Prompt-API design remains Chrome-desktop-only
+  indefinitely — **this is now the binding constraint on reach, not the hardware.**
 - WebGPU itself is much broader (caniuse: 87.35%), but a page-provided model still means
   *we* hand the player a several-hundred-MB download; and **GitHub Pages cannot set the
   COEP/COOP headers** wllama needs for multi-threading.
@@ -272,7 +323,7 @@ Additional notes:
 | Risk | Severity | Mitigation | Residual |
 |---|---|---|---|
 | Content quality is worse than the curated static pool (a 4 GB nano model writing early-reader words) | Medium | Validation drops anything out of charset/length; static pool always present; measure yield before shipping (wordgen's yield story on L25 went 7% → 67% only after measurement) | Some sessions get fewer usable generated words than the local build. Acceptable — it is purely additive |
-| Almost nobody qualifies, so the work buys nothing | **High** | Phase 0 measures `availability()` in the real audience before any generation code ships | We may correctly decide to stop after phase 0 |
+| Almost nobody qualifies, so the work buys nothing | ~~**High**~~ → **Medium** *(downgraded 2026-09-18)* | Phase 0 measures `availability()` in the real audience before any generation code ships. The corrected disjunction admits every 16 GB desktop/laptop, integrated graphics included — the qualifying population is materially larger than this spec assumed | Still unmeasured, and now gated mainly on **Chrome share** rather than on hardware. We may still correctly decide to stop after phase 0 |
 | A future Chrome change (API rename, policy gate, removal) breaks the path | Medium | Everything behind one provider module; a failure resolves to static | A silent regression that only static-host players see. Covered by an invariant test with the provider forced unavailable |
 | The Prohibited Uses Policy / terms coupling turns out to have real obligations for a children's game | Medium | `[unverified]` in the research doc — **confirm before shipping** | Trevor's call; may be a reason not to ship at all |
 | A curious kid opens devtools and edits the prompt | Low (wordgen) | Structural charset gate means the worst case is a nonsense word | Real but bounded. This same risk is **not** bounded for chat, which is why chat is out |
@@ -372,7 +423,9 @@ plus the design source in each test header.
 
 ---
 
-*Evidence: `research/in-browser-llm.md` (live-cited 2026-09-11). Contracts:
+*Evidence: `research/in-browser-llm.md` (live-cited 2026-09-11; hardware requirements,
+API family and vendor standards positions re-verified against primary sources
+**2026-09-18** — see the correction banner at the top). Contracts:
 `.claude/rules/security.md` rules 6–8; `.claude/rules/product.md` §One Rule;
 `docs/testing/STRATEGY.md` §5 INV-64/66/67/68. Code read for this spec:
 `js/wordgen.js`, `js/chat.js`, `js/keyboard-story-gen.js`, `js/keyboard-story.js`,

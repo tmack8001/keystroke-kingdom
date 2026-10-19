@@ -59,7 +59,9 @@ platform until a deliberate decision says otherwise (see Future Considerations).
   css/                  # base / screens / levels (per-level palettes)
   scripts/              # kk-playwright.js (shared nav helper), record-playthrough.js,
                          # dev.sh, *-hook.sh (docs-currency/journal/wiki-context/wiki-freshness/theme-authoring)
-  docs/                 # ROADMAP.md, screenshots/ (+capture-all.js), a11y/ (+audit.js),
+  docs/                 # ROADMAP.md (LIVE backlog, open work only) + roadmap-history.md
+                        #   (append-only record — see the two-file contract at the top of each),
+                        # screenshots/ (+capture-all.js), a11y/ (+audit.js),
                          # testing/ (STRATEGY.md doctrine + INV catalog, FINDINGS.md ledger)
   tests/                # behavior-first suite: static/ unit/ integration/ helpers/
                          # (node --test, zero deps; make test-fast / make test)

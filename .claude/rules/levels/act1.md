@@ -46,6 +46,7 @@ design rules) moved to [`onboarding.md`](onboarding.md) on 2026-07-12.*
 - **Palette:** Black, yellow, blue, red/pink/cyan/orange (ghost colors)
 - **Music:** Waka-waka energy — playful, looping. Lyria prompt: *"bright bubbly chiptune loop, chomping rhythm, four-color fun — joyful and slightly frantic"*
 - **Content:** Still pattern drills — no real words yet (J F D K S L has no vowel, so nothing is spellable). But it's the fullest pattern level so far: both ring fingers now in play, six keys across both hands in call-and-response rhythm.
+- **Cards are a SEPARATE constraint from words** *(added 2026-09-15)*: the sentence above is about the WORD bank — what a child READS — and it is still true. It was being cited to conclude Levels 1–3 could hold no history CARD either, which does not follow: a card's moment word need only be **typeable and citable**, never an English word. The bank had already accepted `\o/`, `386` and `56k`. Levels 1–3 now carry `jf` (the bumps on F and J), `jdk` (Java) and `ls` (the Unix list command) — three tokens, no vowels, no real words. See `research/computing-history-moments.md` §SUPERSEDED.
 - **Narrative beat:** The arcade floor gets a little brighter. The signs on the walls are still just shapes — but not for long.
 
 ---

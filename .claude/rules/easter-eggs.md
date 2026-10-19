@@ -119,8 +119,30 @@ The Command Center's terminal always reads `12/31/99 11:59 PM` in its bottom-rig
 corner. Frozen — it never ticks, never animates, is never explained, and nothing in the game
 ever mentions it. For the parents who remember.
 *(`research/wiki/moments/y2k-bug.md`; the L19 `y2k` history card is the same moment told out
-loud. Note the wiki renders it 24-hour as `12/31/99 23:59`; the 12-hour form here is the
-era-correct format for a US late-90s monitor.)*
+loud.)*
+
+⚠️ **The 12-hour form is now the SOURCED one — do not "fix" it to `23:59`** *(researched
+2026-09-18; the wiki was corrected to match, not the other way round)*. The note that used to sit
+here — *"era-correct for a US late-90s monitor"* — was written by the builder who shipped the egg,
+ratifying its own choice. The evidence says the same thing for a better reason:
+
+**The clock cycle was a property of the LOCALE, never of the screen.** Microsoft's own `time`
+reference: *"Depending on the Country/Region selected, time is displayed in the 12-hour format or
+the 24-hour format."* So the DOS/Windows command line had **no 24-hour convention of its own** — it
+inherited the OS locale like everything else. Windows names the 12-hour case explicitly
+(`LOCALE_ITIME` `0` = *"AM/PM 12-hour format"*), and Unicode CLDR places the US in the 12-hour
+(`preferred="h"`) group.
+
+**The argument that actually settles it is internal consistency:** `12/31/99` is already a US-format
+date, and **date order and clock cycle live in ONE locale record** on both platforms — Microsoft's
+single `country` setting, Apple's `'itl0'` struct holding `dateOrder` and `timeCycle` together. So
+`12/31/99 23:59` is the one combination a machine of that era would never produce by default.
+
+⚠️ **The honest counter-case, recorded rather than buried:** a real *Unix* console tailing logs would
+read `23:59` — RFC 3164 documents syslog's hour as *"a 24-hour format… between 00 and 23."* The
+24-hour convention belongs to Unix, not to "terminals" generally. **If Level 20's terminal is ever
+re-framed as a Unix box rather than the room's PC-lineage console, this recommendation flips.**
+Evidence and limits: `research/wiki/tech/time-display-conventions-1990s.md`.
 
 ### The dial-up handshake *(js/audio.js `modemChirp` + js/mystery.js — built 2026-09-11)*
 The first time the Mystery Cabinet swings aside and the Computer Wing is revealed, half a

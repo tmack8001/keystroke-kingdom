@@ -24,7 +24,7 @@ Cross-act tables live in [`../levels.md`](../levels.md).*
 - **Graphic quality:** 16 colors, platform layering, character personality in sprites. Donkey Kong's expressive shrug and Mario's death animation were genuinely new things in 1981 — games started having characters, not just objects.
 - **Palette:** Brick red, tan girders, warm orange barrel glow, blue sky
 - **Music:** Jaunty, syncopated — rolling percussion. Lyria prompt: *"playful arcade chiptune, syncopated rhythm, barrel-rolling energy, bright and mischievous — a game with a personality"*
-- **Words unlocked:** idea, aide, side, hide, said, sail, fail, hail, like, hike, file, skill, lake, fake, deal, feel, heal, seal, lead, head, dead, field, slide
+- **Words unlocked:** idea, aide, side, hide, said, sail, fail, hail, like, hike, file, skill, lake, fake, deal, feel, heal, seal, lead, head, field, slide *(⚠️ `dead` removed 2026-09-15 — it is on the `js/word-blocklist.json` safety floor and was shipping as Level 6 lesson content; Trevor: "Dead, drug and gun47 aren't curriculum content." Enforced now by INV-105.)*
 - **Narrative beat:** "You stepped through the door. The machines here are different — you can touch them."
 
 ---
