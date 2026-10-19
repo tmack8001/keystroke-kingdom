@@ -370,12 +370,108 @@
   margin-bottom: 10px;
 }
 
-.collection-count {
-  font-size: 11px;
+/* The shelves scroll as ONE column (not one scroller per shelf), so the whole
+   collection reads as a single wall you walk down. The screen is a flex column,
+   so the wrap takes the leftover height — `min-height: 0` is load-bearing: a
+   flex item defaults to min-height:auto and would refuse to shrink, pushing the
+   hint line off the bottom instead of scrolling. */
+.collection-scroll-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 1160px;
+  margin-bottom: 14px;
+}
+
+.collection-shelves {
+  height: 100%;
+  overflow-y: auto;
+  /* Top padding so the first shelf heading is not jammed against the title, and
+     bottom padding so the last row clears the MORE BELOW band. */
+  padding: 6px 14px 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  scroll-behavior: smooth;
+}
+
+/* A retro scrollbar where the platform will draw one. ⚠️ It is a BONUS, never the
+   affordance: measured in the real page, `offsetWidth - clientWidth` on this
+   scroller is 0 — macOS Chromium uses an overlay scrollbar that is invisible
+   until you already know to scroll. The .collection-more markers do the work.
+   Do NOT add `scrollbar-width`/`scrollbar-color`: in current Chromium the
+   standard properties take precedence and switch these rules off entirely. */
+.collection-shelves::-webkit-scrollbar { width: 12px; }
+.collection-shelves::-webkit-scrollbar-track {
+  background: rgba(255, 176, 0, 0.08);
+  border-left: 1px solid rgba(255, 176, 0, 0.25);
+}
+.collection-shelves::-webkit-scrollbar-thumb {
+  background: var(--crt-amber-dim);
+  border: 1px solid var(--crt-amber);
+  box-shadow: 0 0 6px rgba(255, 176, 0, 0.5);
+}
+
+.collection-shelf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 2px solid var(--crt-amber-dim);
+  padding-bottom: 7px;
+  margin-bottom: 12px;
+}
+
+.collection-shelf-name {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 8px rgba(255, 176, 0, 0.5);
+  text-align: left;
+}
+
+/* Every shelf counts ONLY its own bank. There is no total on this screen. */
+.collection-shelf-count {
+  font-size: 9px;
+  letter-spacing: 2px;
   color: var(--crt-green);
   text-shadow: 0 0 8px var(--crt-green);
+  white-space: nowrap;
+}
+
+/* The bottom fade + "MORE BELOW" marker, shown only while there is more below.
+   Without it the grid slices a row at the container edge and reads as the end of
+   the collection — the child simply never sees the shelves underneath. */
+.collection-more {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 62px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+  pointer-events: none;
+  /* Opaque enough at the bottom that the sliced row underneath reads as "it
+     continues", not as a rendering fault. Steady, never blinking — a blinking
+     marker is also invisible half the time, including in a screenshot. */
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0) 0%, rgba(10, 10, 10, 0.86) 55%, rgba(10, 10, 10, 0.99) 100%);
+  font-size: 9px;
   letter-spacing: 3px;
-  margin-bottom: 22px;
+  color: var(--crt-amber);
+  text-shadow: 0 0 10px var(--crt-amber), 0 0 2px #000;
+}
+
+/* The same band, mirrored, at the top edge. */
+.collection-more-up {
+  bottom: auto;
+  top: 0;
+  align-items: flex-start;
+  padding-bottom: 0;
+  padding-top: 4px;
+  background: linear-gradient(to top, rgba(10, 10, 10, 0) 0%, rgba(10, 10, 10, 0.86) 55%, rgba(10, 10, 10, 0.99) 100%);
 }
 
 .collection-grid {
@@ -383,10 +479,6 @@
   grid-template-columns: repeat(auto-fill, 104px);
   gap: 10px;
   justify-content: center;
-  max-width: 92%;
-  max-height: 60vh;
-  overflow-y: auto;
-  margin-bottom: 18px;
 }
 
 .collection-cell {

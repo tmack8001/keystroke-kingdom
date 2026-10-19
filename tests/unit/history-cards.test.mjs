@@ -261,12 +261,111 @@ describe('legacyLevelToCardId — migration helper', () => {
   });
 });
 
+describe('the replay payout — a level with cards should have more than one', () => {
+  // Enforces: docs/ROADMAP.md "Five levels have exactly ONE card, so their rotation never
+  // rotates" (measured 2026-09-14, swept 2026-09-15) + product.md §History Cards, the
+  // Skulltula-style collect-them-all loop: "a level with N cards takes ~N visits to fully
+  // collect… a deliberate completionist hook (Trevor: the kids love the cards, so reward
+  // replay)". A pool of one cannot reward replay — pickFromPool returns the same card
+  // forever, so the second visit pays nothing.
+  //
+  // This is a RATCHET, not a fixed expectation: the allowlist may only ever shrink. If a
+  // future batch cards Level 2, delete it from the list. If this test starts failing for a
+  // level NOT on the list, a card was removed or a new level was added with only one.
+  //
+  // Levels 1-3 are on it for a STRUCTURAL reason, not an unfinished one: a card is found by
+  // typing its word, and their entire cumulative alphabets are `fj`, `fjdk` and `fjdksl`.
+  // There is very little expressible in two, four or six letters — `jf`, `jdk` and `ls` are
+  // already three of the few citable tokens that exist. Do not treat their entries here as
+  // a TODO without first checking that a fourth token is even possible.
+  const STRUCTURALLY_SINGLE = new Set([1, 2, 3]);
+
+  test('every level outside the allowlist has a pool of at least two', async () => {
+    const { cardsForLevel } = await import('../../js/history-cards.js');
+    const thin = [];
+    for (let l = 1; l <= 25; l += 1) {
+      const n = cardsForLevel(l).length;
+      if (n < 2 && !STRUCTURALLY_SINGLE.has(l)) thin.push(`L${l} has ${n}`);
+    }
+    assert.deepEqual(thin, [],
+      'these levels pay nothing new on replay: ' + thin.join(', ') +
+      ' — either card them, or add them to STRUCTURALLY_SINGLE with the reason');
+  });
+
+  test('the allowlist has not silently grown — every entry on it is genuinely thin', async () => {
+    const { cardsForLevel } = await import('../../js/history-cards.js');
+    // The ratchet's other direction. An allowlist entry for a level that HAS two cards is
+    // stale, and leaving it would hide the next regression on that level.
+    const stale = [...STRUCTURALLY_SINGLE].filter(l => cardsForLevel(l).length >= 2);
+    assert.deepEqual(stale, [],
+      `these levels no longer need the allowlist: ${stale.join(', ')} — remove them from STRUCTURALLY_SINGLE`);
+  });
+
+  test('every level has at least one card — the collect loop exists everywhere', async () => {
+    const { cardsForLevel } = await import('../../js/history-cards.js');
+    const bare = [];
+    for (let l = 1; l <= 25; l += 1) if (cardsForLevel(l).length === 0) bare.push(l);
+    assert.deepEqual(bare, [],
+      `levels ${bare.join(', ')} hide no card at all, so replaying them is unrewarded`);
+  });
+});
+
 describe('INV-58 — pickGuaranteedCard: exactly one guaranteed card per play, rotation contract', () => {
   test('returns null for a level with no card pool', async () => {
-    const { pickGuaranteedCard } = await import('../../js/history-cards.js');
-    // Levels 1-3 have no vowel and (per product.md) no cards live there either —
-    // confirm at least one such bare level exists and returns null.
-    assert.equal(pickGuaranteedCard(1, [], 0), null);
+    const { cardsForLevel, pickGuaranteedCard } = await import('../../js/history-cards.js');
+    // ⚠️ REWRITTEN 2026-09-15. This used to assert `pickGuaranteedCard(1, ...) === null`
+    // with the comment "Levels 1-3 have no vowel and (per product.md) no cards live there
+    // either". The second half of that was never a design clause and product.md does not
+    // say it — product.md's Word Bank Principle says no real WORDS before Level 4, which
+    // is a rule about content, not about cards. The empty Levels 1-3 were a CONSEQUENCE
+    // of the spelling constraint (INV-56 attaches a card to the earliest level that can
+    // spell its word) and docs/ROADMAP.md files that consequence as a DEFECT: a
+    // five-year-old replays Levels 1-3 more than anything else in the game and the
+    // collect loop did not exist there. Level 1 now holds `jf` — a PATTERN token, not a
+    // real word, so the Word Bank Principle is untouched.
+    //
+    // The clause worth pinning was always "an empty pool yields null, never a throw", so
+    // it is now asserted over whichever levels are genuinely bare rather than over a
+    // hard-coded 1.
+    //
+    // ⚠️ REWRITTEN AGAIN 2026-09-15, and the second rewrite is the lesson of the first.
+    // The previous version asserted `bare.length > 0` as a fixture-sanity check — i.e.
+    // it assumed SOME curriculum level would always be uncarded. Later the same day the
+    // replay-payout batch carded every remaining level and that assumption became false,
+    // so a test guarding "an empty pool is safe" failed because nothing was empty. Twice
+    // now this clause has been pinned to whichever level HAPPENED to be empty, and twice
+    // the vehicle has rotted out from under it (journal L48).
+    //
+    // A level number that is not a level cannot ever gain a card, so it is the vehicle
+    // that cannot rot. Any genuinely bare curriculum level is still checked when one
+    // exists, but nothing depends on one existing.
+    assert.equal(pickGuaranteedCard(999, [], 0), null,
+      'a level that does not exist has no pool and must yield null rather than throwing');
+    [1, 2, 3, 4, 5].filter(l => cardsForLevel(l).length === 0)
+      .forEach(l => assert.equal(pickGuaranteedCard(l, [], 0), null,
+        `level ${l} has no pool and must yield null rather than throwing`));
+  });
+
+  test('LEVELS 1-3 ARE NO LONGER ALL EMPTY — the beginner has a collect loop', async () => {
+    // Enforces: docs/ROADMAP.md "Levels 1-3 have NO history cards at all" (measured
+    // 2026-09-14, fixed 2026-09-15). A beginner replays these levels more than any other
+    // and used to be paid nothing for it.
+    const { cardsForLevel } = await import('../../js/history-cards.js');
+    const early = [1, 2, 3].reduce((n, l) => n + cardsForLevel(l).length, 0);
+    assert.ok(early > 0, 'at least one of Levels 1-3 must carry a card');
+  });
+
+  test('a card on a wordless level uses a PATTERN token, never a real word', async () => {
+    // The guard the ROADMAP asked for in the same breath as the fix: "must not smuggle
+    // real words into levels that are deliberately wordless" (product.md Word Bank
+    // Principle — J F D K S L has no vowel, so nothing there is spellable).
+    const { cardsForLevel } = await import('../../js/history-cards.js');
+    const VOWELS = /[aeiou]/;
+    [1, 2, 3].forEach(l => cardsForLevel(l).forEach(c => {
+      assert.ok(!VOWELS.test(c.word.toLowerCase()),
+        `level ${l}'s card word "${c.word}" contains a vowel — Levels 1-3 are deliberately ` +
+        'wordless and a real word there breaks the Word Bank Principle');
+    }));
   });
 
   test('returns exactly one card object (never an array/pool) for a level with a pool', async () => {

@@ -25,6 +25,8 @@ const HEALTH_URL = 'api/wordgen/health';
 const CHAT_URL = 'api/chat';
 
 const HEALTH_TIMEOUT_MS = 800;
+import { hasBlockedWord } from './word-blocklist.js';
+
 const CHAT_TIMEOUT_MS = 25000; // a friend's reply is worth a short wait; still bounded
 
 // chatHealthy resolves true only when the server reports Ollama reachable AND the
@@ -81,6 +83,25 @@ export async function sendChat(persona, messages) {
   }
   const reply = body.reply.trim();
   if (!reply) return { ok: false };
+
+  // ⚠️ THE PARENT'S OWN BLOCKED WORDS, ENFORCED HERE AND ONLY HERE.
+  //
+  // The server already word-checks its reply against the shared FLOOR
+  // (`chatOutputOK`, main.go). It cannot check the parent's custom list, and that is
+  // deliberate rather than an oversight: those words are `settings.blockedWords` and
+  // security.md rule 6 keeps them **100% local — never sent to any endpoint**. A
+  // parent's filter words are their business, not the model's.
+  //
+  // So the client is the only place this check can happen, and before 2026-09-16 it
+  // did not happen at all — which made the settings screen's promise ("WORDS YOU ADD
+  // HERE NEVER APPEAR IN THE GAME") false for the one surface most able to say
+  // something unexpected: an LLM writing free text to a child.
+  //
+  // A hit is treated as the documented model-unavailable signal rather than an error,
+  // so the friend simply takes a nap — the same graceful path an offline box already
+  // gets. Never a scary message, never a stall (the One Rule).
+  if (hasBlockedWord(reply)) return { ok: false };
+
   return { ok: true, reply };
 }
 

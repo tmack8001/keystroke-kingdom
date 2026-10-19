@@ -23,6 +23,48 @@
 // so slots.js can migrate a pre-slots kk-cards array (level numbers) to ids.
 
 export const HISTORY_CARDS = [
+  // ── THE FIRST CARD IN THE GAME, and the reason it exists ──────────────────
+  //
+  // Levels 1-3 had NO cards at all, measured 2026-09-14. Not an oversight — a card is
+  // found by TYPING its word, and `J F D K S L` has no vowel, so nothing was spellable
+  // until A arrives at Level 4 (the Word Bank Principle). The distribution was
+  // `0 0 0 2 2 | 3 2 6 4 2 | ...`: Act 1 had 4 cards across 5 levels and Act 3 had 22,
+  // while a five-year-old replays Levels 1-3 more than anything else in the game. The
+  // collect loop simply did not exist where a beginner actually spends their time.
+  //
+  // The fix is the one the ROADMAP proposed: a moment word that is a PATTERN TOKEN
+  // rather than a real word, so nothing is smuggled into levels that are deliberately
+  // wordless. `jf` is already Level 1's own drill (`.claude/rules/levels/act1.md`:
+  // "j, f, jf, fj"), and the bank has precedent for non-word tokens — `\o/`, `386`,
+  // `56k`, `1969`, `` `hack` ``.
+  //
+  // ⚠️ The YEAR is 'UNKNOWN' and that is the sourced answer, not a placeholder. Two
+  // articles written specifically about the F/J bumps give no origin; the patent usually
+  // credited (US 6,667,697 B2) turns out to claim something else entirely and its own
+  // prior-art section describes the bumps as already existing; and ISO/IEC 9995 could not
+  // be confirmed to mention them. The bank has precedent for a non-numeric year
+  // ('1970s', 'LATE 1980s'). Saying UNKNOWN is the honest card; picking a date would be
+  // the fluent error. Research: research/wiki/tech/home-row-bumps.md.
+  { id: 'home-row-bumps', level: 1, word: 'jf', title: 'THE BUMPS ON F AND J', year: 'UNKNOWN',
+    fact: 'Feel the top of the F key and the J key. There is a tiny bump on each one. That is how your two pointer fingers find their way home without ever looking down.' },
+
+  // L2 and L3, completing the beginner fix begun by `jf` above (2026-09-15).
+  //
+  // ⚠️ A RULE THAT WAS BEING MISAPPLIED, and is worth understanding before adding
+  // another early card. `research/computing-history-moments.md` used to say Levels 1-3
+  // "could not receive a card" because *"no English word, name, or common initialism is
+  // spellable without a vowel from this letter set"*. The vowel rule is real — but it
+  // governs the **WORD bank** (what a child READS, product.md §Word Bank Principle) and
+  // had been silently applied to the **CARD bank** (what a child TYPES). Those are
+  // different constraints: a card token need only be typeable and citable, never an
+  // English word. The bank had already accepted `\o/`, `386` and `56k` when that
+  // sentence was written. It is now falsified three times over — and twice by
+  // initialisms, the exact category it ruled out.
+  { id: 'java-jdk', level: 2, word: 'jdk', title: 'JAVA', year: '1995',
+    fact: 'A computer language was almost called Oak. That name was already taken, so the team picked a new one in a room full of coffee cups — and called it Java.' },
+  { id: 'ls-command', level: 3, word: 'ls', title: 'LIST', year: '1971',
+    fact: 'To ask a computer what is inside a folder you type two letters: l, s. It means list. People have been typing exactly those two letters since 1971.' },
+
   { id: 'ada-lovelace', level: 4, legacyLevel: 4, word: 'ada', title: 'ADA LOVELACE', year: '1843',
     fact: "Ada Lovelace wrote the very first computer program — more than 100 years before computers existed. You just typed the first programmer's name." },
   { id: 'hal-9000', level: 5, legacyLevel: 5, word: 'hal', title: 'HAL 9000', year: '1968',
@@ -176,6 +218,120 @@ export const HISTORY_CARDS = [
   { id: 'stickybear-typing', level: 13, word: 'stickybear', title: 'STICKYBEAR TYPING', year: '1985',
     fact: 'A bear taught children to type on a blue screen in 1985. It drew a whole keyboard along the bottom and lit up the next key to press — the same idea as the keyboard at the bottom of yours.' },
 
+  // ── THE REPLAY-PAYOUT BATCH (2026-09-15) — five levels that had a pool of ONE ──
+  //
+  // L16, L19, L21, L22 and L23 each held exactly one card, so `pickFromPool` returned
+  // the same card forever and those cabinets paid nothing on any replay after the first.
+  //
+  // ⚠️ WHY THOSE LEVELS WERE SPARSE, and the rule for adding a sixth: a card attaches to
+  // the EARLIEST level whose keys can spell its word (INV-56), so a card only LANDS here
+  // if its word CONTAINS one of the level's own new characters. `6502` looks like a
+  // perfect Level 16 word and is not — `0` and `2` do not unlock until Levels 20 and 19,
+  // so it would attach at Level 20. Check the word character-by-character against
+  // `js/levels.js`, never by eye.
+  { id: 'ne555-timer', level: 16, word: '555', title: 'THE 555 CHIP', year: '1971',
+    fact: 'A chip smaller than a fingernail, made since 1971, that does one job: count time. It blinks the lights and makes the beeps in toys, kitchens, and spacecraft.' },
+  { id: 'windows-95', level: 19, word: 'win95', title: 'WINDOWS 95', year: '1995',
+    fact: 'Windows 95 is where the Start button came from. Before it, there was no one corner of the screen where everything on your computer began.' },
+  // ⚠️ NOT the bank's first pre-computing card, despite looking like one — `asdf`
+  // (A-S-D-F, 1868) already predates computing by eighty years. Both are cards about the
+  // KEYS, which is this game's actual subject, and Level 21's own content is equations
+  // (`2-1=1`). Sourced to the National Library of Wales and MacTutor.
+  { id: 'equals-sign', level: 21, word: '1=1', title: 'THE EQUALS SIGN', year: '1557',
+    fact: 'Before 1557 you had to write out "is equal to" every single time. A Welsh teacher got tired of it and drew two twin lines the same length instead. That is the = key.' },
+  // ⚠️ `'\\n'` — an ESCAPED backslash. Writing `'\n'` here is a literal newline and
+  // silently produces a broken pattern. Same form as the ASCII card's `'\\o/'`.
+  { id: 'newline-crlf', level: 22, word: '\\n', title: 'THE NEW LINE', year: '1963',
+    fact: 'On a typewriter, one push of the lever sent the paper back to the left AND down one line. Computers split that into two moves: come back, then go down.' },
+  // ⚠️ Deliberately uses the APOSTROPHE — Level 23 teaches two keys and its existing
+  // card (`hack`) only ever exercises the backtick, so the pair now covers both.
+  // ⚠️ "mid-1980s", not 1986: the year is search-summary only. The count is from the
+  // publisher's own live index (it read 1510). Named animals were dropped — only the
+  // slender loris appears in fetched text.
+  { id: 'oreilly-animals', level: 23, word: "o'reilly", title: 'THE ANIMAL BOOKS', year: 'MID-1980s',
+    fact: 'A designer thought computer words like sed and awk sounded like strange creatures — so the covers got old animal drawings instead. Now there are over 1,500 animals.' },
+
+  // ── THE MATH-vs-CODE BATCH (2026-09-15) — every key means two things ────────
+  //
+  // Trevor, on seeing the freshly-shipped `1=1` card: *"1=1 in math would be equality —
+  // in engineering yes this is an assignment which isn't right"*, then the idea that turns
+  // that wrinkle into the feature: **"Maybe each card could help decipher these
+  // differences — as we have each one discoverable."**
+  //
+  // A card is found ONE AT A TIME by typing its word, so each card decodes one idea and
+  // the collection teaches the differences cumulatively. `1=1` and `1==1` are the first
+  // PAIR and they rotate against each other at Level 21: neither card carries both
+  // meanings, the collection does. ⚠️ `1=1` is deliberately UNCHANGED — it is correct
+  // about mathematics, and the pair is the teaching device.
+  //
+  // THE FIND THAT MAKES THE PAIR WORK, and it is not about computers at all: in 1801
+  // Gauss introduced `≡` for congruence because Legendre was already using plain `=` for
+  // it — in his own words, *"to prevent any ambiguity."* The identical collision, and the
+  // identical fix (invent a near-twin sign), 171 years before B gave `==` its job. That is
+  // why `modulo` is in this batch and why the two pages are cross-linked.
+  { id: 'equality-vs-assignment', level: 21, word: '1==1', title: 'EQUALS, TWICE', year: '1972',
+    fact: "In math, = means 'these are the same.' In code it often means 'put this in here.' So coders needed a second sign just to ask the question: == means 'are these the same?'" },
+
+  // ── …and the discrete-maths half of the same direction ──────────────────────
+  // Concepts rather than symbols, landing wherever their letters first close. Each has a
+  // person, a date and an institutional record, because an abstract definition makes a
+  // poor card and a story makes a good one.
+  //
+  // ⚠️ `edge` is titled COUNT THE EDGES, not "Euler's formula", on purpose: Euler did not
+  // discover it (Maurolico wrote it for some shapes in 1537, Descartes found a version
+  // around 1630), so a title naming him beside a 1750 date would overstate exactly the way
+  // journal F7 is about. The fact names nobody and the claim is safe.
+  { id: 'eulers-polyhedron-formula', level: 6, word: 'edge', title: 'COUNT THE EDGES', year: '1750',
+    fact: 'Find a box. Count the corners, count the edges, count the flat sides. Now do corners minus edges plus sides: 8 - 12 + 6 = 2. You always get 2. Try it on anything.' },
+  { id: 'odd-and-even', level: 9, word: 'odd', title: 'ODD AND EVEN', year: 'c. 300 BC',
+    fact: 'Share a pile of buttons fairly between two people. Nothing left over means the number is even. One left over means it is odd. Euclid wrote that down about 2,300 years ago.' },
+  // ⚠️ 1735, NOT 1736. Presented to the St Petersburg Academy 26 August 1735 and published
+  // in 1741; the familiar "1736" is the proceedings VOLUME year, not the work's date.
+  { id: 'seven-bridges', level: 10, word: 'graph', title: 'SEVEN BRIDGES', year: '1735',
+    fact: 'A town had seven bridges, and everyone wondered if you could cross every one exactly once. In 1735 Leonhard Euler proved you cannot — by turning the whole town into dots and lines.' },
+  // ⚠️ "never run out", not "infinite": Euclid IX.20 reads "Prime numbers are more than any
+  // assigned multitude of prime numbers" — he does not use the word infinite.
+  { id: 'prime-numbers', level: 11, word: 'prime', title: 'PRIME NUMBERS', year: 'c. 300 BC',
+    fact: 'Some numbers cannot be split into equal groups at all. 2, 3, 5, 7, 11 — try sharing 7 candies fairly and you never can. Those are prime numbers.' },
+  { id: 'modular-arithmetic', level: 11, word: 'modulo', title: 'MODULO', year: '1801',
+    fact: 'In 1801 Carl Gauss wrote a book about numbers that wrap around. He needed a sign for it, and the equals sign was already busy — so he drew three lines instead of two.' },
+  { id: 'george-boole', level: 12, word: 'boolean', title: 'BOOLEAN', year: '1847',
+    fact: 'George Boole turned true and false into math you can work with, like numbers. He died in 1864, long before computers — and every computer ever built runs on his idea.' },
+
+  // ── THE MOTH (2026-09-18) — the card that points at an easter egg ──────────
+  //
+  // Trevor: *"Would be nice to have moth be one of the history cards when it's letters
+  // unlock and in the text can be a call out or hint to interact with the moth."* The
+  // moth egg lives on the SELECT screen (js/ui/cabinet-art.js): after ~12s of stillness
+  // it flutters in and settles on a LIT cabinet, and clicking it quotes the logbook.
+  // It is an UNCOUNTED egg — missing it costs nothing — so this card is its
+  // discoverability, which is what let the egg stay mouse-only despite
+  // `keyboarding-readiness.md` putting mouse precision at 9-12 and this player at 4-8:
+  // the click is a bonus, never the way value is obtained.
+  //
+  // ⚠️ TWO CLAIMS THIS CARD DELIBERATELY DOES NOT MAKE, both checked 2026-09-18:
+  //
+  // 1. **It does not say the moth is why we call them "bugs."** The word predates it by
+  //    ~70 years — Edison used it in 1878, and Webster's had defined it as "a defect in
+  //    an apparatus" by 1934 (CHM, IEEE Spectrum, JSTOR Daily). The logbook's caption,
+  //    *"First actual case of bug being found,"* is a JOKE ABOUT AN EXISTING WORD: the
+  //    first actual bug FOUND, not the first use of the term. Trevor's framing ("the
+  //    origins of software defects being named bugs") is the one thing the sources
+  //    refuse, and journal F7 is about exactly this shipping once before.
+  // 2. **It does not call it the first SOFTWARE bug.** The Harvard Mark II was
+  //    electromechanical — relays, not software — and JSTOR Daily names it "a mechanical
+  //    obstruction rather than a software bug."
+  //
+  // The sentence below asserts neither: a moth jammed a switch and somebody kept it.
+  //
+  // ⚠️ It also must not retell L13's `grace` card, which is correctly about Hopper's
+  // POPULARISING role (the Smithsonian record says she neither found nor logged it).
+  // L13 owns the person; L11 owns the artifact and the day — the same split as the
+  // arcade's `floppy-disk` (1971 medium) vs the wing's Disk II (1978 drive).
+  // Research: research/wiki/moments/mark-ii-moth-1947.md (9 refs, verified 2026-09-18).
+  { id: 'mark-ii-moth', level: 11, word: 'moth', title: 'THE MOTH IN THE MACHINE', year: '1947',
+    fact: 'In 1947 a computer stopped working, and the people fixing it found a real moth stuck in one of its switches. They taped it into their notebook. One is loose in this arcade, too.' },
+
   // ── SECRET cards (level: null) — never injected into any level's pool. Found
   //    ONLY by the curious who type a magic word (see main.js SECRET_PHRASES).
   //    They still count toward the collection total, so "all cards" needs them
@@ -208,21 +364,69 @@ export const HISTORY_CARDS = [
 // label; the component card is the lesson, because "hardware" is a word a child
 // learns by being handed one touchable thing at a time.
 export const WING_CARDS = [
-  // ⚠️ EMPTY BY DESIGN AS OF 2026-09-14, and this is not an oversight.
+  // ⚠️ HALF-FILLED BY DESIGN AS OF 2026-09-15. Read this before adding a row.
   //
   // Every fact on a card a child reads is citation-verified research in
   // research/wiki/**, never model memory (CLAUDE.md; journal F7 — an overstated
   // attribution once shipped on a child-facing card; F29 — a source's SILENCE is
-  // not a licence to default). The components this wing wants to card — the Disk
-  // II drive, the RF modulator, the CD-ROM, the sound card, the null-modem cable
-  // — have NO page in the vault yet. Writing them from memory is the one thing
-  // this project has repeatedly been burned by.
+  // not a licence to default). When this bank was written it was EMPTY because
+  // none of the components had a page. They do now: the 2026-09-14 wave landed
+  // seven `research/wiki/tech/` pages, each ending in a `## Card-ready facts`
+  // section whose sentences carry their own `[fetched]` sources. The two below
+  // are lifted from those sections, which is why they can exist at all.
   //
-  // So Phase 1 ships the wing's MECHANISM and its CROSS-REFERENCED arcade cards
-  // (spec §0.4), which are already verified, and the new paired cards land the
-  // moment an `arcade-historian` pass does. `stationCards()` tolerates an empty
-  // pool by construction, so the wing is fully walkable in the meantime.
-  // Tracked in docs/ROADMAP.md.
+  // TWO RULES FOR THE NEXT ROW:
+  //
+  // 1. ONLY CARD A BUILT STATION. `js/hardware/stations.js` ships two of the
+  //    spec's seven (§5.1). A card for an unbuilt station would raise this bank's
+  //    denominator with a `???` the player has no route to — a counted obligation
+  //    with no path, which is the thing product.md §1 refuses. The other five
+  //    components ARE researched (rf-modulator, sound-card, null-modem-cable,
+  //    lcd-panel, dialup-shared-phone-line) and their rows wait on their stations.
+  //
+  // 2. DO NOT TELL A CROSS-REFERENCED CARD'S STORY TWICE. `STATION_CROSS_REFS`
+  //    below already shows `floppy-disk` at the Apple IIe — that card is the 1971
+  //    IBM *medium*. This bank's card is the 1978 Apple *drive*, a different
+  //    object with a different story, and disk-ii-drive.md says so in as many
+  //    words. The collision guard is the whole reason the two banks are separate.
+  //
+  // Still missing, and tracked in docs/ROADMAP.md: the MACHINE half of each pair
+  // (spec §0.3 pairs a machine card with a component card). There is no
+  // `apple-iie.md` and no page for the beige 1993 multimedia PC, so those two
+  // rows are not writable yet and are NOT faked in the meantime. Until they land,
+  // each station has a pool of one — which means its rotation does not rotate.
+  { id: 'hw-disk-ii', wing: 'hardware', station: 'apple-iie',
+    word: 'drive', title: 'THE DISK II DRIVE', year: '1978',
+    fact: 'A clever engineer named Steve Wozniak found a way to build a disk drive using far fewer parts than anyone else — about a quarter as many — so a family with a computer could actually afford one.' },
+  { id: 'hw-cd-rom', wing: 'hardware', station: 'msdos-pc',
+    word: 'disc', title: 'THE CD-ROM', year: '1984',
+    fact: 'In 1984, a company called Philips figured out how to use a music CD to store computer files instead of songs. One disc could hold about 460 of the old floppy disks stacked up.' },
+
+  // The MACHINE half of each pair (spec §0.3): the museum label beside the lesson.
+  //
+  // The Apple IIe's card is its LOWERCASE, which is not an arbitrary pick — this is a
+  // typing game, the station is running Stickybear Typing, and "the first Apple that
+  // could type small letters" is the one fact about this machine that belongs here
+  // above all others. Deliberately tells none of the Disk II story (rule 2 above).
+  { id: 'hw-apple-iie', wing: 'hardware', station: 'apple-iie',
+    word: 'lowercase', title: 'THE APPLE IIe', year: '1983',
+    fact: 'The Apple IIe, 1983, was the first Apple computer that could type small letters without buying an extra part. Everything before it came out SHOUTING IN CAPITALS.' },
+
+  // ⚠️ The beige 1993 tower could NOT be carded as asked, and this is the honest
+  // substitute. A generic beige box is a CATEGORY, not a product: nothing fetchable says
+  // anything true about "a beige tower", and the research page says in as many words
+  // "do not write a card about why computers were beige" (F29 — silence is not a licence
+  // to default). What IS sourced is the MPC badge: a published minimum spec with a logo
+  // you could look for in a shop, which is precisely what made a beige box a "multimedia
+  // computer" in 1993. Tells none of the CD-ROM story.
+  //
+  // ⚠️ NAMING GUARD for whoever builds station 4: the spec calls that station's machine
+  // card "THE MULTIMEDIA PC". Do not reuse that title here or there without deciding
+  // which one owns it — this card is the BADGE (the standard), station 4's would be the
+  // 1995 machine itself.
+  { id: 'hw-mpc-badge', wing: 'hardware', station: 'msdos-pc',
+    word: 'multimedia', title: 'THE MPC BADGE', year: '1993',
+    fact: 'In the 1990s a computer could earn a badge that said MPC. It meant the beige box really did have a CD drive and a sound card inside, so the game in the shop would actually run.' },
 ];
 
 // The arcade cards a station CROSS-REFERENCES — already collected-or-not in the
@@ -277,18 +481,47 @@ export function actWordIsTypeable(word) {
 }
 
 export const ACT_CARDS = [
-  // ⚠️ EMPTY BY DESIGN AS OF 2026-09-14 — same reason as WING_CARDS above.
+  // ── ACT 1 — THE ARCADE, 1976-82 ───────────────────────────────────────────
   //
-  // The subjects are chosen (spec §5.5) and are deliberately about the ROOM
-  // rather than about whatever the keys happened to spell — Act 1 takes the
-  // quarter and the coin door, the marquee, attract mode, the three-letter high
-  // score. Not one of them is researched yet, and `research/wiki/` has only
-  // partial coverage (`tech/arcade-control-panels.md`).
+  // Theme (spec §5.5): THE MACHINE AND THE ROOM, NOT THE GAMES — the things a child
+  // standing in a 1979 arcade could actually touch. That is deliberately the axis the
+  // level bank measurably cannot serve: only 7 of 59 level cards sit in their own act's
+  // era, because INV-56 attaches a card by SPELLING, not by subject.
   //
-  // Every fact on a card a child reads is citation-verified research, never model
-  // memory (journal F7, F29). The mechanism ships now; the facts land when an
-  // arcade-historian pass does. `cardsForAct` tolerates an empty bank by
-  // construction, so nothing here is reachable-but-broken in the meantime.
+  // ⚠️ ALL FOUR ARE SOURCED TO ATARI'S OWN SERVICE MANUALS, not to secondary history —
+  // and mostly to the manual for BREAKOUT, which is Level 1's cabinet. These are primary
+  // documents about the exact machine in the game.
+  //
+  // ⚠️ WHAT WAS DELIBERATELY NOT WRITTEN, because the sources would not carry it — each
+  // of these is a fluent, plausible sentence that no institutional source supports, and
+  // writing one anyway is journal F7 happening a second time:
+  //   • WHY a quarter (rather than a nickel or a dime). No source explains the choice.
+  //   • HOW marquee artwork was printed. The manuals say only "Plexiglas".
+  //   • That attract mode came to video games FROM pinball. Sources say only that pinball
+  //     has it too, never which came first.
+  //   • WHY exactly three initials. The one located explanation — an Atari designer
+  //     saying it was to limit obscenities — is a single unattributed sentence in a blog
+  //     with no original interview, publication or date. It is a wonderful story and it
+  //     is not evidence. Not shipped, in any form.
+  //   • That everyone's initials started at AAA. Unsourced convention.
+  // Research: research/wiki/tech/{arcade-coin-door, arcade-marquee, attract-mode}.md,
+  // research/wiki/culture/high-score-initials.md.
+  { id: 'act1-quarter', act: 1, word: 'quarter', title: 'THE COIN DOOR', year: '1976',
+    fact: "Atari's own repair manual for Breakout says the coin slots accept quarters only. Not a nickel, not a dime. One silver quarter bought you a whole game." },
+  { id: 'act1-marquee', act: 1, word: 'marquee', title: 'THE MARQUEE', year: '1970s',
+    fact: 'The glowing sign on top of an arcade machine is the marquee. Behind the plastic is one long fluorescent tube — the same light as a classroom ceiling — left on all day.' },
+  { id: 'act1-attract', act: 1, word: 'attract', title: 'ATTRACT MODE', year: '1970s',
+    fact: 'An arcade machine with nobody at it plays itself. It is called attract mode — the cabinet putting on a little show for an empty room, hoping somebody walks over.' },
+  { id: 'act1-initials', act: 1, word: 'initials', title: 'THREE LETTERS', year: '1979',
+    fact: 'When you beat the top score on Asteroids in 1979, the machine let you type three letters beside it. Your initials sat on that screen until somebody else beat you.' },
+
+  // ── ACTS 2-5 — NOT YET WRITTEN, and the shelves are uneven until they are ──
+  //
+  // Spec §5.5 wants FOUR PER ACT, twenty total, because "every shelf reads ◆ n / 4" and
+  // uniformity is the feature. Act 1 is done; Acts 2-5 are an arcade-historian pass each
+  // (Act 4 is the best-covered in the vault, Acts 2 and 5 the least). `cardsForAct`
+  // tolerates an empty act by construction, so the layer stays inert where it is empty
+  // rather than half-broken. Tracked in docs/ROADMAP.md.
 ];
 
 // The act a level belongs to. Five acts of five levels — the one place this

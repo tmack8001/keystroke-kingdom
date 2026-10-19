@@ -2149,7 +2149,38 @@ export function renderSelectScreen(state) {
   const act = getActForLevel(state.selectedLevel);
   const actIdx = ACTS.indexOf(act);
 
-  const freePlayPrefix = state.freePlay ? 'FREE PLAY · ' : '';
+  // FREE PLAY HAS TO SAY WHAT IT IS. For a long time the only feedback on
+  // pressing F was the bare words "FREE PLAY" here and "F: FREE PLAY ON" on the
+  // prompt line — a mode named but never described, so a child (or the parent
+  // next to them) could not tell what had just been switched on. Its two
+  // defining properties are the ones now spelled out: the WHOLE keyboard instead
+  // of this cabinet's few keys, and real sentences with a live words-per-minute
+  // readout. Same wording the ready screen already uses a beat later
+  // (js/ui/screens.js renderReadyScreen), so the mode introduces itself once and
+  // then confirms itself, in one voice.
+  //
+  // It lives on the ACT LABEL, not on the prompt line below, on purpose: the
+  // prompt line carries `animation: blink` (css/screens.css) and is fully
+  // invisible half of every 1.2s, which is the right home for a short keymap and
+  // the wrong one for a sentence a five-year-old has to read. The label is
+  // steady. The prompt keeps the terse ON/OFF state and the key that toggles it.
+  //
+  // Deliberately NOT a screen: Trevor ruled out a condensed KNOW YOUR KEYS here
+  // (2026-09-17) because anyone who can reach Free Play has already seen that
+  // screen for every cabinet they unlocked, and onboarding.md keeps the opening
+  // finger guide as the game's ONE unprompted hint. A longer label is free; an
+  // extra screen between a child and the game is not.
+  const freePlayPrefix = state.freePlay
+    // ONE separator all the way across, and that is a finding rather than a
+    // default. Two attempts to mark where the banner ends and the room begins
+    // both failed on screen: an em-dash read as a JOIN ("LIVE WPM — ACT 1"
+    // looked like a single phrase, since every other gap is an interpunct of the
+    // same width), and widening the gap with extra spaces did nothing at all —
+    // this is HTML, which collapses any run of whitespace to one space, which is
+    // also why the `  ·  ` below has always rendered as ` · `. A uniform list
+    // reads cleanly; both "clever" versions read worse. Checked at 1280x800.
+    ? 'FREE PLAY · EVERY KEY · FULL SENTENCES · LIVE WPM · '
+    : '';
   $('select-act-label').textContent = `${freePlayPrefix}ACT ${act.num}  ·  ${act.name}  ·  ${act.era}`;
 
   const promptEl = $('select-prompt');

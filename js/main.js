@@ -1,7 +1,7 @@
 import * as Audio from './audio.js';
 import { LEVELS, FINGER_MAP } from './levels.js';
 import { updateHUD, showFingerHint, showHomeRowDiagram, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter } from './ui/hud.js';
-import { showScreen, applyLevelTheme, renderReadyScreen, renderSlotsScreen, renderCollectionScreen, createStars } from './ui/screens.js';
+import { showScreen, applyLevelTheme, renderReadyScreen, renderSlotsScreen, renderCollectionScreen, collectionShelves, scrollCollection, revealCollection, createStars } from './ui/screens.js';
 import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked, focusedDoor, focusedWingEntry, focusDoor, clearDoorFocus } from './ui/cabinet-art.js';
 import { Themes, activeTheme, stopAll } from './themes/index.js';
 import * as KeyboardPreview from './ui/keyboard-preview.js';
@@ -10,7 +10,7 @@ import * as Basement from './basement.js';
 import * as CommandCenter from './commandcenter.js';
 import * as FullCircle from './fullcircle.js';
 import { FREEPLAY_KEYS, buildFreePlayPatterns } from './freeplay.js';
-import { TOTAL_CARDS, ACT_CARD_UNLOCK_LEVEL, bankOf, bankProgress, actOfLevel, actCardsUnlocked, pickGuaranteedActCard, wordToTokens, patternMatchesCard, cardsForLevel, cardById, allCards, pickGuaranteedCard } from './history-cards.js';
+import { TOTAL_CARDS, ACT_CARD_UNLOCK_LEVEL, bankOf, bankProgress, actOfLevel, actCardsUnlocked, pickGuaranteedActCard, wordToTokens, patternMatchesCard, cardsForLevel, cardById, pickGuaranteedCard } from './history-cards.js';
 import { assembleCoda, pickKeyboardStory, buildStoryPool } from './keyboard-story.js';
 import { prefetchKeyboardStories, takeKeyboardStories } from './keyboard-story-gen.js';
 import { addGeneratedStories } from './keyboard-story-cache.js';
@@ -205,6 +205,11 @@ const state = {
   // preferring a card not yet collected in the active slot. Everything about the
   // card gate — sparkle detect, win-gate, reveal — keys off this one object.
   currentCard: null,
+  // Whether the LEVEL COMPLETE panel that is currently being assembled carries a
+  // history card. Set by showLevelComplete, read by showCompleteOverlay — which
+  // runs later, when the panel is finally displayed — so the pick-up-off-the-
+  // floor sound only ever plays over a card the player can actually see.
+  completeCardShown: false,
 
   // Name Moment (see nameWordForLevel etc.): the lowercase name-word that
   // earns this level's guaranteed golden injection, or null. nameMomentDone
@@ -791,7 +796,27 @@ function handleGameKey(e) {
     if (state.currentIndex >= pattern.length) {
       // History card sparkle: the word is just a normal pattern in every way
       // — this only fires an ambient shimmer, it never pauses or gates flow.
-      if (!state.freePlay && !state.cardWordTyped) {
+      //
+      // ⚠️ THE `!state.freePlay` GUARD THAT USED TO BE HERE MADE FREE PLAY
+      // UNWINNABLE, and it is worth saying exactly how, because it is the One Rule
+      // failing by omission rather than by intent.
+      //
+      // The guard was correct for years: only curriculum levels had cards, so Free
+      // Play could not have a moment word to latch. The act-card layer (2026-09-14)
+      // then made Free Play the ONE surface that serves a card — and the win gate
+      // below (`cardPending`, ~line 869) has no free-play exclusion. So the moment
+      // ACT_CARDS stopped being empty: `currentCard` was set, this latch could never
+      // fire, `cardPending` stayed true forever, and **the session could never end.**
+      // No timer, no failure, no message — just a child typing sentences until
+      // somebody closed the tab. That is INV-102's named hazard and the purest form
+      // of "the game should only ever stop a player's flow with joy."
+      //
+      // `currentCard` is only ever set in Free Play when an act card was chosen
+      // (the curriculum picker below is itself `!state.freePlay`-guarded), so the
+      // card identity is sufficient here and the surface check is not needed.
+      // Caught by PLAYING a Free Play session to 600 patterns, not by any gate:
+      // every suite was green, because an empty bank arms nothing.
+      if (!state.cardWordTyped) {
         const card = state.currentCard;
         if (card && patternMatchesCard(pattern, card)) {
           state.cardWordTyped = true;
@@ -1047,6 +1072,25 @@ function renderEighthKeyConfession(show) {
   modal.insertBefore(el, prompt);
 }
 
+// The single moment the LEVEL COMPLETE panel — and the history card on it —
+// actually becomes visible. There are two ways to get here: the victory timer
+// expiring, and a keypress skipping the celebration window (engine behaviour a
+// theme must never fight). Both are a genuine first sight of the card, so both
+// go through here rather than each poking the class list; before this existed,
+// only one of them would have had a voice.
+function showCompleteOverlay() {
+  state.screen = 'complete';
+  $('complete-overlay').classList.remove('hidden');
+  // The card gets picked up off the floor. Fired AFTER the reveal, never before
+  // it, so sound can neither delay nor gate the beat (the One Rule) — and only
+  // when a card is actually on the panel, because a level-complete without one
+  // must sound exactly as it always has. `Audio.historyCard()` is written
+  // against `.history-card`'s 0.4s `cardDrop` keyframe, and that keyframe starts
+  // on the line above: the overlay was display:none until now, so the animation
+  // and the sound begin together rather than one chasing the other.
+  if (state.completeCardShown) Audio.historyCard();
+}
+
 function showLevelComplete() {
   stopSurvivalTimer();
   const elapsed = Date.now() - state.startTime;
@@ -1108,13 +1152,24 @@ function showLevelComplete() {
     // Scoped to the card's OWN bank — see bankOf/bankProgress in history-cards.js.
     // An unscoped count against the arcade total reads "CARD 63 OF 60" as soon as
     // any bonus-wing card exists.
-    const prog = bankProgress(bankOf(card.id) === 'wing' ? 'wing' : 'arcade', Slots.collectedIds());
+    // ⚠️ `bankOf` returns 'arcade' | 'wing' | 'act'. This used to test only for
+    // 'wing', so an ACT card — which DOES reveal here, in Free Play — was counted
+    // against the arcade bank and would read its total, not its own. Same class
+    // of bug as INV-100, one bank later; caught before act cards had any content.
+    const prog = bankProgress(bankOf(card.id) || 'arcade', Slots.collectedIds());
     $('history-card-count').textContent = `CARD ${prog.found} OF ${prog.total}`;
     $('history-card-new').classList.toggle('hidden', !isNew);
     historyCard.classList.remove('hidden');
   } else {
     historyCard.classList.add('hidden');
   }
+  // Does this level-complete carry a card? The sound cannot fire here: the card
+  // is only UNHIDDEN now, and its parent `.complete-overlay` stays display:none
+  // for the whole victory window — so nothing is on screen yet and its 0.4s
+  // `cardDrop` animation has not started. The flag rides on state because there
+  // are TWO ways the overlay appears (the victory timer, and a keypress skipping
+  // the celebration) and both are a genuine first sight of the card.
+  state.completeCardShown = !historyCard.classList.contains('hidden');
 
   if (state.freePlay) {
     document.querySelector('.complete-title').textContent = 'FREE PLAY COMPLETE';
@@ -1179,10 +1234,7 @@ function showLevelComplete() {
   Audio.levelComplete();
 
   state.victoryTimer = setTimeout(() => {
-    if (state.screen === 'victory') {
-      state.screen = 'complete';
-      $('complete-overlay').classList.remove('hidden');
-    }
+    if (state.screen === 'victory') showCompleteOverlay();
   }, victoryMs);
 }
 
@@ -1481,6 +1533,15 @@ function startGame() {
   // also pays the one replay surface that currently pays nothing.
   //
   // The cabinet you picked IS the act, so no new selection concept is needed.
+  //
+  // ⚠️ `actCardSpliced` exists because this branch does its OWN injection, at a
+  // Free-Play-appropriate position (index <=2 into a sentence pool) rather than at
+  // `level.intro.length`, which is a curriculum concept. The generic card-injection
+  // block further down also acts on `state.currentCard` — so without this flag the act
+  // card's word is spliced TWICE and the player types `quarter` twice in one session.
+  // Latent since the layer shipped (2026-09-14) only because ACT_CARDS was empty;
+  // found by authoring the first act card and reading the two splices together.
+  let actCardSpliced = false;
   if (state.freePlay && actCardsUnlocked(getProgress().furthestLevel)) {
     const act = actOfLevel(state.level);
     const key = `act:${act}`;
@@ -1492,6 +1553,7 @@ function startGame() {
       Slots.bumpCardRotation(key);
       const pattern = wordToTokens(chosenAct.word);
       state.patterns.splice(Math.min(2, state.patterns.length), 0, pattern);
+      actCardSpliced = true;
     }
   }
   if (!state.freePlay) {
@@ -1505,7 +1567,7 @@ function startGame() {
     }
   }
   const card = state.currentCard;
-  if (card) {
+  if (card && !actCardSpliced) {
     // Inject right after the intro drills — before the earliest possible
     // level-win — so the moment word is always reached in real play. The
     // completion gate also waits for it (cards are earned, never missable).
@@ -1671,9 +1733,25 @@ function startNewGameFlow() {
 // changes which game is active.
 function showCollectionScreen(slotIndex) {
   state.collectionForSlot = slotIndex;
-  const collected = new Set(Slots.slotCards(slotIndex));
-  renderCollectionScreen(state, allCards(), collected);
+  const collected = Slots.slotCards(slotIndex);
+  // SHELVED, one per card bank (js/ui/screens.js collectionShelves). The gallery
+  // used to render allCards() — the arcade bank only — which meant every wing and
+  // act card a player earned was counted by the picker's ★ and then displayable on
+  // no screen in the game. Which shelves this save may SEE depends on how far THIS
+  // game has got, so the level comes from the slot being browsed, not from the
+  // active game (the picker can peek at any game without switching to it).
+  const info = Slots.listSlots()[slotIndex];
+  const shelves = collectionShelves({
+    furthestLevel: info ? info.furthestLevel : 1,
+    collectedIds: collected,
+    bypass: !!state.selectBypass,
+  });
+  renderCollectionScreen(state, shelves, new Set(collected));
   showScreen('collection', state);
+  // Only now is the screen laid out (it was display:none during render), so this
+  // is the first moment the shelves can be scrolled back to the top and the
+  // "MORE BELOW" marker measured honestly.
+  revealCollection();
 }
 
 // ─── Settings screen ────────────────────────────────────────────────────
@@ -2091,18 +2169,27 @@ function startHardwareHub() {
 // rotation key is NAMESPACED ("hw:<station>") so it cannot collide with a level
 // key ("13") in the same string-keyed map — which is why this needed no save
 // schema change at all (docs/specs/hardware-wing.md §5.4.2).
+// Returns the REVEAL PAYLOAD the wing draws on the way out ({card,isNew,found,
+// total}), or null when this station has no cards of its own — in which case the
+// wing walks straight back to the wall, exactly as it did before cards existed.
+// Crediting still happens HERE, at wake, not at the reveal: the save must not
+// depend on the player sitting through a presentation (Act 6's TF-T1 lesson).
 function collectStationCard(stationId) {
-  if (!Hardware || typeof Hardware.guaranteedCardFor !== 'function') return;
+  if (!Hardware || typeof Hardware.guaranteedCardFor !== 'function') return null;
   const key = `hw:${stationId}`;
   let card = null;
   try {
     card = Hardware.guaranteedCardFor(stationId, Slots.collectedIds(), Slots.getCardRotation(key));
   } catch { card = null; }
-  if (!card) return;          // no station cards authored yet — never an error
+  if (!card) return null;     // no station cards authored yet — never an error
+  let isNew = false;
   try {
-    Slots.collectCardId(card.id);
+    isNew = Slots.collectCardId(card.id);
     Slots.bumpCardRotation(key);
   } catch { /* a card that can't be saved is never a trap */ }
+  let prog = { found: 0, total: 0 };
+  try { prog = bankProgress('wing', Slots.collectedIds()); } catch { /* count is cosmetic */ }
+  return { card, isNew, found: prog.found, total: prog.total };
 }
 
 function showHardwareCard(id) {
@@ -2278,10 +2365,15 @@ document.addEventListener('keydown', (e) => {
     }
 
     case 'collection':
-      // Read-only card gallery. Any of Escape/Space/Enter returns to the picker.
+      // Read-only card gallery. Any of Escape/Space/Enter returns to the picker;
+      // the arrow/page/home/end keys scroll the shelves, because the shelves are
+      // taller than the screen and this is a keyboard-first game — a child should
+      // never need a mouse to see the bottom of her own collection.
       e.preventDefault();
       if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
         showSlotsScreen();
+      } else {
+        scrollCollection(e.key);
       }
       break;
 
@@ -2491,8 +2583,7 @@ document.addEventListener('keydown', (e) => {
     case 'victory':
       e.preventDefault();
       clearTimeout(state.victoryTimer);
-      state.screen = 'complete';
-      $('complete-overlay').classList.remove('hidden');
+      showCompleteOverlay();
       break;
 
     case 'complete':

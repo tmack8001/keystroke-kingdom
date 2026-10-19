@@ -188,3 +188,103 @@ export function modemChirp(delay = 0) {
   noise.start(t0 + 0.3);
   noise.stop(t0 + 0.56);
 }
+
+// ─── The history card ────────────────────────────────────────────────────────
+//
+// THE REWARD RITUAL FINALLY HAS A VOICE. The collect-them-all loop is the game's
+// deliberate replay hook (product.md §History Cards) and the card reveal was the
+// only beat in the whole game that happened in silence — every other moment, down
+// to a wrong keypress, says something.
+//
+// WHAT IT IS: picking a small card up off the arcade floor. Cardstock, not a
+// chime-first fanfare — the DOM card's own copy is "FOUND ON THE ARCADE FLOOR"
+// and the sound is that sentence. Three beats, in the order the eye sees them:
+//
+//   1. 0.00-0.20s  the lift — a band-passed noise sweep, paper coming off the
+//                  floor. Band-passed (never raw noise) so it reads as card stock
+//                  rather than static, and it rides UNDER everything else.
+//   2. ~0.33s      the settle — a soft low tap as the card lands flat. Triangle,
+//                  short, felt more than heard.
+//   3. 0.40s+      the warm two-note reward figure, the house idiom: coin() and
+//                  bonusQuarter() are both ascending pairs and this is their
+//                  quieter cousin (784 -> 1175, a fifth). TRIANGLE, not square —
+//                  square is the arcade machine talking; this is paper.
+//
+// TIMED TO THE ANIMATION, NOT TO A GUESS: css/screens.css `.history-card` runs a
+// 0.4s `cardDrop` keyframe (translateY(-10px) -> 0), and js/hardware/hub.js's
+// canvas card copies it frame for frame. The settle tap lands just before that
+// animation ends and the reward figure lands right as the card comes to rest.
+//
+// THE ONE RULE: purely decorative. It is fired AFTER the reveal, never before it,
+// so it can neither delay nor gate the card; with sound off, or with no WebAudio
+// at all, the reveal is byte-identical.
+export function historyCard() {
+  if (!enabled) return;
+  let c;
+  try {
+    c = getCtx();
+  } catch (_) {
+    return; // no WebAudio (or blocked) — the card reveals exactly the same
+  }
+  const t0 = c.currentTime;
+
+  // One trim for the whole gesture, in the same neighbourhood as coin() (0.06):
+  // a reward, never an alert.
+  const bus = c.createGain();
+  bus.gain.setValueAtTime(0.06, t0);
+  bus.connect(c.destination);
+
+  // 1) The lift (0-0.20s) — paper coming up off the floor. A short noise burst
+  //    through a bandpass that sweeps upward, which is what a card sliding across
+  //    a surface actually sounds like: broadband, brief, rising as it leaves.
+  const frames = Math.max(1, Math.floor(c.sampleRate * 0.2));
+  const buf = c.createBuffer(1, frames, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
+  const rustle = c.createBufferSource();
+  rustle.buffer = buf;
+  const band = c.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.setValueAtTime(900, t0);
+  band.frequency.linearRampToValueAtTime(2600, t0 + 0.18);
+  band.Q.setValueAtTime(0.9, t0);
+  const rGain = c.createGain();
+  rGain.gain.setValueAtTime(0.0001, t0);
+  rGain.gain.linearRampToValueAtTime(0.45, t0 + 0.04);
+  rGain.gain.linearRampToValueAtTime(0.0001, t0 + 0.2);
+  rustle.connect(band);
+  band.connect(rGain);
+  rGain.connect(bus);
+  rustle.start(t0);
+  rustle.stop(t0 + 0.21);
+
+  // 2) The settle (~0.33s) — the card lands flat, just before cardDrop finishes.
+  const tap = c.createOscillator();
+  const tGain = c.createGain();
+  tap.type = 'triangle';
+  tap.frequency.setValueAtTime(210, t0 + 0.33);
+  tap.frequency.exponentialRampToValueAtTime(150, t0 + 0.4);
+  tGain.gain.setValueAtTime(0.0001, t0 + 0.33);
+  tGain.gain.linearRampToValueAtTime(0.5, t0 + 0.35);
+  tGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.42);
+  tap.connect(tGain);
+  tGain.connect(bus);
+  tap.start(t0 + 0.33);
+  tap.stop(t0 + 0.43);
+
+  // 3) The reward figure (0.40s, 0.52s) — two warm rising notes as the card comes
+  //    to rest and the child starts reading it.
+  [[784, 0.4, 0.14], [1175, 0.52, 0.2]].forEach(([freq, at, dur]) => {
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, t0 + at);
+    g.gain.setValueAtTime(0.0001, t0 + at);
+    g.gain.linearRampToValueAtTime(0.75, t0 + at + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + dur);
+    osc.connect(g);
+    g.connect(bus);
+    osc.start(t0 + at);
+    osc.stop(t0 + at + dur + 0.02);
+  });
+}

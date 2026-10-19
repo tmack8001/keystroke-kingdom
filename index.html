@@ -83,12 +83,24 @@
   </div>
 </div>
 
-<!-- CARD COLLECTION GALLERY (per save slot) -->
+<!-- CARD COLLECTION GALLERY (per save slot) — SHELVED, one per card bank.
+     There is deliberately NO single headline total here any more: the game has
+     three card banks (arcade / wing / act) and a blended numerator over a
+     single-bank denominator is exactly the CARD 63 OF 60 defect (INV-100). Each
+     shelf prints its own n / total, scoped to its own bank. -->
 <div class="screen hidden" id="collection-screen">
   <div class="collection-title">COLLECTION</div>
-  <div class="collection-count" id="collection-count">★ 0 / 0</div>
-  <div class="collection-grid" id="collection-grid"></div>
-  <div class="collection-hint">★ FOUND &middot; ??? KEEP PLAYING &middot; ESC BACK</div>
+  <div class="collection-scroll-wrap">
+    <div class="collection-shelves" id="collection-shelves"></div>
+    <!-- Scroll affordance, both directions: the shelves overflow at 1280×800, and
+         a row sliced at the container edge with no marker reads as "that is all
+         there is". These markers, not the scrollbar, ARE the affordance — a
+         macOS overlay scrollbar measures 0px wide and is invisible until you
+         already know to scroll, which is the wrong way round for a child. -->
+    <div class="collection-more collection-more-up hidden" id="collection-more-up">▲  MORE ABOVE</div>
+    <div class="collection-more hidden" id="collection-more">▼  MORE BELOW</div>
+  </div>
+  <div class="collection-hint">↑ ↓ SCROLL &middot; ★ FOUND &middot; ??? KEEP PLAYING &middot; ESC BACK</div>
 </div>
 
 <!-- READY SCREEN -->
@@ -178,7 +190,8 @@
 <div class="screen hidden" id="blockwords-screen">
   <div class="settings-title">BLOCKED WORDS</div>
   <div class="blockwords-intro">
-    WORDS YOU ADD HERE NEVER APPEAR IN THE GAME.<br>
+    BLOCKS EVERY WORD THE GAME MAKES UP — AND YOUR FRIEND'S REPLIES.<br>
+    LESSON WORDS ARE HAND-PICKED AND CHECKED SEPARATELY.<br>
     THIS ONLY MAKES PLAY SAFER — THE BUILT-IN LIST IS ALWAYS ON.
   </div>
   <input

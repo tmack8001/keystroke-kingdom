@@ -65,8 +65,29 @@ describe('INV-98 — station rotation is namespaced, so the save format does not
     const { pickGuaranteedStationCard, pickFromPool } = await import('../../js/history-cards.js');
     // An unauthored station yields null rather than throwing — the wing stays walkable
     // while its exclusive cards wait on an arcade-historian pass.
-    assert.equal(pickGuaranteedStationCard('hardware', 'apple-iie', [], 0), null);
+    //
+    // ⚠️ The station id here must be one with NO cards. This used to say
+    // 'apple-iie', which was an unauthored station when the test was written and
+    // stopped being one on 2026-09-15 — the assertion was pinning transient CONTENT
+    // state while its comment described a DESIGN clause. The clause is unchanged;
+    // only the vehicle was wrong. Use a deliberately-never-authored id so the test
+    // cannot rot the same way again.
+    assert.equal(pickGuaranteedStationCard('hardware', 'no-such-station', [], 0), null);
     assert.equal(pickFromPool([], [], 0), null);
+  });
+
+  test('an AUTHORED station hands over one of its own cards, never a cross-referenced one', async () => {
+    const { pickGuaranteedStationCard, cardsForStation, crossRefCards } = await import('../../js/history-cards.js');
+    const own = cardsForStation('hardware', 'apple-iie');
+    if (!own.length) return;   // still unauthored in some future build — nothing to assert
+    const picked = pickGuaranteedStationCard('hardware', 'apple-iie', [], 0);
+    assert.ok(picked, 'an authored station always yields its guaranteed card');
+    assert.ok(own.some(c => c.id === picked.id), 'the card comes from the station\'s OWN pool');
+    // Cross-referenced arcade cards are shown at a station but never AWARDED there:
+    // they already belong to the curriculum, and handing one over would grant a card
+    // the player either already holds or has not yet reached honestly (spec §0.4).
+    const refs = crossRefCards('apple-iie').map(c => c.id);
+    assert.ok(!refs.includes(picked.id), 'a cross-referenced card is never earned in the wing');
   });
 
   test('pickFromPool prefers an uncollected card, then rotates — identical to a level', async () => {
@@ -75,6 +96,57 @@ describe('INV-98 — station rotation is namespaced, so the save format does not
     assert.equal(pickFromPool(pool, ['a'], 0).id, 'b', 'prefers something not yet collected');
     assert.equal(pickFromPool(pool, ['a'], 1).id, 'c', 'rotates within the uncollected set');
     assert.equal(pickFromPool(pool, ['a', 'b', 'c'], 1).id, 'b', 'all collected → rotates the whole pool');
+  });
+});
+
+describe('INV-104 — a wing bank only cards a BUILT station, and never retells a cross-ref', () => {
+  // Enforces: INV-104 — docs/testing/STRATEGY.md §5; docs/specs/hardware-wing.md §0.3/§0.4
+  test('(a) every WING_CARDS row names a station that actually exists on the wall', async () => {
+    const { WING_CARDS } = await import('../../js/history-cards.js');
+    const { STATIONS } = await import('../../js/hardware/stations.js');
+    const built = new Set(STATIONS.map(s => s.id));
+    WING_CARDS.forEach(c => {
+      assert.ok(built.has(c.station),
+        `${c.id} cards "${c.station}", which is not a built station — that raises the wing's ` +
+        'denominator with a ??? the player has no route to (product.md §1)');
+    });
+  });
+
+  test('(a) the wing denominator counts only reachable cards', async () => {
+    const { WING_CARDS, bankProgress, cardsForStation } = await import('../../js/history-cards.js');
+    const { STATIONS } = await import('../../js/hardware/stations.js');
+    const reachable = STATIONS.reduce((n, s) => n + cardsForStation('hardware', s.id).length, 0);
+    assert.equal(bankProgress('wing', []).total, WING_CARDS.length);
+    assert.equal(reachable, WING_CARDS.length,
+      'every card in the bank must be obtainable by walking up to a machine');
+  });
+
+  test('(b) a wing card never duplicates a card the same station cross-references', async () => {
+    const { WING_CARDS, crossRefCards } = await import('../../js/history-cards.js');
+    WING_CARDS.forEach(c => {
+      const refs = crossRefCards(c.station);
+      assert.ok(!refs.some(r => r.id === c.id),
+        `${c.id} is both owned and cross-referenced at ${c.station}`);
+      // The stronger clause: not the same SUBJECT under two ids. Titles are the
+      // player-visible handle, so an exact title collision is the detectable form.
+      refs.forEach(r => assert.notEqual(r.title.toUpperCase(), c.title.toUpperCase(),
+        `${c.id} retells "${r.title}", which ${c.station} already shows from the arcade bank ` +
+        '(the two banks exist so a fact is never carded twice — spec §0.4)'));
+    });
+  });
+
+  test('every wing card carries the fields the reveal draws', async () => {
+    const { WING_CARDS } = await import('../../js/history-cards.js');
+    WING_CARDS.forEach(c => {
+      ['id', 'wing', 'station', 'word', 'title', 'year', 'fact'].forEach(f => {
+        assert.ok(typeof c[f] === 'string' && c[f].length > 0, `${c.id}: missing ${f}`);
+      });
+      assert.equal(c.wing, 'hardware');
+      // The existing bank's measured norm is 105-211 characters (spec §5.5). A card
+      // far outside it either overflows the panel or wastes the moment.
+      assert.ok(c.fact.length >= 90 && c.fact.length <= 240,
+        `${c.id}: fact is ${c.fact.length} chars, outside the bank's norm`);
+    });
   });
 });
 

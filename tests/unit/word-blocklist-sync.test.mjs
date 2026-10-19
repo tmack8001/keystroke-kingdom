@@ -12,6 +12,7 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import {
   BASE_WORDS, isBlockedWord, hasBlockedWord, setUserBlockedWords, userBlockedWordCount,
@@ -100,5 +101,38 @@ describe('parent-added words are additive, sanitized, and bounded (rule 7)', () 
     assert.equal(userBlockedWordCount(), 0);
     setUserBlockedWords('not an array');
     assert.equal(userBlockedWordCount(), 0);
+  });
+});
+
+// Enforces: security.md rule 7 — "the parent's list governs everything the game WRITES".
+//
+// Added 2026-09-16. The settings screen promised "WORDS YOU ADD HERE NEVER APPEAR IN
+// THE GAME" while the IM-friend reply path applied no check at all — the one surface
+// most able to say something unexpected, because it is an LLM writing free text to a
+// child. The server cannot do this check: the parent's words are kept 100% local
+// (security.md rule 6), so the client is the only possible enforcement point.
+describe('the parent blocked-words layer reaches every GENERATED surface', () => {
+  test('js/chat.js screens replies through hasBlockedWord', async () => {
+    const src = await readFile(new URL('../../js/chat.js', import.meta.url), 'utf8');
+    assert.match(src, /import\s*\{[^}]*hasBlockedWord[^}]*\}\s*from\s*'\.\/word-blocklist\.js'/,
+      'js/chat.js must import the SINGLE-SOURCE checker, not hand-roll a list');
+    assert.match(src, /hasBlockedWord\(\s*reply\s*\)/,
+      'the IM-friend reply must be screened before it is handed back');
+  });
+
+  test('every generated surface uses the same single-source checker', async () => {
+    for (const f of ['js/wordgen.js', 'js/keyboard-story.js', 'js/chat.js']) {
+      const src = await readFile(new URL(`../../${f}`, import.meta.url), 'utf8');
+      assert.ok(src.includes('hasBlockedWord'),
+        `${f} generates text a child reads and must screen it (security.md rule 7)`);
+    }
+  });
+
+  test('the on-screen promise does not over-claim', async () => {
+    const html = await readFile(new URL('../../index.html', import.meta.url), 'utf8');
+    assert.ok(!/NEVER APPEAR IN THE GAME/.test(html),
+      'the old absolute promise was false: the hand-written curriculum cannot honour a parent\'s '
+      + 'list without risking an unwinnable level (One Rule > the promise). Keep the claim scoped '
+      + 'to what the game WRITES.');
   });
 });

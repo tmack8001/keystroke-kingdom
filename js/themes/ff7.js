@@ -21,6 +21,29 @@ let shards = [];
 let camPush = 0; // battle-camera push-in kick on hit
 const WIN_HITS = 25;
 
+// ─── THE VICTORY CELEBRATION — the results screen ───────────────────────────
+//
+// `victory()` used to fire a flash, some shards and a camera push and then return
+// undefined, so the engine fell back to its legacy fixed 4000ms hold — which
+// `.claude/rules/theme-authoring.md` calls out by name: a victory() without a real
+// animation is "4 seconds of dead air — a product violation". The flash is over in
+// about a second; the remaining three were empty.
+//
+// What fills them is the thing every player of this game actually remembers about
+// winning a fight in it: the battle ends and a RESULTS BOX slides up with the
+// numbers counting in. That is era-faithful (a PS1 menu is a flat blue panel with
+// a hard white border), it is the original's own win moment rather than a generic
+// firework — and it is the right celebration for THIS level specifically, because
+// Act 4's whole thesis is *"You know every word. Now let's count."* (levels/act4.md).
+// The reward for the number-row level is a screen full of numbers counting up.
+const VICTORY_MS = 4200;
+let victoryT = -1;          // frames since victory(); -1 = not celebrating
+const RESULTS = [
+  { label: 'EXP',  target: 2970 },
+  { label: 'AP',   target: 90 },
+  { label: 'GIL',  target: 1997 },   // the year on the cabinet
+];
+
 function init() {
   canvas = document.getElementById('invaders-canvas');
   ctx    = canvas.getContext('2d');
@@ -403,7 +426,13 @@ function render() {
 
   ctx.restore();
 
-  drawHPBars(W, H);
+  // ⚠️ The HP bar is suppressed once the results box is up. Two reasons, both found
+  // by LOOKING at a won run rather than by any assertion: the panel is translucent
+  // (a PS1 menu is), so "SEPHIROTH 0 / 999" bled straight through it and read as a
+  // rendering bug; and a health bar for a finished fight is clutter on the one beat
+  // that should be clean.
+  if (victoryT < 0) drawHPBars(W, H);
+  if (victoryT >= 0) { victoryT += 1; drawResults(W, H); }
   // Outside the battle-camera push-in transform — the rabbit crosses the real
   // bottom of the screen, not the zoomed battle stage.
   drawWhiteRabbit(ctx, W, H);
@@ -413,11 +442,87 @@ function render() {
   animId = requestAnimationFrame(render);
 }
 
+// The results box. Every value is a function of `victoryT` alone, so two frames
+// sampled at different times are guaranteed to differ — the property journal L36
+// says to verify, because code that LOOKS animated while rendering identical
+// frames is this project's documented failure mode.
+//
+//   0-24    the panel slides up from the bottom edge and settles
+//   24+     the three rows arrive in turn, each counting from 0 to its total
+//   throughout: the VICTORY header breathes inside the panel's top band
+function drawResults(W, H) {
+  const t = victoryT;
+
+  // ⚠️ Composed in the BOTTOM STRIP (visual-validation.md's stage regions), not at
+  // canvas centre — the prompt panel and keyboard guide own the middle and a panel
+  // there would be half-buried. This is the mistake journal F30 found four themes
+  // making at once, so it is stated rather than assumed.
+  const panelW = Math.min(W * 0.42, 460);
+  const panelH = Math.round(H * 0.26);   // taller: the header band lives inside it now
+  const headH = Math.round(H * 0.055);
+  const px = Math.round(W * 0.52);
+  const slide = Math.min(1, t / 24);
+  const ease = 1 - Math.pow(1 - slide, 3);
+  const py = Math.round(H * 0.995 - panelH * ease - H * 0.02);
+
+  // PS1 menu furniture: a flat translucent blue field inside a hard white border.
+  ctx.save();
+  ctx.globalAlpha = ease;
+  ctx.fillStyle = 'rgba(16,32,96,0.86)';
+  ctx.fillRect(px, py, panelW, panelH);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(px + 1.5, py + 1.5, panelW - 3, panelH - 3);
+  ctx.strokeStyle = 'rgba(150,190,255,0.7)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px + 5.5, py + 5.5, panelW - 11, panelH - 11);
+
+  // ⚠️ The header sits INSIDE the panel. It used to be drawn above the panel's top
+  // edge, where it landed straight across Sephiroth's sword and was unreadable —
+  // a collision no assertion would ever catch, and the reason theme-authoring.md
+  // says to verify a celebration from real frames instead of from the code.
+  ctx.fillStyle = 'rgba(70,110,200,0.55)';
+  ctx.fillRect(px + 6, py + 6, panelW - 12, headH);
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  const breatheH = 0.80 + 0.20 * Math.sin(t / 12);
+  ctx.font = `${Math.max(10, Math.floor(W * 0.013))}px "Press Start 2P", monospace`;
+  ctx.fillStyle = `rgba(255,255,255,${breatheH.toFixed(3)})`;
+  ctx.shadowColor = '#9fc8ff';
+  ctx.shadowBlur = 10;
+  ctx.fillText('VICTORY', px + panelW / 2, py + 6 + headH / 2);
+  ctx.shadowBlur = 0;
+
+  const rowH = (panelH - headH - 22) / RESULTS.length;
+  RESULTS.forEach((row, i) => {
+    const born = 24 + i * 10;
+    if (t < born) return;
+    const age = t - born;
+    // Count UP to the total over ~24 frames, then hold exactly on it — never a
+    // number still drifting when the card lands.
+    const k = Math.min(1, age / 24);
+    const shown = Math.round(row.target * (1 - Math.pow(1 - k, 2)));
+    const ry = py + headH + 14 + rowH * i + rowH / 2;
+    ctx.font = `${Math.max(7, Math.floor(W * 0.0075))}px "Press Start 2P", monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#9fc8ff';
+    ctx.fillText(row.label, px + 16, ry);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = k >= 1 ? '#ffffff' : '#dce8ff';
+    ctx.fillText(String(shown), px + panelW - 16, ry);
+  });
+  ctx.restore();
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export function start() {
   init();
   resetWhiteRabbit();
+  victoryT = -1;
   active = true;
   animId = requestAnimationFrame(render);
 }
@@ -472,11 +577,13 @@ export function patternComplete() {
 }
 
 export function victory() {
-  if (!active) return;
+  if (!active) return VICTORY_MS;
   enemyHP = 0;
   flashes.push({ life: 1 });
   camPush = 2.5;
   spawnShards(canvas.width * 0.78, canvas.height * 0.6, '#ffffff');
+  victoryT = 0;
+  return VICTORY_MS;
 }
 
 window.addEventListener('resize', () => {

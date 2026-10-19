@@ -16,6 +16,26 @@ let bgLayer = null;    // offscreen canvas for the precomputed vignette + curvat
 let bgLayerW = 0, bgLayerH = 0;
 const WIN_CHARS = 25;
 
+// ─── THE VICTORY CELEBRATION — "the first program runs" ─────────────────────
+//
+// This level had NO celebration. `victory()` pushed two lines into the scrolling
+// log and returned undefined, so the engine fell back to its legacy fixed 4000ms
+// hold — which `.claude/rules/theme-authoring.md` names exactly: a victory()
+// without a real animation is "4 seconds of dead air — a product violation".
+// On THIS level that is the worst place in the game for it: `levels/act4.md` calls
+// the binary→HELLO beat *"the whole game has been building here… Letters are
+// numbers. Numbers are electricity. Typing is computation."*
+//
+// So the celebration IS that sentence, performed: the log wipes, the machine
+// types its own binary back one byte at a time, and each byte then RESOLVES into
+// the letter it encodes. Nothing is imported from a later era — a terminal's only
+// spectacle is text, a cursor and phosphor bloom, which is the honest 1960s–∞
+// vocabulary for this cabinet and needs no sprite to be a real animation.
+const VICTORY_MS = 4800;
+const HELLO_BYTES = ['01001000', '01000101', '01001100', '01001100', '01001111'];
+const HELLO_CHARS = ['H', 'E', 'L', 'L', 'O'];
+let victoryT = -1;          // frames since victory(); -1 = not celebrating
+
 // Pre-set terminal lines for atmosphere
 const BOOT_LINES = [
   '> SYSTEM READY',
@@ -294,6 +314,101 @@ function drawBinaryReveal(W, H) {
 }
 
 
+// The celebration, staged. Every beat is a function of `victoryT` alone, so a
+// paused frame anywhere in the run reads as a coherent moment rather than a
+// glitch — and, more usefully, two frames sampled at different times are
+// GUARANTEED to differ, which is the property journal L36 says to verify (code
+// that looks animated while rendering identical frames is the documented trap).
+//
+//   0-35    the binary types itself in, one byte at a time, cursor trailing
+//   40-100  each byte resolves into its letter, left to right, with a bloom
+//   100+    HELLO holds, breathing, over a quiet prompt
+function drawVictory(W, H) {
+  const t = victoryT;
+  const cx = W / 2;
+  const fontBin = Math.max(8, Math.floor(W * 0.011));
+  const fontBig = Math.max(18, Math.floor(W * 0.030));
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // ── the binary, typing itself in ──
+  const bytesShown = Math.min(HELLO_BYTES.length, Math.floor(t / 7));
+  const partial = Math.max(0, Math.min(8, Math.floor((t % 7) * 1.4)));
+  let binLine = HELLO_BYTES.slice(0, bytesShown).join(' ');
+  if (bytesShown < HELLO_BYTES.length && t < 40) {
+    binLine += (binLine ? ' ' : '') + HELLO_BYTES[bytesShown].slice(0, partial);
+  } else if (t >= 40) {
+    binLine = HELLO_BYTES.join(' ');
+  }
+  ctx.font = `${fontBin}px "Press Start 2P", monospace`;
+  ctx.fillStyle = '#1a7a0a';
+  ctx.shadowColor = '#1a7a0a';
+  ctx.shadowBlur = 2;
+  ctx.fillText(binLine, cx, H * 0.40);
+  // The trailing cursor, only while it is still typing.
+  if (t < 40 && ((t >> 2) & 1)) {
+    const w = ctx.measureText(binLine).width;
+    ctx.fillRect(cx + w / 2 + 4, H * 0.40 - fontBin * 0.5, fontBin * 0.6, fontBin);
+  }
+  ctx.shadowBlur = 0;
+
+  // ── each byte resolving into its letter ──
+  // Spaced across the same span the binary occupies, so a letter lands visibly
+  // UNDER the eight bits that encode it — the encoding made legible, which is
+  // the one thing this beat has to say.
+  if (t > 40) {
+    ctx.font = `${fontBig}px "Press Start 2P", monospace`;
+    const binW = (() => {
+      ctx.save();
+      ctx.font = `${fontBin}px "Press Start 2P", monospace`;
+      const w = ctx.measureText(HELLO_BYTES.join(' ')).width;
+      ctx.restore();
+      return w;
+    })();
+    const step = binW / HELLO_CHARS.length;
+    const x0 = cx - binW / 2 + step / 2;
+    for (let i = 0; i < HELLO_CHARS.length; i += 1) {
+      const born = 40 + i * 12;
+      if (t < born) continue;
+      const age = t - born;
+      const pop = age < 10 ? 1 + (10 - age) * 0.06 : 1;       // a small arrival kick
+      const glow = age < 18 ? 24 - age : 8;                    // bloom, settling
+      ctx.save();
+      ctx.translate(x0 + i * step, H * 0.52);
+      ctx.scale(pop, pop);
+      ctx.fillStyle = '#39ff14';
+      ctx.shadowColor = '#39ff14';
+      ctx.shadowBlur = glow;
+      ctx.fillText(HELLO_CHARS[i], 0, 0);
+      ctx.restore();
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  // ── the line that names what just happened ──
+  // Held back until every letter has landed, so it reads as a caption on a
+  // finished thing rather than a label on a work in progress.
+  if (t > 108) {
+    const fade = Math.min(1, (t - 108) / 20);
+    const breathe = 0.82 + 0.18 * Math.sin(t / 14);
+    ctx.font = `${Math.max(8, Math.floor(W * 0.010))}px "Press Start 2P", monospace`;
+    ctx.fillStyle = `rgba(57,255,20,${(fade * breathe).toFixed(3)})`;
+    ctx.fillText('YOUR FIRST PROGRAM', cx, H * 0.64);
+  }
+
+  // ── the prompt, waiting, the way it always was ──
+  if (t > 124 && ((t >> 4) & 1)) {
+    ctx.textAlign = 'left';
+    ctx.font = `${fontBin}px "Press Start 2P", monospace`;
+    ctx.fillStyle = '#39ff14';
+    ctx.fillText('>', Math.round(W * 0.06), H * 0.74);
+  }
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
 // ─── The white rabbit — Act 4 easter egg ─────────────────────────────────────
 // ".claude/rules/easter-eggs.md": "In Act 4 (late-90s Command Center), a small
 // white pixel rabbit very rarely hops across the bottom of the screen between
@@ -455,6 +570,18 @@ function render() {
   drawScreen(W, H);
   drawScanLine(W, H);
   drawCRTLines(W, H);
+  if (victoryT >= 0) {
+    // The celebration owns the screen. The progress counter and the idle-only
+    // eggs are deliberately NOT drawn: the rabbit must never arrive on the
+    // winning beat (easter-eggs.md), and a progress bar reading 25/25 next to
+    // the payoff is clutter at the one moment the screen should be quiet.
+    victoryT += 1;
+    drawVictory(W, H);
+    drawBarrelCurvature();
+    animId = requestAnimationFrame(render);
+    return;
+  }
+
   drawTerminalLines(W, H);
   if (chars >= WIN_CHARS) drawBinaryReveal(W, H);
   drawProgress(W, H);
@@ -473,6 +600,7 @@ function render() {
 export function start() {
   init();
   resetWhiteRabbit();
+  victoryT = -1;
   active = true;
   animId = requestAnimationFrame(render);
 }
@@ -511,9 +639,11 @@ export function patternComplete() {
 }
 
 export function victory() {
-  // Add the binary reveal lines
-  lines.push('> 01001000 01000101 01001100 01001100 01001111');
-  lines.push('> H E L L O');
+  // The log is cleared, not appended to: the machine stops echoing the player and
+  // starts speaking for itself. That hand-over is the whole point of the beat.
+  lines = [];
+  victoryT = 0;
+  return VICTORY_MS;
 }
 
 window.addEventListener('resize', () => {

@@ -411,3 +411,37 @@ test('INV-94: slot-existence checks compare against null, never truthiness', () 
     'getActive() returns a slot INDEX; index 0 is falsy, so it must be compared to null:\n  '
     + offenders.join('\n  '));
 });
+
+// Enforces: INV-105 — docs/testing/STRATEGY.md §5; .claude/rules/security.md rule 7
+//   ("the floor has ONE definition and every consumer reads it").
+//
+// The curriculum is hand-written, which is exactly why nobody was checking it: every other
+// blocklist test guards a GENERATED path. On 2026-09-15 this found Level 6 `dead`, Level 7
+// `drug` and Level 17 `gun47` already shipping as lesson content for a five-year-old.
+test('INV-105: no curriculum pool/intro token is a word on the safety floor', async () => {
+  const floor = new Set(
+    JSON.parse(fs.readFileSync(path.join(REPO, 'js/word-blocklist.json'), 'utf8')).words,
+  );
+  assert.ok(floor.size >= 10, 'fixture sanity: the safety floor loaded');
+  const { LEVELS } = await import(path.join(REPO, 'js/levels.js'));
+
+  const offenders = [];
+  for (let lvl = 1; lvl <= 25; lvl += 1) {
+    const entry = LEVELS[lvl];
+    if (!entry) continue;
+    for (const field of ['pool', 'intro']) {
+      for (const item of entry[field] || []) {
+        // Pool entries are per-character token arrays (['d','e','a','d']); intro entries
+        // may be either. Join, then split on letters so a mixed token like `gun47` is
+        // still caught by its letter part — the same tokenisation main.go's isBlocked uses.
+        const word = Array.isArray(item) ? item.join('') : String(item);
+        for (const tok of word.toLowerCase().match(/[a-z]+/g) || []) {
+          if (floor.has(tok)) offenders.push(`L${lvl} ${field} ${JSON.stringify(word)} → "${tok}"`);
+        }
+      }
+    }
+  }
+  assert.deepStrictEqual(offenders, [],
+    'these curriculum words are on the js/word-blocklist.json safety floor:\n  '
+    + offenders.join('\n  '));
+});

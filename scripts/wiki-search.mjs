@@ -195,6 +195,17 @@ function generateIndex(corpus) {
 // ── Generated per-kind journal views ─────────────────────────────────────────
 function writeJournalViews(entries) {
   const KINDS = { learning: 'learnings', observation: 'observations', failure: 'failures' };
+  // ⚠️ ACCOUNT FOR EVERY ENTRY. An entry whose `kind` is not a key here is written to disk,
+  // passes lint, and then silently appears in NO view — which is how five entries stayed
+  // invisible for up to seven weeks (journal F33). Lint now rejects a bad kind, and this
+  // says so out loud too: a bucketing step that does not reconcile its input count is a
+  // place records go to disappear quietly.
+  const unbucketed = entries.filter(d => !KINDS[d.fm.kind]);
+  if (unbucketed.length) {
+    console.error(`⚠️  ${unbucketed.length} journal entr${unbucketed.length === 1 ? 'y is' : 'ies are'} ` +
+      'in NO generated view (unrecognised `kind`): ' +
+      unbucketed.map(d => `${d.fm.id || d.name} (kind '${d.fm.kind}')`).join(', '));
+  }
   for (const [kind, fname] of Object.entries(KINDS)) {
     const rows = entries.filter(e => e.fm.kind === kind)
       .sort((a, b2) => {
@@ -337,12 +348,34 @@ function lint(corpus) {
     if (!names.has(l)) problems.push(`BROKEN LINK  ${d.name} → [[${l}]]`);
   }
   const STATUSES = new Set(['open', 'addressed', 'adopted', 'monitoring', 'superseded']);
+  // Must stay in step with `KINDS` in the index step — that map is what builds the
+  // per-kind views, so anything absent here is invisible there.
+  const JOURNAL_KINDS = new Set(['learning', 'observation', 'failure']);
+  const ID_PREFIX_KIND = { L: 'learning', O: 'observation', F: 'failure' };
   for (const d of corpus) {
     if (d.kind === 'journal-entry') {
       for (const req of ['id', 'kind', 'title', 'found', 'status', 'importance', 'category']) {
         if (!d.fm[req]) problems.push(`JOURNAL META ${d.name} (missing '${req}')`);
       }
       if (d.fm.status && !STATUSES.has(d.fm.status)) problems.push(`JOURNAL META ${d.name} (bad status '${d.fm.status}')`);
+      // ⚠️ `kind` was checked for PRESENCE but never for VALIDITY, and the cost was
+      // silent: the generated views are built per-kind (`KINDS` in the index step), so an
+      // entry with an unrecognised kind is written to disk, passes lint, and then simply
+      // never appears in learnings/observations/failures. Five entries had `kind: lesson`
+      // instead of `learning` — three of them for up to seven weeks — and nothing said so.
+      // A journal whose index silently drops entries is worse than no index, because the
+      // index is what the next session reads instead of the entries.
+      if (d.fm.kind && !JOURNAL_KINDS.has(d.fm.kind)) {
+        problems.push(`JOURNAL META ${d.name} (bad kind '${d.fm.kind}' — must be one of ` +
+          `${[...JOURNAL_KINDS].join(' | ')}; an unknown kind is dropped from every generated view)`);
+      }
+      // The id's letter prefix and the kind are two spellings of the same fact, so a
+      // disagreement means one of them is wrong and the entry is filed under the wrong view.
+      const prefix = String(d.fm.id || '').match(/^([A-Z]+)/);
+      if (prefix && d.fm.kind && ID_PREFIX_KIND[prefix[1]] && ID_PREFIX_KIND[prefix[1]] !== d.fm.kind) {
+        problems.push(`JOURNAL META ${d.name} (id '${d.fm.id}' implies kind ` +
+          `'${ID_PREFIX_KIND[prefix[1]]}' but frontmatter says '${d.fm.kind}')`);
+      }
       if (d.fm.status === 'addressed' && !d.fm['addressed-by']) problems.push(`JOURNAL META ${d.name} (addressed but no 'addressed-by')`);
       continue;
     }

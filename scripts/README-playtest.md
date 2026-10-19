@@ -34,6 +34,8 @@ DEV_URL=http://127.0.0.1:8834 node scripts/playtest.mjs --at=level:7
 | `--at=cinematic:fullcircle` | Act 4→5, after winning Level 20 |
 | `--at=coda:25` | Level 25's **MY STORY** coda, at its first coda line |
 | `--at=speedway:<track-id>` | Act 7 — a track, mid-race (`monaco-gp`, `f-zero`; ids come from `js/speedway/tracks/index.js`) |
+| `--at=hardware:<station-id>` | THE HARDWARE — boot a machine, then the card it hands you on the way out (`apple-iie`, `msdos-pc`; ids come from `js/hardware/stations.js`) |
+| `--at=freeplay:<1-25>` | FREE PLAY on one cabinet — full keyboard, real sentences, and the **ACT card**, which reveals nowhere else |
 
 `node scripts/playtest.mjs --list` prints the same list with the flags.
 
@@ -68,6 +70,36 @@ rotates or unlocks is invisible on run 1 by construction. What a "lap" means per
 - `speedway:<id>` — races N laps. **Defaults to 2**, because a first lap has no ghost to
   look at; lap 2 asserts the ghost is really there ("YOUR LAST LAP IS OUT THERE WITH YOU"
   at the line, `GHOST · YOU · LAST TIME` on the HUD) and fails if it is not.
+- `freeplay:<1-25>` — plays N Free Play sessions on that cabinet. **Defaults to 2**, because
+  session 1 can only show you *a* card; only session 2 tells you the act pool ROTATES.
+  It reports the act card by name each session and says explicitly whether it repeated.
+
+  Two things this target has to do that are easy to get wrong, both of which produced a
+  confident wrong answer the first time:
+  - **The act layer is unlocked AFTER `goToSelect`, never before.** `goToSelect` opens with
+    `localStorage.clear()` — it always boots a brand-new machine — so a seed applied first is
+    gone before the first keypress. The first version seeded up front and then reported "no act
+    card" on an act that has four.
+  - **Session 2 uses the game's own `R` (replay), not a fresh navigation.** Re-walking through
+    `goToSelect` would clear storage and take the act-card rotation with it, so the pool could
+    never rotate and a working feature would look broken. `R` calls `startGame()` with
+    `state.freePlay` untouched — a genuine second session, same cabinet, storage intact.
+
+  ⚠️ An act with no cards yet (Acts 2–5 today) reports "no act card" and that is **correct, not
+  a failure** — an empty act is inert by construction.
+
+- `hardware:<id>` — visits a station N times. **Defaults to 2**, for the same reason the
+  speedway does: visit 1 shows the card marked **NEW!**, and only visit 2 can tell you
+  whether the station's pool actually ROTATES. With one card authored per station it does
+  not, and the run says so out loud rather than letting a pool of one look like variety.
+
+  ⚠️ **Do not press Return after a boot line.** A line commits on its LAST CHARACTER
+  (`handleBootKey` calls `commitLine()` the moment `typed.length` reaches the line length),
+  so Return is never needed — and after the final line the machine is already awake, where
+  the handler reads Return as *walk out*. The first version of this target did exactly that:
+  it skipped the celebration, landed on the card, and then reported **"no card revealed"**
+  about a card that was on screen. Journal **F28** again — when the evidence says something
+  is broken, check the instrument first.
 
 Then add `--fresh` for the third program: a brand-new machine every run.
 

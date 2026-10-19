@@ -27,7 +27,7 @@ let animId = null;
 let onExit = null;
 let onCard = null;          // host hands a station card to the slot/collection layer
 
-let mode = 'menu';          // 'menu' | 'station'
+let mode = 'menu';          // 'menu' | 'station' | 'card'
 let cursor = 0;
 let station = null;         // the station being visited
 let step = 0;               // which boot line we're on
@@ -36,6 +36,8 @@ let nudge = 0;              // frames of gentle wrong-key feedback (visual only)
 let log = [];               // the machine's transcript, oldest first
 let awake = false;
 let awakeT = 0;
+let earnedCard = null;      // { card, isNew, found, total } — revealed on the way OUT
+let cardT = 0;              // frames the card reveal has been on screen
 let t = 0;
 
 const INK = '#8ef0a8';      // phosphor green — the Apple/DOS CRT both read as this
@@ -68,6 +70,7 @@ export function start(cvs, opts = {}) {
   mode = 'menu';
   station = null;
   awake = false;
+  earnedCard = null;
   cursor = Math.min(Math.max(0, cursor), STATIONS.length - 1);
   active = true;
   if (animId) cancelAnimationFrame(animId);
@@ -81,6 +84,7 @@ export function stop() {
   onExit = null;
   onCard = null;
   station = null;
+  earnedCard = null;
 }
 
 // ─── Input ──────────────────────────────────────────────────────────────────
@@ -89,8 +93,16 @@ export function handleKey(e) {
   if (!active) return false;
 
   if (e.key === 'Escape') {
-    if (mode === 'station') { returnToMenu(); return true; }
+    if (mode === 'station' || mode === 'card') { returnToMenu(); return true; }
     if (onExit) onExit();
+    return true;
+  }
+
+  // The card is a reward being read, not a task. Space/Enter puts it down; any
+  // other key is harmless. It cannot be failed and cannot be lost — the card was
+  // already written to the save when the machine woke (see wakeUp).
+  if (mode === 'card') {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); returnToMenu(); }
     return true;
   }
 
@@ -114,7 +126,26 @@ function handleBootKey(e) {
   if (awake) {
     // The machine is running. Space/Enter steps back to the wall; anything else
     // is harmless. Nothing here can be failed.
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); returnToMenu(); return true; }
+    //
+    // ON THE WAY OUT, the card. This is the arcade's own ritual moved into the
+    // wing (spec §Phase D: "the card itself is revealed when the player leaves
+    // the station") — the celebration first, then the little card picked up off
+    // the floor. A station with no cards authored yet skips straight out, which
+    // is exactly the behaviour this wing shipped with.
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (earnedCard) {
+        mode = 'card';
+        cardT = 0;
+        // The SAME sound the arcade's card gets. This wing draws its card on canvas
+        // rather than through `#history-card`, so it does not inherit anything from
+        // the DOM reveal — including its voice. Without this line the hardware wing
+        // would be the one place a card lands in silence, which is precisely the
+        // asymmetry the sound was added to remove.
+        Audio.historyCard();
+      } else { returnToMenu(); }
+      return true;
+    }
     return true;
   }
   if (!line) return true;
@@ -171,8 +202,13 @@ function wakeUp() {
   awake = true;
   awakeT = 0;
   Audio.levelComplete();
+  // Credit FIRST, reveal later. Act 6's TF-T1 lesson is that leaving must never
+  // silently drop something the player actually did, so the card is written to
+  // the save the instant the machine wakes — the reveal on the way out is
+  // presentation, and walking away with Escape still keeps the card.
   if (onCard) {
-    try { onCard(station.id); } catch { /* a card that can't be handed over is never a trap */ }
+    try { earnedCard = onCard(station.id) || null; }
+    catch { earnedCard = null; /* a card that can't be handed over is never a trap */ }
   }
 }
 
@@ -192,6 +228,8 @@ function returnToMenu() {
   mode = 'menu';
   station = null;
   awake = false;
+  earnedCard = null;
+  cardT = 0;
 }
 
 // ─── Render ─────────────────────────────────────────────────────────────────
@@ -201,7 +239,10 @@ function frame() {
   t += 1;
   if (nudge > 0) nudge -= 1;
   if (awake) awakeT += 1;
-  if (mode === 'menu') drawMenu(); else drawStation();
+  if (mode === 'card') cardT += 1;
+  if (mode === 'menu') drawMenu();
+  else if (mode === 'card') drawCard();
+  else drawStation();
   animId = requestAnimationFrame(frame);
 }
 
@@ -386,6 +427,140 @@ function drawStation() {
     }
   }
   ctx.textAlign = 'left';
+}
+
+// ─── The card ───────────────────────────────────────────────────────────────
+//
+// THE SAME RITUAL, MOVED INTO THE WING. The 25 cabinets have taught the player
+// one contract for sixty cards — you type the word, and a little card gets picked
+// up off the floor with the story on it. This wing had the earning half wired and
+// no reveal at all: `wakeUp()` wrote the id into the save and the player never saw
+// what they got. A card the child never reads is not a card.
+//
+// It is drawn on CANVAS rather than reusing `#history-card`, because that element
+// lives inside `.complete-modal` and showing it here would drag LEVEL COMPLETE
+// and a stats block into a room that has neither. So this echoes the DOM card's
+// own palette and proportions (css/screens.css `.history-card`) — cream stock,
+// double border, the same small tilt and drop-in — and stays canvas text only
+// (security.md rule 1: themes never create DOM sinks).
+
+// Break `text` into lines that fit `maxW` at the current font. Wrapping on words
+// keeps a child's reading line intact; a word longer than the box is left to
+// overflow rather than split, which never happens at these lengths.
+function wrapText(text, maxW) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const next = line ? `${line} ${w}` : w;
+    if (line && ctx.measureText(next).width > maxW) { lines.push(line); line = w; }
+    else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawCard() {
+  const W = canvas.width, H = canvas.height;
+  room(W, H);
+
+  // The room dims behind the card so the reward is the only lit thing.
+  ctx.fillStyle = 'rgba(4,6,8,0.72)';
+  ctx.fillRect(0, 0, W, H);
+
+  const c = earnedCard && earnedCard.card;
+  if (!c) { returnToMenu(); return; }
+
+  // 0.4s drop-in, matching the DOM card's `cardDrop` keyframes exactly so the
+  // two reveals feel like the same object.
+  const inT = Math.min(1, cardT / 24);
+  const ease = 1 - Math.pow(1 - inT, 3);
+  const dy = -H * 0.02 * (1 - ease);
+
+  const pad = H * 0.035;
+  const cw = Math.min(W * 0.42, H * 0.58);
+  const factSize = Math.round(H * 0.0155);
+  ctx.font = `${factSize}px "Press Start 2P", monospace`;
+  const factLines = wrapText(c.fact, cw - pad * 2);
+  const factLead = factSize * 1.9;
+  const ch = pad * 2 + H * 0.028 + H * 0.048 + H * 0.030 + factLines.length * factLead + H * 0.034;
+
+  ctx.save();
+  ctx.globalAlpha = ease;
+  ctx.translate(W / 2, H / 2 + dy);
+  ctx.rotate(-1.5 * Math.PI / 180);          // the same lazy tilt as the DOM card
+
+  // Card stock + double border, straight from .history-card.
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(-cw / 2 + 4, -ch / 2 + 8, cw, ch);
+  ctx.fillStyle = '#e8e0c8';
+  ctx.fillRect(-cw / 2, -ch / 2, cw, ch);
+  ctx.strokeStyle = '#2a2418';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-cw / 2, -ch / 2, cw, ch);
+  ctx.strokeRect(-cw / 2 + 4, -ch / 2 + 4, cw - 8, ch - 8);
+
+  let y = -ch / 2 + pad;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  // The header is the one line that is NOT the arcade's. These cards are not
+  // found on the arcade floor — they are found standing at the machine.
+  ctx.fillStyle = '#6b5f43';
+  ctx.font = `${Math.round(H * 0.012)}px "Press Start 2P", monospace`;
+  ctx.fillText('FOUND BESIDE THE MACHINE', 0, y);
+  y += H * 0.028;
+
+  ctx.fillStyle = '#2a2418';
+  ctx.font = `${Math.round(H * 0.032)}px "Press Start 2P", monospace`;
+  ctx.fillText(String(c.word || '').toUpperCase(), 0, y);
+  y += H * 0.048;
+
+  ctx.fillStyle = '#4a4030';
+  ctx.font = `${Math.round(H * 0.014)}px "Press Start 2P", monospace`;
+  ctx.fillText(`${c.title} · ${c.year}`, 0, y);
+  y += H * 0.030;
+
+  ctx.fillStyle = '#2a2418';
+  ctx.font = `${factSize}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'left';
+  factLines.forEach((ln, i) => ctx.fillText(ln, -cw / 2 + pad, y + i * factLead));
+  y += factLines.length * factLead;
+
+  // Scoped to the WING bank — an unscoped count reads "CARD 63 OF 60" the moment
+  // a bonus card exists (the INV-100 bug), and the scoped line is the better
+  // feature anyway: it names which collection just moved.
+  ctx.fillStyle = '#6b5f43';
+  ctx.font = `${Math.round(H * 0.012)}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'right';
+  ctx.fillText(`CARD ${earnedCard.found} OF ${earnedCard.total}`, cw / 2 - pad, y + H * 0.010);
+
+  if (earnedCard.isNew) {
+    ctx.save();
+    ctx.translate(cw / 2 - H * 0.012, -ch / 2 + H * 0.004);
+    ctx.rotate(8 * Math.PI / 180);
+    ctx.fillStyle = '#ff4444';
+    const bw = H * 0.075, bh = H * 0.030;
+    ctx.fillRect(-bw / 2, -bh / 2, bw, bh);
+    ctx.fillStyle = '#fff';
+    ctx.font = `${Math.round(H * 0.013)}px "Press Start 2P", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('NEW!', 0, 1);
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  if (cardT > 28) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = DIM;
+    ctx.font = `${Math.round(H * 0.017)}px "Press Start 2P", monospace`;
+    ctx.fillText('SPACE · BACK TO THE WALL', W / 2, H * 0.90);
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
 }
 
 // Exposed for the host: which cards this station shows (its own, then the

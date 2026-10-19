@@ -87,6 +87,16 @@ const TARGETS = [
     blurb: 'Level 25\'s "MY STORY" coda, at its first coda prompt',
   },
   {
+    name: 'freeplay', arg: '<1-25>', defaultLaps: 2,
+    laps: 'plays N Free Play sessions on that cabinet; run 2+ shows the NEXT act card in the rotation',
+    blurb: 'FREE PLAY on one cabinet — full keyboard, real sentences, and the ACT card that only reveals here. DEFAULTS TO 2 SESSIONS',
+  },
+  {
+    name: 'hardware', arg: '<station-id>', defaultLaps: 2,
+    laps: 'visits the station N times; run 2+ shows the card AGAIN (a one-card pool does not rotate)',
+    blurb: 'THE HARDWARE — a machine booted the real way, then the card it hands you on the way out. DEFAULTS TO 2 VISITS',
+  },
+  {
     name: 'speedway', arg: '<track-id>', defaultLaps: 2,
     laps: 'races N laps; lap 2+ has the ghost of the previous lap on track',
     blurb: 'Act 7 — a track, mid-race. DEFAULTS TO 2 LAPS, because a first lap has no ghost to look at',
@@ -158,6 +168,8 @@ function printList() {
     node scripts/playtest.mjs --at=complete:7 --laps=2
     node scripts/playtest.mjs --at=cinematic:mystery
     node scripts/playtest.mjs --at=speedway:monaco-gp --laps=2
+    node scripts/playtest.mjs --at=hardware:apple-iie --laps=2
+    node scripts/playtest.mjs --at=freeplay:3 --laps=2
     DEV_URL=http://127.0.0.1:8834 node scripts/playtest.mjs --at=coda:25 --shot=/tmp/kk
 `);
 }
@@ -314,7 +326,13 @@ const SNAPSHOT = () => {
     complete: vis('complete-overlay'),
     completeTitle: (document.querySelector('.complete-title') || {}).textContent || '',
     cardTitle: (document.getElementById('history-card-title') || {}).textContent || '',
-    cardShown: vis('history-card'),
+    // ⚠️ The OVERLAY must be up, not merely the card element. `#history-card` lives
+    // INSIDE `#complete-overlay` and keeps its own `hidden` state, so reading the card
+    // alone happily reports last screen's card long after the overlay was dismissed.
+    // That stale read cost a debugging detour: a run reported "the card revealed" and
+    // "the session never completed" at the same time — a contradiction that could only
+    // be the instrument (journal F28).
+    cardShown: vis('complete-overlay') && vis('history-card'),
     visibleScreens: anyScreen,
     ready: vis('ready-screen'),
     select: vis('select-screen'),
@@ -705,6 +723,267 @@ async function enterLevelForRun(run, level, lap) {
     await replayFromComplete(run.page);
   }
 }
+
+// ── FREE PLAY — the one surface where an ACT card reveals ────────────────────
+//
+// Why this target exists at all: after Level 15 the curriculum cabinets STILL hand
+// out their own restricted key sets — Level 1 is `{j, f}` forever — so an Act 1
+// word can never be typed at Act 1's curriculum cabinet. Free Play is the only
+// place in the game where an Act 1 cabinet and a complete keyboard exist at once,
+// which makes it the only place the act-card layer is visible at all.
+//
+// TWO THINGS THAT ARE EASY TO GET WRONG HERE, both of which produced a confident
+// wrong answer the first time (journal F28 — check the instrument first):
+//   1. `F` TOGGLES Free Play on the select screen. It does not start anything.
+//   2. Picking a cabinet does not go straight into play — it goes to the title
+//      screen's NAME-CONFIRM step, then the ready screen, then the keyboard
+//      preview. Four more keypresses, and they are the real player's route.
+//
+// Default of TWO sessions, same reasoning as speedway and hardware: session 1 can
+// only ever show you A card. Only session 2 can tell you the act pool ROTATES.
+IMPL.freeplay = async (run, arg, lap, laps) => {
+  const { page } = run;
+  const level = parseLevelArg(arg, 'freeplay');
+  const actNum = Math.ceil(level / 5);
+
+  if (isFreshEntry(run, lap)) {
+    await goToSelect(page, run.baseUrl);
+    await waitFor(page, 'the level-select screen', (s) => s.select, 12000);
+
+    // ⚠️ UNLOCK THE ACT LAYER *AFTER* goToSelect, NEVER BEFORE IT.
+    // `goToSelect` opens with `localStorage.clear()` — it always boots a brand-new
+    // machine — so anything seeded beforehand is gone before the first keypress.
+    // The first version of this target seeded up front and then reported "no act
+    // card" on an act that has four, which is the instrument, not the game.
+    //
+    // The act layer is gated on `furthestLevel >= 15` and there is no way to reach
+    // that except by playing fifteen levels, so it is patched in place here.
+    // Seeding to reach a state fast is permitted (testing.md rule 6); the claim
+    // under test is what Free Play DOES, not how the save got there. Patched live
+    // rather than via an init script on purpose: the game writes its act-card
+    // rotation back into this same object, and a re-applying seed would wipe that
+    // between sessions — which would silently make the rotation look broken.
+    const unlocked = await page.evaluate(() => {
+      try {
+        const st = JSON.parse(localStorage.getItem('kk-slots'));
+        if (!st || !Array.isArray(st.slots) || !st.slots[st.active]) return false;
+        st.slots[st.active].furthestLevel = 25;
+        localStorage.setItem('kk-slots', JSON.stringify(st));
+        return true;
+      } catch (e) { return false; }
+    });
+    if (!unlocked) {
+      throw new Error('could not raise furthestLevel to 25 in kk-slots — the act-card layer ' +
+        'is gated at Level 15 (ACT_CARD_UNLOCK_LEVEL) and would stay inert, which reads as ' +
+        '"this act has no cards" rather than as a failure.');
+    }
+
+    // Walk to the cabinet: ArrowDown between acts, ArrowRight within one — the same
+    // walk goToLevel does, but stopping ON the select screen, because Free Play has
+    // to be toggled before a cabinet is picked.
+    for (let i = 1; i < actNum; i += 1) { await page.keyboard.press('ArrowDown'); await page.waitForTimeout(160); }
+    const pos = ((level - 1) % 5) + 1;
+    for (let i = 1; i < pos; i += 1) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(140); }
+
+    await page.keyboard.press('f');
+    await page.waitForTimeout(250);
+    // Confirm the toggle took, BY NAME. A press that silently did nothing would hand
+    // back an ordinary curriculum run wearing a free-play label, and every assertion
+    // below would still pass.
+    const label = await page.evaluate(() =>
+      (document.getElementById('select-act-label') || {}).textContent || '');
+    if (!/FREE PLAY/i.test(label)) {
+      throw new Error(`FREE PLAY did not toggle on (act label reads: ${JSON.stringify(label)}). ` +
+        "`f` is ignored while the cursor sits on a bonus-act door — js/main.js case 'select'.");
+    }
+    await run.phase(`freeplay-select-L${level}`, `FREE PLAY armed — ${label.trim()}`);
+
+    // ⚠️ Picking a cabinet does NOT go straight into play. It goes to the title
+    // screen's NAME-CONFIRM step, then the ready screen, then the keyboard preview.
+    // Four more keypresses, and they are the real player's route.
+    await page.keyboard.press('Enter');  await page.waitForTimeout(350);   // cabinet -> name entry
+    await page.keyboard.press('Enter');  await page.waitForTimeout(350);   // confirm name -> ready
+    await page.keyboard.press('Space');  await page.waitForTimeout(350);   // ready -> keyboard preview
+    await page.keyboard.press('Space');  await page.waitForTimeout(700);   // preview -> the game
+    await waitFor(page, `Free Play's first prompt on cabinet ${level}`, (s) => s.gameScreen && s.token != null, 20000);
+  } else {
+    // Session 2+ uses the game's OWN replay affordance (R on the complete overlay).
+    // It calls startGame() with state.freePlay untouched, so it is a genuine second
+    // Free Play session on the same cabinet — and, critically, it neither navigates
+    // nor clears storage, so the act-card rotation written by session 1 survives.
+    // Re-walking through goToSelect would wipe it and the pool could never rotate.
+    await replayFromComplete(page);
+  }
+
+  const { presses } = await winCurrentLevel(page, run.opts.slow);
+  await waitForCompleteOverlay(page);
+  const s = await snapshot(page);
+  run.log(`session ${lap} won in ${presses} keypresses`);
+
+  const card = s.cardShown ? s.cardTitle : null;
+  const seen = seenActCards[level] || (seenActCards[level] = []);
+  const repeated = card && seen.includes(card);
+  if (card) seen.push(card);
+
+  await run.phase(`freeplay-L${level}-complete-session${lap}`,
+    card ? `${s.completeTitle.trim()} · act card: ${card}` : `${s.completeTitle.trim()} · no act card`);
+
+  if (!card) {
+    run.log(`no act card revealed on the Act ${actNum} cabinet — ACT_CARDS holds none for that ` +
+      'act yet (js/history-cards.js). An act with no content is inert by construction, never broken.');
+  } else if (lap > 1) {
+    run.log(repeated
+      ? `session ${lap} repeated the SAME act card (${card}) — expected only if this act has a pool of one.`
+      : `session ${lap} rotated to a DIFFERENT act card (${card}) — the act pool is doing its job.`);
+  }
+};
+
+// Act card titles seen per cabinet, across the sessions of one invocation.
+const seenActCards = {};
+
+// ── THE HARDWARE — a machine, booted, and the card on the way out ────────────
+// Reached the real way: the wing's own stretch of the back wall. THE HARDWARE
+// renders MACHINES rather than cabinets (BACK_WALL_DOORS `machines:`), so every
+// machine is its own selectable row carrying data-door="hardware" and
+// data-entry="<station-id>" — which is what this walks to, by NAME. Never by
+// blind arrow-counting: the speedway lane learned that the hard way when a wrapped
+// cursor put lap 2 on the wrong track and it read as a missing-ghost bug.
+//
+// Why the default is TWO visits: the card is the point, and a second visit is the
+// only way to see whether the station's pool ROTATES. With one card authored per
+// station it does not, and this tool says so out loud rather than letting a
+// one-card pool look like variety.
+IMPL.hardware = async (run, arg, lap, laps) => {
+  const { page } = run;
+  if (!arg) die('--at=hardware:<station-id> — e.g. apple-iie, msdos-pc (see js/hardware/stations.js)');
+
+  if (isFreshEntry(run, lap)) {
+    await goToSelect(page, run.baseUrl);
+    // Walk the back wall to THE HARDWARE, then along its machines to the one asked
+    // for. ArrowDown steps between wings; ArrowRight steps along a wing's wall.
+    let focused = null;
+    for (let i = 0; i < 12; i += 1) {
+      await page.keyboard.press('ArrowDown');
+      await page.waitForTimeout(120);
+      focused = await page.evaluate(() => {
+        const el = document.querySelector('.select-door.selected');
+        return el ? el.dataset.door : null;
+      });
+      if (focused === 'hardware') break;
+    }
+    if (focused !== 'hardware') {
+      throw new Error(`could not reach THE HARDWARE on the back wall (focused: ${focused}). ` +
+        'It opens at Level 20 — BACK_WALL_DOORS unlockLevel in js/ui/cabinet-art.js.');
+    }
+    let entry = null;
+    for (let i = 0; i < 8; i += 1) {
+      entry = await page.evaluate(() => {
+        const el = document.querySelector('.select-door.selected');
+        return el ? el.dataset.entry : null;
+      });
+      if (entry === arg) break;
+      await page.keyboard.press('ArrowRight');
+      await page.waitForTimeout(120);
+    }
+    if (entry !== arg) {
+      throw new Error(`THE HARDWARE wall has no machine "${arg}" (cursor stopped on: ${entry}). ` +
+        'The wall is BACK_WALL_DOORS `machines:` + js/hardware/stations.js.');
+    }
+    await run.phase(`hardware-wall-${arg}`, `the back wall — THE HARDWARE, standing at ${arg}`);
+    await page.keyboard.press(' ');
+    await waitForDrawn(page, 'THE HARDWARE hub', 'THE HARDWARE', 25000);
+  } else {
+    // Run 2+: we were left on the card. Space puts it down and lands on the wall
+    // of machines, which is where a second visit starts.
+    await page.keyboard.press(' ');
+    await page.waitForTimeout(400);
+    await waitForDrawn(page, 'THE HARDWARE hub', 'THE HARDWARE', 10000);
+  }
+
+  // The hub opens standing at the machine picked on the wall (focusStation), so
+  // Space enters it. Confirm by the machine's own prompt appearing.
+  const station = HARDWARE_STATIONS[arg];
+  if (!station) die(`--at=hardware:<station-id> — "${arg}" is not one of: ${Object.keys(HARDWARE_STATIONS).join(', ')}`);
+  await run.phase(`hardware-hub-visit${lap}`, 'the wall of machines — SPACE walks up to one');
+  await page.keyboard.press(' ');
+  await waitForDrawn(page, `${arg}'s prompt`, station.firstLine[0], 15000);
+
+  // TYPE WHAT IT IS WAITING FOR. This is the wing's whole verb, so the tool types
+  // it a character at a time through real key events, exactly as a child would.
+  //
+  // ⚠️ NO TRAILING Enter. A boot line COMMITS ON ITS LAST CHARACTER —
+  // handleBootKey() calls commitLine() the moment `typed.length` reaches the
+  // line's length — so Return is never needed and, after the final line, is
+  // actively harmful: the machine is already awake by then, and the awake
+  // handler reads Enter as "walk out", which skipped straight past the
+  // celebration to the card. The first run of this tool did exactly that and
+  // reported "no card revealed" about a card that was on screen.
+  for (const line of station.boot) {
+    for (const ch of line) {
+      await page.keyboard.press(ch === ' ' ? ' ' : ch);
+      await page.waitForTimeout(run.opts.slow || 18);
+    }
+    await page.waitForTimeout(260);
+  }
+
+  // The machine wakes. This is the wing's celebration and it is STAGED (flash →
+  // title → year → why → exit line), so wait for the last beat, not the first —
+  // a shot on visibility photographs a half-finished animation (journal F28).
+  // ⚠️ Wait on the RUNNING TITLE, not on "BACK TO THE WALL" — the card screen
+  // carries that same exit line, so it cannot tell the two screens apart and a
+  // shot taken on it photographed the card while calling it the celebration.
+  await waitForDrawn(page, `${arg} running its program`, station.running, 15000);
+  await page.waitForTimeout(1300);   // let the staged wake finish: flash -> title -> year -> why
+  await run.phase(`hardware-${arg}-awake-visit${lap}`, 'the machine is running the thing it was bought for');
+
+  // …and on the way out, the card.
+  await page.keyboard.press(' ');
+  await page.waitForTimeout(700);
+  const drawn = await drawnText(page, 3);
+  const gotCard = drawnHas(drawn, 'FOUND BESIDE THE MACHINE');
+  if (!gotCard) {
+    run.log(`no card revealed at ${arg} — this station has no cards in WING_CARDS yet ` +
+      '(js/history-cards.js), so the wing walks straight back to the wall.');
+    return;
+  }
+  const isNew = drawnHas(drawn, 'NEW!');
+  // WHICH card, not just whether one appeared. A station with a pool of one hands over
+  // the same card forever ("rotation" that never rotates); a station with a real pool
+  // should hand over a DIFFERENT one next visit. Only the title tells them apart, so the
+  // title is what gets remembered across visits.
+  const title = (drawnHas(drawn, 'FOUND BESIDE THE MACHINE') ? drawn : [])
+    .map(d => (typeof d === 'string' ? d : d && d.text) || '')
+    .find(txt => /^THE .+· ?\d|^THE .+·/.test(txt)) || '(title not readable)';
+  const seen = seenStationCards[arg] || (seenStationCards[arg] = []);
+  const repeated = seen.includes(title);
+  seen.push(title);
+
+  await run.phase(`hardware-${arg}-card-visit${lap}`,
+    `${isNew ? 'NEW! — ' : 'already collected — '}${title}`);
+
+  if (lap > 1) {
+    if (repeated) {
+      run.log(`visit ${lap} handed over the SAME card again (${title}). Expected only if this ` +
+        "station has a pool of one — a second card is what makes the rotation rotate.");
+      if (isNew) {
+        run.log('⚠️ …and it is STILL marked NEW!, which means visit 1 never reached the save.');
+      }
+    } else {
+      run.log(`visit ${lap} rotated to a DIFFERENT card (${title}) — the pool is doing its job.`);
+    }
+  }
+};
+
+// Card titles handed over per station, across the visits of one invocation.
+const seenStationCards = {};
+
+// The boot lines, mirrored from js/hardware/stations.js. Deliberately a COPY and
+// deliberately small: the tool drives the real page, so if these ever drift the
+// waitForDrawn on the machine's prompt fails loudly rather than typing nonsense.
+const HARDWARE_STATIONS = {
+  'apple-iie': { firstLine: ['CATALOG'], boot: ['CATALOG', 'RUN STICKYBEAR'], running: 'STICKYBEAR TYPING' },
+  'msdos-pc':  { firstLine: ['DIR'],     boot: ['DIR', 'GIZMOS'],             running: 'GIZMOS' },
+};
 
 // ── Act 7 — The Speedway ─────────────────────────────────────────────────────
 // Reached the real way: the SECOND back-wall door on the select screen.
