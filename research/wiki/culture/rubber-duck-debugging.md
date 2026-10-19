@@ -40,4 +40,11 @@ THE DUCK.") — this card gives that reference its documented origin.
 
 ## See also
 
-`.claude/rules/easter-eggs.md` item 4 (proposed, unbuilt "rubber duck" easter egg) — this card supplies its documented origin.
+`.claude/rules/easter-eggs.md` item 4 — ⚠️ *no longer proposed: the duck was BUILT 2026-09-11*
+(a yellow duck on the Level 20 terminal cabinet's control panel, plus a one-time
+`STUCK? TELL THE DUCK.` line under the first post-miss finger hint from Level 22 on). This
+card supplies its documented origin.
+
+[[mark-ii-moth-1947]] — the other "where bugs come from" page, and the other built
+select-screen easter egg. The two sit together deliberately: the moth is the bug you can
+*see*, the duck is how you find the ones you cannot (added 2026-09-18).

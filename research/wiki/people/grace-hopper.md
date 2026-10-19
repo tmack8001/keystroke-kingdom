@@ -47,6 +47,16 @@ taped it into the logbook."* **This needs correction** — see The facts below.
   unsupported claim. This change was **not** made to `js/history-cards.js` by the
   research pass — flagged here for a human/separate change.
 - Same correction and reasoning appear on [[mark-ii-moth-1947]], the event page.
+- **⚠️ Card-boundary note (added 2026-09-18).** A SECOND card about the same object is
+  proposed at **Level 11** (`moth`), and its subject is the **artifact and the day** —
+  the relay, the insect, the notebook page — with **no mention of Hopper at all**. That
+  separation is deliberate and load-bearing: this L13 card owns the *person and the
+  popularising*, and the L11 card owns the *thing*. Neither may drift into the other's
+  half. Card-ready facts for the L11 card live on [[mark-ii-moth-1947]].
+- **⚠️ "The first software bug" is not sourceable and must not appear on either card.**
+  The Mark II was an electromechanical relay machine; JSTOR Daily calls the incident
+  *"a mechanical obstruction rather than a software bug."* See [[mark-ii-moth-1947]]
+  §Corrections.
 
 ## References
 

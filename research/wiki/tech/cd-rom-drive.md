@@ -90,6 +90,11 @@ enough to build a whole game genre around.
 supports directly.
 [[floppy-disk]] — the earlier removable medium (1971, 80 KB), Level 10's card — the
 comparison point for the capacity math above.
+[[multimedia-pc-standard]] — the PAIRED MACHINE card for the same THE HARDWARE station:
+the MPC badge and VGA, i.e. what made the beige box around this drive a *multimedia*
+computer. It deliberately tells none of the CD-ROM's own story. It also records the
+finding that "a generic beige 1993 tower" cannot carry a sourced card on its own
+(added 2026-09-14).
 
 ## Corrections from citation pass (2026-09-14)
 

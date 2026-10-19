@@ -20,6 +20,13 @@ the thing) first, established journalism second, Wikipedia at most as one of sev
 and never alone. See "Corrections from citation pass" for the one player-facing text change
 this pass surfaced.*
 
+*Annexe added 2026-09-15: **[[discrete-math-and-code-notation]]** — a seven-card
+discrete-mathematics and code-notation batch (`edge` L6, `odd` L9, `graph` L10, `prime` /
+`modulo` L11, `boolean` L12, `1==1` L21), commissioned after Trevor noticed that the shipped
+`1=1` card ([[equals-sign]]) is right as mathematics and **wrong as code**. That hub carries
+the batch's level table, its pool-density warnings, and three created-vs-published date traps
+a card writer would otherwise walk into. No card in this file changes.*
+
 **The core constraint that shaped everything:** each card's word must be typeable using
 ONLY the keys unlocked at its level. This turned out to be a design gift — the curriculum
 itself decides when history becomes speakable, and some assignments landed poetically.
@@ -310,6 +317,32 @@ pass applies: 2–4 references per moment, institutional/primary sources preferr
 least a third of URLs verified by direct WebFetch, no URL written from memory. Every new
 page lives under `research/wiki/**` with full frontmatter/References — this table is the
 index into them.*
+
+> ### ⚠️ SUPERSEDED — corrected 2026-09-15. Read this box before the paragraph below it.
+>
+> **The paragraph below is half right and half wrong, and the wrong half held for fourteen
+> months.** Right: no English **word** is spellable from a vowel-less key set, and inventing
+> one would have been a fake. **Wrong: the sentence "No English word, name, or common
+> initialism is spellable without a vowel from this letter set" — three counterexamples
+> now exist, and two of them are *initialisms*, which the sentence explicitly ruled out.**
+>
+> - **L1 — `jf`** ([[home-row-bumps]], 2026-09-14): the two bumps under the index fingers.
+>   The token is literally Level 1's own documented drill (*"j, f, jf, fj"*).
+> - **L2 — `jdk`** ([[java-language]], 2026-09-15): the Java Development Kit. `j`, `d`, `k`
+>   are exactly Level 2's alphabet, and it uses **both** of the level's new keys.
+> - **L3 — `ls`** ([[ls-command]], 2026-09-15): the Unix list-directory command, whose
+>   First Edition manual page is dated 3 November 1971. **Both** characters are new at L3.
+>
+> **The error was a hidden premise, not a bad fact.** The paragraph reasoned "no vowel →
+> no word → no card," but the card bank had *already* accepted non-word tokens when it was
+> written — `\o/`, `386`, `56k`, `1969`, `asdf`. The vowel rule governs the **word bank**
+> (`product.md` §Word Bank Principle, which is about what a child *reads*); it was silently
+> applied to the **card bank**, which is about what a child *types*. Those are different
+> constraints, and conflating them cost Levels 1–3 their entire replay reward.
+>
+> **The corrected rule:** a card word must be *typeable from the level's cumulative
+> alphabet, contain at least one of its new characters, and be a real thing somebody can
+> cite* — it does **not** have to be an English word. Levels 1–3 are hard, not impossible.
 
 **Levels 1–3 could not receive a card, and this is by design, not an oversight.** Their
 cumulative key sets are `f j` (L1), `d f j k` (L2), and `d f j k l s` (L3) — **zero

@@ -63,3 +63,13 @@ framed as right-pinky-reach levels rather than forcing artificial hand symmetry)
 6. [Frank Edward McGurrin — Wikipedia](https://en.wikipedia.org/wiki/Frank_Edward_McGurrin) — biography; explicitly notes that whether he was first to touch-type "is disputed."
 7. [Mario Teaches Typing — Wikipedia](https://en.wikipedia.org/wiki/Mario_Teaches_Typing) — confirms MTT's shared curriculum lineage. *(Directly fetched and verified.)*
 8. [Mavis Beacon Teaches Typing — Wikipedia](https://en.wikipedia.org/wiki/Mavis_Beacon_Teaches_Typing) — corroborates the shared canon curriculum across the earliest of the comparable tutors. *(Directly fetched and verified.)*
+
+## See also
+
+[[home-row-bumps]] *(added 2026-09-14)* — the two raised marks on **F** and **J** that make
+"home row first" physically findable. Its purpose is well sourced; its **origin is not**,
+and that page says so rather than repeating the internet's two favourite wrong answers
+(the Botich patent, and ISO 9995). Candidate **Level 1** history card, moment word `jf` —
+the first card the game's three wordless levels could ever hold.
+[[qwerty-keyboard]] — why the home keys sit where they sit.
+[[the-eighth-key]] — the home-row key this game refuses to name.

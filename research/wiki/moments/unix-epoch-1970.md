@@ -42,6 +42,7 @@ completely different foundational 1969/1970 computing moments.
 ## See also
 
 [[unix]] — the operating system this convention comes from (Level 14). [[arpanet-first-message-1969]] — this game's other Level 20 card.
+[[time-display-conventions-1990s]] — how that count gets *displayed*: 12-hour vs 24-hour was a locale setting, and Unix/syslog is where the genuine 24-hour convention lives (added 2026-09-18).
 
 ## Unsourceable / weakly-sourced items
 

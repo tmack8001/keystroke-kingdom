@@ -40,3 +40,7 @@ era knew by heart.
 ## See also
 
 [[dialup-modem]] — the handshake sound this modem generation made (Level 20 tag).
+[[ne555-timer]] — the PROPOSED second Level 16 card (`555`), written 2026-09-15 so this
+level has more than one card to rotate between. Both are spelled out of Level 16's only
+two digits, 5 and 6 — the constraint is severe here, and `555` is one of the very few real
+tokens that fits it.

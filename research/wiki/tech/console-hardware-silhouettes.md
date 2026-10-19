@@ -216,6 +216,12 @@ The machine [[stickybear]] actually ran on, and therefore the honest object for 
 Stickybear set dressing. **There is no Stickybear arcade cabinet and there never was**
 ([[bear-on-a-blue-screen]]) — this is the thing to draw instead.
 
+> *Added 2026-09-14:* this section is **drawing reference**; the machine's own history —
+> introduced January 1983 at $1,395, the first Apple II to type lowercase without an extra
+> card, up and down arrow keys for the first time, ~9,000 California schools, on sale until
+> November 1993 — now lives on [[apple-iie]], the MACHINE card for THE HARDWARE wing's
+> Station 2. Same for the beige PC below: [[multimedia-pc-standard]].
+
 - **The computer IS the keyboard.** A low beige wedge with the keys sunk into its top
   surface; there is no separate keyboard and no separate box. Everything else sits on it.
 - **The monitor sits ON TOP of the wedge** — a deep-bezelled beige CRT, roughly as wide as

@@ -14,6 +14,18 @@ this session) or *(search result only, not fetched)*. This is a fast-moving spac
 re-verified before it is trusted.** Anything that could not be confirmed against a
 live source is marked `[unverified]` rather than asserted.
 
+> **RE-VERIFICATION PASS — 2026-09-18.** Prompted by Trevor: *"Browser LLM — do we
+> really need that much ram to be able to use the built in chrome Gemini nano model
+> insane."* The hardware requirements, the availability states, the API family, and both
+> vendor standards positions were re-fetched from primary sources on **2026-09-18**.
+>
+> **One material finding, and it is a correction to us, not a change by Google:** the
+> GPU and CPU requirements are an **OR**, not an **AND** (§Requirements). Everything else
+> — Chrome 148 web-stable, the four availability states, the 22 GB / 10 GB disk rules, the
+> platform exclusions, Mozilla negative, WebKit oppose — is **unchanged**. References
+> carrying **[fetched 2026-09-18]** were read in the re-verification pass; those still
+> marked **[fetched 2026-09-11]** were not re-read and keep their original date.
+
 ---
 
 ## 1. Why this question exists
@@ -86,26 +98,82 @@ non-supporting browsers).
 
 ### Requirements — the gate that decides everything
 
-| Requirement | Value |
+> ## ⚠️ CORRECTED 2026-09-18 — the GPU and CPU clauses are an **OR**, not an **AND**
+>
+> *Trevor, reading the spec's requirements line: "do we really need that much ram to be
+> able to use the built in chrome Gemini nano model insane." He was right to push. The
+> figures below were re-fetched on **2026-09-18** from three Chrome pages, and the
+> earlier reading of them was wrong in the direction that mattered.*
+>
+> Chrome's own text is a single labelled bullet with two sub-bullets:
+>
+> > **GPU or CPU**: Built-in models can run with GPU or CPU.
+> > - **GPU**: Strictly more than 4 GB of VRAM.
+> > - **CPU**: 16 GB of RAM or more and 4 CPU cores or more.
+>
+> The 2026-09-11 pass recorded these as two separate rows of one conjunction and then
+> wrote *"That is a conjunction, and every clause is exclusionary… most integrated-GPU
+> laptops"* — which inverted the meaning of the clause that exists **precisely to admit
+> integrated-GPU laptops**. A machine needs **either** >4 GB VRAM **or** 16 GB RAM with
+> 4 cores. Not both.
+>
+> **This was our transcription error, not a relaxation by Google.** The Prompt API page
+> carries `Last updated 2026-08-26`, *before* the 2026-09-11 fetch, and the get-started
+> page `Last updated: May 20, 2025` — so the "GPU or CPU" wording was already on the page
+> when we misread it. Nothing moved; we did. Corrected table follows.
+
+| Requirement | Value (re-verified 2026-09-18) |
 |---|---|
 | OS | Windows 10/11; macOS 13+ (Ventura and onwards); Linux; ChromeOS on **Chromebook Plus** (Platform 16389.0.0+) |
-| **Not supported** | **Chrome for Android, iOS, and ChromeOS on non-Chromebook-Plus devices** |
-| Storage | "At least **22 GB** of free space on the volume that contains your Chrome profile." Model is **removed** if free space later falls below 10 GB |
-| GPU | "**>4 GB of VRAM**" |
-| CPU/RAM | "16 GB of RAM or more and 4 CPU cores or more" |
-| Network | Unmetered connection required **for the initial download only**; no network needed afterwards |
+| **Not supported** | **Chrome for Android, iOS, and ChromeOS on non-Chromebook-Plus devices** — *"not yet supported by the APIs which use foundation models"* |
+| Storage | *"At least **22 GB** of free space on the volume that contains your Chrome profile."* Model is **removed** if free space later falls below 10 GB. Chrome adds: *"Built-in models should be significantly smaller. The exact size may vary slightly with updates."* — **22 GB is a free-space headroom gate, not the model's size** |
+| **Compute — a DISJUNCTION** | *"**GPU or CPU**: Built-in models can run with GPU or CPU."* → **GPU:** *"Strictly more than 4 GB of VRAM."* **— OR — CPU:** *"16 GB of RAM or more and 4 CPU cores or more."* |
+| Audio input only | *"The Prompt API with audio input requires a GPU."* (text-only generation — our use case — does not) |
+| Network | Unmetered connection required **for the initial download only**; *"Subsequent use of the model does not require a network connection. No data is sent to Google or any third party when using the model."* |
+| Languages | *"From Chrome 149, the models support English, Spanish, Japanese, German, and French for input and output text."* |
 
-That is a **conjunction**, and every clause is exclusionary. It rules out every phone
-and tablet, every Mac on macOS 12 or older, most integrated-GPU laptops (the >4 GB VRAM
-clause), and any machine with a nearly-full disk. StatCounter put **mobile at 49.36%**
-of worldwide traffic in **August 2026** (desktop 49.11%, tablet 1.54%) — so roughly half
-of all web traffic is on a platform where the Prompt API does not exist *at all*, before
-any hardware clause is applied.
+**What the gate actually excludes**, stated correctly: every phone and tablet (platform,
+not hardware); every Mac on macOS 12 or older; any machine with a nearly-full disk; and
+desktops that have **neither** a >4 GB-VRAM GPU **nor** 16 GB of RAM. A 16 GB
+integrated-graphics laptop — the single most common shape of a modern family machine —
+**passes on the CPU clause alone.** StatCounter's mobile share (49.36%, Aug 2026) remains
+irrelevant to this game for the reason recorded in the spec: mobile users are not
+addressable players of a touch-typing game.
 
 **References**
-1. [Get started with built-in AI](https://developer.chrome.com/docs/ai/get-started) — OS list, 22 GB, >4 GB VRAM, 16 GB RAM / 4 cores, unmetered-download note, unsupported platforms. **[fetched 2026-09-11]**
-2. [The Prompt API](https://developer.chrome.com/docs/ai/prompt-api) — same requirements restated; "If available storage falls to less than 10 GB after download, the model is removed." **[fetched 2026-09-11]**
-3. [StatCounter — Platform Market Share Worldwide](https://gs.statcounter.com/platform-market-share/desktop-mobile-tablet/worldwide) — August 2026: mobile 49.36%, desktop 49.11%, tablet 1.54%. **[fetched 2026-09-11]**
+1. [Get started with built-in AI](https://developer.chrome.com/docs/ai/get-started) — `Published: December 12, 2024, Last updated: May 20, 2025`; OS list, 22 GB / 10 GB, the "GPU or CPU" disjunction, unmetered-download note, unsupported platforms, four availability states. **[fetched 2026-09-18]** *(also fetched 2026-09-11 — same page, misread then)*
+2. [The Prompt API](https://developer.chrome.com/docs/ai/prompt-api) — `Published: May 20, 2025, Last updated: August 26, 2026`; identical requirements block, verbatim: *"GPU or CPU: Built-in models can run with GPU or CPU."* **[fetched 2026-09-18]**
+3. [Summarizer API](https://developer.chrome.com/docs/ai/summarizer-api) (`Last updated 2025-07-30`) and [Writer API](https://developer.chrome.com/docs/ai/writer-api) (`Last updated 2025-10-22`) — the **same** requirements block, word for word. Three independent pages agree; this is not a typo on one page. **[fetched 2026-09-18]**
+4. [Manage on-device Generative AI models in Chrome — Google Chrome Help](https://support.google.com/chrome/answer/16961953?hl=en) — the **user-facing** statement of the same gate is markedly looser and names no memory figure at all: *"Network connection: Unmetered network connection. Minimum free disk space: 20GB (approximate). Sufficient device performance. Specific device requirements may change over time."* **[fetched 2026-09-18]**
+5. [StatCounter — Platform Market Share Worldwide](https://gs.statcounter.com/platform-market-share/desktop-mobile-tablet/worldwide) — August 2026: mobile 49.36%, desktop 49.11%, tablet 1.54%. **[fetched 2026-09-11]**
+
+### Download-time vs run-time — the distinction that causes most of the confusion
+
+The published figures are **not all the same kind of requirement**, and conflating them is
+what makes the bar sound absurd:
+
+| Figure | Kind | When it binds |
+|---|---|---|
+| 22 GB free disk (dev docs) / ~20 GB (help page) | **Provisioning** — free-space headroom on the profile volume | Only to *download* the model. Explicitly **not** the model's size (*"should be significantly smaller"*) |
+| Unmetered connection | **Provisioning** | *"only for the initial download"* |
+| <10 GB free → model deleted | **Retention** | After download, ongoing |
+| >4 GB VRAM **or** 16 GB RAM + 4 cores | **Execution** | To run it once provisioned |
+| ~4 GB on disk (secondary: The Register, ~4.27 GB v3Nano) | The actual artifact | Occupies part of that headroom |
+
+So "16 GB of RAM" is **one of two alternative ways to satisfy the execution clause**, not
+a floor every machine must clear, and "22 GB" is a disk-headroom rule that has nothing to
+do with memory. `[unverified]` — Chrome publishes no number for *resident RAM during
+inference*; the ~4 GB artifact size is the only size figure, and it comes from secondary
+reporting.
+
+**VRAM vs unified memory.** Chrome's documentation does **not** distinguish discrete VRAM
+from Apple-silicon unified memory anywhere we could find, and does not document a
+CPU-fallback mechanism beyond the plain "GPU or CPU" disjunction above. Secondary sources
+(dev blogs) claim Chrome counts roughly half of system RAM as available VRAM on
+integrated GPUs including Apple silicon — **`[unverified]`, secondary only, do not rely on
+it.** It also does not need to be load-bearing: a 16 GB Apple-silicon Mac with 8 cores
+satisfies the **CPU clause** on Google's own wording, independent of how its GPU memory is
+counted.
 
 ### The model download
 
@@ -193,6 +261,55 @@ is the crux of §4 below.
 
 Practical consequence: **do not expect Safari or Firefox to implement this.** Any design
 that depends on the Prompt API is a Chrome-desktop-only design, indefinitely.
+
+**Re-verified 2026-09-18 — both positions UNCHANGED.** Queried via the GitHub API:
+
+| Issue | Title | State | Position label | Last updated |
+|---|---|---|---|---|
+| `mozilla/standards-positions#1213` | Prompt API | closed | **`position: negative`**, `concerns: interoperability` | 2026-05-09 |
+| `WebKit/standards-positions#495` | ML Prompt API | closed | **`position: oppose`**, `concerns: interoperability`, `concerns: privacy`, `concerns: portability` | 2026-05-27 |
+
+Both were last touched in **May 2026** — nothing has moved in either direction since the
+2026-09-11 pass. MDN's page still carries *"Limited availability — This feature is not
+Baseline because it does not work in some of the most widely-used browsers"* and an
+explicit *"This feature is currently opposed by two browser vendor(s)"*, listing Mozilla
+**Negative** and Apple/WebKit **Negative**. The Chrome-desktop-only conclusion stands.
+
+**References**
+1. [mozilla/standards-positions#1213](https://github.com/mozilla/standards-positions/issues/1213) — via `api.github.com`: state closed, label `position: negative`, updated 2026-05-09. **[fetched 2026-09-18]**
+2. [WebKit/standards-positions#495](https://github.com/WebKit/standards-positions/issues/495) — via `api.github.com`: state closed, label `position: oppose`, updated 2026-05-27. **[fetched 2026-09-18]**
+3. [Prompt API — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Prompt_API) — Limited-availability banner; "currently opposed by two browser vendor(s)"; both positions linked. **[fetched 2026-09-18]**
+
+### Is there a lighter path? — checked 2026-09-18, and no
+
+Asked directly: does the built-in AI family offer anything cheaper than the full Prompt
+API for a task as small as "give me a few three-letter words spellable from `a s d f`"?
+
+- **No smaller model tier, no quota-limited mode.** The Prompt API page documents one
+  model (*"The Prompt API uses the Gemini Nano model in Chrome"*), four availability
+  states, and — on the web — no sampling parameters at all outside an origin trial. There
+  is no documented "small" variant to request and no cheap/degraded mode.
+- **The task APIs do NOT have a lower bar.** The Summarizer, Writer, Rewriter and
+  Proofreader pages carry the **same requirements block, word for word**, because Chrome
+  states plainly that they share one model: *"The Prompt API, Summarizer API, Writer API,
+  Rewriter API, and Proofreader API work in Chrome when the following conditions are
+  met."* Switching to a "smaller-sounding" API buys nothing — same gate, same download,
+  and none of them generate word lists anyway.
+- **The only genuinely lower-bar family is useless to us.** *"The Translator and Language
+  Detector APIs use expert models"* (not the foundation model) and are listed separately:
+  they *"work in Chrome on desktop"* with no hardware conjunction attached, stable since
+  Chrome 138. They translate and detect; they cannot generate early-reader vocabulary.
+- **Caveat on Chrome's own docs.** The [built-in APIs index](https://developer.chrome.com/docs/ai/built-in-apis)
+  still says *"The Prompt API is available from Chrome 138 stable, only for Chrome
+  Extensions"* and refers to "origin trial participants", which **contradicts** the Prompt
+  API page's Chrome 148 web-stable status. Chrome's AI docs are internally inconsistent;
+  prefer the per-API page and check its `Last updated` stamp. **[fetched 2026-09-18]**
+
+**References**
+1. [The Prompt API](https://developer.chrome.com/docs/ai/prompt-api) — one model; web sampling parameters only via origin trial; shared requirements block. **[fetched 2026-09-18]**
+2. [Summarizer API](https://developer.chrome.com/docs/ai/summarizer-api) / [Writer API](https://developer.chrome.com/docs/ai/writer-api) — identical requirements block. **[fetched 2026-09-18]**
+3. [Get started with built-in AI](https://developer.chrome.com/docs/ai/get-started) — *"The Translator and Language Detector APIs use expert models. All other APIs use a language model"*; *"The Language Detector and Translator APIs work in Chrome on desktop."* **[fetched 2026-09-18]**
+4. [Built-in AI APIs](https://developer.chrome.com/docs/ai/built-in-apis) — the stale Chrome-138/extensions-only claim. **[fetched 2026-09-18]**
 
 **References**
 1. [mozilla/standards-positions#1213 — Prompt API](https://github.com/mozilla/standards-positions/issues/1213) — position: negative. **[fetched 2026-09-11]**
@@ -347,6 +464,15 @@ taken in `docs/specs/browser-llm.md` §4.
 
 ## Corrections from citation pass
 
+- **⚠️ The biggest one, found 2026-09-18: the compute requirement is a DISJUNCTION.**
+  This document's first pass rendered *"GPU or CPU: Built-in models can run with GPU or
+  CPU"* as two rows of a conjunction and then reasoned from it that the bar *"rules out…
+  most integrated-GPU laptops."* The opposite is true: the CPU clause exists to admit
+  them. The wording had not changed on Chrome's side — we misread a live page. **Lesson
+  worth keeping: a requirements table flattens the conjunction/disjunction structure of
+  the prose it was built from, and that structure was the whole decision.** When
+  transcribing a requirements list, copy the parent bullet's connector word, not just its
+  leaf values.
 - The widely-repeated "Chrome 138" figure is about the **Chrome Extensions** Prompt API
   and about flag-gated experimentation, not stable web availability. Stable **web**
   availability is **Chrome 148 (2026-05-05)**. Don't conflate them.
@@ -359,10 +485,19 @@ taken in `docs/specs/browser-llm.md` §4.
 ## Unsourceable / weakly-sourced items
 
 - **What fraction of real players clear the Prompt API hardware bar.** No public dataset
-  reports the joint distribution of (Chrome desktop) × (>4 GB VRAM) × (16 GB RAM) ×
-  (22 GB free disk) × (on-device AI not disabled). `[unverified]`. Every estimate in the
-  spec is reasoned from the platform split, not measured — the only trustworthy number
-  is the one the game itself could report from `availability()` at runtime.
+  reports the joint distribution of (Chrome desktop) × (**>4 GB VRAM OR 16 GB RAM + 4
+  cores** — corrected 2026-09-18) × (22 GB free disk) × (on-device AI not disabled).
+  `[unverified]`. Every estimate in the spec is reasoned from the platform split, not
+  measured — the only trustworthy number is the one the game itself could report from
+  `availability()` at runtime. **The correction moves this number up, probably a lot**,
+  since the disjunction admits the whole integrated-graphics laptop population that the
+  earlier conjunction reading excluded — but "probably a lot" is still not a measurement.
+- **Resident RAM during inference.** Chrome publishes a *provisioning* disk figure and an
+  *eligibility* memory figure, but no statement of how much RAM the model occupies while
+  running. `[unverified]`.
+- **Whether Chrome counts Apple-silicon unified memory as VRAM** (secondary sources claim
+  ~half of system RAM is treated as available VRAM on integrated GPUs). `[unverified]`,
+  secondary only. Not load-bearing — the CPU clause already admits a 16 GB Mac.
 - **The Prohibited Uses Policy acknowledgement requirement** — reported by Mozilla and
   The Register; not found on Chrome's own Prompt API docs page this session. `[unverified]`.
 - **On-device Gemini Nano output safety filtering** — no primary statement found.

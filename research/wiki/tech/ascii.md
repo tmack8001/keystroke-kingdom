@@ -53,3 +53,12 @@ possible Act 6 aesthetic anchor.
 2. [The History of ASCII 1963 — ascii-code.com](https://www.ascii-code.com/articles/ASCII-1963) — confirms ASA X3.4-1963, released June 17, 1963, as a 7-bit/128-character code; notes the original lacked lowercase, added in the 1967 revision. **[fetched]**
 3. [ASCII art — Wikipedia](https://en.wikipedia.org/wiki/ASCII_art) — corroborates ASCII art's lineage through typewriter art and teleprinter/TTY transmission into BBS culture. **[fetched]**
 4. [The Surprisingly Rich History of ASCII Art — The New Stack](https://thenewstack.io/surprisingly-rich-history-ascii-art/) — established tech journalism corroborating the teleprinter-to-BBS lineage.
+
+## See also
+
+[[newline-crlf]] — the PROPOSED second Level 22 card (`\n`), written 2026-09-15 so this
+level has a pool it can rotate through. Same key (`\`), adjacent subject: ASCII gave every
+character a number, and **two** of those numbers — CR and LF — are what a computer sends
+when it wants a new line. The page also records the precision guard that the CR/LF split
+predates ASCII (Baudot code had both as early as 1901).
+[[hello-world]] — the binary-to-letters reveal ASCII makes possible at Level 20.

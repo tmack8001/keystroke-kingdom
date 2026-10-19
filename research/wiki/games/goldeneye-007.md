@@ -60,12 +60,20 @@ anyone noticing" for stealth — never guns, kills, or damage. No existing histo
 text currently makes a GoldenEye mechanic claim, so nothing player-facing needs
 correcting today; this section exists so a future card-writer has a faithful source to
 abstract FROM rather than inventing combat detail from memory. This also fills the wiki
-gap the liveness audit flagged (docs/validation/liveness-audit-2026-07-12.md) — the
-current Level 17 theme shows the split-screen HUD structure faithfully but no
-character/weapon/shooting representation, which is consistent with (not a bug relative
-to) the no-combat-depiction design constraint above, though the audit's broader point
-that the FPS mechanic itself isn't visually represented still stands as a design choice
-to make deliberately, not by omission.*
+gap the liveness audit flagged (docs/validation/liveness-audit-2026-07-12.md).
+
+⚠️ **STALE — corrected 2026-09-16.** That description was invalidated by the 2026-09-14
+rebuild (commit `463b4a0`). Level 17 is no longer "split-screen HUD structure with no
+character representation": `js/themes/goldeneye.js` now draws **all four players in ONE
+shared arena** with a named path — grates, stairs, cells, silos — and a proximity beat,
+after Trevor's ruling that *"the split-screen LAYOUT was never the mechanic — being in
+ONE arena together was"* (`.claude/rules/theme-authoring.md` §"DEPICTING THE FORMAT IS
+NOT DEPICTING THE MECHANIC"). The no-combat-depiction constraint above still holds.
+
+*This is the THIRD wiki page found propagating a verdict from that superseded audit —
+the other two were corrected 2026-09-13 and this one was missed. Journal **F31**: a
+stale finding in the record corroborated a wrong fresh one, and two wrongs read as
+certainty. The audit doc itself now opens with a SUPERSEDED banner.*
 
 ## References
 

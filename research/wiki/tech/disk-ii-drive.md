@@ -92,6 +92,10 @@ room in 1978.
 
 [[floppy-disk]] — the removable medium this drive reads; the Level 10 history card.
 [[apple-computer]] — the company and its 1976 garage founding, Level 10.
+[[apple-iie]] — the PAIRED MACHINE card for the same THE HARDWARE station (spec §0.3: the
+machine is the museum label, the component is the lesson). It deliberately tells none of
+this drive's story — its subject is lowercase letters, arrow keys and classrooms
+(added 2026-09-14).
 
 ## Unsourceable / weakly-sourced items
 

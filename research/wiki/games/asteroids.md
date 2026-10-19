@@ -17,6 +17,11 @@ branch of early arcade hardware alongside [[tempest]], contrasting with the rast
 approach of [[space-invaders]]. Both belong to the [[discrete-logic-era]] / early sprite
 hardware period covered by Act 1.
 
+*Added 2026-09-14:* Asteroids is also the cabinet that made the three-letter high-score
+ritual universal — see [[high-score-initials]], which carries The Strong's careful
+*"one of the first"* wording (Exidy's **Star Fire**, December 1978, got there first) and
+the reasons the "why only three letters" answer should **not** be written onto a card.
+
 ## The facts
 
 - Developer: Atari — concept by Lyle Rains, design and programming by Ed Logg. Released

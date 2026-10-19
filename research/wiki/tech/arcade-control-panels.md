@@ -15,6 +15,13 @@ be found, in the photograph. It is the panel twin of
 
 ## In this game
 
+*Sibling pages, added 2026-09-14 — the rest of the cabinet, sourced from the same class
+of primary Atari service manuals this page relies on:* [[arcade-coin-door]] (the coin
+mechanisms directly **below** this control panel, and the locked cash box behind them),
+[[arcade-marquee]] (Atari's own term is *"attraction panel"* — one fluorescent tube behind
+Plexiglas, sharing its housing with the speaker), [[attract-mode]] (what the screen above
+the panel did when nobody was standing at it).
+
 **Every cabinet used to get the same panel: one joystick and two buttons.** Trevor caught it
 (2026-09-13): *"we should also look when we should introduce more than a joystick and two
 buttons... as eventually games got more complex with more buttons, more levers, etc."*

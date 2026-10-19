@@ -46,3 +46,4 @@ See `.claude/rules/levels/act1.md` Level 4.
 ## See also
 
 [[the-eighth-key]] — the semicolon, the other key Level 4 unlocks alongside A.
+[[home-row-bumps]] — the two raised marks on F and J that anchor the hands to this layout; a candidate Level 1 card, and a page about how poorly-sourced a famous fact can be (added 2026-09-14).

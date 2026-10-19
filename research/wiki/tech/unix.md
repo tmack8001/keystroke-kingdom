@@ -48,3 +48,10 @@ operating system's birth, that one is a specific design decision made within it.
 [[apollo-11-moon-landing-1969]] — the card's "same summer astronauts walked on the moon" line, and
 the proposed flight/space act that pays it off ([[margaret-hamilton]], [[apollo-guidance-computer-dsky]]).
 [[arpa-ipto-funding]] — Bell Labs as the private-lab counterweight to the ARPA-funded era.
+[[ls-command]] — the PROPOSED Level 3 card (`ls`), written 2026-09-15: the two-letter
+directory-listing command whose First Edition manual page, dated 3 November 1971, is signed
+`dmr, ken`. It gives vowel-less Level 3 its first card.
+[[java-language]] — the PROPOSED Level 2 card (`jdk`), written the same day, giving Level 2
+its first card. Both pages exist because Levels 2 and 3 were measured at zero cards.
+[[oreilly-animal-covers]] — why a designer thought `sed`, `awk` and `vi` sounded like
+animals, and put engravings of them on the covers of the books that taught this system.

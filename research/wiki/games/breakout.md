@@ -43,3 +43,5 @@ zero anti-aliasing — the "raw beginning" of the [[discrete-logic-era]]. See
 ## See also
 
 [[atari-inc]] — the company that made this cabinet, its own Level 8 history card (added 2026-07-19).
+[[attract-mode]] — Breakout's own 1976 Atari service manual is the best primary evidence in the vault for what an idle cabinet did: a silent ghost game whose bricks never break (added 2026-09-14).
+[[arcade-coin-door]] — the same manual's *"They accept quarters only"* is the sourced price of a game (added 2026-09-14).

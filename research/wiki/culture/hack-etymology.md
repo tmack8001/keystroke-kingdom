@@ -53,3 +53,7 @@ club's own site directly.
 ## See also
 
 [[hacker-culture]] — the game's broader hidden hacker-culture layer this card belongs to.
+[[oreilly-animal-covers]] — the PROPOSED second Level 23 card (`o'reilly`), written
+2026-09-15. Level 23 unlocks **two** characters and this card uses only the backtick; that
+one uses the apostrophe, so together they cover both of the level's new keys — and give the
+level a pool of more than one to rotate through.

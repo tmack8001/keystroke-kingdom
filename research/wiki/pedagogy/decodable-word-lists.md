@@ -15,7 +15,7 @@ alone make up roughly half of typical running text.
 
 These lists ground decision 7 of Keystroke Kingdom's Act 5 planning: **words are
 early-reader decodable** (3–5 letters, phonetic), matching product.md's Word Bank
-Principle — "no real words until Level 3... words are chosen to match early reader
+Principle — "no real words until Level 4" (⚠️ *corrected 2026-09-15: this quoted a superseded revision saying "Level 3"; the rule is **Level 4**, because J F D K S L has no vowel so nothing is spellable until A arrives — CLAUDE.md §Word Bank Principle*) "... words are chosen to match early reader
 vocabulary." Fry's list is explicitly recommended over Dolch by contemporary literacy
 researchers (Dolch's list is nearly 90 years old and excludes nouns entirely), which is why
 Keystroke Kingdom's own word banks lean toward decodable, phonetic short words rather than

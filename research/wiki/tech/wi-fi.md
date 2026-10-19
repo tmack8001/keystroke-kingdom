@@ -45,3 +45,6 @@ itself as inspiration for the spread-spectrum techniques underlying modern Wi-Fi
 ## See also
 
 [[hedy-lamarr]] — the earlier frequency-hopping patent IEEE cites as inspiration for Wi-Fi's spread-spectrum technology (Level 8).
+[[equals-sign]] — the PROPOSED second Level 21 card (`1=1`), written 2026-09-15. This card
+uses the level's hyphen; that one uses its equals sign, so between them Level 21's two new
+keys are both carded.
