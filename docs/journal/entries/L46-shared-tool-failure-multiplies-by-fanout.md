@@ -1,6 +1,6 @@
 ---
 id: L46
-kind: lesson
+kind: learning
 title: A shared helper's rotted tool path is a single point of failure multiplied by the fan-out width
 found: 2026-09-11
 session: 2026-09-11 static-hosting + browser-LLM PM + roadmap swarm

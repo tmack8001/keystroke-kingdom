@@ -1,6 +1,6 @@
 ---
 id: L45
-kind: lesson
+kind: learning
 title: Reproducing a real text verbatim is a stricter contract than describing it
 found: 2026-07-27
 session: 2026-07-27 hacker-culture history cards + Level 25 Hacker Manifesto finale

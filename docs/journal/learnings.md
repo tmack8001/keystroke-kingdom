@@ -17,6 +17,10 @@
 | [[L36-narrow-animation-windows-die-under-raf-throttling\|L36]] | Narrow animation windows die under rAF throttling | adopted | high | graphics | 2026-07-13 |  |
 | [[L38-difficulty-levers-let-the-game-age-past-its-curriculum\|L38]] | Difficulty levers let the game age past the end of its curriculum | adopted | high | game-design | 2026-07-13 |  |
 | [[L40-parallel-screen-not-engine-extension-for-a-different-input-model\|L40]] | A different input model wants a parallel screen, not an engine extension | adopted | high | engine | 2026-07-13 |  |
+| [[L46-shared-tool-failure-multiplies-by-fanout\|L46]] | A shared helper's rotted tool path is a single point of failure multiplied by the fan-out width | adopted | high | agent-process | 2026-09-11 |  |
+| [[L47-a-correct-decision-can-silently-disable-a-safety-net-elsewhere\|L47]] | A locally-correct decision can silently disable a safety net in a dimension nobody was looking at | adopted | high | tooling | 2026-09-13 |  |
+| [[L49-a-rule-scoped-to-one-subsystem-was-applied-to-another-because-both-said-word\|L49]] | A rule scoped to one subsystem got applied to another because both said "word" — and it cost the beginner levels their collect loop for fourteen months | adopted | high | docs-process | 2026-09-15 |  |
+| [[L50-a-citation-pass-checks-values-not-connectives\|L50]] | A citation pass checks VALUES, not CONNECTIVES — every number was right and the conclusion was still false | adopted | high | research-integrity | 2026-09-18 |  |
 | [[L1-go-binary-embeds-assets-at-compile-time\|L1]] | The Go binary embeds assets at compile time | adopted | medium | engine | 2026-07-11 |  |
 | [[L6-karpathy-llm-wiki-scales-down-gracefully\|L6]] | Karpathy's llm-wiki scales down gracefully | adopted | medium | tooling | 2026-07-11 |  |
 | [[L7-obsidian-table-links-need-escaped-pipes\|L7]] | Obsidian table links need escaped pipes | adopted | medium | tooling | 2026-07-11 |  |
@@ -48,3 +52,5 @@
 | [[L41-one-contract-two-implementations-test-that-they-agree\|L41]] | One validation contract implemented twice — test that the two copies agree | adopted | medium | engine | 2026-07-14 |  |
 | [[L43-a-test-discriminator-probe-couples-to-current-content\|L43]] | A test's discriminator-probe silently couples it to current content | adopted | medium | testing | 2026-07-18 |  |
 | [[L44-the-one-rule-makes-levels-safely-fuzzable\|L44]] | The One Rule makes any level safely auto-playable by cycling its candidate keys | adopted | medium | tooling | 2026-07-19 |  |
+| [[L45-reproducing-a-real-text-verbatim-is-a-stricter-contract-than-describing-it\|L45]] | Reproducing a real text verbatim is a stricter contract than describing it | adopted | medium | research-integrity | 2026-07-27 |  |
+| [[L48-a-test-can-cite-a-design-doc-and-still-be-coupled-to-content\|L48]] | A test can cite a design doc and still be coupled to content — three did, and all three broke the moment a bank gained a row | adopted | medium | testing | 2026-09-15 |  |

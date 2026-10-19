@@ -1,6 +1,6 @@
 ---
 id: L47
-kind: lesson
+kind: learning
 title: A locally-correct decision can silently disable a safety net in a dimension nobody was looking at
 found: 2026-09-13
 session: 2026-09-13 Act 7 build
