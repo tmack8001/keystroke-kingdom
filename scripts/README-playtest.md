@@ -105,6 +105,86 @@ Then add `--fresh` for the third program: a brand-new machine every run.
 
 ---
 
+## Personas — `--persona=<id>`
+
+A persona is a gamer, defined once in **`scripts/personas.mjs`** and replayable exactly:
+its **settings** (written to `kk-settings`, then verified against the live game), its
+**seeded save**, its **route** in, the **host shape** it insists on, and its **typing** —
+cadence, wrong keys, repeated wrong keys, mash bursts, lone modifiers, held keys, idle gaps,
+tab blur, Escape/Tab/Space mid-level. `.claude/rules/playtest.md` §Personas says which one to
+run for which kind of change.
+
+| id | who | settings | types | seed / route / host |
+|---|---|---|---|---|
+| `first-timer` | brand new to keys and to reading | defaults (ADVENTURE, 1×, ANY/ANY, hints moderate) | 2–5 s a key, 25% wrong, the **neighbouring** key first | fresh · **real first-time route** for Level 1 (types `OONA` at name entry) · root |
+| `struggling-beginner` | more wrong than right | defaults | 1.2–3.5 s, 55% wrong, the same wrong key 3–6×, 9/s mash bursts, lone modifiers, held keys, 30–90 s idles, tab blur, Escape/Tab/Space | fresh · WOPR · root |
+| `family-parent` | a grown-up on the shared machine | HOTSHOT 2.25×, length 4–8, hints subtle | ~1 s, 4% wrong | **3 games** (OONA L12, DAD L20, GRAM L4), resumes DAD · WOPR · root |
+| `speedrunner` | ~90 WPM, every lever up | WIZARD 3.5×, length 6–24, hints subtle | 100–130 ms, 1% wrong | fresh · WOPR · root |
+| `speedrunner:survival` | the same hands, opted into Survival | SURVIVAL, EXPERT, 1 quarter | as above | fresh · WOPR · root |
+| `explorer-8yo` | a steady early typist who opens every door | defaults | ~10 WPM, 15% wrong | fresh · WOPR · **prefix** (refuses the root shape) |
+
+`node scripts/playtest.mjs --persona=list` prints the same, plus each persona's **focus list**:
+the `--at` targets it exists for and what to judge at each.
+
+| flag | what it does |
+|---|---|
+| `--persona=<id>` | play as that persona. `--persona=list` lists them. |
+| `--seed=<int>` | the persona's decision stream (default `1979`). **Same id + same seed = the same decisions.** |
+| `--pace=<0.01–1>` | scale the persona's waits (default `1`, real time). Below 1 the game sees a faster typist and an idle is shorter; judge acceptance at `1`. |
+| `--plan=<n>` | print the first *n* decisions and exit. No browser, no server: the cheapest reproducibility check there is. |
+
+What changes under a persona:
+
+- **`level:N` PLAYS the level to a win**, then shows LEVEL COMPLETE (with `--laps`, it replays
+  through **R**). Without a persona, `level:N` still stops at the first prompt.
+- **Every key that is not the right one is checked.** The prompt is read before and after it;
+  if it moved, the PERSONA REPORT prints `✗ ONE RULE VIOLATION` and the run **exits 1**. A lone
+  modifier is also checked for logging a mistake (the input contract says it must not).
+- **The first time each kind of moment happens, it is screenshotted**: `persona-first-wrong-key`,
+  `-mash`, `-hold`, `-idle`, `-blur`, `-pause`, `-tab`, `-gameover`, `-slot-picker`.
+- **It types ahead the way a fluent typist does.** The expected letter is the first one not yet
+  completed, so the persona does not wait for the engine's `paced(150)` highlight. Without this
+  a 90-WPM persona was capped at about 30.
+- **On the canvas wings (`speedway`, `hardware`) it types at its cadence only.** There is no DOM
+  prompt to check a wrong key against, so none is injected, and the report says
+  `NOT EXERCISED` instead of claiming a pass.
+
+The run ends with a **PERSONA REPORT**: settings (and whether they were verified in the live
+game), levels reached, prompt turnovers, correct vs injected keys by kind, wall time, persona
+time (the uncompressed estimate under `--pace`), per-level time against the persona's budget,
+effective WPM, the One Rule verdict, observations, console errors, and the **decision-trace
+hashes**. Under `--shot`, `persona-trace.json` holds the full trace.
+
+**The reproducibility proof:** run it twice with the same seed and compare the `first-50 hash`
+(or diff the two `persona-trace.json` `decisions` arrays). The decisions match. The *typed letters*
+match only as far as the game's intro drills, because the pattern pool after them is unseeded
+by design.
+
+```bash
+python3 -m http.server 8834 --directory /Users/trevormack/dev/keystroke-kingdom
+U=--url=http://127.0.0.1:8834/
+node scripts/playtest.mjs $U --at=level:1 --laps=2 --persona=first-timer           # guide on run 1, gone on run 2
+node scripts/playtest.mjs $U --at=level:8 --persona=struggling-beginner --seed=7   # the One Rule under fire
+node scripts/playtest.mjs $U --at=complete:13 --laps=3 --persona=family-parent     # rotation on DAD's save
+node scripts/playtest.mjs $U --at=complete:22 --persona=speedrunner                # 3.5x is still winnable
+node scripts/playtest.mjs $U --at=level:4 --persona=speedrunner:survival
+node scripts/playtest.mjs --persona=struggling-beginner --plan=20 --seed=7         # no browser at all
+
+# the explorer refuses the root shape — serve the published one:
+mkdir -p /tmp/pagesroot && ln -sfn "$PWD" /tmp/pagesroot/keystroke-kingdom
+python3 -m http.server 8809 --directory /tmp/pagesroot
+node scripts/playtest.mjs --url=http://127.0.0.1:8809/keystroke-kingdom/ --at=coda:25 --persona=explorer-8yo
+```
+
+**Adding or changing a persona** is an edit to `scripts/personas.mjs` alone.
+`tests/unit/personas.test.mjs` then pushes every persona's settings through the real
+`js/settings.js` sanitizer (a value it would coerce fails the test), reads every seeded save
+back through `js/slots.js`, checks every seeded card id is real, and pins that Survival appears
+only in `speedrunner:survival` and that nothing a persona writes carries an age or other
+personal field (security.md rule 8).
+
+---
+
 ## The two workflows
 
 ### 1. "I changed something, let me look at it"
@@ -149,6 +229,9 @@ paste the reason, do not paste "verified".
 - **One seeded target.** `--at=slots` seeds `kk-slots`, because the returning-player front
   door by definition needs saved games to already exist. `.claude/rules/testing.md` rule 6
   permits seeding to reach a state fast. Nothing that is being *looked at* is seeded.
+  A persona with a `slots` seed (`family-parent`) seeds `kk-slots` the same way, prints exactly
+  what it seeded in the banner, and then enters through the returning player's own route
+  (picker → resume → ready).
 - **It fails loudly.** Every wait has a deadline and a reason; unreachable states exit
   non-zero naming the state and why, plus a `FAILED-*.png` under `--shot`. It also refuses
   to accept a *plausible* arrival: the speedway confirms the start line is the track you

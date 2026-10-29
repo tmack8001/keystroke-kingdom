@@ -10,6 +10,14 @@
 //   node scripts/playtest.mjs --at=cinematic:mystery
 //   node scripts/playtest.mjs --at=speedway:monaco-gp --laps=2
 //   node scripts/playtest.mjs --at=coda:25 --shot=/tmp/kk-coda
+//   node scripts/playtest.mjs --at=level:8 --persona=struggling-beginner --seed=7
+//   node scripts/playtest.mjs --persona=list
+//
+// PERSONAS (scripts/personas.mjs, added 2026-10-29): `--persona=<id>` makes a gamer
+// persona a reproducible thing instead of a prose brief — it fixes the settings, the
+// seeded save, and the typing behaviour (cadence, wrong keys, mashing, idling…), and
+// with the same --seed the same sequence of typing DECISIONS happens on every run.
+// With no --persona this tool behaves exactly as it always has.
 //
 // WHY THIS EXISTS (.claude/rules/playtest.md, codified 2026-09-13): every lane
 // must PLAY what it changed before reporting it complete. Trevor found seven
@@ -48,7 +56,11 @@ const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.join(HERE, '..');
 const kk = require(path.join(HERE, 'kk-playwright.js'));
-const { launchPage, resolveBaseUrl, goToSelect, goToLevel, playwright } = kk;
+const { launchPage, resolveBaseUrl, goToSelect, goToLevel, goFromSelectIntoGame, playwright } = kk;
+import {
+  resolvePersona, listPersonas, allPersonaSpecs, createBehavior, wrongKeyFor,
+  describeDecision, settingsSummary, hashString, DEFAULT_SEED,
+} from './personas.mjs';
 
 // ── targets ──────────────────────────────────────────────────────────────────
 // Each entry: { arg, defaultLaps, laps (what a lap MEANS here), blurb, run }.
@@ -108,6 +120,7 @@ function parseArgs(argv) {
   const opts = {
     at: null, laps: null, fresh: false, shot: null, url: null,
     headless: false, list: false, help: false, slow: 0,
+    persona: null, seed: DEFAULT_SEED, pace: 1, plan: 0,
   };
   for (const raw of argv) {
     const [key, ...rest] = raw.split('=');
@@ -124,8 +137,21 @@ function parseArgs(argv) {
       case '--slow': opts.slow = parseInt(val, 10) || 0; break;
       case '--list': opts.list = true; break;
       case '--help': case '-h': opts.help = true; break;
+      case '--persona': opts.persona = val || 'list'; break;
+      case '--seed': opts.seed = parseInt(val, 10); break;
+      case '--pace': opts.pace = parseFloat(val); break;
+      case '--plan': opts.plan = parseInt(val, 10) || 20; break;
       default: die(`unknown flag: ${raw}\nrun --help`);
     }
+  }
+  if (!Number.isInteger(opts.seed) || opts.seed < 0 || opts.seed > 0xFFFFFFFF) {
+    die(`--seed must be a non-negative integer (got "${opts.seed}")`);
+  }
+  if (!Number.isFinite(opts.pace) || opts.pace < 0.01 || opts.pace > 1) {
+    die(`--pace must be 0.01..1 (got "${opts.pace}") — it only ever SPEEDS a persona up`);
+  }
+  if ((opts.seed !== DEFAULT_SEED || opts.pace !== 1 || opts.plan) && !opts.persona) {
+    die('--seed, --pace and --plan only mean something with --persona=<id>');
   }
   if (opts.laps != null && (!Number.isFinite(opts.laps) || opts.laps < 1 || opts.laps > 12)) {
     die(`--laps must be 1..12 (got "${opts.laps}")`);
@@ -162,6 +188,17 @@ function printList() {
                     own static server; .dev-url can serve a stale embedded build.
     --slow=<ms>     slow every keypress down by N ms (watch it type).
     --list          this list.
+
+  personas (scripts/personas.mjs — see scripts/README-playtest.md §Personas)
+    --persona=<id>  play AS a gamer persona: its settings, its seeded save, its
+                    typing (cadence, wrong keys, mashing, idling). Under a persona
+                    level:N PLAYS the level to a win instead of stopping at the
+                    first prompt. --persona=list prints them all.
+    --seed=<int>    the persona's decision stream (default ${DEFAULT_SEED}). Same id +
+                    same seed = the same decisions, every run. Name both in reports.
+    --pace=<0.01-1> scale the persona's waits down (default 1 = real time). Below 1
+                    the game sees a faster typist; judge acceptance at 1.
+    --plan=<n>      print the persona's first n decisions and exit (no browser).
 
   examples
     node scripts/playtest.mjs --at=level:7
@@ -252,6 +289,7 @@ class Run {
     this.phases = [];
     this.shots = [];
     this.step = 0;
+    this.pctx = null; // the persona context, when --persona is on (see PERSONA PLAY)
   }
 
   log(msg) { console.log('  ' + msg); }
@@ -449,7 +487,10 @@ async function waitForDrawn(page, what, needle, timeoutMs = 20000) {
 // pattern pool is unseeded, so the prompt can only be known one key at a time).
 // `stopWhen(snap)` ends the loop early — that is how the coda target stops at
 // the coda's first prompt instead of typing the whole level.
-async function typeUntil(page, { stopWhen, what, maxPresses = 4000, slow = 0 }) {
+async function typeUntil(page, { stopWhen, what, maxPresses = 4000, slow = 0, pctx = null }) {
+  // A persona types its own way — same contract (read the token, press it), plus
+  // its wrong keys, pauses and wanderings, each one checked against the One Rule.
+  if (pctx) return personaTypeUntil(pctx, { stopWhen, what, maxPresses });
   let presses = 0;
   let idle = 0;
   for (;;) {
@@ -474,11 +515,12 @@ async function typeUntil(page, { stopWhen, what, maxPresses = 4000, slow = 0 }) 
 const isWon = (s) => s.gameAreaHidden || s.complete;
 
 // Win the level that is currently on screen, by typing it.
-async function winCurrentLevel(page, slow) {
+async function winCurrentLevel(page, slow, pctx = null) {
   return typeUntil(page, {
     what: 'the level to be won',
     stopWhen: isWon,
     slow,
+    pctx,
   });
 }
 
@@ -520,7 +562,8 @@ IMPL.title = async (run) => {
 
 IMPL.select = async (run) => {
   const { page, baseUrl } = run;
-  await goToSelect(page, baseUrl);
+  if (run.pctx) await selectFor(run);
+  else await goToSelect(page, baseUrl);
   await waitFor(page, 'the level-select screen', (s) => s.select, 10000);
   await run.phase('select-screen', 'every cabinet unlocked via the WOPR bypass');
 };
@@ -531,6 +574,14 @@ IMPL.select = async (run) => {
 // claim about gameplay, only about what the picker looks like with games in it.
 IMPL.slots = async (run) => {
   const { page, baseUrl } = run;
+  // A persona that brings its own shared machine (family-parent) is looked at with
+  // ITS games, not the built-in three — that is what the persona is for.
+  if (run.pctx && run.pctx.persona.seed.kind === 'slots') {
+    await seedPersonaSlots(run);
+    await run.phase('slot-picker', `${run.pctx.persona.seed.slots.length} games seeded by persona ` +
+      `${run.pctx.persona.spec} · SPACE play · N new · C cards · X erase`);
+    return;
+  }
   const seed = {
     v: 1,
     active: 0,
@@ -561,6 +612,7 @@ function parseLevelArg(arg, name) {
 
 IMPL.level = async (run, arg, lap, laps) => {
   const level = parseLevelArg(arg, 'level');
+  if (run.pctx) return personaPlayLevel(run, level, lap);
   if (isFreshEntry(run, lap)) {
     await goToLevel(run.page, run.baseUrl, level);
     await waitFor(run.page, `Level ${level}'s first prompt`, (s) => s.gameScreen && s.token != null, 25000);
@@ -568,7 +620,7 @@ IMPL.level = async (run, arg, lap, laps) => {
     // Run 2+ of a LEVEL means: finish run N-1 and re-enter through the game's
     // own REPLAY, so the pattern pool, card rotation and name-moment latch are
     // all in their genuine second-run state.
-    const { presses } = await winCurrentLevel(run.page, run.opts.slow);
+    const { presses } = await winCurrentLevel(run.page, run.opts.slow, run.pctx);
     run.log(`won run ${lap - 1} in ${presses} keypresses`);
     await waitForCompleteOverlay(run.page);
     await replayFromComplete(run.page);
@@ -587,7 +639,7 @@ function assertLevel(snap, level) {
 IMPL.victory = async (run, arg, lap, laps) => {
   const level = parseLevelArg(arg, 'victory');
   await enterLevelForRun(run, level, lap);
-  const { presses } = await winCurrentLevel(run.page, run.opts.slow);
+  const { presses } = await winCurrentLevel(run.page, run.opts.slow, run.pctx);
   run.log(`won Level ${level} in ${presses} keypresses — celebration is running NOW`);
   if (lap === laps) {
     // The celebration is 1.2-6s and then it is gone, so the frames are captured
@@ -613,7 +665,7 @@ IMPL.victory = async (run, arg, lap, laps) => {
 IMPL.complete = async (run, arg, lap, laps) => {
   const level = parseLevelArg(arg, 'complete');
   await enterLevelForRun(run, level, lap);
-  const { presses } = await winCurrentLevel(run.page, run.opts.slow);
+  const { presses } = await winCurrentLevel(run.page, run.opts.slow, run.pctx);
   run.log(`won Level ${level} in ${presses} keypresses`);
   const s = await waitForCompleteOverlay(run.page);
   await run.phase(`complete-L${level}-run-${lap}`,
@@ -631,7 +683,7 @@ IMPL.cinematic = async (run, arg, lap, laps) => {
   const spec = CINEMATICS[arg];
   if (!spec) die(`--at=cinematic:<${Object.keys(CINEMATICS).join('|')}> — "${arg}" is not one of them`);
   await enterLevelForRun(run, spec.level, lap);
-  const { presses } = await winCurrentLevel(run.page, run.opts.slow);
+  const { presses } = await winCurrentLevel(run.page, run.opts.slow, run.pctx);
   run.log(`won Level ${spec.level} in ${presses} keypresses (the cinematic's real gate)`);
   await waitForCompleteOverlay(run.page);
   if (lap < laps) return;
@@ -684,6 +736,7 @@ IMPL.coda = async (run, arg, lap, laps) => {
   const { presses, snap } = await typeUntil(run.page, {
     what: 'the "MY STORY" coda to begin',
     slow: run.opts.slow,
+    pctx: run.pctx,
     stopWhen: (s) => isWon(s) || (s.storyRotation25 !== null && s.storyRotation25 > baseline),
   });
   if (isWon(snap)) {
@@ -701,7 +754,7 @@ IMPL.coda = async (run, arg, lap, laps) => {
   await run.phase(`coda-run-${lap}`, `first coda line: ${JSON.stringify(codaSnap.sequence)}`);
   if (lap < laps) {
     // Finish the whole coda so the NEXT run rotates to a different story.
-    await winCurrentLevel(run.page, run.opts.slow);
+    await winCurrentLevel(run.page, run.opts.slow, run.pctx);
     await waitForCompleteOverlay(run.page);
   }
 };
@@ -715,7 +768,8 @@ const isFreshEntry = (run, lap) => lap === 1 || run.opts.fresh;
 
 async function enterLevelForRun(run, level, lap) {
   if (isFreshEntry(run, lap)) {
-    await goToLevel(run.page, run.baseUrl, level);
+    if (run.pctx) await personaEnterLevel(run, level);
+    else await goToLevel(run.page, run.baseUrl, level);
     const s = await waitFor(run.page, `Level ${level}'s first prompt`,
       (x) => x.gameScreen && x.token != null, 25000);
     assertLevel(s, level);
@@ -747,7 +801,7 @@ IMPL.freeplay = async (run, arg, lap, laps) => {
   const actNum = Math.ceil(level / 5);
 
   if (isFreshEntry(run, lap)) {
-    await goToSelect(page, run.baseUrl);
+    await selectFor(run);
     await waitFor(page, 'the level-select screen', (s) => s.select, 12000);
 
     // ⚠️ UNLOCK THE ACT LAYER *AFTER* goToSelect, NEVER BEFORE IT.
@@ -815,7 +869,7 @@ IMPL.freeplay = async (run, arg, lap, laps) => {
     await replayFromComplete(page);
   }
 
-  const { presses } = await winCurrentLevel(page, run.opts.slow);
+  const { presses } = await winCurrentLevel(page, run.opts.slow, run.pctx);
   await waitForCompleteOverlay(page);
   const s = await snapshot(page);
   run.log(`session ${lap} won in ${presses} keypresses`);
@@ -858,7 +912,7 @@ IMPL.hardware = async (run, arg, lap, laps) => {
   if (!arg) die('--at=hardware:<station-id> — e.g. apple-iie, msdos-pc (see js/hardware/stations.js)');
 
   if (isFreshEntry(run, lap)) {
-    await goToSelect(page, run.baseUrl);
+    await selectFor(run);
     // Walk the back wall to THE HARDWARE, then along its machines to the one asked
     // for. ArrowDown steps between wings; ArrowRight steps along a wing's wall.
     let focused = null;
@@ -920,6 +974,7 @@ IMPL.hardware = async (run, arg, lap, laps) => {
   // reported "no card revealed" about a card that was on screen.
   for (const line of station.boot) {
     for (const ch of line) {
+      if (run.pctx) await personaCadence(run.pctx, ch);
       await page.keyboard.press(ch === ' ' ? ' ' : ch);
       await page.waitForTimeout(run.opts.slow || 18);
     }
@@ -1001,7 +1056,7 @@ IMPL.speedway = async (run, arg, lap, laps) => {
       'drop --fresh to watch laps accumulate.');
   }
   if (isFreshEntry(run, lap)) {
-    await goToSelect(page, run.baseUrl);
+    await selectFor(run);
     let focused = null;
     for (let i = 0; i < 12; i += 1) {
       await page.keyboard.press('ArrowDown');
@@ -1057,7 +1112,7 @@ IMPL.speedway = async (run, arg, lap, laps) => {
 
   if (lap === laps) {
     // Stop mid-lap: the race in motion is the thing to look at.
-    await raceChars(page, 28, run.opts.slow);
+    await raceChars(page, 28, run.opts.slow, run.pctx);
     await page.waitForTimeout(250);
     const racingDrawn = await drawnText(page, 3);
     const ghostOnTrack = drawnHas(racingDrawn, 'GHOST');
@@ -1069,7 +1124,7 @@ IMPL.speedway = async (run, arg, lap, laps) => {
     return;
   }
 
-  await driveWholeLap(page, run.opts.slow);
+  await driveWholeLap(page, run.opts.slow, run.pctx);
   await page.waitForTimeout(900);
   await run.phase(`speedway-${arg}-lap${lap}-pit-board`, 'lap complete — this is what records the ghost');
 };
@@ -1121,31 +1176,626 @@ async function selectHubTrack(run, trackId) {
 
 const atFinish = async (page) => drawnHas(await drawnText(page, 2), 'LAP COMPLETE');
 
-async function raceChars(page, atLeast, slow) {
+async function raceChars(page, atLeast, slow, pctx = null) {
   let typed = 0;
   for (let i = 0; i < 400 && typed < atLeast; i += 1) {
     if (await atFinish(page)) return typed;
     const word = wordFromDrawn(await drawnText(page, 3));
     if (!word) return typed;
-    for (const ch of word) await pressToken(page, ch, slow);
+    for (const ch of word) { if (pctx) await personaCadence(pctx, ch); await pressToken(page, ch, slow); }
     typed += word.length;
   }
   return typed;
 }
 
-async function driveWholeLap(page, slow) {
+async function driveWholeLap(page, slow, pctx = null) {
   for (let i = 0; i < 600; i += 1) {
     if (await atFinish(page)) return;
     const word = wordFromDrawn(await drawnText(page, 3));
     if (!word) throw new Error('no prompt word is on the track and the lap has not finished');
-    for (const ch of word) await pressToken(page, ch, slow);
+    for (const ch of word) { if (pctx) await personaCadence(pctx, ch); await pressToken(page, ch, slow); }
   }
   throw new Error('the lap did not finish within 600 words');
+}
+
+// ── PERSONA PLAY ─────────────────────────────────────────────────────────────
+// Everything below runs only under --persona. It never changes HOW a state is
+// reached (still the real route, still typing), only WHO is typing: the persona's
+// settings, its seeded save, and its behaviour (scripts/personas.mjs).
+//
+// THE ONE RULE IS CHECKED ON EVERY KEY THAT IS NOT THE RIGHT ONE. The sacred
+// wrong-keypress contract (CLAUDE.md §Wrong Keypress Behavior) says a wrong key
+// never advances — the letter stays and waits. So for every wrong key, mash key,
+// lone modifier, held key, Escape/Tab and idle gap, the prompt is read before and
+// after; if it moved, that is a VIOLATION and the run exits 1. This is observation
+// of the DOM the player sees (testing.md rule 6), never engine state.
+
+// What the persona needs to see, beyond SNAPSHOT: where the cursor is (data-index of
+// the active letter), the overlays that stop play, and the HUD counters a wrong key
+// moves. Static function, no arguments (security.md rule 14).
+const PSNAP = () => {
+  const vis = (id) => {
+    const el = document.getElementById(id);
+    return !!el && !el.classList.contains('hidden');
+  };
+  const txt = (id) => ((document.getElementById(id) || {}).textContent || '').trim();
+  // TYPE-AHEAD: after a correct key the engine has ALREADY advanced, but re-adds the
+  // .active class only after paced(150)ms (js/main.js handleGameKey). A fluent typist
+  // does not wait for the highlight, so the expected letter is the first one NOT YET
+  // COMPLETED — still read from the DOM the player sees. Without this a 90-WPM persona
+  // is throttled by the highlight to roughly a third of its speed.
+  // ⚠️ Never `.active` first: that timer reads state.currentIndex when it FIRES, so a
+  // pattern finished inside the 150ms window gets `.active` re-added to its (completed)
+  // index 0 — a stale highlight — while the engine is already waiting on the NEXT
+  // pattern, which is not drawn yet. Pressing the highlighted letter there types into
+  // an invisible prompt (found 2026-10-29 by the speedrunner persona; see staleActive).
+  const el = document.querySelector('#prompt-sequence .prompt-letter:not(.completed)');
+  let token = null;
+  if (el) {
+    const t = el.textContent || '';
+    token = t === '?' ? ';' : t === '␣' ? ' ' : t === '⌫' ? 'Backspace' : t === '⇧' ? 'Shift' : t;
+  }
+  const seq = Array.from(document.querySelectorAll('#prompt-sequence .prompt-letter'))
+    .map((n) => n.textContent || '').join('');
+  const ga = document.querySelector('#game-screen .game-area');
+  const badge = txt('level-badge-text');
+  const m = badge.match(/LEVEL\s+(\d+)/i);
+  const ae = document.activeElement;
+  // The fields SNAPSHOT's stop predicates read (isWon, the coda's story-rotation
+  // bump), so the persona loop needs ONE page round trip per key, not two.
+  let storyRotation25 = null;
+  try {
+    const st = JSON.parse(localStorage.getItem('kk-slots'));
+    if (st && Array.isArray(st.slots) && Number.isInteger(st.active) && st.slots[st.active]) {
+      const r = (st.slots[st.active].storyRotation || {})['25'];
+      storyRotation25 = Number.isFinite(r) ? r : 0;
+    }
+  } catch (e) { storyRotation25 = null; }
+  return {
+    token,
+    idx: el ? el.getAttribute('data-index') : null,
+    seq,
+    sequence: seq,
+    staleActive: !!document.querySelector('#prompt-sequence .prompt-letter.active.completed'),
+    storyRotation25,
+    visibleScreens: Array.from(document.querySelectorAll('.screen'))
+      .filter((sc) => !sc.classList.contains('hidden')).map((sc) => sc.id),
+    levelNum: m ? parseInt(m[1], 10) : null,
+    game: vis('game-screen'),
+    gameAreaHidden: !!(ga && ga.classList.contains('hidden')),
+    complete: vis('complete-overlay'),
+    paused: vis('pause-overlay'),
+    gameover: vis('gameover-overlay'),
+    streak: txt('hud-streak'),
+    mistakes: txt('hud-mistakes'),
+    fingerHint: ((document.getElementById('finger-hint') || {}).innerHTML || '').length,
+    focus: ae ? (ae.tagName + (ae.id ? '#' + ae.id : '')) : null,
+  };
+};
+const psnap = (page) => page.evaluate(PSNAP);
+
+const playable = (p) => p.game && !p.paused && !p.gameover && !p.complete && !p.gameAreaHidden && p.token != null;
+const advanced = (a, b) => a.idx !== b.idx || a.seq !== b.seq || a.complete !== b.complete
+  || a.gameAreaHidden !== b.gameAreaHidden;
+
+// Would THIS key be accepted for THIS token? Mirrors the documented input contract
+// (CLAUDE.md §Engine input contract): uppercase tokens need the exact uppercase key;
+// everything else compares lowercase.
+function isRightKey(key, token) {
+  if (token == null) return false;
+  if (/^[A-Z]$/.test(token)) return key === token;
+  if (token === ' ') return key === ' ' || key === 'Space';
+  return typeof key === 'string' && key.length === 1 && key.toLowerCase() === token.toLowerCase();
+}
+
+function makePersonaContext(run, persona, seed, pace) {
+  return {
+    run, persona, seed, pace,
+    behavior: createBehavior(persona, seed),
+    decisions: [],          // describeDecision() per intended keypress — the repro trace
+    typed: [],              // literal correct keys pressed (game-dependent, for the report)
+    injected: [],           // literal non-correct keys pressed, with their kind
+    violations: [],
+    observations: [],
+    firsts: new Set(),
+    levelsSeen: new Set(),
+    levelTimes: [],
+    patterns: 0,
+    gameovers: 0,
+    intendedWaitMs: 0,
+    actualWaitMs: 0,
+    startedAt: Date.now(),
+    settingsVerified: null,
+  };
+}
+
+// Every persona wait goes through here, so the report can say how long the run WOULD
+// have taken in the persona's own time even when --pace compressed it.
+async function pwait(pctx, ms, { scale = true } = {}) {
+  if (!(ms > 0)) return;
+  const real = scale ? Math.max(15, Math.round(ms * pctx.pace)) : ms;
+  pctx.intendedWaitMs += ms;
+  pctx.actualWaitMs += real;
+  await pctx.run.page.waitForTimeout(real);
+}
+
+const personaClock = (pctx) => (Date.now() - pctx.startedAt) - pctx.actualWaitMs + pctx.intendedWaitMs;
+
+function violate(pctx, kind, key, before, after, note) {
+  const v = { kind, key, expected: before.token, level: before.levelNum, before: before.idx, after: after.idx, note };
+  pctx.violations.push(v);
+  pctx.run.log(`✗ ONE RULE VIOLATION — ${kind} ${JSON.stringify(key)} while ${JSON.stringify(before.token)} ` +
+    `was expected (Level ${before.levelNum}): ${note}`);
+}
+
+// Screenshot only the FIRST time each kind of moment happens, so a long struggling
+// run produces a handful of evidence frames rather than hundreds.
+async function firstShot(pctx, kind, note) {
+  if (pctx.firsts.has(kind)) return;
+  pctx.firsts.add(kind);
+  await pctx.run.phase(`persona-first-${kind}`, note);
+}
+
+// One non-correct key, checked. Returns the after-snapshot.
+async function pressChecked(pctx, kind, key, before) {
+  const { page } = pctx.run;
+  if (key === 'Space') await page.keyboard.press('Space');
+  else await page.keyboard.press(key);
+  const after = await psnap(page);
+  pctx.injected.push(`${kind}:${key === ' ' ? 'Space' : key}`);
+  if (!isRightKey(key, before.token) && advanced(after, before)) {
+    violate(pctx, kind, key, before, after, `the prompt moved (index ${before.idx} → ${after.idx})`);
+  }
+  return after;
+}
+
+async function personaAction(pctx, a) {
+  const { page } = pctx.run;
+  const b = await psnap(page);
+  if (!playable(b)) return;
+  switch (a.type) {
+    case 'wrong': {
+      const key = wrongKeyFor(b.token, a.wrongIndex, a.style);
+      let last = b;
+      for (let i = 0; i < a.run; i += 1) {
+        last = await pressChecked(pctx, 'wrong', key, b);
+        if (!playable(last)) break;
+        if (i + 1 < a.run) await pwait(pctx, 180);
+      }
+      await firstShot(pctx, 'wrong-key', `wrong key ${JSON.stringify(key)} ×${a.run} — the letter ` +
+        `${JSON.stringify(b.token)} must still be waiting`);
+      await pwait(pctx, a.beatMs);
+      return;
+    }
+    case 'mash': {
+      // ~9 keys a second, NOT scaled by --pace: the speed of a mash is the behaviour.
+      for (const key of a.keys) {
+        const before = await psnap(page);
+        if (!playable(before)) break;
+        await pressChecked(pctx, 'mash', key, before);
+        await pwait(pctx, a.gapMs, { scale: false });
+      }
+      await firstShot(pctx, 'mash', `a ${a.keys.length}-key mash burst`);
+      return;
+    }
+    case 'modifier': {
+      const after = await pressChecked(pctx, 'modifier', a.key, b);
+      // A lone modifier is IGNORED ENTIRELY — never a mistake (CLAUDE.md input contract).
+      if (after.mistakes !== b.mistakes) {
+        violate(pctx, 'modifier', a.key, b, after, `a lone ${a.key} logged a mistake (MISSES ${b.mistakes} → ${after.mistakes})`);
+      }
+      return;
+    }
+    case 'hold': {
+      // Held down: the first keydown plus `repeats` auto-repeat keydowns (Playwright
+      // sets repeat:true on a second down() of a held key).
+      const key = wrongKeyFor(b.token, a.wrongIndex, 'adjacent');
+      for (let i = 0; i <= a.repeats; i += 1) {
+        await page.keyboard.down(key);
+        await page.waitForTimeout(33);
+      }
+      await page.keyboard.up(key);
+      const after = await psnap(page);
+      pctx.injected.push(`hold:${key}×${a.repeats + 1}`);
+      if (advanced(after, b)) violate(pctx, 'hold', key, b, after, 'a held wrong key moved the prompt');
+      else {
+        pctx.observations.push(`held ${JSON.stringify(key)} for ${a.repeats + 1} keydowns: MISSES ${b.mistakes} → ${after.mistakes}, prompt stayed`);
+      }
+      await firstShot(pctx, 'hold', `held ${JSON.stringify(key)} down (${a.repeats + 1} keydowns)`);
+      return;
+    }
+    case 'idle': {
+      await pwait(pctx, a.ms);
+      const after = await psnap(page);
+      const idleRule = pctx.persona.acceptance && pctx.persona.acceptance.idleNeverPunishes;
+      if (idleRule && (advanced(after, b) || after.gameover || !after.game)) {
+        violate(pctx, 'idle', `${a.ms}ms`, b, after, 'walking away changed the game (it must wait, forever)');
+      }
+      await firstShot(pctx, 'idle', `back after ${Math.round(a.ms / 1000)}s away — nothing should have happened`);
+      return;
+    }
+    case 'blur': {
+      // The tab loses focus. The environment is simulated (blur + visibilitychange);
+      // nothing inside the game is touched.
+      const setHidden = (hidden) => {
+        try {
+          Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+          Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (hidden ? 'hidden' : 'visible') });
+        } catch (e) { /* best effort */ }
+        window.dispatchEvent(new Event(hidden ? 'blur' : 'focus'));
+        document.dispatchEvent(new Event('visibilitychange'));
+      };
+      await page.evaluate(setHidden, true);
+      await pwait(pctx, a.ms);
+      await page.evaluate(setHidden, false);
+      const after = await psnap(page);
+      if (advanced(after, b) || after.gameover) violate(pctx, 'blur', `${a.ms}ms`, b, after, 'losing focus changed the game');
+      await firstShot(pctx, 'blur', `tab hidden for ${Math.round(a.ms / 1000)}s, then back`);
+      return;
+    }
+    case 'disrupt': {
+      if (a.key === 'Escape') {
+        await page.keyboard.press('Escape');
+        const mid = await psnap(page);
+        pctx.injected.push('disrupt:Escape');
+        if (!mid.paused) pctx.observations.push(`Escape on Level ${b.levelNum} did not show the pause overlay`);
+        await firstShot(pctx, 'pause', 'Escape mid-level — the pause overlay');
+        await pwait(pctx, 1500);
+        if (mid.paused) await page.keyboard.press('Escape'); // resume, as the pause card says
+        const after = await psnap(page);
+        if (advanced(after, b)) violate(pctx, 'disrupt', 'Escape', b, after, 'pause/resume moved the prompt');
+        if (after.paused) pctx.observations.push('a second Escape did not resume');
+      } else if (a.key === 'Tab') {
+        const after = await pressChecked(pctx, 'disrupt', 'Tab', b);
+        if (after.focus !== b.focus) {
+          pctx.observations.push(`Tab mid-level moved browser focus ${b.focus} → ${after.focus}`);
+        }
+        await firstShot(pctx, 'tab', `Tab mid-level (focus now ${after.focus})`);
+      } else {
+        await pressChecked(pctx, 'disrupt', 'Space', b);
+      }
+      return;
+    }
+    default:
+  }
+}
+
+// One intended keypress's worth of decision, for a surface with no DOM prompt to check
+// (the canvas wings): cadence only. Injecting wrong keys there would be unverifiable —
+// a boot line on THE HARDWARE takes typed characters literally — so it is not done.
+async function personaCadence(pctx, ch) {
+  const d = pctx.behavior.next();
+  pctx.decisions.push('cadence-only ' + describeDecision(d));
+  pctx.typed.push(ch);
+  await pwait(pctx, d.pauseMs);
+}
+
+async function personaTypeUntil(pctx, { stopWhen, what, maxPresses = 4000 }) {
+  const { page } = pctx.run;
+  let presses = 0;
+  let idle = 0;
+  let lastSeq = null;
+  const startedAt = personaClock(pctx);
+  for (;;) {
+    const snap = await psnap(page);
+    if (snap.levelNum) pctx.levelsSeen.add(snap.levelNum);
+    if (lastSeq !== null && snap.seq && snap.seq !== lastSeq) pctx.patterns += 1;
+    if (snap.seq) lastSeq = snap.seq;
+    if (snap.staleActive && !pctx.firsts.has('stale-highlight')) {
+      pctx.observations.push(`Level ${snap.levelNum}: a COMPLETED letter is highlighted as the active one ` +
+        `(prompt ${JSON.stringify(snap.seq)}) — the engine's paced(150) highlight timer fired after the ` +
+        'pattern was already finished; a key pressed now is judged against the next pattern, not yet drawn');
+      // The state lasts < ~300ms (until the next pattern renders), so this frame — taken
+      // after settleAnimations — usually shows the moment just AFTER. The observation
+      // text above is the evidence; the frame is context.
+      await firstShot(pctx, 'stale-highlight', 'just after a completed letter carried the active highlight (state lasts <300ms)');
+    }
+    if (stopWhen(snap)) {
+      if (isWon(snap)) pctx.levelTimes.push({ level: snap.levelNum, personaMs: personaClock(pctx) - startedAt, presses });
+      return { presses, snap: await snapshot(page) };
+    }
+    if (presses >= maxPresses) throw new Error(`gave up after ${maxPresses} keypresses waiting for ${what}`);
+    if (!playable(snap)) {
+      // SURVIVAL's game over is a real state a persona can reach; a player presses
+      // Space (TRY AGAIN), so the persona does too, and the report counts it.
+      if (snap.gameover) {
+        pctx.gameovers += 1;
+        await firstShot(pctx, 'gameover', 'SURVIVAL game over — wrong keys cost nothing, time ran out');
+        await page.keyboard.press('Space');
+        await page.waitForTimeout(800);
+        continue;
+      }
+      if (snap.paused) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); continue; }
+      idle += 1;
+      if (idle > 400) {
+        throw new Error(`no prompt letter on screen for ~20s and ${what} never happened. ` +
+          `Visible screens: [${snap.visibleScreens.join(', ')}]`);
+      }
+      await page.waitForTimeout(50);
+      continue;
+    }
+    idle = 0;
+    const d = pctx.behavior.next();
+    pctx.decisions.push(describeDecision(d));
+    // Environment first (wander off, lose focus, Escape), then the look-before-typing
+    // pause, then the hand's mistakes, then the right key.
+    const env = d.before.filter((a) => a.type === 'idle' || a.type === 'blur' || a.type === 'disrupt');
+    const hand = d.before.filter((a) => !env.includes(a));
+    for (const a of env) await personaAction(pctx, a);
+    await pwait(pctx, d.pauseMs);
+    for (const a of hand) await personaAction(pctx, a);
+    // Re-read only if something else was pressed: a mash may have typed the right key
+    // by chance and moved on.
+    const now = d.before.length ? await psnap(page) : snap;
+    if (stopWhen(now) || !playable(now)) continue;
+    await pressToken(page, now.token, pctx.run.opts.slow);
+    pctx.typed.push(now.token);
+    presses += 1;
+  }
+}
+
+// ── persona routes in ────────────────────────────────────────────────────────
+// Settings are NOT seeded here: an init script (installPersonaSettings) merges the
+// persona's settings into kk-settings at document start on EVERY load, so they are
+// present when js/settings.js boots — including the reload inside goToSelect, which
+// opens with localStorage.clear(). They are applied AFTER that clear by construction.
+
+async function installPersonaSettings(page, settings) {
+  await page.addInitScript((json) => {
+    try {
+      const want = JSON.parse(json);
+      let cur = null;
+      try { cur = JSON.parse(localStorage.getItem('kk-settings')); } catch (e) { cur = null; }
+      const base = cur && typeof cur === 'object' && !Array.isArray(cur) ? cur : {};
+      localStorage.setItem('kk-settings', JSON.stringify({ ...base, ...want }));
+    } catch (e) { /* about:blank, private mode — the verification step will say so */ }
+  }, JSON.stringify(settings));
+}
+
+// Ask the LIVE game what it is running with — js/settings.js's own getSettings(), from
+// the same module instance the engine imported (same URL) — and compare. A value the
+// sanitizer coerced would show up here as a mismatch, which fails the run.
+async function verifyPersonaSettings(pctx) {
+  if (pctx.settingsVerified) return;
+  const live = await pctx.run.page.evaluate(async () => {
+    try { const m = await import('./js/settings.js'); return m.getSettings(); } catch (e) { return null; }
+  });
+  if (!live) throw new Error('could not read js/settings.js getSettings() from the page to verify the persona settings');
+  const wrong = Object.entries(pctx.persona.settings).filter(([k, v]) => live[k] !== v);
+  if (wrong.length) {
+    throw new Error('the game is NOT running with the persona\'s settings: ' +
+      wrong.map(([k, v]) => `${k} wanted ${JSON.stringify(v)} got ${JSON.stringify(live[k])}`).join(', '));
+  }
+  pctx.settingsVerified = true;
+  pctx.run.log(`settings verified in the live game: ${settingsSummary(pctx.persona.settings)}`);
+}
+
+// Seed the persona's shared machine through the route the game itself reads at boot:
+// kk-slots in place before the page loads, then js/slots.js normalizes it like any
+// returning player's save. Lands on CHOOSE YOUR GAME.
+async function seedPersonaSlots(run) {
+  const { page, baseUrl } = run;
+  const seed = { v: 1, active: null, slots: run.pctx.persona.seed.slots };
+  await page.goto(baseUrl);
+  await page.evaluate((json) => {
+    try { localStorage.clear(); localStorage.setItem('kk-slots', json); } catch (e) {}
+  }, JSON.stringify(seed));
+  await page.reload();
+  await page.waitForTimeout(900);
+  await page.click('body');
+  await waitFor(page, 'the "CHOOSE YOUR GAME" slot picker', (s) => s.slots, 12000);
+}
+
+// The persona's way to the select screen.
+//   fresh → goToSelect (a brand-new machine, WOPR bypass) — the normal harness route.
+//   slots → the RETURNING player's route: picker → resume a game → ready → WOPR.
+async function selectFor(run) {
+  const { page, baseUrl, pctx } = run;
+  if (!pctx || pctx.persona.seed.kind !== 'slots') {
+    await goToSelect(page, baseUrl);
+  } else {
+    await seedPersonaSlots(run);
+    await firstShot(pctx, 'slot-picker', 'the shared machine, as seeded');
+    const resume = pctx.persona.seed.resume || 0;
+    for (let i = 0; i < resume; i += 1) { await page.keyboard.press('ArrowDown'); await page.waitForTimeout(150); }
+    await page.keyboard.press('Space');
+    await waitFor(page, 'the ready screen for the resumed game', (s) => s.ready, 10000);
+    await page.keyboard.type('wopr');
+    await page.waitForTimeout(500);
+  }
+  await waitFor(page, 'the level-select screen', (s) => s.select, 12000);
+}
+
+// The real cold open, for a persona whose route is 'first-time': title → name →
+// ready → keyboard preview → Level 1. No WOPR — a first-timer does not know it.
+async function firstTimeRoute(run) {
+  const { page, baseUrl, pctx } = run;
+  await page.goto(baseUrl);
+  await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+  await page.reload();
+  await page.waitForTimeout(900);
+  await page.click('body');
+  await waitFor(page, 'the cold-open title screen', (s) => s.title, 10000);
+  await run.phase('first-time-title', 'a brand-new machine: READY PLAYER ONE');
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(400);
+  const name = pctx.persona.playerName || '';
+  for (const ch of name) { await page.keyboard.type(ch); await pwait(pctx, 500); }
+  await run.phase('first-time-name', name ? `typed ${JSON.stringify(name)} into name entry` : 'kept PLAYER ONE');
+  await page.keyboard.press('Enter');
+  await waitFor(page, 'the READY screen', (s) => s.ready, 10000);
+  await run.phase('first-time-ready', `READY ${name || 'PLAYER ONE'}!`);
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(600);
+  await run.phase('first-time-keyboard-preview', 'KNOW YOUR KEYS');
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(600);
+}
+
+async function personaEnterLevel(run, level) {
+  const { page, pctx } = run;
+  if (pctx.persona.route === 'first-time' && level === 1) {
+    await firstTimeRoute(run);
+  } else {
+    if (pctx.persona.route === 'first-time') {
+      run.log(`note: ${pctx.persona.spec} reaches Level ${level} through the WOPR bypass — a real ` +
+        'first-timer cannot; only Level 1 has a true first-time route');
+    }
+    await selectFor(run);
+    const actNum = Math.ceil(level / 5);
+    for (let i = 1; i < actNum; i += 1) { await page.keyboard.press('ArrowDown'); await page.waitForTimeout(200); }
+    const pos = ((level - 1) % 5) + 1;
+    for (let i = 1; i < pos; i += 1) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(150); }
+    await goFromSelectIntoGame(page);
+  }
+  await waitFor(page, `Level ${level}'s first prompt`, (s) => s.gameScreen && s.token != null, 25000);
+  await verifyPersonaSettings(pctx);
+}
+
+// Under a persona, level:N PLAYS the level — the persona is the thing being looked at,
+// so stopping at the first prompt would show nothing of it. Run 2+ re-enters through
+// the game's own R = REPLAY, exactly like the non-persona target.
+async function personaPlayLevel(run, level, lap) {
+  const { page, pctx } = run;
+  if (isFreshEntry(run, lap)) await personaEnterLevel(run, level);
+  else await replayFromComplete(page);
+  const s = await snapshot(page);
+  assertLevel(s, level);
+  const p = await psnap(page);
+  const guide = p.fingerHint > 0;
+  if (level === 1) {
+    pctx.observations.push(`run ${lap}: the one-time finger guide is ${guide ? 'SHOWN' : 'absent'} at Level 1's first prompt`);
+  }
+  await run.phase(`level-${level}-run-${lap}`, `prompt: ${JSON.stringify(s.sequence)}` +
+    (level === 1 ? ` · finger guide ${guide ? 'SHOWN' : 'absent'}` : ''));
+  const { presses } = await winCurrentLevel(page, run.opts.slow, pctx);
+  const done = await waitForCompleteOverlay(page);
+  const t = pctx.levelTimes[pctx.levelTimes.length - 1];
+  run.log(`won Level ${level} run ${lap}: ${presses} correct keys, ` +
+    `${t ? fmtMs(t.personaMs) : '?'} of persona time`);
+  await run.phase(`complete-L${level}-run-${lap}`,
+    `${done.completeTitle}${done.cardShown ? ' · card: ' + done.cardTitle : ' · no card shown'}`);
+}
+
+function fmtMs(ms) {
+  const s = Math.round(ms / 1000);
+  return `${Math.floor(s / 60)}m${String(s % 60).padStart(2, '0')}s`;
+}
+
+function printSeed(persona) {
+  const seed = persona.seed;
+  if (seed.kind === 'fresh') {
+    console.log('  SEED:    none — a brand-new machine (localStorage cleared before every entry)');
+    return;
+  }
+  console.log(`  SEED:    kk-slots, ${seed.slots.length} games, resuming #${(seed.resume || 0) + 1}:`);
+  seed.slots.forEach((g, i) => {
+    console.log(`             ${i === (seed.resume || 0) ? '▶' : ' '} ${g.name.padEnd(6)} furthest L${g.furthestLevel} · ` +
+      `${Object.keys(g.completed).length} completed · ${g.cards.length} card(s)` +
+      (g.cards.length ? ` [${g.cards.join(', ')}]` : ''));
+  });
+}
+
+function printPersonaList() {
+  console.log('\nplaytest.mjs — gamer personas (scripts/personas.mjs)\n');
+  for (const p of listPersonas()) {
+    const specs = [p.id, ...Object.keys(p.variants || {}).map((v) => `${p.id}:${v}`)];
+    console.log(`  ${specs.join(' | ')}`);
+    console.log(`      ${p.label} — ${p.who}`);
+    console.log(`      settings: ${settingsSummary(p.settings)}`);
+    for (const [v, def] of Object.entries(p.variants || {})) {
+      console.log(`      :${v} settings: ${settingsSummary(def.settings)}`);
+    }
+    const b = p.behavior;
+    console.log(`      types: ${b.cadenceMs[0]}-${b.cadenceMs[1]}ms/key, ${Math.round(b.wrongKeyRate * 100)}% wrong ` +
+      `(${b.wrongStyle}, ×${b.repeatWrongRun.join('-')})` +
+      (b.mashBurst ? ', mashes' : '') + (b.idleChance ? `, idles ${b.idleMs[0] / 1000}-${b.idleMs[1] / 1000}s` : '') +
+      (b.disruptKeys.length ? `, presses ${b.disruptKeys.join('/')}` : ''));
+    console.log(`      seed: ${p.seed.kind}   route: ${p.route}   host: ${p.host}`);
+    for (const f of p.focus) {
+      console.log(`        --at=${f.at}${f.laps > 1 ? ' --laps=' + f.laps : ''}${f.fresh ? ' --fresh' : ''}` +
+        `${f.variant ? '  (:' + f.variant + ')' : ''}  — ${f.judge}`);
+    }
+    console.log('');
+  }
+}
+
+function printPersonaReport(pctx, wallMs, consoleErrorCount) {
+  const p = pctx.persona;
+  const inj = {};
+  for (const k of pctx.injected) { const kind = k.split(':')[0]; inj[kind] = (inj[kind] || 0) + 1; }
+  const traceHash = hashString(pctx.decisions.join('\n')).toString(16).padStart(8, '0');
+  const typedHash = hashString(pctx.typed.join('')).toString(16).padStart(8, '0');
+  console.log('');
+  console.log('  ── PERSONA REPORT ───────────────────────────────────────────────');
+  console.log(`  persona:        ${p.spec}  (${p.label})   seed ${pctx.seed}   pace ${pctx.pace}`);
+  console.log(`  settings:       ${settingsSummary(p.settings)}  ${pctx.settingsVerified ? '(verified in the live game)' : '(NOT verified — no level was entered)'}`);
+  console.log(`  levels reached: ${[...pctx.levelsSeen].sort((a, b) => a - b).join(', ') || '—'}`);
+  console.log(`  patterns:       ${pctx.patterns} prompt turnovers observed`);
+  console.log(`  keys:           ${pctx.typed.length} correct · ${pctx.injected.length} injected ` +
+    `(${Object.entries(inj).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'})`);
+  if (pctx.gameovers) console.log(`  game overs:     ${pctx.gameovers} (SURVIVAL — pressed Space to TRY AGAIN)`);
+  console.log(`  wall time:      ${fmtMs(Date.now() - pctx.startedAt)} (whole invocation ${fmtMs(wallMs)})`);
+  console.log(`  persona time:   ${fmtMs(personaClock(pctx))}${pctx.pace !== 1 ? `  (waits ran at ${pctx.pace}x; this is the uncompressed estimate)` : ''}`);
+  for (const t of pctx.levelTimes) {
+    const budget = p.acceptance.maxLevelMinutes;
+    const over = budget && t.personaMs > budget * 60000;
+    const wpm = t.personaMs > 0 ? Math.round((t.presses / 5) / (t.personaMs / 60000)) : 0;
+    console.log(`  Level ${String(t.level).padStart(2)}:       ${fmtMs(t.personaMs)} persona time, ${t.presses} correct keys, ~${wpm} WPM effective` +
+      (budget ? `  — ${over ? '⚠ ACCEPTANCE MISS: over' : 'within'} the ${budget}-minute budget` : ''));
+  }
+  const ruleLine = pctx.violations.length
+    ? `✗ ${pctx.violations.length} VIOLATION(S)`
+    : pctx.injected.length
+      ? `✓ no wrong key, modifier, hold, idle or Escape ever moved the prompt (${pctx.injected.length} checked)`
+      : '— NOT EXERCISED: nothing was injected (a canvas wing types cadence-only, or the persona made no mistakes)';
+  console.log(`  one rule:       ${ruleLine}`);
+  pctx.violations.forEach((v) => console.log(`      ✗ ${v.kind} ${JSON.stringify(v.key)} on L${v.level} expecting ${JSON.stringify(v.expected)}: ${v.note}`));
+  pctx.observations.forEach((o) => console.log(`  observed:       ${o}`));
+  console.log(`  console errors: ${consoleErrorCount}`);
+  // Runs end after a game-dependent number of keys, so compare a FIXED-LENGTH prefix:
+  // same persona + same seed ⇒ the same first-50 hash, whatever the game served.
+  const prefixHash = hashString(pctx.decisions.slice(0, 50).join('\n')).toString(16).padStart(8, '0');
+  console.log(`  decision trace: ${pctx.decisions.length} decisions · first-50 hash ${prefixHash} · full hash ${traceHash}`);
+  console.log(`  first decisions: ${pctx.decisions.slice(0, 4).join('  |  ')}`);
+  console.log(`  typed (game-dependent, hash ${typedHash}): ${JSON.stringify(pctx.typed.join('').slice(0, 72))}`);
+  return { traceHash, prefixHash, typedHash };
+}
+
+function writePersonaTrace(pctx, dir, hashes) {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, 'persona-trace.json');
+    fs.writeFileSync(file, JSON.stringify({
+      persona: pctx.persona.spec, seed: pctx.seed, pace: pctx.pace,
+      settings: pctx.persona.settings, ...hashes,
+      decisions: pctx.decisions, typed: pctx.typed, injected: pctx.injected,
+      violations: pctx.violations, observations: pctx.observations, levelTimes: pctx.levelTimes,
+    }, null, 2));
+    console.log(`  trace:          ${file}`);
+  } catch (e) { console.error(`  could not write the persona trace: ${e.message}`); }
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
+  // ── persona resolution (before anything else needs it) ──
+  let persona = null;
+  if (opts.persona === 'list') { printPersonaList(); process.exit(0); }
+  if (opts.persona) {
+    try { persona = resolvePersona(opts.persona); } catch (e) { die(e.message + '\nrun --persona=list'); }
+    if (opts.plan) {
+      // The reproducibility proof with no browser at all: the first N decisions are a
+      // pure function of persona + seed.
+      const beh = createBehavior(persona, opts.seed);
+      console.log(`\nPERSONA: ${persona.spec} | seed ${opts.seed} | first ${opts.plan} decisions\n`);
+      const lines = [];
+      for (let i = 0; i < opts.plan; i += 1) lines.push(describeDecision(beh.next()));
+      lines.forEach((l) => console.log('  ' + l));
+      console.log(`\n  hash ${hashString(lines.join('\n')).toString(16).padStart(8, '0')}\n`);
+      process.exit(0);
+    }
+  }
   if (opts.help || (!opts.at && !opts.list)) { printList(); process.exit(opts.help ? 0 : 2); }
   if (opts.list) { printList(); process.exit(0); }
   if (opts.shot) opts.headless = true;
@@ -1168,9 +1818,31 @@ async function main() {
       '  DEV_URL=http://127.0.0.1:8834 node scripts/playtest.mjs --at=' + opts.at);
   }
 
+  // A persona that plays the PUBLISHED shape refuses to run anywhere else: a pass on the
+  // site root says nothing about the /keystroke-kingdom/ prefix (visual-validation.md
+  // §The Three Environments — the favicon 404s passed every root-served check).
+  if (persona && persona.host === 'prefix') {
+    let pathname = '';
+    try { pathname = new URL(baseUrl).pathname; } catch (e) { pathname = ''; }
+    if (!/\/keystroke-kingdom\/?$/.test(pathname)) {
+      die(`persona ${persona.spec} plays the STATIC-HOST shape (/keystroke-kingdom/ prefix, no backend), ` +
+        `but the URL is ${baseUrl}. Serve the prefix shape and pass it:\n` +
+        '  mkdir -p /tmp/pagesroot && ln -sfn ' + REPO_ROOT + ' /tmp/pagesroot/keystroke-kingdom\n' +
+        '  python3 -m http.server 8809 --directory /tmp/pagesroot\n' +
+        `  node scripts/playtest.mjs --url=http://127.0.0.1:8809/keystroke-kingdom/ --at=${opts.at} --persona=${persona.spec}`);
+    }
+  }
+
   console.log(`\nplaytest → ${opts.at}   (${target.blurb})`);
   console.log(`  url: ${baseUrl}   runs: ${laps}${opts.fresh ? '   fresh: wiping storage before every run' : ''}` +
     `${opts.shot ? '   shots: ' + opts.shot : ''}`);
+  if (persona) {
+    console.log(`  PERSONA: ${persona.spec} | ${settingsSummary(persona.settings)} | seed ${opts.seed}` +
+      `${opts.pace !== 1 ? ' | pace ' + opts.pace : ''}`);
+    console.log(`  WHO:     ${persona.label} — ${persona.who}`);
+    printSeed(persona);
+    console.log(`  ROUTE:   ${persona.route}   HOST: ${persona.host}`);
+  }
   if (laps === 1 && target.laps !== 'n/a') {
     console.log('  ⚠ ONE run. Three of the seven findings that created this tool existed ONLY on');
     console.log(`    the second run. Re-run with --laps=2 (${target.laps}).`);
@@ -1180,6 +1852,11 @@ async function main() {
   const { browser, page, consoleErrors } = await openBrowser(opts.headless);
   const run = new Run(page, opts, baseUrl);
   await installDrawRecorder(page);
+  if (persona) {
+    run.pctx = makePersonaContext(run, persona, opts.seed, opts.pace);
+    await installPersonaSettings(page, persona.settings);
+  }
+  const invokedAt = Date.now();
 
   let failure = null;
   try {
@@ -1217,16 +1894,25 @@ async function main() {
     run.shots.forEach((s) => console.log('      ' + s));
   }
 
+  // The persona's own report, and its one hard gate: a wrong key that advanced.
+  let personaBad = false;
+  if (run.pctx) {
+    const hashes = printPersonaReport(run.pctx, Date.now() - invokedAt, consoleErrors.length);
+    if (opts.shot) writePersonaTrace(run.pctx, opts.shot, hashes);
+    personaBad = run.pctx.violations.length > 0;
+    console.log('');
+  }
+
   // A console error is a failure everywhere, not only under --shot: the whole
   // point is that nobody has to remember to look for one.
-  const bad = !!failure || consoleErrors.length > 0;
+  const bad = !!failure || consoleErrors.length > 0 || personaBad;
 
   if (opts.headless) {
     await browser.close();
     process.exit(bad ? 1 : 0);
   }
 
-  if (failure) {
+  if (failure || personaBad) {
     await browser.close();
     process.exit(1);
   }

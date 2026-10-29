@@ -119,10 +119,56 @@ watch the video. The **`game-player` agent** (`.claude/agents/game-player.md`) e
 precisely for this and is under-used — dispatch it rather than deciding you will eyeball
 it later. *This is the correction: the agent existed, and nobody sent it.*
 
+## Personas — play as somebody, the same somebody every time
+
+*Added 2026-10-29.* Five persona testers were run in one session as PROSE briefs ("you are a
+first-timer, pause 2–5 s, get a quarter of the keys wrong…"). Every brief had to re-invent its
+settings, its typing, its seeded save and its focus list, so two runs of "the struggling
+beginner" were two different testers and a finding could not be re-played against a fix.
+**A persona is now a named, reproducible thing** — `scripts/personas.mjs`, one source of truth:
+
+```bash
+node scripts/playtest.mjs --persona=list
+node scripts/playtest.mjs --at=level:8 --persona=struggling-beginner --seed=7
+```
+
+The same id and the same `--seed` give the same settings, the same seeded save and **the same
+sequence of typing decisions** on every run. The game's own pattern pool is unseeded and stays
+that way, so the *letters* differ between runs; the persona's behaviour does not. Two things the
+persona does that a prose brief never did:
+
+- **It checks the One Rule on every key that is not the right one.** Every wrong key, mash key,
+  lone modifier, held key, Escape, Tab and idle gap is bracketed by a read of the prompt. If the
+  prompt moved, that is a violation and the run exits 1. A green persona run is evidence, not an
+  impression, that the letter waited.
+- **It verifies the game is actually running its settings**, by asking the live
+  `js/settings.js`, and fails if any value was coerced.
+
+**Which persona for which change:**
+
+| You changed… | Run |
+|---|---|
+| anything a brand-new player meets (cold open, Levels 1–5, the first finger guide, the mystery cinematic) | `first-timer` — Level 1 uses the real first-time route, no WOPR |
+| feedback, wrong-key handling, hints, pause, a level's win gate, anything "mid-level" | `struggling-beginner` — the One Rule under 55% wrong keys, mashing, holds, idling, Escape/Tab |
+| save slots, cards, rotation, the gallery, act cards, a bonus wing's card | `family-parent` — three seeded games on one machine, HOTSHOT, length 4–8 |
+| EXPERIENCE scaling, word length, Survival, a race, the L25 coda length | `speedrunner` (WIZARD 3.5×, length 6–24) and `speedrunner:survival` (EXPERT, 1 quarter) |
+| a wing, an `/api/*` call, anything that must degrade on the published site | `explorer-8yo` — refuses to run anywhere but the `/keystroke-kingdom/` prefix shape |
+
+**What a persona cannot do — say so when it matters.** On the canvas wings (Speedway, Hardware)
+it types at the persona's cadence but **injects no wrong keys**: there is no DOM prompt to check
+the One Rule against, and a boot line takes typed characters literally. `--pace` below 1
+compresses its waits, so the game sees a faster typist, and an "idle" lasts a fraction of its
+real length. **Judge acceptance at `--pace=1`.** Use `--pace` only to reach a state.
+
+**A persona report names the persona and the seed** (`struggling-beginner seed 7`), and quotes
+the PERSONA REPORT block, which includes the decision-trace hash. Without the seed, nobody can
+re-play the run that found it.
+
 ## Report honestly
 
 Every report on player-facing work states:
-- **what you actually played** — route, how many runs, which phases;
+- **what you actually played** — route, how many runs, which phases, and **the persona and
+  `--seed`** if you played as one;
 - **what you looked at** — the frame paths, and that you opened them;
 - **what you could not play, and why** — the honest limits, named rather than implied.
 
