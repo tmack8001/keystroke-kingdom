@@ -343,5 +343,6 @@ Agents: read this file first, then drill into pages. Schema: [[WIKI]].*
 ## Journal & planning (project memory)
 
 - [[JOURNAL]] — journal schema · [[dashboard]] — live Dataview status board
-- 104 journal entries (0 OPEN) — views: [[learnings]] · [[observations]] · [[failures]]
+- 105 journal entries (1 OPEN) — views: [[learnings]] · [[observations]] · [[failures]]
+  - OPEN [high] [[F34-five-personas-one-backdoor-the-gate-we-set-out-to-test-was-never-exercised|F34: Five personas, one backdoor — every tester reached the levels through `wopr`, so the unlock gates nobody can see were never played]]
 - [[ROADMAP]] — > ## The two-file contract *(established 2026-09-16)* > > | File | Holds | Tense | Rule | > |---|---|---|---| > | **`ROADMAP.md`** (this file) | **only work that is still open** | present | **A ✅ here is a bug.** Done wo

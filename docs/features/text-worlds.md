@@ -4,7 +4,7 @@ code: [js/textworld/hub.js, js/textworld/engine.js, js/textworld/greendragon.js,
 rules: [.claude/rules/product.md, .claude/rules/security.md, docs/handoffs/im-friend-build.md]
 screenshots: docs/screenshots/textworlds/
 capture: node docs/screenshots/capture-textworlds.js
-verified: 2026-09-13 (back-wall door registry — state.doorIndex; Act 7 now the sibling wing)
+verified: 2026-10-29 (IM-friend replies also checked against the parent's blocked-words list)
 ---
 
 # Act 6 — The Text Worlds
@@ -457,6 +457,12 @@ napping" and shows a scripted, in-character warm line
 (`personas.offlineReply` — curated friends use their authored `nap` array,
 4 lines each; a made friend gets one of 4 generic lines woven with its own
 name) — **never a broken UI, never an error message shown to the child.**
+
+**Client-side blocklist check on replies (added 2026-09-16):** after a non-empty reply arrives,
+`sendChat` runs `hasBlockedWord(reply)` (`js/word-blocklist.js`: the shared floor PLUS the parent's
+`settings.blockedWords`). A hit returns `{ok:false}` — the same "friend takes a nap" path as an
+unavailable model, never an error. It must be client-side because the parent's words stay 100% local
+and are never sent to the server (security.md rules 6-7).
 
 ### Server: `main.go` `POST /api/chat` — the system prompt is composed server-side
 

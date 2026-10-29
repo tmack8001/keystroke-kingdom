@@ -4,6 +4,7 @@
 
 | ID | Title | Status | Importance | Category | Found | Addressed |
 |---|---|---|---|---|---|---|
+| [[F34-five-personas-one-backdoor-the-gate-we-set-out-to-test-was-never-exercised\|F34]] | Five personas, one backdoor — every tester reached the levels through `wopr`, so the unlock gates nobody can see were never played | open | high | testing | 2026-10-29 |  |
 | [[F1-level-4-victory-crashed-rendering\|F1]] | Level 4 victory crashed rendering for every player | addressed | critical | engine | 2026-07-11 | 2026-07-11 |
 | [[F2-canvas-z-index-bug\|F2]] | The canvas z-index bug | addressed | critical | graphics | 2026-06-25 | 2026-06-25 |
 | [[F7-child-facing-card-overstated-history\|F7]] | A child-facing card overstated history | addressed | critical | research-integrity | 2026-07-11 | 2026-07-11 |

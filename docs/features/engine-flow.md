@@ -4,7 +4,7 @@ code: [js/main.js, js/finale-quote.js, js/keyboard-story.js, js/keyboard-story-g
 rules: [.claude/rules/tech.md, .claude/rules/security.md, .claude/rules/easter-eggs.md, research/wiki/culture/hacker-manifesto.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js
-verified: 2026-09-13 (back-wall door registry + Act 7's lazy-imported `speedway` screen)
+verified: 2026-10-29 (showCompleteOverlay + card sound; shelved gallery wiring; collection markup in index.html)
 ---
 
 **Graph gap note:** three surfaces documented here have no reference frame, flagged
@@ -618,6 +618,17 @@ back to the historical `4000`; any declared value is clamped to `1200-6000` so a
 theme return can neither stall the card nor clip the beat mid-animation
 (`victoryMs = Math.min(6000, Math.max(1200, declared))`). All 25 themes now export
 `victory()`; see [[level-themes]] for the per-theme celebration contract.
+
+**Single reveal point (2026-10-19):** both ways the overlay appears — the victory timer and a
+keypress skipping the celebration — go through `showCompleteOverlay()`, which unhides
+`#complete-overlay` and, if `state.completeCardShown` (set in `showLevelComplete` from whether
+`.history-card` is visible), plays `Audio.historyCard()` so the sound never precedes or gates the
+reveal. Level-complete's `CARD n OF N` uses `bankProgress(bankOf(card.id) || 'arcade', …)` (act
+cards included). `showCollectionScreen(slot)` builds shelves via `collectionShelves` and calls
+`revealCollection()`; on the `collection` screen non-exit keys go to `scrollCollection`.
+`index.html` replaced `#collection-count`/`#collection-grid` with `#collection-shelves` + scroll
+markers, and the settings BLOCKED WORDS blurb now reads "BLOCKS EVERY WORD THE GAME MAKES UP — AND
+YOUR FRIEND'S REPLIES. LESSON WORDS ARE HAND-PICKED AND CHECKED SEPARATELY."
 
 ## Replay (landed 2026-07-12)
 

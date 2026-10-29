@@ -4,7 +4,7 @@ code: [js/ui/screens.js]
 rules: [.claude/rules/levels.md, .claude/rules/transitions.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-07-19
+verified: 2026-10-29 (shelved collection gallery)
 ---
 
 # Onboarding, the Slot Picker & Collection Gallery
@@ -57,13 +57,19 @@ one hides the other, so the child is never shown two conflicting instructions at
 
 ## The collection gallery (`collection` screen)
 
-`renderCollectionScreen(state, cards, collectedSet)` — `cards` is
-`allCards()` (all history cards, including the secret one — see [[history-cards]]),
-`collectedSet` a `Set` of collected ids for whichever game the picker's `C` key was
-pressed on. Rebuilds `#collection-grid`: each card becomes a cell — owned cards show
-their word (uppercase) + title, `.owned` styled (green border/glow if `card.secret`);
-unfound cards show a `???` silhouette, `.locked` styled and dimmed. Header
-`#collection-count` reads `★ {found} / {total}`. Read-only — opening it never changes
+`renderCollectionScreen(state, shelves, collectedSet)` — `shelves` is the output of
+`collectionShelves({furthestLevel, collectedIds, bypass})` (one shelf per card bank: THE CABINETS
+= the 76-card arcade bank incl. the secret, THE HARDWARE from Level 20, ACT n shelves from
+Level 15; see [[history-cards]] "Collection gallery"), `collectedSet` a `Set` of collected ids for
+whichever game the picker's `C` key was pressed on (`furthestLevel` comes from that slot, not the
+active game). Rebuilds `#collection-shelves`: each shelf gets a head (`.collection-shelf-name` +
+`.collection-shelf-count` `glyph found / total`, scoped to its own bank) and a grid of cells —
+owned cards show their word (uppercase) + title, `.owned` styled (green if `card.secret`); unfound
+show `???`, `.locked`. There is deliberately **no single headline total** (the old
+`#collection-count` was removed). The shelves scroll as one column: ↑/↓/PgUp/PgDn/Home/End via
+`scrollCollection`, `revealCollection()` (called after `showScreen`) resets scroll and measures the
+`▲ MORE ABOVE` / `▼ MORE BELOW` markers; hint line `↑ ↓ SCROLL · ★ FOUND · ??? KEEP PLAYING · ESC
+BACK`. Read-only — opening it never changes
 which game is active. All text is fixed literal card data (never user input), so
 `textContent` is used for consistency with the picker's convention rather than any
 security necessity here.

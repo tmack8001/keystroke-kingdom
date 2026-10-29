@@ -4,7 +4,7 @@ code: [js/hardware/hub.js, js/hardware/stations.js, js/hardware/]
 rules: [docs/specs/hardware-wing.md, .claude/rules/theme-authoring.md, .claude/rules/security.md]
 screenshots: docs/screenshots/hardware/
 capture: DEV_URL=<url> node scripts/playtest.mjs --at=hardware:apple-iie --laps=2 --shot=docs/screenshots/hardware && DEV_URL=<url> node scripts/playtest.mjs --at=hardware:msdos-pc --laps=2 --shot=docs/screenshots/hardware
-verified: 2026-09-15
+verified: 2026-10-29 (arcade bank is 76; reveal + SPACE hint + historyCard sound re-checked)
 ---
 
 # Act 8 — THE HARDWARE
@@ -80,7 +80,7 @@ the select screen.
 ## The card reveal — built 2026-09-14/15, closing a real gap
 
 **Before 2026-09-15, `wakeUp()` wrote a card id into the save and the player never saw what
-they got** — a card earned with no reveal. `drawCard()` now shows it: when the machine wakes
+they got** — a card earned with no reveal. `drawCard()` (with `Audio.historyCard()` on entering `mode === 'card'`) now shows it: when the machine wakes
 and the player presses Space to leave the station, the hub switches to a `'card'` render mode
 that draws — **on canvas**, never as a DOM sink (security.md rule 1) — an echo of the arcade's
 own `#history-card` panel: cream card stock, the same double border, the same ~0.4s drop-in
@@ -126,8 +126,7 @@ See [[history-cards]] for the full three-bank model (`HISTORY_CARDS` / `WING_CAR
   one flat id list), but the level-complete panel used to compare that flat count against
   `TOTAL_CARDS` — the ARCADE bank's size alone — so a save with any wing card would read
   **"CARD 63 OF 60."** `bankOf`/`bankProgress` scope the displayed count to the SAME bank as
-  the card being revealed. Confirmed live in the captures above (`CARD 1 OF 4`, never `OF 60`
-  or `OF 61`).
+  the card being revealed. Confirmed live in the captures above (`CARD 1 OF 4`, never the arcade's `OF 76`).
 - **Two stations built ⇒ a pool of one MACHINE and one COMPONENT card per station ⇒ two
   visits fully collect a station's own pool** (the rotation "rotates" between exactly two).
   The remaining five stations the spec names (§5.1) are not yet built and have no cards.

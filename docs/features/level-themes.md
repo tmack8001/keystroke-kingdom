@@ -4,7 +4,7 @@ code: [js/themes/]
 rules: [.claude/rules/theme-authoring.md, .claude/rules/levels.md, .claude/rules/levels/act5.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-09-11
+verified: 2026-10-29 (L19 + L20 victory celebrations)
 ---
 
 # Level Themes
@@ -198,6 +198,19 @@ pre-EXPERIENCE Q\*bert (pyramid flip only, no extra-words requirement). Higher t
 add a rounded multiple of 5 extra completed words on top of the pyramid — same
 "more play, never a penalty" law as Tetris's scaling above.
 
+## Act 4 victories — Level 19 (FF7) and Level 20 (terminal), added 2026-10-19
+
+- **`ff7.js` `victory()`** returns `VICTORY_MS = 4200`. A blue FF7-style **VICTORY** results panel
+  (header band, double border) slides up from the bottom-right stage (`px ≈ 0.52W`), and three rows
+  count up with ease-out: **EXP** → 2970, **AP** → 90, **GIL** → 1997 (the cabinet's year). The HP
+  bars are hidden while it plays. Resets in `start()`.
+- **`terminal.js` `victory()`** returns `VICTORY_MS = 4800`. The scrolling log is cleared and the
+  Level 20 payoff is drawn live: the five binary bytes `01001000 01000101 01001100 01001100
+  01001111` type out, then `H E L L O` pop in beneath them in bright green with a bloom, then
+  `YOUR FIRST PROGRAM` fades in and a `>` cursor blinks. The binary/H E L L O lines were formerly
+  pushed into the scroll log in `victory()`; they are now this animation. Both draw under the
+  barrel-glass pass and use explicit `textAlign`/`textBaseline`.
+
 ## Act 4 (Levels 16-20) — the shared white rabbit + the Y2K clock (added 2026-09-11)
 
 The five Command Center themes gained two easter eggs; the catalog and design rules
@@ -228,7 +241,8 @@ layer is the **sharing pattern**, which is the first of its kind in `js/themes/`
   explicit `textAlign`/`textBaseline` (journal L28). Visible in that level's reference
   frame.
 
-Neither egg changes any win gate, any `victory()` duration, or any theme's exported
+**Superseded 2026-10-19 for two themes:** `terminal.js` and `ff7.js` now carry real
+`victory()` celebrations (below). Neither egg changes any win gate, any `victory()` duration, or any theme's exported
 contract. Only `levels/act4-command-center/20-terminal.png` was regenerated for this
 change (the Y2K clock is always on screen); levels 16-19 were **not** re-shot — the
 rabbit rolls 1-in-150 at a pattern boundary and is never present in an opening-chrome

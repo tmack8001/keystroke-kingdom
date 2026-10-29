@@ -4,7 +4,7 @@ code: [js/history-cards.js]
 rules: [research/computing-history-moments.md, research/hacker-culture.md, research/educational-software.md, docs/specs/act-exclusive-cards.md, docs/specs/hardware-wing.md]
 screenshots: docs/screenshots/history-cards/
 capture: node docs/screenshots/capture-cards.js
-verified: 2026-09-15
+verified: 2026-10-29 (arcade bank 76; shelved gallery; fidelity pass)
 ---
 
 # History Cards
@@ -21,13 +21,13 @@ denominator, never merged:
 
 | Bank | Export | Attaches to | Current size | Where it's shown |
 |---|---|---|---|---|
-| Arcade (the original) | `HISTORY_CARDS` | a curriculum level (1-25) | **61** (`TOTAL_CARDS`) | Level-complete overlay, [[free-play]] |
+| Arcade (the original) | `HISTORY_CARDS` | a curriculum level (1-25) | **76** (`TOTAL_CARDS`) | Level-complete overlay, [[free-play]] |
 | The wing | `WING_CARDS` | a bonus-wing station (`wing`+`station`) | **4** | [[hardware-wing]]'s own canvas-drawn card reveal |
 | The act | `ACT_CARDS` | a whole act (1-5), gated at Level 15 | **4** (Act 1 only) | [[free-play]]'s complete panel only |
 
 **Why three arrays and not one filtered list (`docs/specs/hardware-wing.md` §5.4.1,
 `docs/specs/act-exclusive-cards.md`):** `TOTAL_CARDS` is the denominator a player reads
-on the slot picker and the level-complete card ("CARD n OF 61"). Appending wing or act
+on the slot picker and the level-complete card ("CARD n OF 76"). Appending wing or act
 cards to `HISTORY_CARDS` would silently make **every existing save less complete** the
 moment a new bonus layer shipped — a number the child already earned getting worse
 because the game grew a room they haven't opened yet. Keeping the banks separate means
@@ -52,7 +52,7 @@ displayed count to the bank the *revealed* card belongs to — which is also str
 the better feature, since it now tells the player which collection they just advanced.
 Verified live 2026-09-15 (`js/main.js` `showLevelComplete()`, using
 `bankOf(card.id) || 'arcade'`; [[hardware-wing]]'s own canvas reveal does the
-equivalent with `bankProgress('wing', …)`): a Level 1 win reads `CARD 2 OF 61`
+equivalent with `bankProgress('wing', …)`): a Level 1 win reads `CARD n OF 76`
 (arcade); a hardware-station visit reads `CARD 1 OF 4` / `CARD 2 OF 4` (wing); a Free
 Play act-card reveal reads `CARD 1 OF 4` (act) — never a cross-bank number.
 
@@ -108,8 +108,8 @@ word, title, year, fact, legacyLevel?, secret? }`.
   confirmed to mention them; saying `UNKNOWN` is the honest card, and the bank already
   has non-numeric years (`'1970s'`, `'LATE 1980s'`) as precedent for the shape.
   Research: `research/wiki/tech/home-row-bumps.md`.
-- **Current total: 60 curriculum cards + 1 secret card = 61** (`TOTAL_CARDS === 61`).
-  Levels 2 and 3 remain the only levels with zero cards.
+- **Current total: 75 pooled curriculum cards + 1 secret card = 76** (`TOTAL_CARDS === 76`,
+  verified 2026-10-29). Every level 1-25 now carries at least one card (L1-3: one each; L4+ rotate).
 
 Field shape per entry:
 - **`id`** — a stable slug (`'ada-lovelace'`, `'qwerty-keyboard'`, …), the collection key
@@ -117,10 +117,8 @@ Field shape per entry:
 - **`level`** — the **earliest** curriculum level whose unlocked keys can spell the
   card's word. Multiple cards can share a level (a *pool*): e.g. level 4 carries both
   `ada-lovelace` and `qwerty-keyboard`; level 8 carries `hedy-lamarr`, `atari-founded`,
-  and `altair-8800`. **Levels 2 and 3 carry no card** (no vowel is spellable there, and
-  no non-word pattern-token precedent has been carded for them yet); **Level 1** got its
-  first card on 2026-09-15 (`home-row-bumps`, word `jf` — a pattern token, not a real
-  word — see above).
+  and `altair-8800`. **Levels 1-3 carry exactly one card each** — vowel-free PATTERN tokens, not real
+  words: `home-row-bumps` (`jf`, L1), `jdk` (L2), `ls` (L3).
 - **`legacyLevel`** — set only on the original 17 cards, tagging which level they used
   to live at under the old one-per-level model. Purely a migration aid (below); has no
   effect on gameplay.
@@ -216,7 +214,19 @@ A read-only grid (`collection` screen, reached with `C` from the slot picker) ov
 a `???` silhouette. Secret cards render in green when owned. Header shows
 `★ {found} / {total}`. See [[save-slots]] for the screen's key handling and screenshots.
 
-**Verified against all 55 cards (2026-07-27):** a fully-collected gallery screenshot
+**Superseded 2026-10-19:** the gallery is no longer one grid over `allCards()` and has **no
+single headline total**. `collectionShelves()` (`js/ui/screens.js`) builds one SHELF per bank,
+each counting only its own bank: **THE CABINETS** (`★`, the whole 76-card arcade bank, via
+`bankProgress('arcade')`), **THE HARDWARE** (`◼`, 4 wing cards, shown once the browsed game's
+`furthestLevel >= 20` or it already holds one), and **ACT n · <room>** (`♦`, one per act that has
+cards — today only Act 1, 4 cards — shown once `actCardsUnlocked` (Level 15) and the act's first
+cabinet is reached, or the save holds one). `bypass` (WOPR) opens all shelves. The shelves scroll
+as one column with ↑↓/PgUp/PgDn/Home/End (`scrollCollection`), with `▲ MORE ABOVE` / `▼ MORE
+BELOW` markers; Escape/Space/Enter return to the picker. The heading is THE CABINETS, not "THE
+ARCADE", to avoid colliding with Act 1's room name. Level-complete also plays `Audio.historyCard()`
+(rustle, tap, two chimes) the instant the card becomes visible (`showCompleteOverlay`).
+
+**Historical (2026-07-27, 55 cards, pre-shelves):** a fully-collected gallery screenshot
 (`docs/screenshots/screens/collection-gallery.png`) shows `★ 55 / 55`, all 13 new
 hacker-culture cards render with no clipping, and the secret `JOSHUA` card still
 renders in green.
@@ -235,8 +245,8 @@ now shows both `RUBBER DUCK` and `HELLO WORLD` in full, two-line, no clipping;
 
 **Capture tooling — `capture-cards.js` WORKS. Do not report it as broken.**
 Last verified 2026-09-15 (after the Level 1 `home-row-bumps` card landed):
-`node docs/screenshots/capture-cards.js` → exit 0, **60/60 pooled cards captured**
-(of 60 pooled cards; the arcade bank is 61 total including the one secret card),
+`node docs/screenshots/capture-cards.js` → exit 0, **all pooled cards captured**
+(pooled cards; the arcade bank is 76 total including the one secret card),
 secret card captured, zero console errors, zero legibility issues. The script needed
 no code change to pick up the new card — it derives its expected set from the live
 `HISTORY_CARDS` array, exactly as designed.
@@ -257,11 +267,11 @@ scan against what is now a flat array, plus a stale `CARD_LEVELS` list) — it e
 fatally on any invocation. It has since been rewritten for the flat-array/pool model
 (pulls the live `HISTORY_CARDS` array in-page, derives its expected set and the
 "CARD n OF N" check from that data rather than a literal) and re-run in full:
-`docs/screenshots/history-cards/` now holds all **59 pooled cards** (+1 secret = 60 files) as
+`docs/screenshots/history-cards/` held all **59 pooled cards** (+1 secret = 60 files) as
 `<level>-<id>.png` (e.g. `13-colossal-cave.png`, `25-hello-world.png`,
 `25-rubber-duck.png`) plus the one secret card as `secret-wargames-joshua.png` — 60
 files total (verified 2026-09-13, including the five 2026-09-13 edutainment-lineage
-cards), zero console errors, zero guaranteed-capture failures.
+cards), zero console errors, zero guaranteed-capture failures. **Re-checked 2026-10-29: 76 files (75 pooled + the secret); one missing (`11-mark-ii-moth.png`) was regenerated with a filtered run.**
 
 ## Bank 2 — the wing (`WING_CARDS`) — paired, per station
 
@@ -292,7 +302,7 @@ unlocked by the time a wing opens) — station cards instead attach to `{wing, s
 ## Bank 3 — the act (`ACT_CARDS`) — unlocked by the whole keyboard, shown only in Free Play
 
 `docs/specs/act-exclusive-cards.md`. **The problem this solves, measured rather than
-assumed:** only 7 of the arcade bank's (pre-2026-09-15) 59 cards land in their own act's
+assumed:** only 7 of the arcade bank's (then) 59 cards land in their own act's
 era, because INV-56 attaches a card to the *earliest spellable* level — e.g. `phrack`
 (1985) sits on the Myst cabinet (Level 13) because that's where its letters close, not
 because Myst has anything to do with 1985 hacker zines. An act-themed card layer needs a

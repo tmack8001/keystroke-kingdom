@@ -4,7 +4,7 @@ code: [js/audio.js]
 rules: [.claude/rules/tech.md]
 screenshots: null
 capture: null
-verified: 2026-09-11
+verified: 2026-10-29 (historyCard)
 ---
 
 # Audio
@@ -34,6 +34,7 @@ frequency set via `setValueAtTime`, envelope is decay-only —
 | `timeout()` | `wrong()` ×2, 140ms apart | **Survival only** — clock, never a keypress |
 | `bonusQuarter()` | 2-note bright square (1046/1568Hz) | **Survival only** — 15-streak mercy chime |
 | `gameOver()` | 3-note descending triangle (G-E-C) | **Survival only**, the game's one failure state — "must never mock the player" (source comment) |
+| `historyCard()` | ~0.55s "card picked up off the floor": 0.2s band-passed noise rustle, a 210→150Hz triangle tap at +0.33s, two triangle chimes (784/1175Hz at +0.4/+0.52s), all on a 0.06 bus | fired by `main.js` `showCompleteOverlay()` only when a card is on the level-complete panel, and by the hardware wing's `drawCard()` reveal; after the reveal, never gating it; silent if WebAudio is unavailable |
 | `modemChirp(delay)` | ~0.55s layered dial-up handshake | easter egg, cinematic only — the one sound that doesn't use `play()`; see below |
 
 ## `modemChirp(delay)` — the dial-up handshake (added 2026-09-11)

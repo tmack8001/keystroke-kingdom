@@ -4,7 +4,7 @@ code: [js/ui/cabinet-art.js]
 rules: [.claude/rules/levels.md]
 screenshots: docs/screenshots/acts/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-09-13 (console-station cabinet art overhaul + control panels + screen/year fixes — see git log js/ui/cabinet-art.js)
+verified: 2026-10-29 (Free Play banner text; earlier: console-station cabinet art overhaul + control panels + screen/year fixes — see git log js/ui/cabinet-art.js)
 ---
 
 # Select Screen ("GREETINGS PROFESSOR FALKEN")
@@ -115,7 +115,9 @@ all) is unaffected: it still falls through to the untouched cold-open/title flow
   cabinet. `ArrowDown` past the LAST act steps into the **back wall** (below).
 - `1`-`5` → `selectByPosition(state, pos)` — jump directly to the pos-th cabinet in
   the current act (1-indexed); no-ops if locked. **No-op at the back wall.**
-- `F` → toggles Free Play (see [[free-play]]). **No-op at the back wall.**
+- `F` → toggles Free Play (see [[free-play]]). **No-op at the back wall.** While on, the act label
+  is prefixed `FREE PLAY · EVERY KEY · FULL SENTENCES · LIVE WPM · ACT n · …` (one interpunct
+  separator throughout; the old prefix was just `FREE PLAY · `).
 - `Enter`/`Space` → enters the selected cabinet (guarded again against locked
   levels) — or, at the back wall, the focused door's wing.
 - `Escape` → clears Free Play, calls `clearDoorFocus(state)`, returns to title.

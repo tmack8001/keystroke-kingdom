@@ -94,6 +94,13 @@ one.
 Each verified open against source by the 2026-09-16 audit.
 
 ### Player-facing
+- **Settings hard-codes `'PRESS RETURN'`** — `js/main.js:1773` (action-row value cell). A Windows/Linux
+  player sees RETURN on a keyboard that says ENTER (CLAUDE.md §Platform Key Label). The boot-time
+  `[data-enter-key]` swap cannot reach HTML rendered later, so the fix is to use `enterLabel`
+  (`main.js:2776`) directly.
+- **Question for Trevor — Survival is one keypress from the title:** Tab → → Esc lands in SURVIVAL (`PLAY STYLE` is
+  `ROWS[0]`, `applyRowChange` saves immediately, `js/settings.js`). Opt-in is honoured, but a child can opt in by
+  accident; `kk-settings` is also global, so it reaches every save slot. Ruling needed before any change.
 - **Six themes declare no victory duration** — `breakout.js` (L1), `invaders.js` (L2), `pacman.js` (L3),
   `fighter.js` (**L4 Galaga**), `pokemon.js` (**L15, the FULL KEYBOARD UNLOCKED milestone**),
   `wordprocessor.js` (L25). Each gets the engine's legacy fixed 4000ms hold. ⚠️ **Not yet a known

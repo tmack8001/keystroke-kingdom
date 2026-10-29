@@ -4,7 +4,7 @@ code: [css/base.css, css/screens.css, css/levels.css]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-09-13 (back-wall door labels, #speedway-screen cards, the touch keyboard notice)
+verified: 2026-10-29 (collection shelves + scroll markers)
 ---
 
 # Visual Styling
@@ -77,6 +77,16 @@ space to break on) stay on one line exactly as before. Cells keep their fixed si
 only the label's own wrap behavior changed. Verified via a regenerated
 `docs/screenshots/screens/collection-gallery.png` (synthetic fully-collected slot);
 see [[history-cards]] for the before/after detail.
+
+## Collection shelves + scroll markers (added 2026-10-19)
+
+The gallery became shelves ([[history-cards]], [[onboarding-continue]]), and `css/screens.css`
+gained: `.collection-scroll-wrap` / `.collection-shelves` (one scrolling column, top padding, a retro
+webkit scrollbar that is a bonus only), `.collection-shelf-head` / `-name` / `-count` (each shelf
+prints only its own bank's `n / total`), and `.collection-more` / `.collection-more-up` (the
+bottom/top fade + `▼ MORE BELOW` / `▲ MORE ABOVE` markers — the real scroll affordance, since a macOS
+overlay scrollbar is invisible). `docs/screenshots/screens/collection-gallery.png` regenerated
+2026-10-29.
 
 ## Back-wall door labels + `#speedway-screen` cards (added 2026-09-13)
 

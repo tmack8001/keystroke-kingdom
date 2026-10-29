@@ -4,7 +4,7 @@ code: [js/levels.js]
 rules: [.claude/rules/levels.md, .claude/rules/levels/act5.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-07-13
+verified: 2026-10-29 (blocklisted `dead`/`drug`/`gun47` removed; digit-bearing card tokens L16-23)
 ---
 
 # Curriculum Data
@@ -46,7 +46,9 @@ match required), `' '`, `'Backspace'`.
 - L1-3: pattern drills only (`['j','f','j']`, `['s','l','s','l']`), no real words — L3's
   key set (J F D K S L) has no vowel, so nothing is spellable yet.
 - L4-5: first home-row words, once `a` unlocks (`dad`, `lad`, `flask`, `falls`, `salad`).
-- L6-12: growing early-reader vocabulary per new key pair.
+- L6-12: growing early-reader vocabulary per new key pair. **`dead` (L6) and `drug` (L7) were removed
+  2026-09-15** (on the `js/word-blocklist.json` safety floor; INV-105 now checks the whole curriculum
+  against it); L6 `theatre` became `theater`.
 
 **Word-length spectrum expansion (2026-07-13):** the real-word `pool` arrays for
 every level from 4 through 25 gained additional longer entries (respecting each
@@ -72,7 +74,11 @@ added entry.
 - L15: `z`/`/` — includes the foreshadowing token run `keyboard/world`.
 - L16-20: themed letter+digit mixes per cabinet (SimCity's `city5`, terminal's `hello`/
   `world`). **Level 20's binary→HELLO beat exists only as the plain words
-  `hello`/`world` in this data — no literal binary-string tokens.**
+  `hello`/`world` in this data — no literal binary-string tokens** (the binary + HELLO is drawn by
+  `terminal.js`'s `victory()`, see [[level-themes]]). **Digit-bearing history-card tokens
+  (2026-09-15):** L16 `5,6` / `65,566` / `5/6` / `5.5` (`555` card), L17 `747` / `7/4` / `4/7`
+  (GoldenEye's `gun47` removed, SimCity's `sim5`/`sim6` replaced), L18-19 `3,838` / `3/8` / `2,929` /
+  `9/2`, L21 `1/1`, L20 `10/10`, `007`. All are within the level's cumulative key closure.
 - L21: hyphen compounds (`zig-zag`) and subtraction equations as token arrays
   (`['2','-','1','=','1']`).
 - L22: bracketed words (`[ok]`), backslash drills (`a\b`), and `\o/`.
