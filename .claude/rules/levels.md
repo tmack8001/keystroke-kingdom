@@ -83,7 +83,7 @@ Per-level detail lives in each act file (last column links to it).
 | 1 | The Arcade | J, F | Breakout | Atari | 1976 | [act1.md](levels/act1.md) |
 | 2 | The Arcade | D, K | Space Invaders | Taito | 1978 | [act1.md](levels/act1.md) |
 | 3 | The Arcade | S, L | Pac-Man | Namco | 1980 | [act1.md](levels/act1.md) |
-| 4 | The Arcade | A, the eighth key | Galaga | Namco | 1981 | [act1.md](levels/act1.md) |
+| 4 | The Arcade | A, the eighth key (`;` — glyph shown, word withheld) | Galaga | Namco | 1981 | [act1.md](levels/act1.md) |
 | 5 | The Arcade | G, H | Joust | Williams | 1982 | [act1.md](levels/act1.md) |
 | 6 | Computer Wing | E, I | Donkey Kong | Nintendo | 1981 | [act2.md](levels/act2.md) |
 | 7 | Computer Wing | R, U | Dragon's Lair | Cinematronics | 1983 | [act2.md](levels/act2.md) |

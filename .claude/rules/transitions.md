@@ -106,11 +106,35 @@ No instructions. No tutorial text. No "here's how the game works." The letter `j
 
 ---
 
+## Skipping — one rule for all four act cinematics *(Trevor, 2026-10-30)*
+
+"Skippable after first completion" below is exact, and it holds for the Mystery,
+the Basement, the Command Center and Full Circle alike:
+
+| | Before the title card | On the title card |
+|---|---|---|
+| **First viewing** (this saved game has never cleared the gating level) | **No key skips.** Every key is ignored. | **Space only** continues — it is what the card says. |
+| **Replay** (the gating level was already cleared) | **Space or Escape** jumps to the title card. Every other key is ignored. | **Space only.** |
+
+- *Why:* until 2026-10-30 ANY key skipped, on any viewing. A first-timer's stray key at
+  ~8s jumped straight to the ACT 2 card, so the child never saw *HELLO. YOU FOUND ME.*,
+  the secret door or the Computer Wing — the reveal the whole of Act 1 builds toward.
+  The title cards also advanced on any key while saying PRESS SPACE TO CONTINUE.
+- *"First viewing"* is derived from progress that already exists — the gating level's
+  `completed` flag read **before** it is recorded (the eighth-key confession's latch).
+  No new storage. A replay of Level 5 therefore gets a skippable Mystery.
+- *Full Circle* has no title card: its last phase is the opening-screen callback that
+  says TYPE YOUR NAME, so there **Space or any typed character** hands off to Level 21
+  (after its 1s fade-in), and Escape/Tab/arrows/modifiers do nothing.
+- A held key's auto-repeat is never a decision.
+
+---
+
 ## Mystery Beat — The Reveal Sequence
 
 **Trigger:** The final word of Level 5 is typed correctly. The Joust completion animation plays normally. Then, instead of returning to the arcade idle state, the sequence begins automatically.
 
-**Total duration:** ~50 seconds. Skippable after first completion (Space or Escape). Replayable at any time from the Stats Cabinet.
+**Total duration:** ~50 seconds. Skippable after first completion (Space or Escape) — never on the first viewing; see §Skipping above. Replayable at any time from the Stats Cabinet.
 
 ---
 

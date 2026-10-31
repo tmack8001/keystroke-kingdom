@@ -52,14 +52,14 @@ design rules) moved to [`onboarding.md`](onboarding.md) on 2026-07-12.*
 ---
 
 ### Level 4 — A & the Eighth Key
-- **New keys:** A (left pinky), ; (right pinky — never called "semicolon")
+- **New keys:** A (left pinky), ; (right pinky — the glyph `;` is shown; the WORD "semicolon" is withheld)
 - **Game:** Galaga — Namco, 1981
 - **Era:** 1981
 - **Graphic quality:** 8+ colors. Rainbow alien formations, starfield depth, multi-frame animation. The biggest visual step yet in Act 1 — sprites have color variety, formations have geometry. The screen feels alive.
 - **Palette:** Deep space black, with colorful bug sprites in red, blue, yellow, green, white
 - **Music:** Fast, cosmic, staccato. Formation patterns in the music mirror the alien grids. Lyria prompt: *"upbeat space chiptune, staccato burst rhythms, rising arpeggios — the sound of precision at speed"*
 - **Content:** Full home row unlocked, and A is the vowel that changes everything: **dad, sad, fad, lad, ads, lads, lass, flask, falls, dads, asks, salad**
-- **The eighth key:** Never "semicolon." The right pinky finally has a home. *"Press the eighth key — the one your right pinky has been waiting for."*
+- **The eighth key:** A mystery key the game teaches — the WORD "semicolon" is withheld (no in-game string names it), while the `;` GLYPH is shown on the prompt and keyboard guide like any other key *(Trevor, 2026-10-30; the prompt used to stand a `?` in for it)*. INV-29 checks the word, never the glyph. The right pinky finally has a home. *"Press the eighth key — the one your right pinky has been waiting for."*
 - **The first real word:** Three levels of pure pattern drills pay off here — the instant A lands, the letters on screen aren't just a rhythm anymore, they're a word the player can actually read. That's the double win the whole word bank system is built around, and it belongs to Level 4, not Level 3.
 - **Completion:** The Mystery Cabinet, dark in the corner, begins to glow.
 - **Narrative beat:** You played four cabinets. Something in the back of the arcade noticed.

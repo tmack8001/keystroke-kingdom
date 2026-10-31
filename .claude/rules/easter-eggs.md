@@ -175,8 +175,13 @@ earned — the level-complete card carries a two-line couplet revealing that the
 a name, and ends with the character **without ever naming it**. One time per saved game; the
 latch is derived from `!getProgress().completed['20']`, read before the level is recorded, so
 no storage field was added and a replay never re-fires it.
-*(The semicolon secret, withheld until the machine is earned. INV-29 — the "never say
-semicolon" static check — stays green.)*
+*(The semicolon secret, withheld until the machine is earned. **What is withheld is the
+WORD, never the glyph** (Trevor, 2026-10-30): the `;` glyph is on the prompt and the keyboard
+guide from Level 4 on, like any other key — the child has typed it hundreds of times by
+Level 20. The secret this couplet keeps is that the mark has a NAME; it ends on the glyph
+they already know and still does not say the word. INV-29 — the "never say semicolon"
+static check — checks the WORD in player-facing strings, never the `;` character, and stays
+green.)*
 
 ## Proposed — the menu is EMPTY
 

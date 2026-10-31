@@ -32,6 +32,15 @@ A retro arcade-themed typing game for young children who are simultaneously lear
 - Correct key pressed → small celebration, move forward
 - The game **never skips ahead** after a wrong keypress — correcting yourself is always rewarded, never penalized
 - Mistakes are logged quietly in the background, never displayed alarmingly
+- **Holding a key down is ONE press** *(Trevor, 2026-10-30)*. The keyboard's auto-repeat is
+  ignored for every typed token: a held wrong key is one nudge and one logged mistake, never
+  one per repeat (a single hold was logging +8 to +13), and a held right key on a doubled
+  letter (`jj`) advances once, never twice.
+- **The letter the player sees is the letter being judged** *(Trevor, 2026-10-30)*. A key
+  pressed in the short beat between one pattern finishing and the next one appearing first
+  draws the next pattern, then is judged against it — a fast typist is never judged against a
+  word that is not on screen, and a finished letter is never re-highlighted. A key pressed
+  after the level's last pattern, while the win is being shown, is simply ignored.
 
 ### 4. Words Emerge Naturally
 - Early levels use rhythm and nonsense patterns (pure muscle memory)
@@ -157,12 +166,12 @@ the keys", the default, always) vs **SURVIVAL** ("quarters on the line — 1979 
 
 | Setting | Default | Options |
 |---|---|---|
-| Play Style | ADVENTURE | SURVIVAL (opt-in; time pressure only — wrong keys NEVER cost anything) |
+| Play Style | ADVENTURE | SURVIVAL (opt-in; asks "KEEP IT? Y/N" before it is saved; time pressure only — wrong keys NEVER cost anything) |
 | Lives (quarters) | 3 | 1–5 (Survival only) |
 | Difficulty | NOVICE | ARCADE / EXPERT — classic tiers, tuned "challenging, never cruel"; 15-streak earns a quarter back; game over is warm |
 | Experience | FIRST QUARTER (1x) | REGULAR (1.5x) / HOTSHOT (2.25x) / WIZARD (3.5x) — scales how much typing a level requires before it can be won, to a player's typing experience (never age). A higher tier is MORE play, never a penalty; works in both Adventure and Survival. Scales the engine minimum-patterns gate and wired themes' win targets (Tetris, Q\*bert); other themes scale via the engine minimum |
-| Min Word Length | ANY | 3 / 4 / 5 / 6 / 7 — raise to drop the easy short words. *(built 2026-07-13)* |
-| Max Word Length | ANY | 4 / 5 / 6 / 7 / 8 / 10 / 12 / 16 / 24 — raise to allow longer, harder words; 24 is the WIZARD-equivalent top rung. *(built 2026-07-13)* |
+| Min Word Length | ANY | 3 … 12 — raise to drop the easy short words. *(built 2026-07-13)* |
+| Max Word Length | ANY | 4 … 24 — raise to allow longer, harder words; 24 is the WIZARD-equivalent top rung. *(built 2026-07-13)* |
 | Hints | Moderate | Subtle / Obvious |
 | Mistakes Shown | Small | Hidden / Prominent |
 | Sound | ON | OFF |
@@ -171,6 +180,40 @@ the keys", the default, always) vs **SURVIVAL** ("quarters on the line — 1979 
 | Player Name | Player One | Customizable (title screen; persisted) |
 | Erase All Progress | — | Y/N confirm required |
 | Visual Theme | 1979 Arcade | Future: expandable (Oona's ideas!) — see docs/ROADMAP.md |
+
+### Choosing a harder rule asks once *(Trevor, 2026-10-30)*
+
+SURVIVAL is opt-in, and it used to be one accidental keypress away: Tab → → → Esc on the
+title saved it instantly, and `kk-settings` is machine-wide, so it reached every family
+member's game. **Moving PLAY STYLE to SURVIVAL now asks:**
+
+```
+YOU CHOSE 1979 RULES — KEEP IT?  Y / N
+```
+
+- **Only Y keeps it.** N, Escape, Tab, an arrow, or any other key keeps the easier value — the
+  same "never trap, never act on ambiguity" shape as every Y/N in the game.
+- **An unconfirmed harder value is never saved**, not even if the tab is closed while the
+  question is on screen. It lives only on screen until Y.
+- **Easier changes stay instant** — moving back to ADVENTURE never asks.
+- Per-game (per-slot) difficulty is a separate, later change; settings are still machine-wide.
+
+### Survival is challenging, never cruel — two floors *(Trevor, 2026-10-30)*
+
+- **The 15-streak mercy quarter works at 1 quarter too.** With several quarters it hands back
+  one you lost; with ONE quarter there is nothing to hand back, so the mercy could never fire.
+  At 1 quarter, the first 15-streak of the run earns **one spare quarter** (shown as a second
+  coin) — a one-time reprieve. Once spent, a 1-quarter run is back to its chosen rule.
+- **No prompt is ever given less than 10 seconds.** The per-pattern clock scales with length,
+  which left a one-letter prompt ~5.4s at EXPERT — a child glancing away briefly lost a quarter
+  on the SHORTEST prompt. The floor makes a short prompt never harsher than a long one. (The
+  clock is not otherwise retuned.)
+
+### Word-length labels say which way is harder *(2026-10-30)*
+
+A higher MAX allows longer words and is HARDER; a higher MIN demands longer words and is
+HARDER. The descriptors used to call every MAX rung "EASIER", including 24, the hardest one.
+Every rung now names its real direction.
 
 ### EXPERIENCE also buys FIDELITY, not just volume *(Trevor, 2026-09-13 — direction)*
 
@@ -324,8 +367,10 @@ The single global save became **any number of independent saved games** (no cap 
 can have as many players as it likes; Trevor: "no reason to limit"), so a shared machine
 holds a game each for Oona, a sibling, a parent, a grandparent. Returning players land on a
 **"CHOOSE YOUR GAME"** slot picker (the new front door, replacing the old continue screen):
-each slot shows its **name, level, and ★ cards-found count**; Space resumes, N starts a new
-game, X erases (Y/N confirm), C browses that game's card collection. The **player name is
+each slot shows its **name, level, and ★ found / total** (the arcade card bank); Space resumes, N starts a new
+game, R renames it (the only way a saved game's name changes — 2026-10-30), X erases (Y/N
+confirm), C browses that game's card collection. Escape on READY reaches the arcade select
+screen for a saved game, with its unlock gates honoured (`levels/onboarding.md`). The **player name is
 now per-slot**; global machine preferences (sound, CRT, difficulty tiers) stay shared. A
 pre-slots single save auto-migrates into Slot 1 the first time — no returning player ever
 loses their game. The first-time cold open is untouched; it simply creates Slot 1 on the

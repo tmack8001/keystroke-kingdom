@@ -42,7 +42,7 @@ platform until a deliberate decision says otherwise (see Future Considerations).
     main.js             # Engine: state machine, input contract, survival wrapper
     levels.js           # Curriculum data: FINGER_MAP, KEY_REACH, LEVELS 1-25
     freeplay.js         # Free Play sentences + full-keyboard session builder
-    history-cards.js    # 59 history moments (+1 secret), flat/id model, rotating-pool picker
+    history-cards.js    # 3 banks: HISTORY_CARDS 76 (75 pooled + 1 secret = TOTAL_CARDS), WING_CARDS 4, ACT_CARDS 4; flat/id model, rotating-pool picker
     finale-quote.js     # L25 finale: EXPERIENCE-tier Hacker Manifesto excerpt (the coda capstone)
     keyboard-story.js   # L25 "MY STORY" coda: static all-26-letter story bank + assembleCoda/rotation/typo-beats
     keyboard-story-gen.js # async client for the local-Ollama /api/keyboard-story generator (static fallback)

@@ -152,7 +152,7 @@ persona does that a prose brief never did:
 | feedback, wrong-key handling, hints, pause, a level's win gate, anything "mid-level" | `struggling-beginner` — the One Rule under 55% wrong keys, mashing, holds, idling, Escape/Tab |
 | save slots, cards, rotation, the gallery, act cards, a bonus wing's card | `family-parent` — three seeded games on one machine, HOTSHOT, length 4–8 |
 | EXPERIENCE scaling, word length, Survival, a race, the L25 coda length | `speedrunner` (WIZARD 3.5×, length 6–24) and `speedrunner:survival` (EXPERT, 1 quarter) |
-| a wing, an `/api/*` call, anything that must degrade on the published site | `explorer-8yo` — refuses to run anywhere but the `/keystroke-kingdom/` prefix shape |
+| a wing, an `/api/*` call, anything that must degrade on the published site | `explorer` — refuses to run anywhere but the `/keystroke-kingdom/` prefix shape |
 
 **What a persona cannot do — say so when it matters.** On the canvas wings (Speedway, Hardware)
 it types at the persona's cadence but **injects no wrong keys**: there is no DOM prompt to check
