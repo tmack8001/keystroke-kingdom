@@ -218,17 +218,36 @@ export async function toSelect(page, baseUrl) {
  * also sets state.selectBypass — the same flag that unlocks the Act 6 back-wall
  * door regardless of curriculum progress, per cabinet-art.js `doorUnlocked`) all
  * the way to the door's focused sub-state, ready for Space to enter the text
- * world. Five ArrowDown presses walk down through all five acts to the door,
- * which sits one step below Act 5 (js/ui/cabinet-art.js `navigateAct`).
+ * world. Walks ArrowDown until the TEXT WORLDS wall is on screen (see
+ * {@link walkToWingDoor}) instead of counting presses blind — a blind count
+ * silently lands on the wrong wall when an act is added.
  * @param {import('playwright').Page} page
  * @param {string} baseUrl
  */
 export async function toTextWorldDoor(page, baseUrl) {
   await toSelect(page, baseUrl);
-  for (let i = 0; i < 5; i++) {
+  await walkToWingDoor(page, 'textworld');
+}
+
+/**
+ * Press ArrowDown on the select screen until the named bonus-act wall is
+ * showing (a `.select-door[data-door="<id>"]` machine is on screen), instead of
+ * counting presses blind. A blind count silently lands on the wrong wall the
+ * moment an act is added or a wing's unlock level moves; this reads the one
+ * thing the player reads — which wall is on screen — and gives up loudly.
+ * @param {import('playwright').Page} page
+ * @param {string} doorId 'textworld' | 'speedway' | 'hardware'
+ * @param {number} [maxPresses=12]
+ */
+export async function walkToWingDoor(page, doorId, maxPresses = 12) {
+  const present = () => page.evaluate(
+    (id) => !!document.querySelector(`#select-cabinets .select-door[data-door="${id}"]`), doorId);
+  for (let i = 0; i < maxPresses; i++) {
+    if (await present()) return;
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(150);
   }
+  if (!(await present())) throw new Error(`walkToWingDoor: the ${doorId} wall never appeared after ${maxPresses} ArrowDown presses`);
 }
 
 /**
@@ -357,9 +376,17 @@ export async function typeSequence(page, str) {
 
 // ── Observable-state readers (DOM text only) ────────────────────────────────
 
-// Displayed prompt glyphs are lossy (`;`→`?`, ' '→'␣', Backspace→'⌫'); this
-// reverses them back to raw tokens so readPrompt reports the token the engine
+// Displayed prompt glyphs that differ from the engine token (' '→'␣',
+// Backspace→'⌫'); this reverses them so readPrompt reports the token the engine
 // expects, not the on-screen glyph. Kept in sync with hud.js promptDisplay().
+//
+// The eighth key is DISPLAYED AS ITS OWN GLYPH `;` since 2026-10-30 (CLAUDE.md
+// footnote, levels/act1.md Level 4; INV-140) — it used to be masked as `?`, and
+// this map used to translate `?`→`;`. The `?`→`;` entry is deliberately KEPT so
+// the driver accepts BOTH spellings and an old/new game can still be driven; it
+// is NOT how INV-140 is asserted — that test reads the raw rendered text with
+// `readPromptGlyphs`, which does no translation, so a regression that stands a
+// `?` back in cannot hide behind this map.
 const GLYPH_TO_TOKEN = { '?': ';', '␣': ' ', '⌫': 'Backspace' };
 
 /**
@@ -386,6 +413,18 @@ export async function readPrompt(page) {
   const activeToken =
     raw.activeIndex >= 0 && raw.activeIndex < tokens.length ? tokens[raw.activeIndex] : null;
   return { tokens, activeIndex: raw.activeIndex, activeToken };
+}
+
+/**
+ * The prompt letters EXACTLY as rendered (no glyph→token translation): what a
+ * child actually sees on screen. Use this — not {@link readPrompt} — to assert
+ * on the displayed mark for a key (INV-140: the eighth key shows `;`).
+ * @param {import('playwright').Page} page
+ * @returns {Promise<string[]>}
+ */
+export async function readPromptGlyphs(page) {
+  return page.evaluate(() =>
+    [...document.querySelectorAll('#prompt-sequence .prompt-letter')].map((el) => el.textContent));
 }
 
 /**

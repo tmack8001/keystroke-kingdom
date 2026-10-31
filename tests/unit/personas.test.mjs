@@ -47,7 +47,7 @@ describe('personas — identity', () => {
   });
 
   test('the five personas the 2026-10 sessions used all exist', () => {
-    for (const id of ['first-timer', 'struggling-beginner', 'family-parent', 'speedrunner', 'explorer-8yo']) {
+    for (const id of ['first-timer', 'struggling-beginner', 'family-parent', 'speedrunner', 'explorer']) {
       assert.ok(SPECS.includes(id), `missing persona ${id}`);
     }
   });
@@ -118,6 +118,42 @@ describe('personas — the PII floor', () => {
     }
   });
 
+  // A persona's NAME never implies an age either (Trevor, 2026-10-30: `explorer-8yo` was
+  // renamed `explorer`). An age-shaped token is "8yo", "8 y/o", "8-year", "age", or a
+  // bare 1–2 digit number standing as its own word ("explorer-8", "age 8"). A digit
+  // glued to a letter ("D2", the speedrunner variant's label) is an index, not an age.
+  const AGE_SHAPED = [
+    /\d+\s*-?\s*(yo|y\/o|yrs?|years?)\b/i,
+    /\bages?\b/i,
+    /(^|[\s\-_:(])\d{1,2}(?=$|[\s\-_:)])/,
+  ];
+  const ageHit = (s) => AGE_SHAPED.some((re) => re.test(String(s)));
+
+  test('the age matcher itself catches the shapes it exists for (and not an index like D2)', () => {
+    for (const bad of ['explorer-8yo', 'explorer 8 y/o', 'a 5-year-old', 'explorer-8', 'age 8', 'kid (7)']) {
+      assert.ok(ageHit(bad), `matcher missed "${bad}"`);
+    }
+    for (const ok of ['explorer', 'D2 — the speedrunner, SURVIVAL', 'speedrunner:survival', 'first-timer']) {
+      assert.ok(!ageHit(ok), `matcher over-blocks "${ok}"`);
+    }
+  });
+
+  test('no persona id or label contains an age', () => {
+    for (const s of SPECS) {
+      const p = resolvePersona(s);
+      for (const [what, v] of [['spec', s], ['id', p.id], ['label', p.label]]) {
+        assert.ok(!ageHit(v), `${s}: persona ${what} "${v}" carries an age-shaped token`);
+      }
+    }
+    for (const p of listPersonas()) {
+      assert.ok(!ageHit(p.id), `persona id "${p.id}" carries an age-shaped token`);
+      assert.ok(!ageHit(p.label), `persona label "${p.label}" carries an age-shaped token`);
+      // `who` is prose for the human reader and legitimately says "~10 WPM"; it is held
+      // only to the explicit "N-year-old / Nyo" shape.
+      assert.ok(!AGE_SHAPED[0].test(p.who || ''), `persona "${p.id}" describes an age in \`who\``);
+    }
+  });
+
   test('a seeded game holds only the fields js/slots.js already stores (display name is the only personal datum)', () => {
     const ALLOWED = ['name', 'furthestLevel', 'completed', 'nameMoment', 'textWorlds', 'cards',
       'cardRotation', 'storyRotation', 'speedway'];
@@ -168,7 +204,7 @@ describe('personas — reproducible by seed', () => {
   });
 
   test('two personas run with the same seed do not make the same decisions', () => {
-    assert.notDeepEqual(trace('first-timer', 7), trace('explorer-8yo', 7));
+    assert.notDeepEqual(trace('first-timer', 7), trace('explorer', 7));
   });
 
   test('the RNG is deterministic and stays in [0, 1)', () => {
