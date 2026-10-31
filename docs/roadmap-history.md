@@ -2273,3 +2273,40 @@ top-edge clipping on L2/L4/L22; IM-friend footers tell the truth; Text Worlds hi
 
 **Decisions recorded (Trevor):** per-slot difficulty is a separate PR; Escape on the complete card
 stays as is (progress is saved); persona time-budget overruns warn only; the persona id is `explorer`.
+
+---
+
+## 2026-10-31 — THE KEY HAS A NAME: the Level 13 semicolon teaching beat (journal F35, L53)
+
+Trevor's direction: the game teaches the word "semicolon" at the level where its last letter unlocks
+(C, Level 13); the NAME and its meaning as punctuation are taught there, the PROGRAMMING meaning waits
+for the Level 20 terminal; typing the word discovers a keyboard card. Spec:
+`docs/specs/semicolon-teaching-beat.md`. Facts: `research/wiki/tech/semicolon.md` (verified;
+"first printed", Venice, February 1496 — never 1494, never "invented").
+
+**Built, tested (INV-153..166, ~57 new cases) and played at real pace** (struggling-beginner seed 13,
+first-timer seed 11, family-parent seed 5, speedrunner:survival seed 3, plus fresh-machine and erase
+runs; frames opened):
+- `semicolon` is served once, as a normal pattern at intro index 4, on a save's first Level 13 play;
+  the wrong-key contract is untouched (6 wrong keys mid-word, the letter waited every time). On
+  completion: a two-line non-modal caption in the gap band (`ITS NAME IS SEMICOLON.` / `IT CAN JOIN
+  TWO SENTENCES.`), the `;` key glows, a keyboard card is credited at once and shown at LEVEL COMPLETE
+  (`KEYBOARD CARD 1 OF 1`, header FOUND ON THE KEYBOARD). No beat on replays; it returns after an erase.
+  The arcade L13 rotation does not advance on a beat play.
+- A fourth card bank `KEY_CARDS` (`js/key-cards.js`): `TOTAL_CARDS` stays 76. A KEYBOARD shelf in the
+  collection gallery (locked tile: `;` + `???`, never the word). INV-29 now allowlists exactly that
+  one file for the word; the `;` glyph is never restricted.
+- No programming meaning at Level 13 on any surface (checked on a save that had already cleared L20).
+  The Level 20 couplet now reads `YOU MET ITS NAME AT LEVEL 13.` (saves that met it) or `THE EIGHTH KEY
+  HAS A NAME.` (saves that did not) over `MANY CODERS END AN INSTRUCTION WITH IT;` — the old "EVERY
+  LINE" was false and was corrected in four docs.
+- Survival: no clock and no timer bar on the beat.
+
+**Fixed alongside (TF-V1, journal F35):** a Survival timeout used to delete a guaranteed word that was
+the current prompt (history-card word, Name Moment, Level 24 name), stranding the level. The word is now
+re-queued as the next prompt; clock and quarter accounting are unchanged; game over at 0 quarters is
+unchanged. Played: card `ada` and Name Moment both win after an expiry.
+
+**Decisions recorded (Trevor):** Phase 1 is the semicolon only; keyboard cards live in a new fourth bank
+(topic grouping is a separate follow-on spec); the keyboard card takes the first L13 play's card slot;
+guaranteed words are re-queued with the clock kept.

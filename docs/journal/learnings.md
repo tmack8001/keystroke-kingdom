@@ -56,3 +56,4 @@
 | [[L44-the-one-rule-makes-levels-safely-fuzzable\|L44]] | The One Rule makes any level safely auto-playable by cycling its candidate keys | adopted | medium | tooling | 2026-07-19 |  |
 | [[L45-reproducing-a-real-text-verbatim-is-a-stricter-contract-than-describing-it\|L45]] | Reproducing a real text verbatim is a stricter contract than describing it | adopted | medium | research-integrity | 2026-07-27 |  |
 | [[L48-a-test-can-cite-a-design-doc-and-still-be-coupled-to-content\|L48]] | A test can cite a design doc and still be coupled to content — three did, and all three broke the moment a bank gained a row | adopted | medium | testing | 2026-09-15 |  |
+| [[L53-a-plausible-simplification-in-a-delight-egg-spread-into-four-docs\|L53]] | A plausible simplification in a delight egg ("programmers end every line with it") shipped as player text and was copied into four docs | adopted | medium | research-integrity | 2026-10-31 |  |

@@ -77,7 +77,10 @@ Proposals and specs with no implementation. Detail for each is in `roadmap-histo
 | **Acts 2–5 act cards** (16 cards) | Act 1's four shipped | One `arcade-historian` pass per act; §5.5's "every shelf reads ◆ n / 4" does not hold until they land |
 | **Act 6 / Act 7 exclusive card sets** | THE HARDWARE has cards; the others have none | Blocked on deciding each wing's attachment axis (a text world is not a station) |
 | **A `moth` card at Level 11** | Decided 2026-09-18; research in flight | Nudges toward the select-screen moth egg. ⚠️ **Two traps:** the moth did NOT coin "bug" (predates 1947, per CHM) — the logbook says *"first actual case of bug being found"*, i.e. the first bug FOUND, not the first use of the word; and it must not retell L13's `grace` card, which is about Hopper's popularising role |
-| **The math-vs-code symbol sub-theme** | Proof pair shipped (`1=1` / `1==1` at L21) | The rest of the map: `;` L4, `,` L13, `.` L14, `//` L15, `[ ]` L22, and the Shift cluster at L24 |
+| **Keyboard cards, Phase 2a** — `, . / - [ ] \ ` '` (`docs/specs/semicolon-teaching-beat.md` §5.9) | The mechanism and the semicolon shipped (see `roadmap-history.md`) | **Each symbol needs its own arcade-historian pass BEFORE any player text.** Open question Q-P2a: how the comma/period/slash code lessons reach the Level 20 terminal (default: one quiet extra line under the couplet, only when the save owns the card). `=` gets no card (`1=1`/`1==1` already teach it) |
+| **Keyboard cards, Phase 2b** — `( ) { } :` | Blocked | Needs the engine input contract extended first (`js/main.js` input regex rejects them; CLAUDE.md marks it "do not break") |
+| **Topical card collections + card detail view** | Trevor's idea 2026-10-31: math / programming / hacking / tech culture / the keyboard | A SEPARATE spec: a `topic` tag on every card in every bank (the field is reserved on `KEY_CARDS`), gallery grouped by topic, and the detail view that finally shows a card's `codeFact`. Needs a curator pass over all 84 cards |
+| **The math-vs-code symbol sub-theme** | Proof pair shipped (`1=1` / `1==1` at L21); the `;` entry is **superseded** by the L13 keyboard card | The rest of the map: `,` L13, `.` L14, `//` L15, `[ ]` L22, and the Shift cluster at L24. These stay *arcade history* cards (a moment in time); the keyboard-card mechanism covers what a key is *called and does* |
 | **Visual theme selector** | Theming is modular (CSS vars per level); no settings row | `js/settings.js` ROWS has no theme entry |
 | **Mobile Tier A** (tablet + Bluetooth keyboard) | Works today, unverified | Schedule portrait/landscape layout verification |
 | **Mobile Tier B** (touch-only) | `docs/specs/mobile-touch-mode.md`, reviewed 2026-09-12 | Public-promise wording: README still says "not supported yet" where the spec wants "keyboard-only, on purpose" |
@@ -108,8 +111,7 @@ Each verified open against source by the 2026-09-16 audit.
     re-lights the old letter until the next keypress. Left untouched (wrong-key contract); ask first.
   - **No escape hatch on a first Mystery viewing** — by ruling nothing skips it (~50 s); if a child is
     distressed there is no exit. Revisit if a real child finds it long.
-  - **The word "semicolon" is taught nowhere.** Trevor's intent: taught later in the game. Today only the
-    L20 couplet says the key HAS a name; it needs a design.
+  - **Level 13 beat polish** (found by the final play gate; none blocking): the caption is ~9 px and sits 4 px above the keyboard (a 5-year-old will not read it; the glow and the card carry the lesson); Escape/pause drops the caption for that play and it does not return on resume (the card is already credited); the comma prompt follows the beat while a caption naming the semicolon is above it (the two glyphs look alike in Press Start 2P).
   - **ERASE ALL leaves `kk-friends` and `kk-stories`** (only `kk-slots` goes). "YOUR SETTINGS STAY" is
     true but does not mention friends; decide whether ERASE ALL should wipe them.
   - **L21's opening screen says TYPE YOUR NAME**, but L21 is dash and equals (`js/fullcircle.js`).

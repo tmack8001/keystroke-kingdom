@@ -24,6 +24,7 @@
 | [[F31-a-stale-finding-corroborated-a-wrong-one\|F31]] | A stale finding in the record corroborated a wrong fresh one — and two wrongs read as certainty | addressed | high | agent-process | 2026-09-13 | 2026-09-13 |
 | [[F32-an-empty-bank-arms-nothing-so-it-proves-nothing\|F32]] | An empty bank arms nothing — so it proved nothing, and shipping "mechanism only" deferred three defects onto the content author | addressed | high | testing | 2026-09-15 | 2026-09-15 |
 | [[F33-the-journal-index-silently-dropped-five-entries-because-lint-checked-presence-not-validity\|F33]] | The journal's own index silently dropped five entries for seven weeks — because lint checked that `kind` was present, never that it was valid | addressed | high | tooling | 2026-09-15 | 2026-09-15 |
+| [[F35-a-safety-net-for-the-happy-path-stranded-the-guaranteed-words-it-could-not-see\|F35]] | Survival's timeout replaced the current prompt — and silently deleted any guaranteed word that happened to be it, so the level could never end | addressed | high | engine | 2026-10-31 | 2026-10-31 |
 | [[F5-keyboard-preview-had-no-number-row\|F5]] | The keyboard preview had no number row at all | addressed | medium | a11y | 2026-07-11 | 2026-07-11 |
 | [[F8-eniac-six-programmers-list-named-five\|F8]] | The ENIAC "six programmers" list named five people | addressed | medium | research-integrity | 2026-07-11 | 2026-07-11 |
 | [[F10-settings-survival-build-agent-died-twice\|F10]] | The settings/survival build agent died twice | addressed | medium | agent-process | 2026-07-11 | 2026-07-11 |
