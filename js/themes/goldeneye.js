@@ -1,22 +1,42 @@
 // GoldenEye 007 — Rare, N64, 1997 — Level 17
-// The living-room multiplayer that GoldenEye made famous: a 2x2 SPLIT-SCREEN.
-// Each quadrant is a LIVE mini mission-view — a small agent figure creeping
-// through its named level's corridor floor-plan (Facility / Archives / Surface /
-// Temple, each a distinct layout), collecting glowing GADGET pickups (watch,
-// keycard) and slipping past comically oblivious patrol guards whose flashlight
-// vision cones sweep the halls. When a cone nears, the agent freezes and sneaks.
-// Wholesome hide-and-seek — never combat, never a weapon drawn anywhere (per the
-// binding kid-safe abstraction in research/wiki/games/goldeneye-007.md).
 //
-// Typing drives P1's quadrant: each keystroke advances P1's agent along its path,
-// and completing a letter sequence secures a gadget + flashes P1's quadrant.
-// P2–P4 tick along ambiently as friendly competition (cosmetic attract motion,
-// L20-safe — their gadget count never gates the win, and is frozen when the tab
-// is unattended). Victory: a "MISSION COMPLETE" debrief stamp with a ticking
-// objective checklist and all four quadrants ping-flashing (~3500ms).
+// The living-room multiplayer GoldenEye made famous: a 2x2 SPLIT-SCREEN, FOUR
+// FRIENDS IN ONE ARENA. Each quadrant is one friend's first-person view of the
+// SAME facility, and — the thing anybody remembers about a LAN night — you can
+// SEE YOUR FRIENDS in your own quarter of the screen, walking the same halls.
 //
-// N64-era look (act4.md): flat-shaded corridors in simple pinhole perspective,
-// chunky low-poly agent/guard blocks, dim so the letter prompt stays brightest.
+// Trevor, 2026-09-14 (theme-authoring.md "DEPICTING THE FORMAT IS NOT DEPICTING
+// THE MECHANIC"):
+//   "it was a local lan with a quadrant split screen and we should be able to see
+//    the players see each other and interact as they explore their level. Going in
+//    grates, climbing stairs, exploring cells, and silos etc."
+//
+// The 2026-09-14 rebuild got the IDEA right (one shared arena) but drew it as four
+// tiny top-down route maps, dim and murky, with 7px agents — a persona playtest
+// (2026-10-29) found a six-year-old could not read it. So this version draws what
+// the split screen actually LOOKED like: each quadrant a bright, flat-shaded N64
+// corridor in perspective, the room ahead being one of the arena's named features
+// (STAIRS to climb, a SILO, a row of CELLS, a floor GRATE to duck into), and the
+// other three friends as big chunky low-poly figures standing in it — colour-coded,
+// name-tagged, and waving "HI!" when they meet. One large shared map in the top
+// band shows all four dots in one place, so "same arena" is SEEN, not deduced.
+//
+// Kid-safe abstraction (binding — research/wiki/games/goldeneye-007.md): "four
+// friends on one screen, racing to find hidden gadgets." No weapon is drawn
+// anywhere, nobody is ever hit, nothing is ever lost. There are no guards: the
+// multiplayer arenas had none, and their removal is a fidelity gain, not a loss.
+//
+// Typing drives P1: each keystroke walks P1 forward, each completed sequence finds
+// a gadget. P2–P4 explore alongside as a loose group (cosmetic attract motion,
+// L20-gated — frozen when the tab is unattended; never touches the win gate).
+//
+// LAYOUT (visual-validation.md, measured at 1280x800): the prompt panel holds
+// ~0.40–0.60W x 0.18–0.44H and the keyboard guide ~0.22–0.78W x 0.50–0.82H. So
+// each view's vanishing point — where the room and the friends are — sits in that
+// quadrant's VISIBLE stage: P1/P2 in the big top-left/top-right regions, P3/P4 in
+// the side columns with their floors running into the bottom strip. The shared map
+// sits in the top band between the two HUD corners. During victory() the DOM panels
+// are hidden, so the celebration may use the centre until the LEVEL COMPLETE card.
 
 import { getWinRatio } from '../settings.js';
 // The Act 4 white rabbit is shared by all five Command Center themes and lives in
@@ -25,490 +45,137 @@ import { resetWhiteRabbit, maybeWhiteRabbit, drawWhiteRabbit } from './terminal.
 
 let canvas, ctx, animId;
 let active = false;
-let t = 0;                 // global time accumulator (seconds-ish)
-let lastKeyMs = 0;         // for the L20 engagement gate on ambient P2–P4 motion
+let t = 0;                 // render-time accumulator (seconds-ish), cosmetic only
+let simT = 0;              // ENGAGEMENT-GATED clock: advances only while typing (L20)
+let lastKeyMs = 0;
 
-// Win gate: gadgets P1 must secure (one per completed letter sequence).
+// Win gate: gadgets P1 must find (one per completed letter sequence), scaled by
+// the EXPERIENCE win-ratio (theme-authoring.md). Unchanged by the visual rebuild.
 const BASE_GADGETS = 5;
 let GADGETS_TO_WIN = BASE_GADGETS;
+let gadgets = 0;
 let hasWon = false;
+let gadgetFlash = 0;       // 0..1 P1 view flash on a gadget found
 
 // Victory
 let victoryMode = false;
 let victoryStartMs = 0;
-const VICTORY_MS = 3500;
+const VICTORY_MS = 4400;
 
 // ── Bounded FX pools ─────────────────────────────────────────────────────────
-let pings = [];            // gadget-secured / victory ring pings
+let pings = [];
 const MAX_PINGS = 40;
+let confetti = [];
+const MAX_CONFETTI = 90;
 
-// ── The four split-screen players / quadrants ────────────────────────────────
-// Each has a distinct level layout ('style') and its own path the agent walks.
-// gadgets: how many this player has secured (P1 keystroke-gated; P2-P4 ambient).
-const QUADRANTS = [
-  { id: 'P1', name: 'FACILITY', tint: '#3a4a3a', accent: '#9fd39f',
-    qx: 0, qy: 0, style: 'facility' },
-  { id: 'P2', name: 'ARCHIVES', tint: '#4a4230', accent: '#d8c888',
-    qx: 0.5, qy: 0, style: 'archives' },
-  { id: 'P3', name: 'SURFACE', tint: '#33414f', accent: '#b8d4e8',
-    qx: 0, qy: 0.5, style: 'surface' },
-  { id: 'P4', name: 'TEMPLE', tint: '#40384a', accent: '#c8aed8',
-    qx: 0.5, qy: 0.5, style: 'temple' },
+// ── The four friends. Bright, saturated, distinct — a child matches a figure in
+//    their view to the coloured tag on the map without reading a word.
+const PLAYERS = [
+  { id: 'P1', col: '#5cf06a', dark: '#1f7a2a' },
+  { id: 'P2', col: '#ffd23f', dark: '#8a6a00' },
+  { id: 'P3', col: '#4fb4ff', dark: '#1a4f86' },
+  { id: 'P4', col: '#ff7ad9', dark: '#8a2a70' },
+];
+// Lateral lane in a corridor (u in [-1,1]) so two friends at one depth never
+// stand inside each other.
+const LANES = [0.0, -0.52, 0.52, 0.26];
+
+// Each quadrant's view: its rect, its vanishing point (in the quadrant's VISIBLE
+// stage region — see LAYOUT above), and the corridor half-extents at depth 1.
+function viewFor(qi, W, H) {
+  const top = qi < 2, left = qi % 2 === 0;
+  const rect = { x: left ? 0 : W * 0.5, y: top ? 0 : H * 0.5, w: W * 0.5, h: H * 0.5 };
+  if (top) {
+    return { rect, vp: { x: left ? W * 0.20 : W * 0.80, y: H * 0.275 }, hw: W * 0.16, hh: H * 0.19 };
+  }
+  return { rect, vp: { x: left ? W * 0.112 : W * 0.888, y: H * 0.685 }, hw: W * 0.115, hh: H * 0.165 };
+}
+
+// ── THE ARENA — one facility, a loop of rooms ───────────────────────────────
+const ARENA_NAME = 'FACILITY';
+const ARENA = [
+  { u: -0.62, v: -0.50, feature: 'stairs' },
+  { u:  0.10, v: -0.58, feature: null     },
+  { u:  0.58, v: -0.40, feature: 'silo'   },
+  { u:  0.60, v:  0.18, feature: null     },
+  { u:  0.18, v:  0.55, feature: 'cells'  },
+  { u: -0.30, v:  0.52, feature: null     },
+  { u: -0.66, v:  0.08, feature: 'grate'  },
+];
+const N = ARENA.length;
+const FEATURE_WORD = { stairs: 'STAIRS', silo: 'SILO', cells: 'CELLS', grate: 'GRATE' };
+
+// Group exploring together: P2–P4 keep a loose, shifting formation around P1, so
+// whoever is behind sees the others ahead of them — and the lead changes hands.
+const OFFSETS = [
+  null,
+  { base:  0.055, amp: 0.050, w: 0.50, ph: 0.0 },
+  { base:  0.115, amp: 0.060, w: 0.37, ph: 2.1 },
+  { base: -0.060, amp: 0.055, w: 0.43, ph: 4.0 },
 ];
 
-// Per-quadrant live state, rebuilt in init(). Kept parallel to QUADRANTS by index.
-let players = [];
+let p1prog = 0;
+function progOf(oi) {
+  if (oi === 0) return p1prog;
+  const o = OFFSETS[oi];
+  return (((p1prog + o.base + o.amp * Math.sin(simT * o.w + o.ph)) % 1) + 1) % 1;
+}
+
+// Where on the loop a progress value sits: segment index, fraction, and the
+// distance (in segments) still to walk before the next room.
+function locate(prog) {
+  const f = (((prog % 1) + 1) % 1) * N;
+  const i = Math.min(N - 1, Math.floor(f));
+  const frac = f - i;
+  return { i, frac, rem: 1 - frac, next: (i + 1) % N };
+}
+
+function mapPoint(prog) {
+  const { i, frac, next } = locate(prog);
+  const a = ARENA[i], b = ARENA[next];
+  return { u: a.u + (b.u - a.u) * frac, v: a.v + (b.v - a.v) * frac };
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function init() {
   canvas = document.getElementById('invaders-canvas');
   ctx    = canvas.getContext('2d');
   t = 0;
+  simT = 0;
   hasWon = false;
   victoryMode = false;
   victoryStartMs = 0;
   pings = [];
+  confetti = [];
+  gadgets = 0;
+  gadgetFlash = 0;
+  p1prog = 0.02;
   lastKeyMs = performance.now();
-
-  const ratio = getWinRatio();
-  GADGETS_TO_WIN = Math.max(1, Math.ceil(BASE_GADGETS * ratio));
-
-  players = QUADRANTS.map((q, i) => ({
-    // Path progress 0..1 around this quadrant's floor-plan loop.
-    prog: i * 0.13,
-    // P1's progress is advanced by keystrokes; P2-P4 drift on their own.
-    speed: i === 0 ? 0 : 0.055 + i * 0.012,
-    gadgets: 0,
-    // Sneaking state: when a guard cone is near, the agent freezes (crouch).
-    sneaking: false,
-    quadFlash: 0,           // 0..1 quadrant flash on gadget secured
-    // Which path node currently holds a collectable gadget (advances as taken).
-    gadgetNode: 1,
-    gadgetPulse: 0,
-  }));
+  GADGETS_TO_WIN = Math.max(1, Math.ceil(BASE_GADGETS * getWinRatio()));
 }
 
-// ─── Perspective projection (pinhole) — N64-era 3D look in canvas 2D ─────────
-function project(u, v, d, vp, halfW, halfH) {
-  const scale = 1 / (d + 0.001);
-  return { x: vp.x + u * halfW * scale, y: vp.y + v * halfH * scale, scale };
+// ─── Colour helpers ─────────────────────────────────────────────────────────
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+// Shade a colour toward the corridor's far darkness by depth (flat N64 fog).
+function fogged(hex, d, mul = 1) {
+  const n = parseInt(hex.slice(1), 16);
+  const f = Math.min(0.62, Math.max(0, (d - 0.6) / 6));
+  const fr = 26, fg = 32, fb = 30;
+  const r = Math.round(Math.min(255, ((n >> 16) & 255) * mul) * (1 - f) + fr * f);
+  const g = Math.round(Math.min(255, ((n >> 8) & 255) * mul) * (1 - f) + fg * f);
+  const b = Math.round(Math.min(255, (n & 255) * mul) * (1 - f) + fb * f);
+  return `rgb(${r},${g},${b})`;
 }
 
-// ─── A quadrant's top-down floor-plan path (loop of nodes in [-1,1] quad space),
-// distinct per named level. Agents walk these; guards patrol segments of them.
-// ── THE ARENA — one level, four views ───────────────────────────────────────
-// Trevor, 2026-09-14, answering whether depicting the FORMAT is enough:
-//
-//   "it was a local lan with a quadrant split screen and we should be able to see
-//    the players see each other and interact as they explore THEIR LEVEL. Going in
-//    grates, climbing stairs, exploring cells, and silos etc."
-//
-// That is the fidelity point, and it settles the open question: the split-screen
-// LAYOUT is not the mechanic. **All four players are in ONE arena** — that is the
-// entire reason you could see each other, and the entire reason the mode is
-// remembered. Four quadrants each showing a DIFFERENT level was four people
-// playing alone next to each other.
-//
-// So the mission plan is now shared, every quadrant draws all four agents on it,
-// and the path runs through the named features he asked for. Each quadrant keeps
-// its own tint, vanishing point and receding environment — that is the VIEW
-// differing, which is correct, rather than the world differing, which was not.
-const ARENA_NAME = 'FACILITY';
-
-// The shared floor-plan. Each node may carry a FEATURE the agents interact with;
-// `drawFeature` renders it and `poseAt` changes an agent's posture as it passes.
-const ARENA = [
-  { u: -0.62, v: -0.55, feature: 'stairs' },
-  { u:  0.10, v: -0.58, feature: null     },
-  { u:  0.55, v: -0.40, feature: 'silo'   },
-  { u:  0.58, v:  0.18, feature: null     },
-  { u:  0.18, v:  0.52, feature: 'cells'  },
-  { u: -0.30, v:  0.50, feature: null     },
-  { u: -0.64, v:  0.10, feature: 'grate'  },
-];
-const ARENA_PATH = ARENA.map(n => [n.u, n.v]);
-
-function pathFor(style) {
-  switch (style) {
-    case 'facility':   // tight rectangular corridor loop (the dam interior)
-      return [ [-0.62, -0.55], [0.55, -0.55], [0.55, 0.5], [0.05, 0.5],
-               [0.05, -0.05], [-0.62, -0.05] ];
-    case 'archives':  // shelving-row zig-zag
-      return [ [-0.6, -0.5], [0.5, -0.5], [0.5, -0.1], [-0.5, -0.1],
-               [-0.5, 0.3], [0.55, 0.3], [0.55, 0.55], [-0.6, 0.55] ];
-    case 'surface':   // open snowfield diagonal sweep between crates
-      return [ [-0.65, 0.4], [-0.2, -0.2], [0.35, 0.35], [0.6, -0.4],
-               [0.1, -0.5], [-0.6, -0.2] ];
-    case 'temple':    // symmetric pillared hall figure-eight
-      return [ [-0.5, -0.45], [0.5, -0.45], [-0.5, 0.45], [0.5, 0.45],
-               [0.0, 0.0], [-0.5, -0.45] ];
-    default:
-      return [ [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5] ];
-  }
+// ─── Perspective (pinhole) — N64-era 3D in canvas 2D ────────────────────────
+// u: left/right (-1..1 = the corridor walls); v: up/down (-1 ceiling .. +1 floor).
+function P(view, u, v, d) {
+  const s = 1 / Math.max(0.2, d);
+  return { x: view.vp.x + u * view.hw * s, y: view.vp.y + v * view.hh * s };
 }
-
-// Position (and heading) along a node loop at parameter prog in [0,1).
-function walkPath(path, prog) {
-  const n = path.length;
-  const f = ((prog % 1) + 1) % 1 * n;   // clamp into [0,n)
-  const i = Math.floor(f);
-  const frac = f - i;
-  const a = path[i];
-  const b = path[(i + 1) % n];
-  const x = a[0] + (b[0] - a[0]) * frac;
-  const y = a[1] + (b[1] - a[1]) * frac;
-  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
-  return { x, y, ang, node: i, frac };
-}
-
-// A guard's patrol position: walks a segment of the same path at its own phase,
-// offset from the player so they rarely coincide. Returns pos + facing angle
-// whose vision cone sweeps side-to-side.
-function guardOn(path, phase, style) {
-  const gp = walkPath(path, phase);
-  // Cone sweeps back and forth around the guard's travel heading.
-  const sweep = Math.sin(t * 1.3 + phase * 6.28) * 0.6;
-  return { x: gp.x, y: gp.y, facing: gp.ang + sweep };
-}
-
-// ─── Draw one quadrant: environment frame + the live mission view ────────────
-function drawQuadrant(qi, W, H) {
-  const q = QUADRANTS[qi];
-  const p = players[qi];
-  const rx = q.qx * W, ry = q.qy * H, rw = 0.5 * W, rh = 0.5 * H;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(rx, ry, rw, rh);
-  ctx.clip();
-
-  // Base fill — dim, tinted per environment.
-  ctx.globalAlpha = 0.5;
-  ctx.fillStyle = q.tint;
-  ctx.fillRect(rx, ry, rw, rh);
-  ctx.globalAlpha = 1;
-
-  // Vanishing point in this quadrant's OUTER region so receding geometry and the
-  // agent action sit in the visible stage corners, clear of the center DOM UI.
-  const outX = q.qx < 0.5 ? rx + rw * 0.34 : rx + rw * 0.66;
-  const outY = q.qy < 0.5 ? ry + rh * 0.36 : ry + rh * 0.64;
-  const drift = Math.sin(t * (0.22 + qi * 0.05) + qi) * rw * 0.03;
-  const vp = { x: outX + drift, y: outY };
-  const halfW = rw * 0.5, halfH = rh * 0.5;
-
-  // Distance fog toward the vanishing point (flat-color depth cue).
-  const fog = ctx.createRadialGradient(vp.x, vp.y, 0, vp.x, vp.y, Math.max(rw, rh) * 0.6);
-  fog.addColorStop(0, hexA(q.accent, 0.10));
-  fog.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = fog;
-  ctx.fillRect(rx, ry, rw, rh);
-
-  drawEnvironment(q, vp, halfW, halfH);
-
-  // ── The live mission view (top-down mini floor-plan overlaid on the corner) ─
-  drawMission(qi, rx, ry, rw, rh);
-
-  // Quadrant flash when a gadget is secured (bright wash that decays).
-  if (p.quadFlash > 0) {
-    ctx.globalAlpha = p.quadFlash * 0.4;
-    ctx.fillStyle = q.accent;
-    ctx.fillRect(rx, ry, rw, rh);
-    ctx.globalAlpha = 1;
-  }
-
-  // Subtle scanline banding — CRT living-room TV feel, dim.
-  ctx.globalAlpha = 0.05;
-  ctx.fillStyle = '#000000';
-  for (let y = ry; y < ry + rh; y += 3) ctx.fillRect(rx, y, rw, 1);
-  ctx.globalAlpha = 1;
-
-  ctx.restore();
-}
-
-// Flat-shaded receding environment geometry, distinct per level style.
-function drawEnvironment(q, vp, halfW, halfH) {
-  const segs = 5;
-  if (q.style === 'facility' || q.style === 'archives') {
-    for (let s = segs; s >= 1; s--) {
-      const dNear = 0.4 + s * 0.6;
-      const dFar = dNear + 0.6;
-      const a = Math.min(0.9, 0.6 / dNear);
-      const shade = s % 2 === 0 ? 1 : 0.78;
-      quad(project(-1, -1, dNear, vp, halfW, halfH), project(-1, 1, dNear, vp, halfW, halfH),
-           project(-1, 1, dFar, vp, halfW, halfH),  project(-1, -1, dFar, vp, halfW, halfH),
-           shadeCol(q.tint, shade, a));           // left wall
-      quad(project(1, -1, dNear, vp, halfW, halfH), project(1, 1, dNear, vp, halfW, halfH),
-           project(1, 1, dFar, vp, halfW, halfH),  project(1, -1, dFar, vp, halfW, halfH),
-           shadeCol(q.tint, shade, a));           // right wall
-      quad(project(-1, 1, dNear, vp, halfW, halfH), project(1, 1, dNear, vp, halfW, halfH),
-           project(1, 1, dFar, vp, halfW, halfH),  project(-1, 1, dFar, vp, halfW, halfH),
-           shadeCol(q.tint, shade * 0.6, a));      // floor
-      quad(project(-1, -1, dNear, vp, halfW, halfH), project(1, -1, dNear, vp, halfW, halfH),
-           project(1, -1, dFar, vp, halfW, halfH),  project(-1, -1, dFar, vp, halfW, halfH),
-           shadeCol(q.tint, shade * 0.5, a));      // ceiling
-    }
-    if (q.style === 'archives') {
-      for (let s = 1; s <= segs; s++) {
-        const d = 0.5 + s * 0.6;
-        const top = project(-0.7, -0.4, d, vp, halfW, halfH);
-        const bot = project(-0.7, 0.6, d, vp, halfW, halfH);
-        ctx.fillStyle = hexA(q.accent, 0.18 * Math.min(1, top.scale));
-        ctx.fillRect(top.x, top.y, Math.max(2, 10 * top.scale), bot.y - top.y);
-        const top2 = project(0.7, -0.4, d, vp, halfW, halfH);
-        ctx.fillRect(top2.x, top2.y, Math.max(2, 10 * top2.scale), bot.y - top2.y);
-      }
-    }
-  } else if (q.style === 'surface') {
-    const horizon = vp.y;
-    ctx.fillStyle = shadeCol(q.tint, 1.4, 0.5);
-    ctx.fillRect(vp.x - halfW * 2, horizon, halfW * 4, halfH * 2);            // snow
-    ctx.fillStyle = shadeCol(q.tint, 0.5, 0.5);
-    ctx.fillRect(vp.x - halfW * 2, horizon - halfH * 2, halfW * 4, halfH * 2); // sky
-    for (let i = 0; i < 3; i++) {
-      const d = 1.2 + i * 0.7;
-      const pr = project(-0.6 + i * 0.6, 0.5, d, vp, halfW, halfH);
-      const sz = 22 * pr.scale;
-      ctx.fillStyle = hexA(q.accent, 0.5);
-      ctx.fillRect(pr.x - sz / 2, pr.y - sz, sz, sz);
-      ctx.fillStyle = hexA(q.accent, 0.8);
-      ctx.fillRect(pr.x - sz / 2, pr.y - sz, sz, sz * 0.28);
-    }
-  } else if (q.style === 'temple') {
-    for (let s = segs; s >= 1; s--) {
-      const d = 0.5 + s * 0.6;
-      const a = Math.min(0.85, 0.6 / d);
-      [-0.7, 0.7].forEach(u => {
-        const top = project(u, -0.8, d, vp, halfW, halfH);
-        const bot = project(u, 0.8, d, vp, halfW, halfH);
-        const w = Math.max(3, 20 * top.scale);
-        ctx.fillStyle = shadeCol(q.tint, s % 2 === 0 ? 1.2 : 0.9, a);
-        ctx.fillRect(top.x - w / 2, top.y, w, bot.y - top.y);
-      });
-    }
-    quad(project(-1, 0.8, 0.5, vp, halfW, halfH), project(1, 0.8, 0.5, vp, halfW, halfH),
-         project(1, 0.8, 3, vp, halfW, halfH),   project(-1, 0.8, 3, vp, halfW, halfH),
-         shadeCol(q.tint, 0.6, 0.6));
-  }
-}
-
-// ── The live mission: floor-plan lines, gadget pickup, patrol guard + cone, and
-// the agent creeping the halls. Composed in the quadrant's OUTER (stage) corner.
-function drawMission(qi, rx, ry, rw, rh) {
-  const q = QUADRANTS[qi];
-  const p = players[qi];
-  const path = ARENA_PATH;          // ONE arena — see the ARENA note above
-
-  // Map quad-space [-1,1] to a compact plan box in the OUTER corner of the
-  // quadrant, so agents/guards live in the visible stage margin, never center.
-  const cx = q.qx < 0.5 ? rx + rw * 0.30 : rx + rw * 0.70;
-  const cy = q.qy < 0.5 ? ry + rh * 0.34 : ry + rh * 0.66;
-  const sx = rw * 0.24, sy = rh * 0.24;
-  const map = (u, v) => ({ x: cx + u * sx, y: cy + v * sy });
-
-  // Floor-plan corridor lines (the level's layout, faintly lit).
-  ctx.strokeStyle = hexA(q.accent, 0.5);
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  for (let i = 0; i < path.length; i++) {
-    const a = map(path[i][0], path[i][1]);
-    if (i === 0) ctx.moveTo(a.x, a.y); else ctx.lineTo(a.x, a.y);
-  }
-  ctx.closePath();
-  ctx.stroke();
-
-  // Corridor node markers (junctions).
-  ctx.fillStyle = hexA(q.accent, 0.35);
-  for (const nd of path) {
-    const m = map(nd[0], nd[1]);
-    ctx.fillRect(m.x - 1.5, m.y - 1.5, 3, 3);
-  }
-
-  // ── Gadget pickup: a glowing icon (watch / keycard) at the current node. ────
-  const gn = path[p.gadgetNode % path.length];
-  const gm = map(gn[0], gn[1]);
-  const pulse = 0.6 + 0.4 * Math.sin(t * 4 + qi);
-  const isWatch = (p.gadgets + qi) % 2 === 0;
-  drawGadget(gm.x, gm.y, isWatch, q.accent, pulse);
-
-  // ── Patrol guard + sweeping flashlight vision cone. ─────────────────────────
-  const g = guardOn(path, (p.prog + 0.45) % 1, q.style);
-  const gpos = map(g.x, g.y);
-  drawGuardCone(gpos.x, gpos.y, g.facing, sx, q.accent, p.sneaking);
-  drawGuard(gpos.x, gpos.y, q.accent);
-
-  // ── The arena's features: a grate to duck into, stairs to climb, cells to
-  //    creep past, a silo to circle. Named on the plan so the room reads as a
-  //    PLACE the four of them are exploring together, not an abstract loop.
-  ARENA.forEach((nd) => {
-    if (!nd.feature) return;
-    const m = map(nd.u, nd.v);
-    drawFeature(m.x, m.y, nd.feature, q.accent);
-  });
-
-  // ── EVERY player, on the shared plan. This is the whole point: in a real
-  //    split-screen LAN you watch your friend cross YOUR screen. The owner of
-  //    this quadrant is drawn bright and tagged; the other three are dimmer,
-  //    still unmistakably present, each labelled so you know who you just saw.
-  const here = [];
-  players.forEach((op, oi) => {
-    const a = walkPath(path, op.prog);
-    const m = map(a.x, a.y);
-    here.push({ oi, x: m.x, y: m.y });
-    const mine = oi === qi;
-    ctx.globalAlpha = mine ? 1 : 0.55;
-    drawAgent(m.x, m.y, a.ang, mine && qi === 0, op.sneaking,
-              mine ? q.accent : QUADRANTS[oi].accent);
-    if (!mine) {
-      ctx.font = '5px "Press Start 2P", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = hexA(QUADRANTS[oi].accent, 0.8);
-      ctx.fillText(QUADRANTS[oi].id, m.x, m.y - 11);
-      ctx.textAlign = 'left';
-    }
-    ctx.globalAlpha = 1;
-  });
-
-  // ── They INTERACT. When two agents are close on the shared plan, both of
-  //    their screens show it: a link between them and a friendly "!" over each.
-  //    Never a weapon, never a hit — this is spotting a friend across the room,
-  //    which is the part of a LAN night anybody actually remembers.
-  for (let a = 0; a < here.length; a++) {
-    for (let b = a + 1; b < here.length; b++) {
-      const dx = here[a].x - here[b].x, dy = here[a].y - here[b].y;
-      const d = Math.hypot(dx, dy);
-      if (d > sx * 0.42) continue;
-      const glow = 1 - d / (sx * 0.42);
-      ctx.save();
-      ctx.globalAlpha = 0.28 + 0.4 * glow;
-      ctx.strokeStyle = q.accent;
-      ctx.setLineDash([2, 3]);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(here[a].x, here[a].y);
-      ctx.lineTo(here[b].x, here[b].y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.globalAlpha = 0.5 + 0.5 * glow;
-      ctx.font = '6px "Press Start 2P", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffe680';
-      ctx.fillText('!', here[a].x, here[a].y - 16);
-      ctx.fillText('!', here[b].x, here[b].y - 16);
-      ctx.restore();
-      ctx.textAlign = 'left';
-    }
-  }
-}
-
-// One arena feature, drawn small and readable at plan scale.
-function drawFeature(x, y, kind, accent) {
-  ctx.save();
-  ctx.strokeStyle = hexA(accent, 0.75);
-  ctx.fillStyle   = hexA(accent, 0.30);
-  ctx.lineWidth = 1;
-  if (kind === 'grate') {                     // a floor grate you duck into
-    ctx.fillRect(x - 6, y - 5, 12, 10);
-    ctx.strokeRect(x - 6.5, y - 5.5, 13, 11);
-    ctx.strokeStyle = hexA(accent, 0.9);
-    for (let i = -4; i <= 4; i += 3) {
-      ctx.beginPath(); ctx.moveTo(x + i, y - 5); ctx.lineTo(x + i, y + 5); ctx.stroke();
-    }
-  } else if (kind === 'stairs') {              // steps climbing away
-    for (let i = 0; i < 4; i++) {
-      ctx.fillRect(x - 7 + i * 3, y + 4 - i * 3, 9 - i, 2);
-      ctx.strokeRect(x - 7.5 + i * 3, y + 3.5 - i * 3, 10 - i, 3);
-    }
-  } else if (kind === 'cells') {               // a row of barred cells
-    for (let i = 0; i < 3; i++) {
-      ctx.strokeRect(x - 9 + i * 7, y - 5, 6, 10);
-      ctx.beginPath(); ctx.moveTo(x - 6 + i * 7, y - 5); ctx.lineTo(x - 6 + i * 7, y + 5); ctx.stroke();
-    }
-  } else if (kind === 'silo') {                // a tall round silo, seen from above
-    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-// A blocky low-poly agent: torso + head, a small "P1" tint for the player.
-function drawAgent(x, y, ang, isPlayer, sneaking, accent) {
-  const s = sneaking ? 5 : 7;                     // crouch = smaller
-  ctx.save();
-  ctx.translate(x, y);
-  // Body block
-  ctx.fillStyle = isPlayer ? '#e8f0e8' : hexA(accent, 0.9);
-  ctx.fillRect(-s / 2, -s / 2, s, s);
-  // Head dot
-  ctx.fillStyle = isPlayer ? '#ffffff' : accent;
-  ctx.fillRect(-2, -s / 2 - 3, 4, 3);
-  // Heading nub (facing direction) — a tiny step, never a weapon
-  ctx.fillStyle = isPlayer ? '#bfe8bf' : hexA(accent, 0.7);
-  ctx.fillRect(Math.cos(ang) * s * 0.7 - 1.5, Math.sin(ang) * s * 0.7 - 1.5, 3, 3);
-  if (isPlayer) {
-    ctx.strokeStyle = '#9fd39f';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(-s / 2 - 1, -s / 2 - 1, s + 2, s + 2);
-  }
-  ctx.restore();
-}
-
-// A comically oblivious guard: a dim block, smaller and duller than the agent.
-function drawGuard(x, y, accent) {
-  ctx.fillStyle = hexA(accent, 0.55);
-  ctx.fillRect(x - 3, y - 3, 6, 6);
-  ctx.fillStyle = hexA(accent, 0.8);
-  ctx.fillRect(x - 1.5, y - 5, 3, 2);            // head
-}
-
-// The guard's flashlight vision cone: a translucent wedge that sweeps. When the
-// agent sneaks, it tints faintly amber (a "close call"), never red/alarm.
-function drawGuardCone(x, y, facing, reach, accent, near) {
-  const len = reach * 0.9;
-  const half = 0.32;                              // cone half-angle
-  ctx.save();
-  ctx.globalAlpha = near ? 0.22 : 0.13;
-  ctx.fillStyle = near ? '#e8d088' : accent;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x + Math.cos(facing - half) * len, y + Math.sin(facing - half) * len);
-  ctx.lineTo(x + Math.cos(facing + half) * len, y + Math.sin(facing + half) * len);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-// A gadget pickup icon: a wristwatch (circle + band) or a keycard (rect + stripe).
-function drawGadget(x, y, isWatch, accent, pulse) {
-  ctx.save();
-  ctx.globalAlpha = pulse;
-  if (isWatch) {
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(x, y, 3.2, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();                              // watch band
-    ctx.moveTo(x, y - 3.2); ctx.lineTo(x, y - 5);
-    ctx.moveTo(x, y + 3.2); ctx.lineTo(x, y + 5);
-    ctx.stroke();
-    ctx.fillStyle = accent;
-    ctx.fillRect(x - 0.5, y - 2.2, 1, 2.5);       // hand
-  } else {
-    ctx.fillStyle = hexA(accent, 0.85);
-    ctx.fillRect(x - 4, y - 2.6, 8, 5);           // keycard
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(x - 3, y - 1.4, 6, 1.4);         // magnetic stripe
-  }
-  // Glow halo
-  ctx.globalAlpha = pulse * 0.3;
-  ctx.fillStyle = accent;
-  ctx.beginPath();
-  ctx.arc(x, y, 6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
 function quad(a, b, c, d, fill) {
   ctx.fillStyle = fill;
   ctx.beginPath();
@@ -517,334 +184,699 @@ function quad(a, b, c, d, fill) {
   ctx.fill();
 }
 
-// ─── Color helpers ─────────────────────────────────────────────────────────
-function hexA(hex, a) {
-  const n = parseInt(hex.slice(1), 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
-}
-function shadeCol(hex, mul, a) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.min(255, Math.round(((n >> 16) & 255) * mul));
-  const g = Math.min(255, Math.round(((n >> 8) & 255) * mul));
-  const b = Math.min(255, Math.round((n & 255) * mul));
-  return `rgba(${r}, ${g}, ${b}, ${a})`;
-}
+// The facility palette — ONE palette for all four views, because it is ONE place.
+const WALL_L = '#a9b7a2', WALL_R = '#97a690', FLOOR = '#6b7a68', FLOOR2 = '#5f6d5c';
+const CEIL = '#56624f', TRIM = '#d6e2c4', LIGHT = '#f6ffe8';
 
-// ─── Split-screen divider lines (ambient — allowed behind the UI panels) ────
-// ── THE SHARED MAP ──────────────────────────────────────────────────────────
-// Trevor, 2026-09-14: "Maybe we introduce a map showing where the players are and
-// to nail home that they are in the same arena — as the player might not pick up
-// on that."
-//
-// He is right, and it is a nice instance of a general trap: the four quadrants DO
-// now render one arena, but the only way to notice is to compare two quadrants and
-// realise the floor-plans match — which is a deduction, and a five-year-old will
-// not make it. A fact the design depends on has to be SHOWN, not inferrable.
-//
-// So: one small map, one copy of the arena, four dots. It sits in the TOP BAND
-// between the two HUD corners (visual-validation.md's stage), which is where an
-// arcade would have put a scoreboard anyway — never over the prompt panel, never
-// over the keyboard guide.
-function drawArenaMap(W, H) {
-  const cx = W * 0.5, cy = H * 0.085;
-  const sx = W * 0.055, sy = H * 0.052;
-  const map = (u, v) => ({ x: cx + u * sx, y: cy + v * sy });
+const SEG_DEPTH = 3.0;     // corridor depth per arena segment
+const NEAR = 0.25;         // nearest drawn slice (near enough to fill each view's edge)
+const D0 = 0.95;           // depth of a friend standing right beside you
+
+// ─── One quadrant: a first-person view of the shared arena ──────────────────
+function drawView(qi, W, H, vic) {
+  const view = viewFor(qi, W, H);
+  const r = view.rect;
+  const me = PLAYERS[qi];
+  const loc = locate(progOf(qi));
+  const feature = ARENA[loc.next].feature;
+  const dEnd = D0 + loc.rem * SEG_DEPTH + 0.35;
 
   ctx.save();
-  // A dim plate so the map reads over whatever the quadrants are doing behind it.
-  ctx.fillStyle = 'rgba(6,8,6,0.72)';
-  ctx.fillRect(cx - sx * 0.95, cy - sy * 1.0, sx * 1.9, sy * 2.1);
-  ctx.strokeStyle = 'rgba(216,200,64,0.35)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(cx - sx * 0.95 + 0.5, cy - sy * 1.0 + 0.5, sx * 1.9 - 1, sy * 2.1 - 1);
-
-  // The arena, once.
-  ctx.strokeStyle = 'rgba(216,200,64,0.5)';
   ctx.beginPath();
-  ARENA_PATH.forEach((nd, i) => {
-    const a = map(nd[0], nd[1]);
+  ctx.rect(r.x, r.y, r.w, r.h);
+  ctx.clip();
+
+  ctx.fillStyle = '#1c231e';
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+
+  // Corridor slices, far to near, alternating shade + ceiling light panels.
+  const slices = [];
+  for (let d = NEAR; d < dEnd; d += 0.5) slices.push([d, Math.min(dEnd, d + 0.5)]);
+  for (let k = slices.length - 1; k >= 0; k--) {
+    const [dn, df] = slices[k];
+    const alt = k % 2 === 0 ? 1 : 0.92;
+    quad(P(view, -1, -1, dn), P(view, -1, 1, dn), P(view, -1, 1, df), P(view, -1, -1, df), fogged(WALL_L, dn, alt));
+    quad(P(view, 1, -1, dn), P(view, 1, 1, dn), P(view, 1, 1, df), P(view, 1, -1, df), fogged(WALL_R, dn, alt));
+    quad(P(view, -1, 1, dn), P(view, 1, 1, dn), P(view, 1, 1, df), P(view, -1, 1, df), fogged(k % 2 ? FLOOR : FLOOR2, dn));
+    quad(P(view, -1, -1, dn), P(view, 1, -1, dn), P(view, 1, -1, df), P(view, -1, -1, df), fogged(CEIL, dn));
+    // A fluorescent ceiling panel per slice — the light that makes the room read.
+    const lm = (dn + df) / 2;
+    quad(P(view, -0.28, -1, lm - 0.12), P(view, 0.28, -1, lm - 0.12),
+         P(view, 0.28, -1, lm + 0.12), P(view, -0.28, -1, lm + 0.12), fogged(LIGHT, dn));
+    // Skirting trim where the walls meet the floor.
+    ctx.strokeStyle = fogged(TRIM, dn);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    let a = P(view, -1, 1, dn), b = P(view, -1, 1, df);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    a = P(view, 1, 1, dn); b = P(view, 1, 1, df);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+
+  // The room ahead — one of the arena's named features.
+  drawFeature(view, feature, dEnd, loc.rem);
+
+  // FRIENDS in this view: anyone ahead of me on the loop, up to and into the next
+  // room. Drawn far to near so a closer friend overlaps a farther one.
+  const seen = [];
+  const myProg = progOf(qi);
+  PLAYERS.forEach((pl, oi) => {
+    if (oi === qi) return;
+    let ahead, depth, pose;
+    if (vic) {
+      // Victory: everybody comes to you. They walk in from the far end and gather.
+      const k = [1, 2, 3].indexOf(((oi - qi + 4) % 4));
+      const arrive = Math.min(1, Math.max(0, (vic.elapsed - k * 140) / 900));
+      depth = 1.2 + k * 0.32 + (1 - easeOut(arrive)) * 2.6;
+      pose = 'wave';
+    } else {
+      ahead = ((((progOf(oi) - myProg) % 1) + 1) % 1) * N;
+      if (ahead > loc.rem + 0.4) return;       // round the corner — out of sight
+      if (ahead <= loc.rem) {
+        depth = D0 + ahead * SEG_DEPTH;
+        pose = depth < 1.9 ? 'wave' : 'walk';
+      } else {
+        depth = dEnd - 0.55;
+        pose = feature || 'walk';
+      }
+    }
+    seen.push({ oi, depth, pose });
+  });
+  seen.sort((a, b) => b.depth - a.depth);
+  // Only the NEAREST friend says "HI!" — with the group gathered, every bubble
+  // at once landed on a neighbour's name tag.
+  seen.forEach((f, k) => drawFriend(view, f.oi, f.depth, f.pose,
+    f.depth > dEnd - 0.7 ? feature : null, k === seen.length - 1));
+
+  // P1 only: the gadget you are about to find, bobbing in the corridor.
+  if (qi === 0 && !vic) drawGadgetInView(view);
+
+  // Gadget-found flash in P1's view.
+  if (qi === 0 && gadgetFlash > 0) {
+    ctx.globalAlpha = gadgetFlash * 0.35;
+    ctx.fillStyle = '#fff6b0';
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.globalAlpha = 1;
+  }
+
+  // A coloured inner frame in the owner's colour: which screen is whose.
+  ctx.strokeStyle = hexA(me.col, 0.85);
+  ctx.lineWidth = 4;
+  ctx.strokeRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4);
+
+  // Light CRT banding — a living-room TV, kept faint so the scene stays bright.
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  for (let y = r.y; y < r.y + r.h; y += 3) ctx.fillRect(r.x, y, r.w, 1);
+
+  ctx.restore();
+}
+
+// ─── The arena's named rooms, in first person ───────────────────────────────
+function drawFeature(view, feature, dEnd, rem) {
+  // Default end wall with an open doorway — the corridor turns here.
+  const endWall = (col) => {
+    quad(P(view, -1, -1, dEnd), P(view, 1, -1, dEnd), P(view, 1, 1, dEnd), P(view, -1, 1, dEnd), fogged(col, dEnd));
+  };
+  if (feature === 'stairs') {
+    endWall('#8e9c88');
+    // A flight of steps climbing up and away into a lit doorway.
+    const steps = 6, run = 1.3;
+    const d0 = dEnd - run;
+    // The lit landing at the top.
+    quad(P(view, -0.55, -1.0, dEnd), P(view, 0.55, -1.0, dEnd), P(view, 0.55, -0.35, dEnd), P(view, -0.55, -0.35, dEnd), fogged('#fff3c4', dEnd));
+    for (let k = steps - 1; k >= 0; k--) {
+      const dn = d0 + (k * run) / steps, df = d0 + ((k + 1) * run) / steps;
+      const vTop = 1 - ((k + 1) * 1.35) / steps, vBot = 1 - (k * 1.35) / steps;
+      quad(P(view, -0.85, vTop, dn), P(view, 0.85, vTop, dn), P(view, 0.85, vBot, dn), P(view, -0.85, vBot, dn), fogged('#c9b48a', dn, 0.85)); // riser
+      quad(P(view, -0.85, vTop, dn), P(view, 0.85, vTop, dn), P(view, 0.85, vTop, df), P(view, -0.85, vTop, df), fogged('#e6d3a4', dn));     // tread
+    }
+    // Handrail.
+    ctx.strokeStyle = fogged('#ffe58a', d0);
+    ctx.lineWidth = 2;
+    let a = P(view, 0.85, 0.35, d0), b = P(view, 0.85, -1.0, dEnd);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  } else if (feature === 'silo') {
+    // The corridor opens onto a tall round silo: curved wall, hazard band, ladder.
+    endWall('#3e4640');
+    const L = P(view, -0.95, -1, dEnd), R = P(view, 0.95, 1, dEnd);
+    const cx = (L.x + R.x) / 2, w = R.x - L.x, h = R.y - L.y;
+    const g = ctx.createLinearGradient(L.x, 0, R.x, 0);
+    g.addColorStop(0, fogged('#c2793a', dEnd, 0.8));
+    g.addColorStop(0.45, fogged('#ffb066', dEnd));
+    g.addColorStop(1, fogged('#9a5a28', dEnd, 0.8));
+    ctx.fillStyle = g;
+    ctx.fillRect(L.x, L.y, w, h);
+    // Hazard stripes round its base.
+    const bandY = L.y + h * 0.70, bandH = h * 0.10;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(L.x, bandY, w, bandH); ctx.clip();
+    ctx.fillStyle = fogged('#ffd23f', dEnd);
+    ctx.fillRect(L.x, bandY, w, bandH);
+    ctx.fillStyle = '#20201c';
+    const sw = Math.max(4, w / 10);
+    for (let x = L.x - bandH; x < R.x + bandH; x += sw * 2) {
+      ctx.beginPath();
+      ctx.moveTo(x, bandY + bandH); ctx.lineTo(x + bandH, bandY);
+      ctx.lineTo(x + bandH + sw, bandY); ctx.lineTo(x + sw, bandY + bandH);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    // Ladder up the silo.
+    ctx.strokeStyle = fogged('#2b2b28', dEnd);
+    ctx.lineWidth = Math.max(1.5, w * 0.012);
+    const lx = cx + w * 0.12, lw = w * 0.12;
+    ctx.beginPath();
+    ctx.moveTo(lx, L.y); ctx.lineTo(lx, R.y);
+    ctx.moveTo(lx + lw, L.y); ctx.lineTo(lx + lw, R.y);
+    for (let y = L.y + h * 0.05; y < R.y; y += h * 0.09) { ctx.moveTo(lx, y); ctx.lineTo(lx + lw, y); }
+    ctx.stroke();
+  } else if (feature === 'cells') {
+    endWall('#9aa892');
+    // A row of barred cells down both walls of the last stretch.
+    const d0 = Math.max(NEAR + 0.2, dEnd - 1.8);
+    for (const side of [-1, 1]) {
+      for (let c = 0; c < 3; c++) {
+        const dn = d0 + c * 0.6, df = dn + 0.45;
+        if (df > dEnd) break;
+        quad(P(view, side, -0.65, dn), P(view, side, 1, dn), P(view, side, 1, df), P(view, side, -0.65, df), fogged('#3a403a', dn));
+        ctx.strokeStyle = fogged('#d9dfd2', dn);
+        ctx.lineWidth = Math.max(1, 2.2 / dn);
+        ctx.beginPath();
+        for (let bI = 0; bI <= 4; bI++) {
+          const d = dn + (bI / 4) * (df - dn);
+          const a = P(view, side, -0.65, d), b = P(view, side, 1, d);
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        }
+        ctx.stroke();
+      }
+    }
+    // A cell door at the end too.
+    const a = P(view, -0.5, -0.7, dEnd), b = P(view, 0.5, 1, dEnd);
+    ctx.fillStyle = fogged('#3a403a', dEnd);
+    ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+    ctx.strokeStyle = fogged('#d9dfd2', dEnd);
+    ctx.lineWidth = Math.max(1, 2 / dEnd);
+    ctx.beginPath();
+    for (let k = 0; k <= 6; k++) { const x = a.x + ((b.x - a.x) * k) / 6; ctx.moveTo(x, a.y); ctx.lineTo(x, b.y); }
+    ctx.stroke();
+  } else if (feature === 'grate') {
+    endWall('#8e9c88');
+    // A floor grate with its hatch lifted — a way down into the vents.
+    const dn = dEnd - 1.0, df = dEnd - 0.35;
+    quad(P(view, -0.55, 1, dn), P(view, 0.55, 1, dn), P(view, 0.55, 1, df), P(view, -0.55, 1, df), '#121612');
+    ctx.strokeStyle = fogged('#c6d0bc', dn);
+    ctx.lineWidth = Math.max(1, 2 / dn);
+    ctx.beginPath();
+    for (let k = 0; k <= 6; k++) {
+      const u = -0.55 + (1.1 * k) / 6;
+      const a = P(view, u, 1, dn), b = P(view, u, 1, df);
+      ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke();
+    // The lifted hatch, standing up at the near edge.
+    quad(P(view, -0.55, 1, dn), P(view, 0.55, 1, dn), P(view, 0.55, 0.45, dn - 0.1), P(view, -0.55, 0.45, dn - 0.1), fogged('#8f9a86', dn));
+    // A wall vent at the end, too.
+    const va = P(view, -0.35, 0.35, dEnd), vb = P(view, 0.35, 0.85, dEnd);
+    ctx.fillStyle = '#141814';
+    ctx.fillRect(va.x, va.y, vb.x - va.x, vb.y - va.y);
+    ctx.strokeStyle = fogged('#c6d0bc', dEnd);
+    ctx.beginPath();
+    for (let k = 1; k < 5; k++) { const y = va.y + ((vb.y - va.y) * k) / 5; ctx.moveTo(va.x, y); ctx.lineTo(vb.x, y); }
+    ctx.stroke();
+  } else {
+    // Plain turn: an end wall with an open doorway to the next stretch.
+    endWall('#9aa892');
+    const a = P(view, -0.4, -0.55, dEnd), b = P(view, 0.4, 1, dEnd);
+    ctx.fillStyle = fogged('#e8f2d8', dEnd + 1.5);
+    ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+  }
+
+  // Name the room on its own wall, big and plain — STAIRS, SILO, CELLS, GRATE.
+  if (feature && rem < 0.75) {
+    const sp = P(view, 0, -0.82, dEnd);
+    const fs = Math.max(7, Math.min(14, Math.round(view.hh / dEnd * 0.16)));
+    ctx.font = `${fs}px "Press Start 2P", monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const word = FEATURE_WORD[feature];
+    const tw = ctx.measureText(word).width;
+    ctx.fillStyle = 'rgba(16,20,16,0.85)';
+    ctx.fillRect(sp.x - tw / 2 - 4, sp.y - fs / 2 - 3, tw + 8, fs + 6);
+    ctx.fillStyle = '#ffe680';
+    ctx.fillText(word, sp.x, sp.y);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
+}
+
+// ─── A friend: a chunky N64 low-poly figure in their colour ─────────────────
+// pose: 'walk' (back to you, heading on), 'wave' (turned round, waving HI!), or a
+// feature name — climbing the stairs, on the silo ladder, peering from the cells,
+// or halfway down the grate.
+function drawFriend(view, oi, depth, pose, atFeature, speaks) {
+  const pl = PLAYERS[oi];
+  const s = view.hh / Math.max(0.3, depth);          // px per world unit
+  let lane = LANES[oi];
+  let lift = 0, sink = 0;
+  if (atFeature === 'stairs' && pose === 'stairs') lift = 0.55;
+  if (atFeature === 'silo' && pose === 'silo') { lift = 0.5; lane = 0.18; }
+  if (atFeature === 'grate' && pose === 'grate') { sink = 0.7; lane = 0; }
+  if (atFeature === 'cells' && pose === 'cells') lane = Math.sign(lane || 1) * 0.72;
+  const feet = P(view, lane, 1 - lift, depth);
+  const x = feet.x, yF = feet.y;
+  const facing = pose === 'wave';
+  const bob = pose === 'walk' ? Math.abs(Math.sin(t * 7 + oi)) * 0.03 * s : 0;
+
+  ctx.save();
+  if (sink > 0) {                                     // going down the grate:
+    ctx.beginPath();                                  // hide whatever is below the floor
+    ctx.rect(view.rect.x, view.rect.y, view.rect.w, Math.max(0, yF - view.rect.y));
+    ctx.clip();
+  }
+  const yBase = yF + sink * s - bob;
+  const legH = 0.55 * s, torH = 0.55 * s, headH = 0.27 * s;
+  const torW = 0.42 * s, legW = 0.15 * s, headW = 0.25 * s, armW = 0.11 * s;
+  const step = pose === 'walk' ? Math.sin(t * 7 + oi) * 0.05 * s : 0;
+
+  // Soft floor shadow.
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.beginPath();
+  ctx.ellipse(x, yF, torW * 0.7, Math.max(1, 0.05 * s), 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Legs.
+  ctx.fillStyle = '#2b3140';
+  ctx.fillRect(x - torW * 0.36, yBase - legH + step, legW, legH - step);
+  ctx.fillRect(x + torW * 0.36 - legW, yBase - legH - step, legW, legH + step);
+  // Torso — the player's colour, flat-shaded in two tones (an N64 polygon look).
+  const tTop = yBase - legH - torH;
+  ctx.fillStyle = pl.col;
+  ctx.fillRect(x - torW / 2, tTop, torW, torH);
+  ctx.fillStyle = hexA(pl.dark, 0.55);
+  ctx.fillRect(x, tTop, torW / 2, torH);
+  // Arms: one raised and waving when they have turned to say hello.
+  ctx.fillStyle = pl.col;
+  ctx.fillRect(x - torW / 2 - armW, tTop + 0.04 * s, armW, torH * 0.85);
+  if (facing) {
+    const wave = Math.sin(t * 10 + oi) * 0.35;
+    ctx.save();
+    ctx.translate(x + torW / 2 + armW / 2, tTop + 0.06 * s);
+    ctx.rotate(Math.PI + wave);
+    ctx.fillRect(-armW / 2, 0, armW, torH * 0.85);
+    ctx.fillStyle = '#f2c9a0';
+    ctx.fillRect(-armW * 0.65, torH * 0.82, armW * 1.3, armW * 1.2);   // hand
+    ctx.restore();
+  } else {
+    ctx.fillRect(x + torW / 2, tTop + 0.04 * s, armW, torH * 0.85);
+  }
+  // Head.
+  const hTop = tTop - headH - 0.02 * s;
+  ctx.fillStyle = '#f2c9a0';
+  ctx.fillRect(x - headW / 2, hTop, headW, headH);
+  ctx.fillStyle = '#3a2a1c';                                            // hair
+  ctx.fillRect(x - headW / 2, hTop, headW, facing ? headH * 0.28 : headH * 0.8);
+  if (facing) {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(x - headW * 0.28, hTop + headH * 0.45, Math.max(1, headW * 0.14), Math.max(1, headH * 0.16));
+    ctx.fillRect(x + headW * 0.14, hTop + headH * 0.45, Math.max(1, headW * 0.14), Math.max(1, headH * 0.16));
+    ctx.fillRect(x - headW * 0.2, hTop + headH * 0.75, headW * 0.4, Math.max(1, headH * 0.08)); // smile
+  }
+  ctx.restore();
+
+  // Name tag above the head — the same colour as their dot on the map.
+  const fs = Math.max(7, Math.min(12, Math.round(s * 0.11)));
+  ctx.font = `${fs}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const ty = hTop - fs - 4;
+  const tw = ctx.measureText(pl.id).width;
+  ctx.fillStyle = pl.col;
+  ctx.fillRect(x - tw / 2 - 4, ty - fs / 2 - 3, tw + 8, fs + 6);
+  ctx.fillStyle = '#101010';
+  ctx.fillText(pl.id, x, ty);
+
+  // "HI!" — friends spotting each other. Never a weapon, never a hit.
+  if (facing && speaks) {
+    const bx = x + torW * 0.9, by = ty - fs * 0.4;
+    const bfs = Math.max(7, Math.min(12, fs));
+    ctx.font = `${bfs}px "Press Start 2P", monospace`;
+    const bw = ctx.measureText('HI!').width + 10;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(bx, by - bfs - 4, bw, bfs + 8);
+    ctx.beginPath();
+    ctx.moveTo(bx + 4, by + 4); ctx.lineTo(bx + 4, by + 10); ctx.lineTo(bx + 12, by + 4);
+    ctx.fill();
+    ctx.fillStyle = '#101010';
+    ctx.textAlign = 'left';
+    ctx.fillText('HI!', bx + 5, by - bfs / 2);
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+// The next gadget — a glowing gold wristwatch hovering just above the floor by the
+// right wall, outside every friend's lane (LANES spans -0.52..0.52). Deliberately
+// ROUND and bright: an earlier keycard (a dark-striped bar) kept landing beside a
+// friend's hand, and a dark bar held at arm's length reads as something this game
+// never draws.
+function drawGadgetInView(view) {
+  const d = 1.25;
+  const c = P(view, 0.80, 0.70 + Math.sin(t * 3) * 0.04, d);
+  const s = view.hh / d;
+  const r = 0.10 * s;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r * 3.2);
+  g.addColorStop(0, 'rgba(255,240,140,0.6)');
+  g.addColorStop(1, 'rgba(255,240,140,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(c.x - r * 3.2, c.y - r * 3.2, r * 6.4, r * 6.4);
+  ctx.restore();
+  ctx.fillStyle = '#ffe14d';                                   // strap
+  ctx.fillRect(c.x - r * 0.45, c.y - r * 1.9, r * 0.9, r * 3.8);
+  ctx.beginPath();                                             // face
+  ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff6c8';
+  ctx.fill();
+  ctx.lineWidth = Math.max(2, r * 0.25);
+  ctx.strokeStyle = '#ffb000';
+  ctx.stroke();
+  ctx.strokeStyle = '#8a5a00';                                 // hands
+  ctx.lineWidth = Math.max(1, r * 0.12);
+  ctx.beginPath();
+  ctx.moveTo(c.x, c.y); ctx.lineTo(c.x, c.y - r * 0.65);
+  ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + r * 0.5, c.y);
+  ctx.stroke();
+  // A twinkle, so it reads as a THING TO FIND.
+  const tw = 0.5 + 0.5 * Math.sin(t * 6);
+  ctx.fillStyle = `rgba(255,255,255,${(0.5 + 0.5 * tw).toFixed(3)})`;
+  const sx = c.x + r * 1.3, sy = c.y - r * 1.3, k = r * (0.5 + 0.4 * tw);
+  ctx.beginPath();
+  ctx.moveTo(sx, sy - k); ctx.lineTo(sx + k * 0.25, sy); ctx.lineTo(sx, sy + k); ctx.lineTo(sx - k * 0.25, sy);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(sx - k, sy); ctx.lineTo(sx, sy + k * 0.25); ctx.lineTo(sx + k, sy); ctx.lineTo(sx, sy - k * 0.25);
+  ctx.closePath(); ctx.fill();
+}
+
+// ─── THE SHARED MAP ─────────────────────────────────────────────────────────
+// Trevor, 2026-09-14: "Maybe we introduce a map showing where the players are and
+// to nail home that they are in the same arena." One arena, four dots — now big
+// enough to read: the top band between the HUD corners, ~0.33–0.67W x 0.01–0.17H.
+function drawArenaMap(W, H, vic) {
+  const x0 = W * 0.33, y0 = H * 0.012, w = W * 0.34, h = H * 0.158;
+  const cx = x0 + w * 0.5, cy = y0 + h * 0.47;
+  const sx = w * 0.40, sy = h * 0.66;
+  const map = (u, v) => ({ x: cx + u * sx, y: cy + v * sy * 0.62 });
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(10,16,12,0.88)';
+  ctx.fillRect(x0, y0, w, h);
+  ctx.strokeStyle = '#e8d44a';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x0 + 1, y0 + 1, w - 2, h - 2);
+
+  // The route, once, bright.
+  ctx.strokeStyle = '#cfe8c8';
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ARENA.forEach((nd, i) => {
+    const a = map(nd.u, nd.v);
     if (i === 0) ctx.moveTo(a.x, a.y); else ctx.lineTo(a.x, a.y);
   });
   ctx.closePath();
   ctx.stroke();
 
-  // Its features, as the same small marks used on the quadrant plans.
-  ctx.fillStyle = 'rgba(216,200,64,0.55)';
+  // Rooms, labelled.
+  ctx.font = '7px "Press Start 2P", monospace';
+  ctx.textBaseline = 'middle';
   ARENA.forEach((nd) => {
     if (!nd.feature) return;
     const m = map(nd.u, nd.v);
-    ctx.fillRect(m.x - 2, m.y - 2, 4, 4);
+    ctx.fillStyle = '#ffb066';
+    ctx.fillRect(m.x - 5, m.y - 5, 10, 10);
+    ctx.fillStyle = '#ffe9c8';
+    ctx.textAlign = nd.u < 0 ? 'right' : 'left';
+    ctx.fillText(FEATURE_WORD[nd.feature], m.x + (nd.u < 0 ? -9 : 9), m.y);
   });
 
-  // FOUR DOTS, ONE ROOM. Each in its player's colour, each labelled — so the
-  // shared arena is a thing you SEE rather than a thing you work out.
-  players.forEach((op, oi) => {
-    const a = walkPath(ARENA_PATH, op.prog);
-    const m = map(a.x, a.y);
-    const col = QUADRANTS[oi].accent;
-    ctx.fillStyle = col;
-    ctx.shadowColor = col;
-    ctx.shadowBlur = oi === 0 ? 8 : 3;
+  // FOUR DOTS, ONE ROOM.
+  PLAYERS.forEach((pl, oi) => {
+    let pt;
+    if (vic) {
+      // Everyone converges on the exit (the stairs) together.
+      const from = mapPoint(progOf(oi));
+      const k = Math.min(1, vic.elapsed / 1400);
+      const e = easeOut(k);
+      const to = { u: ARENA[0].u + [0, 0.07, -0.07, 0][oi], v: ARENA[0].v + [0, 0.07, 0.07, 0.14][oi] };
+      pt = { u: from.u + (to.u - from.u) * e, v: from.v + (to.v - from.v) * e };
+    } else {
+      pt = mapPoint(progOf(oi));
+    }
+    const m = map(pt.u, pt.v);
+    ctx.fillStyle = pl.col;
+    ctx.shadowColor = pl.col;
+    ctx.shadowBlur = 8;
     ctx.beginPath();
-    ctx.arc(m.x, m.y, oi === 0 ? 3.2 : 2.4, 0, Math.PI * 2);
+    ctx.arc(m.x, m.y, oi === 0 ? 7 : 6, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
-    // Stagger above/below: when two players stand together — which is exactly the
-    // moment this map exists to show — their tags landed on top of each other and
-    // rendered "PP2".
-    ctx.font = '5px "Press Start 2P", monospace';
+    ctx.strokeStyle = '#101010';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.font = '8px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText(QUADRANTS[oi].id, m.x, m.y + (oi % 2 === 0 ? -5 : 9));
+    ctx.fillStyle = pl.col;
+    // Staggered above/below so two friends standing together never read "PP2".
+    ctx.fillText(pl.id, m.x, m.y + (oi % 2 === 0 ? -13 : 14));
   });
 
-  ctx.font = '5px "Press Start 2P", monospace';
+  ctx.font = '7px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(216,200,64,0.8)';
-  ctx.fillText(`ALL 4 IN ${ARENA_NAME}`, cx, cy + sy * 1.0 - 4);
-  ctx.textAlign = 'left';
+  ctx.fillStyle = '#e8d44a';
+  ctx.fillText(`4 FRIENDS · ONE ${ARENA_NAME}`, cx, y0 + h - 9);
   ctx.restore();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
 }
 
 function drawDividers(W, H) {
-  ctx.strokeStyle = 'rgba(210, 200, 150, 0.35)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H);
-  ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2);
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(60, 55, 35, 0.6)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(W / 2 + 2, 0); ctx.lineTo(W / 2 + 2, H);
-  ctx.moveTo(0, H / 2 + 2); ctx.lineTo(W, H / 2 + 2);
-  ctx.stroke();
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(W / 2 - 3, 0, 6, H);
+  ctx.fillRect(0, H / 2 - 3, W, 6);
 }
 
-// ─── Per-quadrant player tag + gadget tally, in the outer visible corner ────
-function drawQuadTag(qi, W, H) {
-  const q = QUADRANTS[qi];
-  const p = players[qi];
-  const tx = q.qx < 0.5 ? W * 0.055 : W * 0.945;
-  const ty = q.qy < 0.5 ? H * 0.145 : H * 0.855;
-  ctx.textAlign = q.qx < 0.5 ? 'left' : 'right';
-  ctx.textBaseline = 'alphabetic';
-
-  ctx.font = '8px "Press Start 2P", monospace';
-  ctx.fillStyle = hexA(q.accent, 0.95);
-  ctx.fillText(q.id, tx, ty);
-  // Was q.name (FACILITY / ARCHIVES / SURFACE / TEMPLE) — four different levels,
-  // which was the bug. All four are in ONE arena now, so the tag names the VIEW
-  // ("YOUR SCREEN") and the arena is named once, in the HUD.
-  ctx.font = '5px "Press Start 2P", monospace';
-  ctx.fillStyle = hexA(q.accent, 0.6);
-  ctx.fillText(qi === 0 ? 'YOUR SCREEN' : 'SPLIT SCREEN', tx, ty + 9);
-  // Gadget tally dots
-  ctx.fillStyle = hexA(q.accent, 0.85);
-  const target = qi === 0 ? GADGETS_TO_WIN : 5;
-  const dir = q.qx < 0.5 ? 1 : -1;
-  for (let i = 0; i < target; i++) {
-    const dx = tx + dir * (i * 6) + (q.qx < 0.5 ? 0 : -target * 6 + 6);
-    ctx.globalAlpha = i < p.gadgets ? 0.95 : 0.25;
-    ctx.fillRect(dx, ty + 14, 4, 4);
-  }
-  ctx.globalAlpha = 1;
+// ─── Per-quadrant player tags, in each view's visible corner ────────────────
+function drawTags(W, H) {
+  ctx.font = '11px "Press Start 2P", monospace';
+  ctx.textBaseline = 'middle';
+  const spots = [
+    { x: W * 0.015, y: H * 0.468, al: 'left' },
+    { x: W * 0.985, y: H * 0.468, al: 'right' },
+    { x: W * 0.015, y: H * 0.535, al: 'left' },
+    { x: W * 0.985, y: H * 0.535, al: 'right' },
+  ];
+  PLAYERS.forEach((pl, i) => {
+    const sp = spots[i];
+    const label = i === 0 ? 'P1 · YOU' : pl.id;
+    ctx.textAlign = sp.al;
+    const tw = ctx.measureText(label).width;
+    const bx = sp.al === 'left' ? sp.x : sp.x - tw - 12;
+    ctx.fillStyle = pl.col;
+    ctx.fillRect(bx, sp.y - 10, tw + 12, 20);
+    ctx.fillStyle = '#101010';
+    ctx.fillText(label, sp.al === 'left' ? sp.x + 6 : sp.x - 6, sp.y + 1);
+  });
   ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
 }
 
-// ─── Expanding ring pings (gadget-secured / victory) ─────────────────────────
+// P1's gadget count — top band, right of the LEVEL badge (clear of the HUD
+// corner, the map and the prompt panel).
+function drawHUD(W, H) {
+  const bx = Math.round(W * 0.125), by = Math.round(H * 0.035);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = '9px "Press Start 2P", monospace';
+  const label = `GADGETS ${gadgets}/${GADGETS_TO_WIN}`;
+  const tw = ctx.measureText(label).width;
+  ctx.fillStyle = 'rgba(10,16,12,0.85)';
+  ctx.fillRect(bx - 6, by - 11, Math.max(tw, W * 0.15) + 12, 38);
+  ctx.fillStyle = '#ffe14d';
+  ctx.fillText(label, bx, by);
+  const barW = Math.round(W * 0.15), barY = by + 9;
+  ctx.fillStyle = '#2a2610';
+  ctx.fillRect(bx, barY, barW, 9);
+  ctx.fillStyle = '#ffe14d';
+  ctx.fillRect(bx, barY, Math.round(barW * Math.min(1, gadgets / GADGETS_TO_WIN)), 9);
+  ctx.strokeStyle = '#8a7a20';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(bx + 0.5, barY + 0.5, barW - 1, 8);
+  ctx.textBaseline = 'alphabetic';
+}
+
+// ─── Expanding ring pings ───────────────────────────────────────────────────
 function drawPings() {
   for (let i = pings.length - 1; i >= 0; i--) {
     const s = pings[i];
-    s.life -= 0.05;
+    s.life -= 0.04;
     if (s.life <= 0) { pings.splice(i, 1); continue; }
     const grow = 1 - s.life;
     ctx.globalAlpha = s.life;
     ctx.strokeStyle = s.col;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, Math.max(0, s.r * (0.4 + grow * 1.4)), 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, Math.max(0, s.r * (0.4 + grow * 1.6)), 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
 }
-
 function addPing(x, y, r, col) {
   if (pings.length >= MAX_PINGS) pings.shift();
   pings.push({ x, y, r, life: 1, col });
 }
 
-// The mission-progress bar for P1 (the player), centered on the divider cross,
-// clear of the DOM UI panels.
-function drawHUD(W, H) {
-  const pct = players[0].gadgets / GADGETS_TO_WIN;
-  const barW = Math.round(W * 0.14), barH = 8;
-  const bx = Math.round(W * 0.04);
-  const by = Math.round(H * 0.5 - 20);
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.font = '7px "Press Start 2P", monospace';
-  ctx.fillStyle = '#d8c840';
-  ctx.shadowColor = '#d8c840';
-  ctx.shadowBlur = 4;
-  ctx.fillText(`GADGETS ${players[0].gadgets}/${GADGETS_TO_WIN}`, bx, by);
-  ctx.font = '5px "Press Start 2P", monospace';
-  ctx.fillStyle = '#9a8a40';
-  ctx.fillText(`4-PLAYER · ${ARENA_NAME}`, bx, by - 10);
-  ctx.font = '7px "Press Start 2P", monospace';
-  ctx.fillStyle = '#d8c840';
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#181410';
-  ctx.fillRect(bx, by + 5, barW, barH);
-  ctx.fillStyle = '#d8c840';
-  ctx.fillRect(bx, by + 5, Math.round(barW * Math.min(1, pct)), barH);
-  ctx.strokeStyle = '#5a4a10';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(bx + 0.5, by + 5.5, barW - 1, barH - 1);
+// ─── Victory: MISSION COMPLETE — everyone meets up ──────────────────────────
+const OBJECTIVES = ['GADGETS FOUND', 'FRIENDS FOUND', 'EXIT REACHED'];
+
+function spawnConfetti(W, H) {
+  for (let i = 0; i < 30; i++) {
+    if (confetti.length >= MAX_CONFETTI) confetti.shift();
+    const ang = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
+    const sp = 4 + Math.random() * 6;
+    confetti.push({
+      x: W * 0.5, y: H * 0.47,
+      vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+      rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3,
+      kind: Math.random() < 0.5 ? 'card' : 'watch',
+      col: PLAYERS[i % 4].col, life: 1,
+    });
+  }
 }
-
-// ── Ambient sim: advance P2–P4 agents; sweep guards; toggle sneaking; P1 idles
-//    between keystrokes (its progress advances only in keystroke()). Gated on
-//    recent keystrokes so an unattended tab never progresses the game (L20).
-function stepSim(dt) {
-  const engaged = (performance.now() - lastKeyMs) < 8000;
-  for (let i = 0; i < players.length; i++) {
-    const p = players[i];
-    const q = QUADRANTS[i];
-    const path = pathFor(q.style);
-
-    // P2-P4 walk continuously (attract motion) only while engaged; P1 idles.
-    if (i !== 0 && engaged) {
-      p.prog = (p.prog + p.speed * dt) % 1;
-      // Ambient gadget secures for the friendly-competition tally.
-      const near = distToNode(path, p.prog, p.gadgetNode);
-      if (near < 0.04 && p.gadgets < 5) {
-        p.gadgets++;
-        p.gadgetNode = (p.gadgetNode + 2) % path.length;
-      }
+function drawConfetti(H) {
+  for (let i = confetti.length - 1; i >= 0; i--) {
+    const c = confetti[i];
+    c.x += c.vx; c.y += c.vy; c.vy += 0.18; c.vx *= 0.99; c.rot += c.vr;
+    c.life -= 0.006;
+    if (c.life <= 0 || c.y > H + 20) { confetti.splice(i, 1); continue; }
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.rot);
+    ctx.globalAlpha = Math.min(1, c.life * 1.5);
+    if (c.kind === 'card') {
+      ctx.fillStyle = c.col;
+      ctx.fillRect(-9, -6, 18, 12);
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillRect(-9, -2, 18, 3);
+    } else {
+      ctx.strokeStyle = c.col;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = c.col;
+      ctx.fillRect(-2, -12, 4, 6); ctx.fillRect(-2, 6, 4, 6);
     }
-
-    // Sneaking: freeze when the sweeping guard cone points near the agent.
-    const g = guardOn(path, (p.prog + 0.45) % 1, q.style);
-    const ag = walkPath(path, p.prog);
-    const toAgent = Math.atan2(ag.y - g.y, ag.x - g.x);
-    const dAng = Math.abs(angDiff(g.facing, toAgent));
-    const dDist = Math.hypot(ag.x - g.x, ag.y - g.y);
-    p.sneaking = dAng < 0.4 && dDist < 0.9;
-
-    if (p.quadFlash > 0) p.quadFlash = Math.max(0, p.quadFlash - dt * 1.6);
+    ctx.restore();
   }
 }
 
-function distToNode(path, prog, nodeIdx) {
-  const a = walkPath(path, prog);
-  const nd = path[nodeIdx % path.length];
-  return Math.hypot(a.x - nd[0], a.y - nd[1]);
-}
-function angDiff(a, b) {
-  let d = a - b;
-  while (d > Math.PI) d -= Math.PI * 2;
-  while (d < -Math.PI) d += Math.PI * 2;
-  return d;
-}
+function drawVictory(W, H, vic) {
+  const p = Math.min(1, vic.elapsed / VICTORY_MS);
 
-// ─── MISSION COMPLETE debrief (victory) ──────────────────────────────────────
-const OBJECTIVES = ['GADGETS SECURED', 'GUARDS EVADED', 'EXIT REACHED'];
-
-function drawVictory(W, H, nowMs) {
-  const elapsed = Math.max(0, nowMs - victoryStartMs);
-  const prog = Math.min(1, elapsed / VICTORY_MS);
-
-  // All four quadrants ping-flash in sequence throughout the debrief.
-  for (let i = 0; i < 4; i++) {
-    const q = QUADRANTS[i];
-    const phase = (prog * 4 + i * 0.25) % 1;
-    const a = Math.max(0, 0.35 * (1 - phase));
-    if (a > 0.01) {
-      ctx.globalAlpha = a;
-      ctx.fillStyle = q.accent;
-      ctx.fillRect(q.qx * W, q.qy * H, W * 0.5, H * 0.5);
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  // Debrief stamp panel across the top stage band (clear of center DOM UI).
-  const panelY = H * 0.055, panelH = H * 0.10;
-  ctx.fillStyle = 'rgba(8, 10, 8, 0.82)';
-  ctx.fillRect(W * 0.5 - W * 0.24, panelY, W * 0.48, panelH);
-  ctx.strokeStyle = '#d8c840';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(W * 0.5 - W * 0.24, panelY, W * 0.48, panelH);
-
-  // "MISSION COMPLETE" stamp — scales in with a slight overshoot, then holds.
-  const stampIn = Math.min(1, prog / 0.22);
-  const scale = 0.6 + 0.4 * easeOut(stampIn) + Math.sin(stampIn * Math.PI) * 0.06;
+  // Each quadrant flashes in its owner's colour, round the table in turn.
   ctx.save();
-  ctx.translate(W * 0.5, panelY + panelH * 0.42);
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 4; i++) {
+    const order = [0, 1, 3, 2][i];
+    const phase = ((vic.elapsed / 900) + i * 0.25) % 1;
+    const a = Math.max(0, 0.30 * (1 - phase * 2.2));
+    if (a <= 0.01) continue;
+    const v = viewFor(order, W, H).rect;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = PLAYERS[order].col;
+    ctx.fillRect(v.x, v.y, v.w, v.h);
+  }
+  ctx.restore();
+
+  drawConfetti(H);
+
+  // The debrief plate — centre stage, now that the panels are down.
+  const pw = W * 0.44, ph = H * 0.20;
+  const px = W * 0.5 - pw / 2, py = H * 0.36;
+  ctx.fillStyle = 'rgba(8, 12, 8, 0.9)';
+  ctx.fillRect(px, py, pw, ph);
+  ctx.strokeStyle = '#ffe14d';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(px, py, pw, ph);
+
+  const stampIn = Math.min(1, vic.elapsed / 700);
+  const scale = 0.5 + 0.5 * easeOut(stampIn) + Math.sin(stampIn * Math.PI) * 0.12;
+  ctx.save();
+  ctx.translate(W * 0.5, py + ph * 0.32);
   ctx.scale(scale, scale);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = '16px "Press Start 2P", monospace';
-  ctx.fillStyle = '#ffe870';
-  ctx.shadowColor = '#d8c840';
-  ctx.shadowBlur = 10;
+  ctx.font = `${Math.max(16, Math.round(W * 0.022))}px "Press Start 2P", monospace`;
+  ctx.fillStyle = '#fff3a0';
+  ctx.shadowColor = '#ffd23f';
+  ctx.shadowBlur = 16;
   ctx.fillText('MISSION COMPLETE', 0, 0);
-  ctx.shadowBlur = 0;
   ctx.restore();
 
-  // Objective checklist ticking ✓ one at a time under the stamp.
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.font = '7px "Press Start 2P", monospace';
-  const listX = W * 0.5 - W * 0.20;
-  const listY = panelY + panelH * 0.78;
+  ctx.font = `${Math.max(8, Math.round(W * 0.0085))}px "Press Start 2P", monospace`;
+  const listY = py + ph * 0.72;
+  const colW = pw / OBJECTIVES.length;
   for (let i = 0; i < OBJECTIVES.length; i++) {
-    const checked = prog > 0.30 + i * 0.18;
-    ctx.fillStyle = checked ? '#9fe89f' : 'rgba(180,180,150,0.4)';
-    const box = listX + i * (W * 0.135);
-    ctx.strokeStyle = checked ? '#9fe89f' : 'rgba(180,180,150,0.4)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(box, listY - 5, 8, 8);
-    if (checked) {                       // draw a check mark
+    const checked = p > 0.22 + i * 0.16;
+    const bx = px + colW * i + 14;
+    ctx.strokeStyle = checked ? '#5cf06a' : 'rgba(200,200,170,0.5)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx, listY - 7, 13, 13);
+    if (checked) {
       ctx.beginPath();
-      ctx.moveTo(box + 1.5, listY - 1);
-      ctx.lineTo(box + 3.5, listY + 2.5);
-      ctx.lineTo(box + 6.5, listY - 3.5);
-      ctx.lineWidth = 1.5;
+      ctx.moveTo(bx + 2.5, listY - 1); ctx.lineTo(bx + 5.5, listY + 3.5); ctx.lineTo(bx + 11, listY - 5);
       ctx.stroke();
     }
-    ctx.fillText(OBJECTIVES[i], box + 12, listY);
+    ctx.fillStyle = checked ? '#c8ffc8' : 'rgba(200,200,170,0.5)';
+    ctx.fillText(OBJECTIVES[i], bx + 19, listY);
   }
-  ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 }
 
-function easeOut(x) { return 1 - Math.pow(1 - x, 3); }
+function easeOut(x) { return 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3); }
 
-// ─── Main render loop ────────────────────────────────────────────────────────
+// ─── Main render loop ───────────────────────────────────────────────────────
+let lastFrameMs = 0;
+let confettiBursts = 0;
 function render() {
   if (!active) return;
   const W = canvas.width, H = canvas.height;
   const nowMs = performance.now();
-  t += 0.016;
+  const dt = Math.min(0.05, Math.max(0, (nowMs - (lastFrameMs || nowMs)) / 1000));
+  lastFrameMs = nowMs;
+  t += dt;
+  // The friends' formation drifts only while the player is engaged (L20).
+  if (!victoryMode && nowMs - lastKeyMs < 8000) simT += dt;
+  if (gadgetFlash > 0) gadgetFlash = Math.max(0, gadgetFlash - dt * 1.8);
+
+  const vic = victoryMode ? { elapsed: Math.min(VICTORY_MS, Math.max(0, nowMs - victoryStartMs)) } : null;
+  if (vic) {
+    // Three bursts of gadget confetti, keyed to elapsed time (clamped — L36).
+    const want = vic.elapsed > 1800 ? 3 : vic.elapsed > 900 ? 2 : vic.elapsed > 150 ? 1 : 0;
+    while (confettiBursts < want) { spawnConfetti(W, H); confettiBursts++; }
+  }
 
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#050505';
-  ctx.fillRect(0, 0, W, H);
-
-  if (!victoryMode) stepSim(0.016);
-
-  for (let i = 0; i < QUADRANTS.length; i++) drawQuadrant(i, W, H);
+  for (let i = 0; i < 4; i++) drawView(i, W, H, vic);
   drawDividers(W, H);
-  drawArenaMap(W, H);
-  for (let i = 0; i < QUADRANTS.length; i++) drawQuadTag(i, W, H);
+  drawArenaMap(W, H, vic);
+  drawTags(W, H);
   drawPings();
-
-  if (victoryMode) {
-    drawVictory(W, H, nowMs);
-  } else {
-    drawHUD(W, H);
-  }
+  if (vic) drawVictory(W, H, vic);
+  else drawHUD(W, H);
 
   // Hops across the true bottom of the screen, over the split-screen grid.
   drawWhiteRabbit(ctx, W, H);
@@ -852,22 +884,13 @@ function render() {
   animId = requestAnimationFrame(render);
 }
 
-// Corner center (canvas px) for a quadrant's mission action — for pings.
-function quadActionCenter(qi) {
-  const W = canvas.width, H = canvas.height;
-  const q = QUADRANTS[qi];
-  const rx = q.qx * W, ry = q.qy * H, rw = 0.5 * W, rh = 0.5 * H;
-  return {
-    x: q.qx < 0.5 ? rx + rw * 0.30 : rx + rw * 0.70,
-    y: q.qy < 0.5 ? ry + rh * 0.34 : ry + rh * 0.66,
-  };
-}
-
 // ─── Public API ──────────────────────────────────────────────────────────────
 export function start() {
   init();
   resetWhiteRabbit();
   active = true;
+  lastFrameMs = 0;
+  confettiBursts = 0;
   animId = requestAnimationFrame(render);
 }
 
@@ -877,52 +900,45 @@ export function stop() {
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-// Each correct keystroke nudges P1's agent forward along the Facility floor-plan.
-// The agent creeps toward the next gadget node; sequence completion secures it.
+// Each correct keystroke walks P1 (and so the whole group) forward through the
+// facility — round the next corner, up the stairs, past the cells.
 export function keystroke() {
   if (!active || victoryMode) return;
   lastKeyMs = performance.now();
-  const p = players[0];
-  p.prog = (p.prog + 0.04) % 1;
+  p1prog = (p1prog + 0.035) % 1;
 }
 
 export function miss() {
-  // Gentle near-miss: the guard cone gets a soft amber "close call" pulse in P1's
-  // quadrant — no penalty, no alarm, nothing lost.
+  // Gentle: a soft ring in P1's view, nothing lost, nothing alarming.
   if (!active || victoryMode) return;
-  players[0].sneaking = true;
-  const c = quadActionCenter(0);
-  addPing(c.x, c.y, Math.min(canvas.width, canvas.height) * 0.012, 'rgba(232,208,136,0.9)');
+  const v = viewFor(0, canvas.width, canvas.height);
+  addPing(v.vp.x, v.vp.y, Math.min(canvas.width, canvas.height) * 0.02, 'rgba(255,240,180,0.8)');
 }
 
-// Called once per completed letter sequence — P1 secures a gadget. Win when P1
-// has secured GADGETS_TO_WIN. Won stays won on repeated calls (engine may re-ask).
+// Called once per completed letter sequence — P1 finds a gadget. Win when P1 has
+// found GADGETS_TO_WIN. Won stays won on repeated calls (the engine may re-ask).
 export function patternComplete() {
   if (victoryMode || hasWon) return true;
-  const p = players[0];
   lastKeyMs = performance.now();
-  p.gadgets++;
-  p.quadFlash = 1;
-  // Advance the gadget pickup to the next node along the plan.
-  const path = pathFor(QUADRANTS[0].style);
-  p.gadgetNode = (p.gadgetNode + 2) % path.length;
-  // Snap the agent to the secured node for a satisfying "picked it up" beat.
-  const c = quadActionCenter(0);
-  addPing(c.x, c.y, Math.min(canvas.width, canvas.height) * 0.03, QUADRANTS[0].accent);
-  if (p.gadgets >= GADGETS_TO_WIN) hasWon = true;
+  gadgets++;
+  gadgetFlash = 1;
+  const v = viewFor(0, canvas.width, canvas.height);
+  addPing(v.vp.x - v.hw * 0.35, v.vp.y + v.hh * 0.1, Math.min(canvas.width, canvas.height) * 0.04, '#ffe14d');
+  if (gadgets >= GADGETS_TO_WIN) hasWon = true;
   maybeWhiteRabbit(hasWon);   // cosmetic only — never gates or delays the win
   return hasWon;
 }
 
-// The MISSION COMPLETE debrief celebration. Returns its duration in ms.
+// MISSION COMPLETE: all four friends walk up to every screen and wave, their dots
+// meet at the exit on the map, gadgets fountain. Returns its duration in ms.
 export function victory() {
   if (!active) return VICTORY_MS;
   victoryMode = true;
   victoryStartMs = performance.now();
-  // Fill every quadrant's tally and fire a ping in each corner.
-  for (let i = 0; i < players.length; i++) {
-    const c = quadActionCenter(i);
-    addPing(c.x, c.y, Math.min(canvas.width, canvas.height) * 0.05, QUADRANTS[i].accent);
+  confettiBursts = 0;
+  for (let i = 0; i < 4; i++) {
+    const v = viewFor(i, canvas.width, canvas.height);
+    addPing(v.vp.x, v.vp.y, Math.min(canvas.width, canvas.height) * 0.06, PLAYERS[i].col);
   }
   return VICTORY_MS;
 }

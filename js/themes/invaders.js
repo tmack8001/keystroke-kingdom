@@ -7,6 +7,7 @@ let animId = null;
 let active = false;
 let victoryMode = false;
 let victoryShip = { x: 0, y: 0, angle: 0, speed: 0, trail: [] };
+const VICTORY_MS = 1700;
 
 let marchDir = 1;
 let marchSpeed = 0.3;
@@ -85,18 +86,39 @@ function resize() {
   ship.y = c.height - 60;
 }
 
+// ─── Layout — "the UI owns the center; the theme owns the frame" ────────────
+// The 11x5 rack lives in the TOP BAND between the HUD corners. It used to be a
+// fixed 3px sprite starting at y=35, which ran to y~195 — straight through
+// "TYPE THE LETTER" (persona playtest, 2026-10-29; journal F30's class). The
+// prompt panel's border MEASURES 0.177H at 1280x800, so the band ends at 0.160H.
+// The sprite pixel is sized from that band (a per-theme const — F30), leaving
+// room under the rack for the classic step-down, which is capped at FORM_BOTTOM:
+// the invaders march and creep exactly as the cabinet's did, but they can never
+// walk down into the panel however long a child takes over a level.
+const FORM_TOP = 0.015;
+const FORM_BOTTOM = 0.160;
+const MARCH_LEFT = 0.115;     // just right of the HUD badge (~0.02–0.105W)
+const MARCH_RIGHT = 0.855;    // just left of the HUD stats (~0.866–0.98W)
+const ROWS = 5;
+let floorY = 0;               // the lowest a rack's bottom edge may creep to (px)
+
 function spawnAliens() {
   aliens = [];
   const cols = 11;
-  const rows = 5;
-  const px = 3;
+  const rows = ROWS;
+  const H = canvas.height;
+  const bandH = (FORM_BOTTOM - FORM_TOP) * H;
+  // 5 ranks x 8 sprite-px + 4 gaps x 2 sprite-px, using ~85% of the band so the
+  // rest is step-down room. Integer pixels; 2 is the legibility floor.
+  const px = Math.max(2, Math.floor((bandH * 0.85) / (rows * 8 + (rows - 1) * 2)));
   const alienW = 11 * px;
   const alienH = 8 * px;
-  const gapX = 12;
-  const gapY = 10;
+  const gapX = Math.round(alienW * 0.36);
+  const gapY = 2 * px;
   const totalW = cols * (alienW + gapX) - gapX;
   const startX = (canvas.width - totalW) / 2;
-  const startY = 35;
+  const startY = H * FORM_TOP;
+  floorY = H * FORM_BOTTOM;
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
@@ -143,15 +165,19 @@ function drawLaser(laser) {
   ctx.shadowBlur = 0;
 }
 
+// drawExplosion's furthest spark: dist (35) + half its largest square (28/4).
+const EXPLOSION_REACH = 42;
+
 function drawExplosion(exp) {
   const progress = exp.frame / exp.maxFrames;
   const alpha = 1 - progress;
   ctx.globalAlpha = alpha;
-  const size = 4 + progress * 24;
+  const k = exp.scale || 1;
+  const size = (4 + progress * 24) * k;
   const numParticles = 8;
   for (let i = 0; i < numParticles; i++) {
     const angle = (i / numParticles) * Math.PI * 2;
-    const dist = progress * 35;
+    const dist = progress * 35 * k;
     const px = exp.x + Math.cos(angle) * dist;
     const py = exp.y + Math.sin(angle) * dist;
     ctx.fillStyle = i % 2 === 0 ? (exp.color || '#ffff00') : '#ffffff';
@@ -187,19 +213,24 @@ function updateAliens() {
   const aliveAliens = aliens.filter(a => a.alive);
   if (aliveAliens.length === 0) return;
 
-  let leftMost = canvas.width, rightMost = 0;
+  let leftMost = canvas.width, rightMost = 0, bottomMost = 0;
   aliveAliens.forEach(a => {
     const w = a.shape[0].length * a.px;
     if (a.x < leftMost) leftMost = a.x;
     if (a.x + w > rightMost) rightMost = a.x + w;
+    const b = a.y + a.shape.length * a.px;
+    if (b > bottomMost) bottomMost = b;
   });
 
-  if (rightMost >= canvas.width - 20 && marchDir === 1) {
+  // March between the HUD corners; step down at each wall, but only while the
+  // rack's bottom edge still has room above floorY (see the layout note above).
+  const stepRoom = Math.max(0, floorY - bottomMost);
+  if (rightMost >= canvas.width * MARCH_RIGHT && marchDir === 1) {
     marchDir = -1;
-    dropAmount += 8;
-  } else if (leftMost <= 20 && marchDir === -1) {
+    dropAmount += Math.min(8, stepRoom);
+  } else if (leftMost <= canvas.width * MARCH_LEFT && marchDir === -1) {
     marchDir = 1;
-    dropAmount += 8;
+    dropAmount += Math.min(8, stepRoom);
   }
 
   const killed = aliens.length - aliveAliens.length;
@@ -254,8 +285,16 @@ function update() {
     if (dist < l.speed) {
       if (l.target.alive) {
         l.target.alive = false;
+        // Keep the whole burst on the canvas: an explosion reaches
+        // EXPLOSION_REACH px from its centre, and the top rank sits at 0.015H,
+        // so a burst on a top-rank invader used to be sliced off by y=0 (persona
+        // playtest, 2026-10-30; journal L34 — budget to the full box, not the
+        // anchor). The burst stays ON the invader it hit and is scaled down to
+        // the room it has, never moved off it.
+        const room = l.targetY - canvas.height * FORM_TOP;
         explosions.push({
           x: l.targetX, y: l.targetY,
+          scale: Math.max(0.35, Math.min(1, room / EXPLOSION_REACH)),
           frame: 0, maxFrames: 20,
           color: l.target.color
         });
@@ -399,6 +438,10 @@ export function victory() {
       victoryShip.angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.3;
     }
   }, 600);
+  // The takeoff clears the top of the screen in ~1.1s and its trail fades by
+  // ~1.6s. Returning the window means the LEVEL COMPLETE card lands as the
+  // animation does, instead of after the engine's legacy 4000ms silent hold.
+  return VICTORY_MS;
 }
 
 export function miss() {}

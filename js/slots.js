@@ -347,6 +347,17 @@ export function setActiveName(name) {
   writeState(st);
 }
 
+// Rename the game at index `i` WITHOUT touching which game is active. The picker's
+// R RENAME used to route through setActive(i)+setActiveName+restore, which left a
+// game active when none had been (active === null → active: i). Renaming is a label
+// change, never a "which game is playing" change (levels/onboarding.md).
+export function renameSlot(i, name) {
+  const st = state();
+  if (!Number.isInteger(i) || i < 0 || i >= st.slots.length) return;
+  st.slots[i].name = (typeof name === 'string' && name.trim()) ? name.slice(0, NAME_MAX) : 'PLAYER ONE';
+  writeState(st);
+}
+
 export function activeName() {
   const st = state();
   return st.active !== null && st.slots[st.active] ? st.slots[st.active].name : null;

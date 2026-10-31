@@ -189,7 +189,7 @@ function currentLine() {
 function commitLine() {
   const line = currentLine();
   if (!line) return;
-  log.push({ kind: 'echo', text: station.prompt + line.type });
+  log.push({ kind: 'echo', prompt: station.prompt, text: line.type });
   (line.says || []).forEach(s => log.push({ kind: 'says', text: s }));
   typed = '';
   step += 1;
@@ -268,6 +268,31 @@ function room(W, H) {
     ctx.fillRect(x + W * 0.006, H * 0.900, W * 0.009, H * 0.012);
     ctx.fillRect(x + W * 0.021, H * 0.900, W * 0.009, H * 0.012);
   }
+}
+
+// ─── The machine's prompt ───────────────────────────────────────────────────
+//
+// The Apple IIe's Applesoft prompt is `]`. In Press Start 2P a `]` is a top bar, a
+// right stroke and a bottom bar — which at prompt size is a `J`, so `]CATALOG`
+// read as if the child had to type a J first (2026-10-30 explorer playtest). So
+// the bracket is DRAWN, the faithful shape a bracket really has: taller than a
+// capital letter and reaching BELOW the baseline, which no letter here does, set
+// apart from the command by a clear gap. Any other prompt (`C:\>`) is just text.
+function promptWidth(prompt, fs) {
+  return prompt === ']' ? fs * 1.35 : ctx.measureText(prompt).width;
+}
+
+function drawPrompt(prompt, x, y, fs) {
+  if (prompt !== ']') { ctx.fillText(prompt, x, y); return ctx.measureText(prompt).width; }
+  const px = Math.max(2, Math.round(fs / 8));           // one Press Start 2P pixel
+  const top = Math.round(y - fs * 1.05);                // above cap height
+  const bot = Math.round(y + fs * 0.3);                 // below the baseline
+  const right = Math.round(x + fs * 0.62);
+  const arm = Math.round(fs * 0.45);
+  ctx.fillRect(right - px, top, px, bot - top);         // the stroke
+  ctx.fillRect(right - arm, top, arm, px);              // top arm, pointing left
+  ctx.fillRect(right - arm, bot - px, arm, px);         // bottom arm
+  return fs * 1.35;
 }
 
 function drawMenu() {
@@ -351,7 +376,9 @@ function drawStation() {
     const shown = log.slice(-Math.max(0, maxLines - 2));
     shown.forEach(entry => {
       ctx.fillStyle = entry.kind === 'echo' ? INK : '#69b585';
-      ctx.fillText(entry.text, sx + W * 0.02, y);
+      let ex = sx + W * 0.02;
+      if (entry.kind === 'echo') ex += drawPrompt(entry.prompt, ex, y, fs);
+      ctx.fillText(entry.text, ex, y);
       y += lh;
     });
   }
@@ -362,10 +389,10 @@ function drawStation() {
       // The prompt, what you have typed so far, and a cursor. What you have NOT
       // typed yet is shown dim — so the thing you are aiming at is always
       // visible. A child should never have to guess the incantation.
-      const px = sx + W * 0.02;
       ctx.fillStyle = INK;
-      ctx.fillText(s.prompt + typed, px, y);
-      const w = ctx.measureText(s.prompt + typed).width;
+      const px = sx + W * 0.02 + drawPrompt(s.prompt, sx + W * 0.02, y, fs);
+      ctx.fillText(typed, px, y);
+      const w = ctx.measureText(typed).width;
       const rest = line.type.slice(typed.length);
       ctx.fillStyle = nudge > 0 ? '#e8b060' : DIM;      // the gentle nudge: a warm blink, never red
       ctx.fillText(rest, px + w, y);
@@ -460,6 +487,20 @@ function wrapText(text, maxW) {
   return lines;
 }
 
+// The largest font size (<= `size`, >= 60% of it) at which `text` fits `maxW`.
+// Every card today fits at its base size, so this is a no-op for them; it exists
+// for the next row of WING_CARDS (spec §0.3 plans 14), so a long station title can
+// never run off the card stock or into its border.
+function fitFontSize(text, size, maxW) {
+  const floor = Math.max(6, Math.floor(size * 0.6));
+  let px = size;
+  for (; px > floor; px--) {
+    ctx.font = `${px}px "Press Start 2P", monospace`;
+    if (ctx.measureText(text).width <= maxW) break;
+  }
+  return px;
+}
+
 function drawCard() {
   const W = canvas.width, H = canvas.height;
   room(W, H);
@@ -511,14 +552,17 @@ function drawCard() {
   ctx.fillText('FOUND BESIDE THE MACHINE', 0, y);
   y += H * 0.028;
 
+  const innerW = cw - pad * 2;
+  const wordText = String(c.word || '').toUpperCase();
   ctx.fillStyle = '#2a2418';
-  ctx.font = `${Math.round(H * 0.032)}px "Press Start 2P", monospace`;
-  ctx.fillText(String(c.word || '').toUpperCase(), 0, y);
+  ctx.font = `${fitFontSize(wordText, Math.round(H * 0.032), innerW)}px "Press Start 2P", monospace`;
+  ctx.fillText(wordText, 0, y);
   y += H * 0.048;
 
+  const titleText = `${c.title} · ${c.year}`;
   ctx.fillStyle = '#4a4030';
-  ctx.font = `${Math.round(H * 0.014)}px "Press Start 2P", monospace`;
-  ctx.fillText(`${c.title} · ${c.year}`, 0, y);
+  ctx.font = `${fitFontSize(titleText, Math.round(H * 0.014), innerW)}px "Press Start 2P", monospace`;
+  ctx.fillText(titleText, 0, y);
   y += H * 0.030;
 
   ctx.fillStyle = '#2a2418';
@@ -552,12 +596,24 @@ function drawCard() {
 
   ctx.restore();
 
+  // The way out, ABOVE the bench. It used to sit at 0.90H — on top of the boards
+  // and chips laid along the floor strip (0.86-1.0H), in the dimmest green, which
+  // is where a child's eye has the least chance of finding it (2026-10-30). Now it
+  // sits just under the card, clear of the bench line, on its own dark plate.
   if (cardT > 28) {
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = DIM;
-    ctx.font = `${Math.round(H * 0.017)}px "Press Start 2P", monospace`;
-    ctx.fillText('SPACE · BACK TO THE WALL', W / 2, H * 0.90);
+    ctx.textBaseline = 'middle';
+    const fsz = Math.round(H * 0.019);
+    ctx.font = `${fsz}px "Press Start 2P", monospace`;
+    const label = 'SPACE · BACK TO THE WALL';
+    const y = Math.min(H * 0.815, H / 2 + ch / 2 + H * 0.065);
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(W / 2 - tw / 2 - fsz, y - fsz * 1.1, tw + fsz * 2, fsz * 2.2);
+    ctx.fillStyle = '#8fd0a4';
+    ctx.globalAlpha = Math.min(1, (cardT - 28) / 20);
+    ctx.fillText(label, W / 2, y);
+    ctx.globalAlpha = 1;
   }
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';

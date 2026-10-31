@@ -15,6 +15,9 @@
 //      gentle nudge and the buffer WAITS — never advances, never punishes (the
 //      One Rule). Colossal Cave / Zork / MUD precedent (research Q4): typing the
 //      direction WAS the interaction. Movement is spelling practice.
+//      Once three whole words have been typed, a whole word becomes a RUN to the
+//      next thing worth stopping for, and a single letter stays one step — see
+//      STRIDE_UNLOCK_WORDS below (2026-10-30: ~700 keystrokes a world → ~100).
 //   2. FOG OF WAR. Roguelike lit/dark line-of-sight: unexplored tiles are hidden,
 //      seen walls are remembered (dim), the area you can see is lit. A big map
 //      becomes a place to DISCOVER, not a grid to cross (research Q2 — "the single
@@ -44,7 +47,8 @@
 //                everything else is looked up in world.glyphs (unknown → wall).
 
 import * as Audio from '../audio.js';
-import { buildPool, answerMatches, ANSWER_CAP, HINT_AT_TRY, REVEAL_AT_TRY } from './riddles.js';
+import { buildPool, answerMatches, isNearMiss, ANSWER_CAP, HINT_AT_TRY, REVEAL_AT_TRY, ANSWER_KEYS_CUE } from './riddles.js';
+import { enterLabel } from '../key-label.js';
 
 // ─── Movement vocabulary (the guided prefix-matcher's allowlist) ────────────
 // Full words are prefix-matched and auto-fire on an exact, unambiguous match; the
@@ -59,7 +63,30 @@ const DIRVEC = {
 };
 const LETTER_DIR = { n: 'north', s: 'south', e: 'east', w: 'west' };
 const HINT_WORDS = ['up', 'down', 'left', 'right'];   // the four shown as hints
+const HINT_ALIASES = ['n', 's', 'e', 'w'];            // shown once they are taught
+const PLAIN = { north: 'up', south: 'down', east: 'right', west: 'left' };
 
+// ─── A WHOLE WORD WALKS YOU FAR (2026-10-30, the explorer playtest) ──────────
+// One tile per typed word made each world ~140 moves — about 700 keystrokes, most
+// of them `right` typed a hundred and thirty times — for a child of eight. The
+// typing is the point of the wing, so it stays; what changed is how far a word
+// carries you. NetHack's capital-letter direction is a continuous run "until
+// something interesting" (research/wiki/tech/ascii-overhead-world-conventions.md
+// ref [1]); here a fully-typed direction WORD is that run, and a single letter
+// alias stays one careful step. The run is EARNED: the first STRIDE_UNLOCK_WORDS
+// words are single steps, so a new player first learns that typing `right` moves
+// you right, then finds that her words now carry her further.
+//
+// A run stops at anything worth stopping for — a wall, a creature at your side
+// (its riddle opens), the goal, a change of ground (the log bridge), coming level
+// with a way off this screen or with the goal, crossing to a new screen — and
+// after RUN_MAX tiles regardless, so it reads as walking, never as teleporting.
+// It is drawn a tile at a time, one every RUN_FRAMES frames. Reachability is only
+// ever widened by this: every single step is still available as a letter alias,
+// so INV-55's one-tile BFS floor holds unchanged.
+const STRIDE_UNLOCK_WORDS = 3;
+const RUN_MAX = 10;
+const RUN_FRAMES = 3;
 const FOG_RADIUS = 5;      // roguelike torch reach (tiles)
 // ANSWER_CAP / HINT_AT_TRY / REVEAL_AT_TRY now live in riddles.js — shared with
 // the prose engine so both wings escalate hints (and cap the answer) identically.
@@ -85,6 +112,7 @@ let visible = null; // current screen Set of 'r,c' (lit right now)
 let mode = 'move';  // 'move' | 'riddle'
 let buf = '';       // movement command buffer
 let swallow = '';   // tail of a compass word to quietly absorb after a letter alias
+let swallowDir = ''; // the direction that tail belongs to (completing it = a whole word)
 let activeNpc = null;
 let activeRiddle = null;   // the pooled riddle the active NPC is currently posing
 let dismissedNpc = null;   // an NPC whose riddle you stepped back from — don't re-pop
@@ -96,6 +124,13 @@ let message = '';
 let won = false;
 let winT = 0;
 let motes = [];
+
+let wordsTyped = 0;       // whole direction words typed (drives the earned run)
+let aliasesTaught = false; // the n/s/e/w hint is shown once taught or discovered
+let run = null;           // { dir, left, tick } while a word is carrying you
+let riddleNote = '';      // the visible "not quite" / "so close" line in the riddle panel
+let riddleNoteT = 0;
+let nearMisses = 0;       // typos on the current riddle; the first is free
 
 let mastery = 0;    // successful moves — drives the hint fade
 let hintBoostT = 0; // frames of forced-full hints (nudge / arrival / new screen)
@@ -122,6 +157,7 @@ export function start(w, opts = {}) {
   mode = 'move';
   buf = '';
   swallow = '';
+  swallowDir = '';
   activeNpc = null;
   activeRiddle = null;
   dismissedNpc = null;
@@ -131,6 +167,12 @@ export function start(w, opts = {}) {
   winT = 0;
   motes = [];
   mastery = 0;
+  wordsTyped = 0;
+  aliasesTaught = false;
+  run = null;
+  riddleNote = '';
+  riddleNoteT = 0;
+  nearMisses = 0;
   hintBoostT = 240;
   lastActMs = performance.now();
   nudgeT = 0;
@@ -143,6 +185,7 @@ export function start(w, opts = {}) {
 
 export function stop() {
   active = false;
+  run = null;
   if (animId) { cancelAnimationFrame(animId); animId = null; }
   if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
   world = null;
@@ -270,7 +313,7 @@ function handleMoveKey(e) {
   const k = e.key;
   if (k === 'Backspace') { if (buf) { buf = buf.slice(0, -1); Audio.correct(); } return; }
   if (k === 'Enter') {
-    if (buf && WORDS.includes(buf)) { const d = buf; buf = ''; swallow = ''; attemptMove(d); }
+    if (buf && WORDS.includes(buf)) { const d = buf; buf = ''; swallow = ''; wordMove(d); }
     return;
   }
   if (k.length !== 1) return;
@@ -280,14 +323,36 @@ function handleMoveKey(e) {
 
   // Tail-swallow: after a single-letter alias fired, quietly eat the rest of the
   // compass word the child may still be typing ('n' fired north → eat 'o','r','t','h').
-  if (swallow && ch === swallow[0]) { swallow = swallow.slice(1); return; }
+  // Finishing the whole word counts as typing it: once the run is earned, the
+  // rest of the word carries you on from the step the letter already took.
+  if (swallow && ch === swallow[0]) {
+    swallow = swallow.slice(1);
+    if (!swallow && swallowDir) {
+      const d = swallowDir; swallowDir = '';
+      wordsTyped++;
+      if (wordsTyped > STRIDE_UNLOCK_WORDS && mode === 'move' && !won) startRun(d, true);
+      else if (wordsTyped === STRIDE_UNLOCK_WORDS) announceStride();
+    }
+    return;
+  }
   swallow = '';
+  swallowDir = '';
 
-  // Single-letter compass alias fires instantly from an empty buffer.
+  // Single-letter compass alias fires instantly from an empty buffer (INV-53).
+  // It is a real move, so it must never be a SURPRISE: the first time one fires
+  // before the hint has taught it, the game says what just happened, and from
+  // then on the hint shows the four shortcuts (2026-10-30 — a stray `s` from an
+  // empty line was moving a child who did not know `s` meant anything).
   if (buf === '' && LETTER_DIR[ch]) {
     const d = LETTER_DIR[ch];
     swallow = d.slice(1);
+    swallowDir = d;
     attemptMove(d);
+    if (!aliasesTaught && mode === 'move' && !won) {
+      aliasesTaught = true;
+      hintBoostT = 240;
+      message = `"${ch}" is a shortcut: one step ${d.toUpperCase()} (${PLAIN[d]}). You can type the whole word, too.`;
+    }
     return;
   }
 
@@ -296,7 +361,7 @@ function handleMoveKey(e) {
     buf = next;
     const exact = WORDS.includes(buf);
     const ambiguous = WORDS.some((t) => t !== buf && t.startsWith(buf));
-    if (exact && !ambiguous) { const d = buf; buf = ''; attemptMove(d); }
+    if (exact && !ambiguous) { const d = buf; buf = ''; wordMove(d); }
     else { Audio.correct(); }   // an accepted, on-track keystroke feels responsive
     return;
   }
@@ -307,7 +372,26 @@ function handleMoveKey(e) {
   hintBoostT = 200;
 }
 
-function attemptMove(dir) {
+// A typed WORD: one step until the run is earned, then a run.
+function wordMove(dir) {
+  wordsTyped++;
+  if (wordsTyped > STRIDE_UNLOCK_WORDS) { startRun(dir, false); return; }
+  attemptMove(dir);
+  if (wordsTyped === STRIDE_UNLOCK_WORDS) announceStride();
+}
+
+function announceStride() {
+  if (mode !== 'move' || won) return;
+  aliasesTaught = true;
+  hintBoostT = 300;
+  message = 'Your feet know the way now. A whole word walks you on until something is worth stopping for. One letter — n, s, e or w — is one careful step.';
+}
+
+// One step. Returns 'moved' | 'crossed' | 'blocked' | 'stopped' (the goal was
+// reached or a creature's riddle opened). `quiet` skips the wall nudge, for the
+// steps of a run after its first — running up to a wall is arriving, not a miss.
+function attemptMove(dir, quiet = false) {
+  run = null;
   buf = '';
   const v = DIRVEC[dir];
   const s = screens[cur];
@@ -317,18 +401,68 @@ function attemptMove(dir) {
   if (tr < 0 || tr >= s.ROWS || tc < 0 || tc >= s.COLS) {
     const edge = v[0] < 0 ? 'north' : v[0] > 0 ? 'south' : v[1] < 0 ? 'west' : 'east';
     const target = s.exits[edge];
-    if (target != null && screens[target]) { crossTo(edge, target); return; }
-    nudgeWall();
-    return;
+    if (target != null && screens[target]) { crossTo(edge, target); return settled() ? 'stopped' : 'crossed'; }
+    if (!quiet) nudgeWall();
+    return 'blocked';
   }
-  if (!walkable(cur, tr, tc)) { nudgeWall(); return; }
+  if (!walkable(cur, tr, tc)) { if (!quiet) nudgeWall(); return 'blocked'; }
 
   you = { r: tr, c: tc };
   mastery++;
-  Audio.correct();
+  if (!quiet) Audio.correct();
   message = '';
   computeFog();
   checkArrival();
+  return settled() ? 'stopped' : 'moved';
+}
+
+// Something on arrival took over (the reveal, or a riddle opening).
+function settled() { return won || mode !== 'move'; }
+
+// Begin a run. `continuing` means the first step was already taken by the letter
+// alias at the start of the word, so the run picks up from there.
+function startRun(dir, continuing) {
+  if (!continuing) {
+    const first = attemptMove(dir);
+    if (first !== 'moved') return;
+  }
+  if (runShouldStop(dir, null)) return;
+  run = { dir, left: RUN_MAX - 1, tick: 0 };
+}
+
+// Called from render(): advance a run one tile every RUN_FRAMES frames.
+function advanceRun() {
+  if (!run || won || mode !== 'move') { run = null; return; }
+  if (++run.tick < RUN_FRAMES) return;
+  run.tick = 0;
+  const { dir, left } = run;
+  const before = screens[cur].grid[you.r][you.c];
+  const r = attemptMove(dir, true);       // clears `run`; re-armed below if it goes on
+  if (r !== 'moved') return;              // a wall, a new screen, the goal, a riddle
+  if (runShouldStop(dir, before)) return;
+  if (left - 1 <= 0) return;
+  run = { dir, left: left - 1, tick: 0 };
+}
+
+// Anything worth stopping for, judged from where you now stand.
+function runShouldStop(dir, prevGlyph) {
+  const s = screens[cur];
+  const v = DIRVEC[dir];
+  const here = s.grid[you.r][you.c];
+  if (prevGlyph != null && here !== prevGlyph) return true;            // the ground changed
+  const tr = you.r + v[0], tc = you.c + v[1];
+  const offEdge = tr < 0 || tr >= s.ROWS || tc < 0 || tc >= s.COLS;
+  if (!offEdge && !walkable(cur, tr, tc)) return true;                 // a wall ahead
+  if (v[0] !== 0) {                                                    // walking up/down:
+    if (s.exits.west != null && walkable(cur, you.r, 0)) return true;  //   level with a way out
+    if (s.exits.east != null && walkable(cur, you.r, s.COLS - 1)) return true;
+    if (goal && goal.screen === cur && goal.r === you.r) return true;  //   level with the goal
+  } else {                                                             // walking left/right:
+    if (s.exits.north != null && walkable(cur, 0, you.c)) return true;
+    if (s.exits.south != null && walkable(cur, s.ROWS - 1, you.c)) return true;
+    if (goal && goal.screen === cur && goal.c === you.c) return true;
+  }
+  return false;
 }
 
 function nudgeWall() {
@@ -404,6 +538,9 @@ function openRiddle(npc) {
   npc._ri++;                     // next visit rotates to the next puzzle
   answer = '';
   tries = 0;
+  nearMisses = 0;
+  riddleNote = '';
+  riddleNoteT = 0;
   message = activeRiddle.riddle || '';
   Audio.coin();
 }
@@ -412,6 +549,14 @@ function openRiddle(npc) {
 // entry, length-capped, compared locally, never stored, never a DOM sink.
 function handleRiddleKey(e) {
   const k = e.key;
+  // The rest of a compass word whose first letter (the alias) walked you up to
+  // this creature is still the WORD, not an answer — eat it, as move mode would.
+  if (swallow && !answer && k.length === 1 && k.toLowerCase() === swallow[0]) {
+    swallow = swallow.slice(1);
+    return;
+  }
+  swallow = '';
+  swallowDir = '';
   if (k === ' ') { closeRiddle(); return; }               // Space steps back out (never stuck)
   if (k === 'Backspace') { if (answer) { answer = answer.slice(0, -1); Audio.correct(); } return; }
   if (k === 'Enter') { submitAnswer(); return; }
@@ -422,11 +567,25 @@ function handleRiddleKey(e) {
 }
 
 function submitAnswer() {
+  if (!answer) return;                    // an empty Return is not a guess
   if (answerMatches(activeRiddle, answer)) { solveNpc(activeNpc); return; }
-  tries++;
-  answer = '';
   Audio.wrong();
   nudgeT = 12;
+  riddleNoteT = 300;
+  // A TYPO is not a wrong idea (riddles.js isNearMiss — never counted as right):
+  // say so and leave the word in the box to be fixed. The first typo on a riddle
+  // is free; later ones count, so the hint and the answer still arrive.
+  if (isNearMiss(activeRiddle, answer)) {
+    nearMisses++;
+    if (nearMisses > 1) tries++;
+    riddleNote = 'So close! One letter is off — BACKSPACE can fix it.';
+    return;
+  }
+  tries++;
+  // Wrong: the box clears for a fresh try, and now it SAYS so — it used to clear
+  // with only a sound, which reads as the game eating your answer (2026-10-30).
+  riddleNote = `Not quite: "${answer}". Have another go — there is no hurry.`;
+  answer = '';
   // message stays the riddle; the hint/answer is drawn from `tries` (see riddle panel)
 }
 
@@ -503,6 +662,8 @@ function render() {
 
   if (nudgeT > 0) nudgeT--;
   if (hintBoostT > 0) hintBoostT--;
+  if (riddleNoteT > 0) riddleNoteT--;
+  advanceRun();
   if (won) { winT++; if (winT === 330) finish(); }   // ~5.5s to savour, then walk out
   animId = requestAnimationFrame(render);
 }
@@ -698,9 +859,11 @@ function drawWinChrome(W, H, fs) {
   }
   const small = Math.max(9, Math.floor(fs * 0.72));
   ctx.font = `${small}px "Press Start 2P", monospace`;
-  ctx.fillStyle = PAL.dim || '#567';
-  ctx.globalAlpha = 0.8;
-  ctx.fillText('SPACE / ENTER: back to the arcade', Math.round(W * 0.06), Math.round(H * 0.94));
+  ctx.fillStyle = PAL.hint || PAL.dim || '#567';   // how to leave — must be readable (>=4.5:1)
+  ctx.globalAlpha = 1;
+  // TRUE wording: Space/Return hands you back to the Text Worlds chooser
+  // (hub.js returnToMenu), not the arcade — the old line said "the arcade".
+  ctx.fillText(`SPACE / ${enterLabel()} / ESC: back to the Text Worlds`, Math.round(W * 0.06), Math.round(H * 0.94));
   ctx.globalAlpha = 1;
   ctx.textBaseline = 'alphabetic';
 }
@@ -739,8 +902,11 @@ function drawMoveChrome(W, H, fs) {
     ctx.font = `${small}px "Press Start 2P", monospace`;
     const hy = Math.round(H * 0.93);
     let x = marginX;
-    ctx.globalAlpha = dim ? 0.3 : 0.75;
-    ctx.fillStyle = PAL.dim || '#567';
+    // 'full' mode is the child's only list of what to type: readable `hint` colour at
+    // full opacity (>=4.5:1). 'dim' mode is the deliberate faded-with-mastery reminder.
+    const readable = PAL.hint || PAL.dim || '#567';
+    ctx.globalAlpha = dim ? 0.3 : 1;
+    ctx.fillStyle = dim ? (PAL.dim || '#567') : readable;
     const label = dim ? '· ' : 'move:  ';
     ctx.fillText(label, x, hy); x += ctx.measureText(label).width;
     HINT_WORDS.forEach((wd, idx) => {
@@ -751,10 +917,24 @@ function drawMoveChrome(W, H, fs) {
         ctx.fillText(sep, x, hy); x += ctx.measureText(sep).width;
       }
       const matches = !dim && buf.length && wd.startsWith(buf);
-      ctx.globalAlpha = dim ? 0.3 : (matches ? 1 : 0.7);
-      ctx.fillStyle = matches ? (PAL.you || '#ffd23f') : (PAL.dim || '#567');
+      ctx.globalAlpha = dim ? 0.3 : 1;
+      ctx.fillStyle = matches ? (PAL.you || '#ffd23f') : (dim ? (PAL.dim || '#567') : readable);
       ctx.fillText(wd, x, hy); x += ctx.measureText(wd).width;
     });
+    // The four one-letter shortcuts, once the game has taught them (the run is
+    // earned, or a letter has already fired) — before this they were real moves
+    // that nothing on screen ever mentioned.
+    if (aliasesTaught) {
+      ctx.globalAlpha = dim ? 0.3 : 1;
+      ctx.fillStyle = dim ? (PAL.dim || '#567') : readable;
+      const lbl = dim ? '      · ' : '      one step:  ';
+      ctx.fillText(lbl, x, hy); x += ctx.measureText(lbl).width;
+      HINT_ALIASES.forEach((a, idx) => {
+        const sep = idx > 0 ? '  ' : '';
+        ctx.globalAlpha = dim ? 0.3 : 1;
+        ctx.fillText(sep + a, x, hy); x += ctx.measureText(sep + a).width;
+      });
+    }
     ctx.globalAlpha = 1;
   }
   ctx.textBaseline = 'alphabetic';
@@ -811,23 +991,45 @@ function drawRiddlePanel(W, H, fs) {
     ctx.globalAlpha = 1;
   }
 
-  // The answer line + blinking cursor.
+  // The answer line + blinking cursor, in a visible BOX so it reads as a field you
+  // can edit rather than one more line of text.
   const ansY = panelY + panelH - Math.round(H * 0.10);
   ctx.font = `${fs}px "Press Start 2P", monospace`;
-  ctx.fillStyle = nudgeT > 0 ? '#d98a3f' : (PAL.you || '#ffd23f');
+  const ans = '> ' + answer;
+  const pad = Math.round(fs * 0.5);
+  const boxW = Math.max(ctx.measureText('> ' + 'M'.repeat(12)).width, ctx.measureText(ans).width + fs) + pad * 2;
+  const boxX = marginX - pad, boxY = ansY - pad, boxH = fs + pad * 2;
+  const tint = nudgeT > 0 ? '#d98a3f' : (PAL.you || '#ffd23f');
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.strokeStyle = tint;
+  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(boxX + 1, boxY + 1, boxW - 2, boxH - 2);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = tint;
   ctx.shadowColor = ctx.fillStyle;
   ctx.shadowBlur = 8;
-  const ans = '> ' + answer;
   ctx.fillText(ans, marginX, ansY);
   const cx = marginX + ctx.measureText(ans).width + 2;
   if (Math.floor(performance.now() / 500) % 2 === 0) ctx.fillRect(cx, ansY, Math.round(fs * 0.6), fs);
   ctx.shadowBlur = 0;
 
   const foot = Math.max(9, Math.floor(fs * 0.72));
+  // The "not quite" / "so close" line, beside the box — a wrong answer used to
+  // clear the box with only a sound (2026-10-30). Warm, never red.
+  if (riddleNoteT > 0 && riddleNote) {
+    ctx.font = `${foot}px "Press Start 2P", monospace`;
+    ctx.fillStyle = PAL.accent || '#ffd23f';
+    ctx.globalAlpha = Math.min(1, riddleNoteT / 40);
+    ctx.fillText(riddleNote, boxX + boxW + Math.round(fs * 1.2), ansY + Math.round((fs - foot) / 2));
+    ctx.globalAlpha = 1;
+  }
+
   ctx.font = `${foot}px "Press Start 2P", monospace`;
-  ctx.fillStyle = PAL.dim || '#567';
-  ctx.globalAlpha = 0.8;
-  ctx.fillText('type a word, then ENTER   ·   SPACE: step back and keep exploring', marginX, ansY + Math.round(fs * 1.5));
+  ctx.fillStyle = PAL.hint || PAL.dim || '#567';   // the BACKSPACE cue — readable (>=4.5:1)
+  ctx.globalAlpha = 1;
+  ctx.fillText(`type a word, then ${enterLabel()}   ·   ${ANSWER_KEYS_CUE}   ·   SPACE: step back`, marginX, ansY + Math.round(fs * 2.0));
   ctx.globalAlpha = 1;
   ctx.textBaseline = 'alphabetic';
 }

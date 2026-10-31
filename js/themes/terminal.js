@@ -31,10 +31,10 @@ const WIN_CHARS = 25;
 // the letter it encodes. Nothing is imported from a later era — a terminal's only
 // spectacle is text, a cursor and phosphor bloom, which is the honest 1960s–∞
 // vocabulary for this cabinet and needs no sprite to be a real animation.
-const VICTORY_MS = 4800;
+const VICTORY_MS = 5200;
 const HELLO_BYTES = ['01001000', '01000101', '01001100', '01001100', '01001111'];
 const HELLO_CHARS = ['H', 'E', 'L', 'L', 'O'];
-let victoryT = -1;          // frames since victory(); -1 = not celebrating
+let victoryStartMs = -1;    // performance.now() at victory(); -1 = not celebrating
 
 // Pre-set terminal lines for atmosphere
 const BOOT_LINES = [
@@ -314,95 +314,145 @@ function drawBinaryReveal(W, H) {
 }
 
 
-// The celebration, staged. Every beat is a function of `victoryT` alone, so a
-// paused frame anywhere in the run reads as a coherent moment rather than a
-// glitch — and, more usefully, two frames sampled at different times are
-// GUARANTEED to differ, which is the property journal L36 says to verify (code
-// that looks animated while rendering identical frames is the documented trap).
+// The celebration, staged. Every beat is a function of CLAMPED ELAPSED MILLISECONDS
+// (journal L36), never of a frame counter: the earlier version counted rAF frames,
+// so at 60fps every beat had landed by ~2s and the last ~2.8s of the window were a
+// single static frame (a 2026-10-29 persona playtest caught it: "HELLO just
+// brightens"). A throttled frame anywhere in the run still lands coherently.
 //
-//   0-35    the binary types itself in, one byte at a time, cursor trailing
-//   40-100  each byte resolves into its letter, left to right, with a bloom
-//   100+    HELLO holds, breathing, over a quiet prompt
-function drawVictory(W, H) {
-  const t = victoryT;
+//      0-1000   the machine types the binary back, one byte at a time
+//   1000-2000   each byte RESOLVES into its letter, with a phosphor flash
+//   2000-2500   the prompt comes back and types RUN
+//   2500-end    the program RUNS: HELLO pours down the whole screen, line after
+//               line, the way a terminal answers a program that says hello —
+//               the machine saying it back, over and over, delighted
+//
+// Nothing here asserts history — no language, no listing, no year. A terminal's
+// whole vocabulary is text, a cursor and phosphor, and that is all this uses.
+const RUN_AT = 2000;
+const FLOOD_AT = 2500;
+const FLOOD_LINE_MS = 60;
+
+function drawVictory(W, H, e) {
   const cx = W / 2;
   const fontBin = Math.max(8, Math.floor(W * 0.011));
-  const fontBig = Math.max(18, Math.floor(W * 0.030));
+  const fontBig = Math.max(22, Math.floor(W * 0.040));
+  const fontFlood = Math.max(9, Math.floor(W * 0.012));
+
+  // ── the program's output, pouring in behind everything ──
+  if (e >= FLOOD_AT) {
+    const n = Math.floor((e - FLOOD_AT) / FLOOD_LINE_MS) + 1;
+    const lineH = Math.round(fontFlood * 1.9);
+    const bottom = H * 0.95;
+    const rows = Math.ceil(H / lineH) + 1;
+    ctx.font = `${fontFlood}px "Press Start 2P", monospace`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const unit = 'HELLO   ';
+    const unitW = ctx.measureText(unit).width || fontFlood * 8;
+    for (let k = Math.max(0, n - rows); k < n; k++) {
+      const age = n - 1 - k;
+      const y = bottom - age * lineH;
+      if (y < -lineH) continue;
+      const fresh = age === 0;
+      ctx.globalAlpha = Math.max(0.22, 1 - age * 0.05);
+      ctx.fillStyle = fresh ? '#d8ffc8' : '#39ff14';
+      ctx.shadowColor = '#39ff14';
+      ctx.shadowBlur = fresh ? 14 : 3;
+      // Each line starts a little further along, so the flood ripples diagonally.
+      const shift = -((k * 3) % 8) * (unitW / 8);
+      for (let x = W * 0.02 + shift; x < W; x += unitW) ctx.fillText('HELLO', x, y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    // A plate behind the big word so the flood never swallows it.
+    const pw = W * 0.46, ph = H * 0.36;
+    ctx.fillStyle = 'rgba(0,6,0,0.88)';
+    ctx.fillRect(cx - pw / 2, H * 0.29, pw, ph);
+    ctx.strokeStyle = '#39ff14';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cx - pw / 2, H * 0.29, pw, ph);
+  }
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
   // ── the binary, typing itself in ──
-  const bytesShown = Math.min(HELLO_BYTES.length, Math.floor(t / 7));
-  const partial = Math.max(0, Math.min(8, Math.floor((t % 7) * 1.4)));
+  const bytesF = Math.min(HELLO_BYTES.length, e / 200);
+  const bytesShown = Math.floor(bytesF);
+  const partial = Math.min(8, Math.floor((bytesF - bytesShown) * 9));
   let binLine = HELLO_BYTES.slice(0, bytesShown).join(' ');
-  if (bytesShown < HELLO_BYTES.length && t < 40) {
-    binLine += (binLine ? ' ' : '') + HELLO_BYTES[bytesShown].slice(0, partial);
-  } else if (t >= 40) {
-    binLine = HELLO_BYTES.join(' ');
-  }
+  if (bytesShown < HELLO_BYTES.length) binLine += (binLine ? ' ' : '') + HELLO_BYTES[bytesShown].slice(0, partial);
   ctx.font = `${fontBin}px "Press Start 2P", monospace`;
-  ctx.fillStyle = '#1a7a0a';
-  ctx.shadowColor = '#1a7a0a';
-  ctx.shadowBlur = 2;
-  ctx.fillText(binLine, cx, H * 0.40);
-  // The trailing cursor, only while it is still typing.
-  if (t < 40 && ((t >> 2) & 1)) {
+  ctx.fillStyle = '#2fbf12';
+  ctx.shadowColor = '#39ff14';
+  ctx.shadowBlur = 3;
+  ctx.fillText(binLine, cx, H * 0.36);
+  if (e < 1000 && Math.floor(e / 160) % 2 === 0) {
     const w = ctx.measureText(binLine).width;
-    ctx.fillRect(cx + w / 2 + 4, H * 0.40 - fontBin * 0.5, fontBin * 0.6, fontBin);
+    ctx.fillRect(cx + w / 2 + 4, H * 0.36 - fontBin * 0.5, fontBin * 0.6, fontBin);
   }
   ctx.shadowBlur = 0;
 
   // ── each byte resolving into its letter ──
-  // Spaced across the same span the binary occupies, so a letter lands visibly
-  // UNDER the eight bits that encode it — the encoding made legible, which is
-  // the one thing this beat has to say.
-  if (t > 40) {
-    ctx.font = `${fontBig}px "Press Start 2P", monospace`;
-    const binW = (() => {
+  // Spaced across the span the binary occupies, so each letter lands UNDER the
+  // eight bits that encode it — the encoding made legible.
+  ctx.save();
+  ctx.font = `${fontBin}px "Press Start 2P", monospace`;
+  const binW = ctx.measureText(HELLO_BYTES.join(' ')).width;
+  ctx.restore();
+  const step = binW / HELLO_CHARS.length;
+  const x0 = cx - binW / 2 + step / 2;
+  const breathe = e > FLOOD_AT ? 1 + 0.06 * Math.sin((e - FLOOD_AT) / 140) : 1;
+  ctx.font = `${fontBig}px "Press Start 2P", monospace`;
+  for (let i = 0; i < HELLO_CHARS.length; i += 1) {
+    const born = 1000 + i * 190;
+    if (e < born) continue;
+    const age = e - born;
+    const pop = age < 260 ? 1 + (1 - age / 260) * 0.6 : breathe;
+    const lx = x0 + i * step, ly = H * 0.47;
+    // The arrival flash — additive, so it actually reads as LIGHT on black (L35).
+    if (age < 420) {
+      const k = 1 - age / 420;
       ctx.save();
-      ctx.font = `${fontBin}px "Press Start 2P", monospace`;
-      const w = ctx.measureText(HELLO_BYTES.join(' ')).width;
-      ctx.restore();
-      return w;
-    })();
-    const step = binW / HELLO_CHARS.length;
-    const x0 = cx - binW / 2 + step / 2;
-    for (let i = 0; i < HELLO_CHARS.length; i += 1) {
-      const born = 40 + i * 12;
-      if (t < born) continue;
-      const age = t - born;
-      const pop = age < 10 ? 1 + (10 - age) * 0.06 : 1;       // a small arrival kick
-      const glow = age < 18 ? 24 - age : 8;                    // bloom, settling
-      ctx.save();
-      ctx.translate(x0 + i * step, H * 0.52);
-      ctx.scale(pop, pop);
-      ctx.fillStyle = '#39ff14';
-      ctx.shadowColor = '#39ff14';
-      ctx.shadowBlur = glow;
-      ctx.fillText(HELLO_CHARS[i], 0, 0);
+      ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, fontBig * (1.2 + (1 - k) * 1.6));
+      g.addColorStop(0, `rgba(220,255,200,${0.85 * k})`);
+      g.addColorStop(0.4, `rgba(57,255,20,${0.45 * k})`);
+      g.addColorStop(1, 'rgba(57,255,20,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(lx - fontBig * 3, ly - fontBig * 3, fontBig * 6, fontBig * 6);
       ctx.restore();
     }
-    ctx.shadowBlur = 0;
+    ctx.save();
+    ctx.translate(lx, ly);
+    ctx.scale(pop, pop);
+    ctx.fillStyle = age < 200 ? '#eaffdf' : '#39ff14';
+    ctx.shadowColor = '#39ff14';
+    ctx.shadowBlur = age < 400 ? 30 : 14;
+    ctx.fillText(HELLO_CHARS[i], 0, 0);
+    ctx.restore();
+  }
+  ctx.shadowBlur = 0;
+
+  // ── RUN ──
+  if (e >= RUN_AT) {
+    const typed = 'RUN'.slice(0, Math.min(3, Math.floor((e - RUN_AT) / 110) + 1));
+    ctx.font = `${fontBin}px "Press Start 2P", monospace`;
+    ctx.fillStyle = '#39ff14';
+    ctx.textAlign = 'center';
+    ctx.fillText('> ' + typed + (e < FLOOD_AT && Math.floor(e / 160) % 2 ? '_' : ''), cx, H * 0.565);
   }
 
   // ── the line that names what just happened ──
-  // Held back until every letter has landed, so it reads as a caption on a
-  // finished thing rather than a label on a work in progress.
-  if (t > 108) {
-    const fade = Math.min(1, (t - 108) / 20);
-    const breathe = 0.82 + 0.18 * Math.sin(t / 14);
-    ctx.font = `${Math.max(8, Math.floor(W * 0.010))}px "Press Start 2P", monospace`;
-    ctx.fillStyle = `rgba(57,255,20,${(fade * breathe).toFixed(3)})`;
-    ctx.fillText('YOUR FIRST PROGRAM', cx, H * 0.64);
-  }
-
-  // ── the prompt, waiting, the way it always was ──
-  if (t > 124 && ((t >> 4) & 1)) {
-    ctx.textAlign = 'left';
-    ctx.font = `${fontBin}px "Press Start 2P", monospace`;
-    ctx.fillStyle = '#39ff14';
-    ctx.fillText('>', Math.round(W * 0.06), H * 0.74);
+  if (e > FLOOD_AT + 300) {
+    const fade = Math.min(1, (e - FLOOD_AT - 300) / 400);
+    ctx.font = `${Math.max(9, Math.floor(W * 0.012))}px "Press Start 2P", monospace`;
+    ctx.fillStyle = `rgba(200,255,180,${fade.toFixed(3)})`;
+    ctx.shadowColor = '#39ff14';
+    ctx.shadowBlur = 8;
+    ctx.fillText('YOUR FIRST PROGRAM', cx, H * 0.625);
+    ctx.shadowBlur = 0;
   }
 
   ctx.textAlign = 'left';
@@ -570,13 +620,13 @@ function render() {
   drawScreen(W, H);
   drawScanLine(W, H);
   drawCRTLines(W, H);
-  if (victoryT >= 0) {
+  if (victoryStartMs >= 0) {
     // The celebration owns the screen. The progress counter and the idle-only
     // eggs are deliberately NOT drawn: the rabbit must never arrive on the
     // winning beat (easter-eggs.md), and a progress bar reading 25/25 next to
     // the payoff is clutter at the one moment the screen should be quiet.
-    victoryT += 1;
-    drawVictory(W, H);
+    const e = Math.min(VICTORY_MS, Math.max(0, performance.now() - victoryStartMs));
+    drawVictory(W, H, e);
     drawBarrelCurvature();
     animId = requestAnimationFrame(render);
     return;
@@ -600,7 +650,7 @@ function render() {
 export function start() {
   init();
   resetWhiteRabbit();
-  victoryT = -1;
+  victoryStartMs = -1;
   active = true;
   animId = requestAnimationFrame(render);
 }
@@ -642,7 +692,7 @@ export function victory() {
   // The log is cleared, not appended to: the machine stops echoing the player and
   // starts speaking for itself. That hand-over is the whole point of the beat.
   lines = [];
-  victoryT = 0;
+  victoryStartMs = performance.now();
   return VICTORY_MS;
 }
 

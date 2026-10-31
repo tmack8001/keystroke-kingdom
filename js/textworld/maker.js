@@ -19,12 +19,13 @@
 //   start({onComplete}), stop(), handleKey(e), isActive()
 
 import * as Audio from '../audio.js';
+import { enterLabel } from '../key-label.js';
 
 let canvas, ctx, animId;
 let active = false;
 let onComplete = null;
 
-const PAL = { sky1: '#0b1830', sky2: '#243a5e', ground: '#183a22', groundEdge: '#2f6b3a', fg: '#eaf3ff', dim: '#5f7fb0', prompt: '#7fd0ff', accent: '#ffd23f' };
+const PAL = { sky1: '#0b1830', sky2: '#243a5e', ground: '#183a22', groundEdge: '#2f6b3a', fg: '#eaf3ff', dim: '#5f7fb0', hint: '#7f9bcb', prompt: '#7fd0ff', accent: '#ffd23f' };
 
 // Each word → a thing: its zone band, how many you may place, the tier it unlocks
 // at, and a draw(x,y,size,t,phase,alive) that renders it (glyphs + little shapes).
@@ -298,22 +299,24 @@ function drawChrome(W, H) {
   if (message) {
     const sm = Math.max(9, Math.floor(fs * 0.8));
     ctx.font = `${sm}px "Press Start 2P", monospace`;
-    ctx.fillStyle = alive ? PAL.accent : PAL.dim; ctx.globalAlpha = 0.95;
+    ctx.fillStyle = alive ? PAL.accent : PAL.hint; ctx.globalAlpha = 1;
     wrap(message, W - W * 0.14, sm).forEach((l, i) => ctx.fillText(l, Math.round(W * 0.07), Math.round(H * 0.75) + i * Math.round(sm * 1.7)));
     ctx.globalAlpha = 1;
   }
 
   if (alive) {
     ctx.font = `${Math.max(9, Math.floor(fs * 0.72))}px "Press Start 2P", monospace`;
-    ctx.fillStyle = PAL.dim; ctx.globalAlpha = 0.8;
-    ctx.fillText('SPACE / ENTER: back to the arcade', Math.round(W * 0.07), Math.round(H * 0.93));
+    ctx.fillStyle = PAL.hint; ctx.globalAlpha = 1;   // how to leave — readable (>=4.5:1)
+    // The wording must be TRUE: Space/Return hands you back to the Text Worlds
+    // chooser (hub.js returnToMenu), not to the arcade — that is one more Escape.
+    ctx.fillText(`SPACE / ${enterLabel()}: back to the Text Worlds`, Math.round(W * 0.07), Math.round(H * 0.93));
     ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic'; return;
   }
 
   // prompt bar
   const py = Math.round(H * 0.85);
   ctx.font = `${fs}px "Press Start 2P", monospace`;
-  ctx.fillStyle = PAL.dim; ctx.fillText('type a thing:', Math.round(W * 0.07), py - Math.round(fs * 1.6));
+  ctx.fillStyle = PAL.hint; ctx.fillText('type a thing:', Math.round(W * 0.07), py - Math.round(fs * 1.6));
   const promptStr = '> ' + typed;
   ctx.fillStyle = nudgeT > 0 ? '#d98a3f' : PAL.prompt; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 8;
   ctx.fillText(promptStr, Math.round(W * 0.07), py);
@@ -330,19 +333,21 @@ function drawChrome(W, H) {
   if (mode !== 'off' && mode !== 'hidden' && words.length) {
     const dim = mode === 'dim';
     let x = Math.round(W * 0.07);
-    ctx.globalAlpha = dim ? 0.3 : 0.7; ctx.fillStyle = PAL.dim;
+    // 'full' mode is what the child reads to know what to type: hint colour, full
+    // opacity (7.2:1). 'dim' is the deliberate faded-with-mastery reminder.
+    ctx.globalAlpha = dim ? 0.3 : 1; ctx.fillStyle = dim ? PAL.dim : PAL.hint;
     const lab = dim ? '· ' : 'you can add:  ';
     ctx.fillText(lab, x, hy); x += ctx.measureText(lab).width;
     for (let i = 0; i < words.length; i++) {
       if (i > 0) { ctx.globalAlpha = dim ? 0.22 : 0.4; ctx.fillStyle = PAL.dim; ctx.fillText(' · ', x, hy); x += ctx.measureText(' · ').width; }
       const m = !dim && typed && words[i].startsWith(typed);
-      ctx.globalAlpha = dim ? 0.3 : (m ? 1 : 0.65); ctx.fillStyle = m ? PAL.prompt : PAL.dim;
+      ctx.globalAlpha = dim ? 0.3 : 1; ctx.fillStyle = m ? PAL.prompt : (dim ? PAL.dim : PAL.hint);
       ctx.fillText(words[i], x, hy); x += ctx.measureText(words[i]).width;
     }
     ctx.globalAlpha = 1;
   }
   // the toggle affordance, on the prompt line's right (clear of the word list)
-  ctx.globalAlpha = 0.5; ctx.fillStyle = PAL.dim;
+  ctx.globalAlpha = 0.9; ctx.fillStyle = PAL.hint;   // a real control — readable (6.0:1)
   ctx.textAlign = 'right';
   ctx.fillText(hintsOn ? 'TAB: hide words' : 'TAB: show words', Math.round(W * 0.93), py);
   ctx.textAlign = 'left'; ctx.globalAlpha = 1;

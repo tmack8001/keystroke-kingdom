@@ -270,17 +270,27 @@ function drawQbert() {
 
   ctx.restore();
 
-  // Speech bubble floats above Q*bert (or drifts up), kept within the left stage.
+  // Speech bubble floats at Q*bert's upper-RIGHT and drifts up. It used to be
+  // centred over him, which on the apex cube put the box into the HUD badge's
+  // reserved corner; anchored to his right it can never extend left of him, and
+  // the clamp keeps it on-canvas and left of the prompt panel (x < 0.40W).
   if (bubble && bubble.life > 0) {
-    const bx = Math.min(x, W * 0.30);
-    const by = y - s * 1.5 - (30 - bubble.life) * 0.6;
     const alpha = Math.min(1, bubble.life / 20);
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.font = `${Math.round(s * 0.55)}px "Press Start 2P", monospace`;
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     // little rounded speech box
     const tw = ctx.measureText(bubble.text).width;
+    const bx = Math.min(x + s * 0.5 + tw / 2 + 6, W * 0.39 - tw / 2 - 6);
+    // The box's TOP edge (by - 0.5s) never rises above a 0.015H margin. It used
+    // to clamp to 4px, and the opener bubble — which drifts up for its whole
+    // 60-frame life in the victory — sat on that floor with its glyphs, which
+    // stood taller than the box, sliced off by y=0 (persona playtest,
+    // 2026-10-30). The text is now centred IN the box (textBaseline 'middle'),
+    // so the glyphs can never poke out past the box either (journal L34).
+    const by = Math.max(H * 0.015 + s * 0.5, y - s * 0.9 - (30 - bubble.life) * 0.6);
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.fillRect(bx - tw / 2 - 6, by - s * 0.5, tw + 12, s * 0.7);
     ctx.fillStyle = '#231030';
@@ -293,7 +303,7 @@ function drawQbert() {
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.fill();
     ctx.fillStyle = '#c81e6e';
-    ctx.fillText(bubble.text, bx, by);
+    ctx.fillText(bubble.text, bx, by - s * 0.15);   // the box's vertical centre
     ctx.restore();
   }
 }
@@ -342,19 +352,35 @@ function drawCoily() {
   ctx.fill();
 }
 
+// The pyramid's lowest drawn pixel (bottom row's faces + flip-pop lift headroom).
+function pyramidBottomY() {
+  const s = cubeSize();
+  return cubeScreenPos(PYRAMID_ROWS - 1, 0).y + s * 0.55 + s * 1.05;
+}
+
+// The CUBES / WORDS counters sit as a little scoreboard UNDER THE PYRAMID, in the
+// left stage. They used to be drawn at fixed pixels (14,22)/(14,40) — i.e. INSIDE
+// the HUD badge's reserved corner (~0.02–0.11W × 0.02–0.07H), so at WIZARD the two
+// lines and "LEVEL 22" printed on top of each other (journal F30's "counters under
+// the HUD badge" class). Placed in canvas fractions from the pyramid's own geometry
+// (L16), left of the keyboard guide (x < 0.217W) and above its top edge.
 function drawHUD() {
+  const fontPx = Math.max(9, Math.min(12, Math.round(W * 0.0078)));
+  const x = W * 0.025;
+  const y0 = Math.min(pyramidBottomY() + fontPx * 1.6, H * 0.74);
+  ctx.save();
   ctx.fillStyle = '#33e0e0';
-  ctx.font = '10px "Press Start 2P", monospace';
+  ctx.font = `${fontPx}px "Press Start 2P", monospace`;
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
+  ctx.textBaseline = 'top';
   ctx.shadowColor = '#ff8c1a';
   ctx.shadowBlur = 5;
-  ctx.fillText(`CUBES ${Math.min(flippedCount, WIN_CUBES_TARGET)}/${WIN_CUBES_TARGET}`, 14, 22);
+  ctx.fillText(`CUBES ${Math.min(flippedCount, WIN_CUBES_TARGET)}/${WIN_CUBES_TARGET}`, x, y0);
   // Above 1x EXPERIENCE an extra-words floor applies — show it so progress reads.
   if (minSequences > 0) {
-    ctx.fillText(`WORDS ${Math.min(sequencesPlaced, minSequences)}/${minSequences}`, 14, 40);
+    ctx.fillText(`WORDS ${Math.min(sequencesPlaced, minSequences)}/${minSequences}`, x, y0 + fontPx * 1.8);
   }
-  ctx.shadowBlur = 0;
+  ctx.restore();
 }
 
 // ─── Update ───────────────────────────────────────────────────────────────────

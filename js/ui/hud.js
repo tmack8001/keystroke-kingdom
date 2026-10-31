@@ -19,7 +19,15 @@ const $ = (id) => document.getElementById(id);
 //      product docs use "comma"/"period"/"apostrophe" directly — never
 //      inventing new names, never "semicolon" for the eighth key).
 // Normal letters, digits, and the existing ␣/⌫/⇧ glyphs are untouched.
-const SMALL_GLYPH_BOOST = new Set(['`', "'", ',', '.', '-', '=']);
+//
+// The eighth key is in the set because it now shows its REAL glyph (Trevor,
+// 2026-10-30). It used to be masked as '?', and a five-year-old looking down
+// at her own keyboard hunted for a '?' that is not on the right-pinky key.
+// "Never say semicolon" was always about the WORD, which the game withholds
+// until the Level 20 confession — never about the mark printed on the keycap.
+// Press Start 2P draws that mark as a few pixels, so it is boosted like the
+// others. It gets NO caption: a caption would have to name it.
+const SMALL_GLYPH_BOOST = new Set(['`', "'", ',', '.', '-', '=', ';']);
 const SMALL_GLYPH_CAPTION = {
   '`': 'TICK MARK',
   "'": 'APOSTROPHE',
@@ -180,7 +188,7 @@ export function showHomeRowDiagram() {
 
   const KEY = 20, GAP = 2, TOP = 6;
   const left  = ['A', 'S', 'D', 'F'];
-  const right = ['J', 'K', 'L', '?'];
+  const right = ['J', 'K', 'L', ';'];   // the real keycap mark — see SMALL_GLYPH_BOOST
   const rowW  = 4 * KEY + 3 * GAP;
   const lx = 10, rx = W - 10 - rowW;
 
@@ -195,7 +203,8 @@ export function showHomeRowDiagram() {
       ctx.lineWidth = 1;
       ctx.strokeRect(x + 0.5, TOP + 0.5, KEY - 1, KEY - 1);
       ctx.fillStyle = lit ? '#b8ffcf' : '#7a7a7a';
-      ctx.font = '9px "Press Start 2P", monospace';
+      // The eighth key's mark is a few pixels at 9px — draw it bigger.
+      ctx.font = (SMALL_GLYPH_BOOST.has(ch) ? '15px' : '9px') + ' "Press Start 2P", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(ch, x + KEY / 2, TOP + KEY / 2 + 1);
@@ -234,7 +243,8 @@ export function showHomeRowDiagram() {
 }
 
 export function displayKey(k) {
-  if (k === ';') return '?';
+  // ';' falls through to toUpperCase() and shows its own glyph, exactly as it
+  // is printed on the keycap (see SMALL_GLYPH_BOOST for why it is not masked).
   if (k === 'Shift') return '⇧';
   if (k === ' ') return '␣';
   if (k === 'Backspace') return '⌫';
@@ -268,6 +278,12 @@ function isGlyphLabel(label) {
 // SHRINKS multi-character labels like SHIFT, so the marks need their own class.
 function isSmallMarkLabel(label) {
   return label.length === 1 && SMALL_GLYPH_BOOST.has(label);
+}
+
+// Exported so the KNOW YOUR KEYS canvas (keyboard-preview.js) boosts exactly
+// the same marks as the guide and the prompt — one set, three consumers.
+export function isSmallMark(label) {
+  return typeof label === 'string' && isSmallMarkLabel(label);
 }
 
 // True ANSI keyboard geometry — the guide is a real keyboard silhouette.
@@ -398,7 +414,6 @@ export function renderKeyboard(level, activeKey, wrongKey, state) {
 // letters render lowercase, uppercase A-Z stay uppercase) unlike displayKey,
 // which always uppercases plain letters for the keyboard guide.
 function promptDisplay(token) {
-  if (token === ';') return '?';
   if (token === ' ') return '␣';
   if (token === 'Backspace') return '⌫';
   return token;

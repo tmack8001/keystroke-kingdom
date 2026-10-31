@@ -73,7 +73,8 @@ export function renderReadyScreen(state, level) {
 }
 
 // Slot picker ("CHOOSE YOUR GAME") — the returning-player front door. `slots`
-// is Slots.listSlots(): an array of { name, furthestLevel, cardsFound } | null.
+// is Slots.listSlots() (an array of { name, furthestLevel, cardsFound } | null),
+// optionally augmented by main.js with `arcade: { found, total }`.
 // Each filled slot shows its name, level, and a Skulltula-style cards-found
 // count. Rows are built with createElement so the player-chosen NAME goes in via
 // textContent only (security.md rule 1 — never innerHTML for user text).
@@ -125,7 +126,14 @@ export function renderSlotsScreen(state, slots) {
       lvl.textContent = 'LV ' + slot.furthestLevel;
       const cards = document.createElement('span');
       cards.className = 'slot-cards';
-      cards.textContent = '★ ' + slot.cardsFound;
+      // ★ found / total, scoped to the ARCADE bank (levels/onboarding.md shows
+      // "★ 14 / 76"). main.js supplies `slot.arcade` = bankProgress('arcade', ids);
+      // `cardsFound` counts EVERY bank, so printing it over TOTAL_CARDS would be the
+      // CARD 63 OF 60 defect (INV-100) on the front door. Without `arcade` (an older
+      // caller) fall back to the bare count rather than invent a denominator.
+      cards.textContent = slot.arcade
+        ? `★ ${slot.arcade.found} / ${slot.arcade.total}`
+        : '★ ' + slot.cardsFound;
       row.appendChild(lvl);
       row.appendChild(cards);
     }
@@ -150,6 +158,22 @@ export function renderSlotsScreen(state, slots) {
   const confirming = !!state.slotsEraseConfirm;
   $('slots-erase').classList.toggle('hidden', !confirming);
   $('slots-hint').classList.toggle('hidden', confirming);
+
+  // Name the game that Y would erase — on a shared family machine "ERASE THIS
+  // GAME?" alone did not say WHOSE. textContent only: the name is player-typed
+  // (security.md rule 1).
+  const target = confirming ? slots[state.slotsSelected] : null;
+  $('slots-erase-name').textContent = target
+    ? `${target.name} · LV ${target.furthestLevel}`
+    : '';
+
+  // Offer only the keys that do something HERE. R/C/X act on a highlighted game,
+  // so on the NEW GAME row — and on a machine with no games at all — they are
+  // left out rather than promised and then ignored. Fixed literals only.
+  const onGame = state.slotsSelected < slots.length && !!slots[state.slotsSelected];
+  $('slots-hint').textContent = onGame
+    ? 'SPACE PLAY · N NEW · R RENAME · C CARDS · X ERASE'
+    : 'SPACE START A NEW GAME';
 }
 
 // ─── The card collection gallery — SHELVES, one per bank ────────────────────

@@ -28,6 +28,8 @@ let animId = null;
 let active = false;
 let startTime = 0;
 let onDone = null;
+// Replay-only skipping (transitions.md: "Skippable after first completion").
+let skippable = false;
 let audioCtx = null;
 let washNodes = [];
 // DOM elements we defensively hide for the duration of the cinematic so no
@@ -999,7 +1001,9 @@ function render(now) {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-export function start(callback) {
+// opts.skippable — false on the FIRST viewing (the default), true on replays.
+export function start(callback, opts = {}) {
+  skippable = !!(opts && opts.skippable);
   canvas = document.getElementById('invaders-canvas');
   ctx    = canvas.getContext('2d');
   canvas.width  = window.innerWidth;
@@ -1020,16 +1024,28 @@ export function start(callback) {
   animId    = requestAnimationFrame(render);
 }
 
-export function confirm() {
+// Every key during the cinematic arrives here.
+//   • Before the opening screen: the FIRST viewing ignores every key; a REPLAY
+//     skips straight to the opening screen on Space or Escape only (same rule as
+//     the other three cinematics — transitions.md "Skippable after first completion").
+//   • On the opening screen: it is NOT a title card — it says "TYPE YOUR NAME",
+//     and transitions.md says "the player just starts typing" — so Space or any
+//     typed character hands off to Level 21. Escape, Tab, arrows and lone
+//     modifiers are not typing and do nothing. It waits out its 1s fade-in first,
+//     so a key already in flight at the phase change cannot skip the screen
+//     before it has been seen.
+export function confirm(key) {
   if (!active) return;
   const ms = performance.now() - startTime;
   if (getPhase(ms) < 3) {
-    // Not yet on the opening-screen callback — skip straight to it.
-    stopAllAudio();
-    startTime = performance.now() - P.OPENING.s;
+    if (skippable && (key === ' ' || key === 'Escape')) {
+      stopAllAudio();
+      startTime = performance.now() - P.OPENING.s;
+    }
     return;
   }
-  // On the opening screen: Space begins Level 21 — hand off to its ready screen.
+  if (ms - P.OPENING.s < 1000) return;
+  if (typeof key !== 'string' || key.length !== 1) return;
   stop();
   if (onDone) onDone();
 }

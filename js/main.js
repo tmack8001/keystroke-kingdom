@@ -15,7 +15,7 @@ import { assembleCoda, pickKeyboardStory, buildStoryPool } from './keyboard-stor
 import { prefetchKeyboardStories, takeKeyboardStories } from './keyboard-story-gen.js';
 import { addGeneratedStories } from './keyboard-story-cache.js';
 import * as Slots from './slots.js';
-import { getSettings, saveSettings, getRows, applyRowChange, DIFFICULTY_MULTIPLIER, getWinRatio, getWordLengthRange } from './settings.js';
+import { getSettings, saveSettings, getRows, previewRowChange, DIFFICULTY_MULTIPLIER, getWinRatio, getWordLengthRange } from './settings.js';
 import { initWordgen, prefetch as wordgenPrefetch, takeWords as wordgenTakeWords } from './wordgen.js';
 import * as TextWorldHub from './textworld/hub.js';
 import { isBlockedWord } from './word-blocklist.js';
@@ -252,6 +252,10 @@ const state = {
   slotsSelected: 0,          // 0-based highlighted row (count == the NEW GAME row)
   slotsEraseConfirm: false,  // X → Y/N erase confirmation sub-state
   pendingNewGame: false,     // a new-game name entry is in progress (append on confirm)
+  // The picker's labelled R RENAME action: the index of the game whose name the
+  // name field is editing, or null. The ONLY path that renames a saved game
+  // (levels/onboarding.md §The arcade from READY, Trevor 2026-10-30).
+  renameSlot: null,
   collectionForSlot: 0,      // which game the collection gallery is showing
 
   // Select-screen gating: the highest level the player may enter. Cabinets
@@ -272,6 +276,10 @@ const state = {
   settingsReturn: 'title',   // 'title' | 'pause'
   settingsSelectedRow: 0,
   settingsEraseConfirm: false,
+  // A settings move to a HARDER value awaiting Y/N (product.md §Choosing a harder
+  // rule asks once). Held ONLY here, never in `settings` and never in kk-settings,
+  // until the player presses Y.
+  settingsPending: null,
   // Blocked-words editor: which parent-added chip is highlighted for removal.
   blockWordsSelected: 0,
 
@@ -287,7 +295,18 @@ const state = {
     remainingAtPause: null,  // ms left when paused, so pause doesn't cost time
     rafId: null,
     lettersTyped: 0,
+    spareAwarded: false,     // the 1-quarter run's one-time spare (see maybeAwardMercyQuarter)
   },
+
+  // Pattern-boundary guards (product.md §Reinforce — "the letter the player sees is
+  // the letter being judged", 2026-10-30). Between one pattern finishing and the next
+  // being drawn there is a paced ~300ms beat; `pendingPromptRender` holds the draw
+  // so a key pressed inside the beat can flush it first. `levelEnding` is set once
+  // the win is decided, so keys pressed while the win is being shown are ignored
+  // rather than judged against a pattern that will never be drawn.
+  pendingPromptRender: null,
+  pendingPromptTimer: null,
+  levelEnding: false,
 };
 
 // Free Play uses the selected cabinet's theme/art/era but swaps in the full
@@ -597,6 +616,14 @@ function paced(baseMs) {
 // a per-pattern clock, (b) re-rolls the CURRENT pattern on timeout without
 // advancing patternsCompleted, and (c) hands back a quarter on a 15-streak.
 
+// No prompt is ever given less than this (product.md §Survival is challenging, never
+// cruel — Trevor 2026-10-30). The formula below scales with length, which left a
+// ONE-letter prompt ~5.4s at EXPERT: a child glancing
+// away briefly lost a quarter on the shortest, easiest prompt on screen. The floor
+// makes a short prompt never harsher than a long one. The clock is NOT otherwise
+// retuned (challenging fast typists is a deferred, separate decision).
+const SURVIVAL_MIN_PATTERN_MS = 10000;
+
 function survivalPatternDuration(pattern) {
   const mult = DIFFICULTY_MULTIPLIER[settings.difficulty] || DIFFICULTY_MULTIPLIER.novice;
   const base = 5000 + 1400 * pattern.length;
@@ -605,8 +632,15 @@ function survivalPatternDuration(pattern) {
   // slower typist gets MORE time, never less. "The game adapts to the player's
   // pace — if they're slow, the game slows with them" (product.md §1) is most
   // load-bearing in the one opt-in mode where a clock exists at all. At the
-  // baseline pace this is byte-identical to the historical formula.
-  return Math.round(base * mult * state.paceScale);
+  // baseline pace this is byte-identical to the historical formula (above the floor).
+  return Math.max(SURVIVAL_MIN_PATTERN_MS, Math.round(base * mult * state.paceScale));
+}
+
+// The purse as drawn: one dot per quarter the player could hold. Normally that is the
+// starting count; the 1-quarter spare (below) is the one time it can be one more.
+function renderPurse() {
+  const sv = state.survival;
+  renderQuarters(Math.max(0, sv.quartersRemaining), Math.max(sv.quartersTotal, sv.quartersRemaining));
 }
 
 function stopSurvivalTimer() {
@@ -668,13 +702,27 @@ function resumeSurvivalTimer() {
 
 // MERCY MECHANIC: every 15-streak of correct keys earns a quarter back, up
 // to the starting count. "Skill always offers a way back."
+//
+// At ONE quarter there is never a quarter to hand back — a lost quarter ends the run —
+// so the mercy used to be structurally unreachable on exactly the setting where it
+// matters most. product.md §Survival is challenging, never cruel (Trevor 2026-10-30):
+// at 1 quarter, the FIRST 15-streak of the run earns one SPARE quarter (a second coin
+// in the purse), once per run. Spent, the run is back to the rule the player chose.
 function maybeAwardMercyQuarter() {
   if (!state.survival.active) return;
-  state.survival.survivalStreak++;
-  if (state.survival.survivalStreak > 0 && state.survival.survivalStreak % 15 === 0
-      && state.survival.quartersRemaining < state.survival.quartersTotal) {
-    state.survival.quartersRemaining++;
-    renderQuarters(state.survival.quartersRemaining, state.survival.quartersTotal);
+  const sv = state.survival;
+  sv.survivalStreak++;
+  if (!(sv.survivalStreak > 0 && sv.survivalStreak % 15 === 0)) return;
+  let award = false;
+  if (sv.quartersRemaining < sv.quartersTotal) {
+    award = true;
+  } else if (sv.quartersTotal === 1 && !sv.spareAwarded) {
+    sv.spareAwarded = true;
+    award = true;
+  }
+  if (award) {
+    sv.quartersRemaining++;
+    renderPurse();
     flashBonusQuarter();
     Audio.bonusQuarter();
   }
@@ -684,7 +732,7 @@ function handleSurvivalTimeout() {
   stopSurvivalTimer();
   state.survival.survivalStreak = 0;
   state.survival.quartersRemaining--;
-  renderQuarters(Math.max(0, state.survival.quartersRemaining), state.survival.quartersTotal);
+  renderPurse();
   Audio.timeout();
 
   if (state.survival.quartersRemaining <= 0) {
@@ -724,6 +772,26 @@ function showGameOver() {
   Audio.gameOver();
 }
 
+// The beat between patterns (see state.pendingPromptRender). One pending draw at a
+// time; a newer schedule replaces an older one, and a flush runs it at once.
+function schedulePromptRender(fn, ms) {
+  clearPendingPromptRender();
+  state.pendingPromptRender = fn;
+  state.pendingPromptTimer = setTimeout(flushPendingPromptRender, ms);
+}
+
+function flushPendingPromptRender() {
+  const fn = state.pendingPromptRender;
+  clearPendingPromptRender();
+  if (fn && state.screen === 'game') fn();
+}
+
+function clearPendingPromptRender() {
+  if (state.pendingPromptTimer) clearTimeout(state.pendingPromptTimer);
+  state.pendingPromptTimer = null;
+  state.pendingPromptRender = null;
+}
+
 function handleGameKey(e) {
   if (state.screen !== 'game') return;
 
@@ -737,6 +805,20 @@ function handleGameKey(e) {
   // 3. Everything else on the game screen should never scroll/navigate the page.
   e.preventDefault();
 
+  // 3b. A held key is ONE press (product.md §Reinforce, Trevor 2026-10-30). The OS
+  //     auto-repeat fires keydown again and again with e.repeat = true; judged as
+  //     presses, one hold of a WRONG key logged +8..+13 mistakes and one hold of a
+  //     RIGHT key on a doubled letter (`jj`) typed both. Applies to every typed
+  //     token, Space and Backspace included: each Backspace in the L25 typo gag is
+  //     its own token, so a held Backspace would otherwise either skip past the
+  //     scripted beat or log a mistake per repeat against the letter after it.
+  //     A first (non-repeat) keydown is untouched — the wrong-key contract below
+  //     runs byte-for-byte as before.
+  if (e.repeat) return;
+
+  // 3c. The win is decided and being shown: nothing left to judge.
+  if (state.levelEnding) return;
+
   // 4. Determine the raw token: Backspace stays as-is, space stays ' ',
   //    single chars validated against the allowed set (case preserved for now).
   let key;
@@ -749,6 +831,11 @@ function handleGameKey(e) {
   } else {
     return;
   }
+
+  // 3d. A key pressed in the beat between patterns: draw the next pattern FIRST, so
+  //     the key is judged against the letter now on screen — never against a pattern
+  //     the player cannot see (product.md §Reinforce, Trevor 2026-10-30).
+  if (state.pendingPromptRender) flushPendingPromptRender();
 
   const level = getLevelData();
   const pattern = getNextPattern();
@@ -927,17 +1014,19 @@ function handleGameKey(e) {
           startCoda(); // static fallback guarantees a non-empty, all-26-letter coda
         }
         if (state.codaActive && state.codaTyped >= state.codaLines.length) {
+          state.levelEnding = true;
           setTimeout(showLevelComplete, 400);
           return;
         }
         // else: still in normal play, or mid-coda — fall through to the next prompt
         // (getNextPattern serves the next coda line once the coda is active).
       } else if (normalTargetMet) {
+        state.levelEnding = true;
         setTimeout(showLevelComplete, 400);
         return;
       }
 
-      setTimeout(() => {
+      schedulePromptRender(() => {
         const nextPattern = getNextPattern();
         maybeSignalCoda();
         renderPrompt(state, level, nextPattern);
@@ -945,10 +1034,20 @@ function handleGameKey(e) {
         startSurvivalPatternTimer(nextPattern);
       }, paced(300));
     } else {
+      // Re-light the next letter after a short beat. Capture WHICH letter at schedule
+      // time: this used to read state.currentIndex when the timer FIRED, so a fast
+      // typist who finished the pattern inside the beat had index 0 by then and the
+      // timer re-highlighted the already-completed first letter. If the player has
+      // moved on (typed the next letter, finished the pattern, a Survival re-roll),
+      // a newer render already owns the highlight and this one stands down.
+      const atPattern = state.currentPattern;
+      const atIndex = state.currentIndex;
       setTimeout(() => {
-        const nextEl = document.querySelector(`.prompt-letter[data-index="${state.currentIndex}"]`);
+        if (state.screen !== 'game' || state.currentPattern !== atPattern
+            || state.currentIndex !== atIndex || state.patterns[atPattern] !== pattern) return;
+        const nextEl = document.querySelector(`.prompt-letter[data-index="${atIndex}"]`);
         if (nextEl) nextEl.classList.add('active');
-        renderKeyboard(level, pattern[state.currentIndex], null, state);
+        renderKeyboard(level, pattern[atIndex], null, state);
       }, paced(150));
     }
 
@@ -1120,6 +1219,13 @@ function showLevelComplete() {
     && !getProgress().completed['20'];
   renderEighthKeyConfession(eighthKeyReveal);
 
+  // Is this the FIRST time this saved game has cleared this level? The act
+  // cinematics after Levels 5/10/15/20 cannot be skipped on their first viewing
+  // and can be (Space/Escape) on a replay — transitions.md "Skippable after first
+  // completion". Same derived latch as the eighth-key confession above: read
+  // BEFORE recordLevelComplete writes the flag, so no new storage field.
+  state.firstClear = !state.freePlay && !getProgress().completed[String(state.level)];
+
   $('final-time').textContent = formatTime(elapsed);
   $('final-accuracy').textContent = acc + '%';
   $('final-streak').textContent = state.bestStreak;
@@ -1176,9 +1282,14 @@ function showLevelComplete() {
     $('complete-prompt').textContent = 'PRESS SPACE FOR THE ARCADE';
   } else if (state.level === 25) {
     document.querySelector('.complete-title').textContent = 'FULL KEYBOARD MASTERED';
-    $('complete-prompt').textContent = 'YOU BUILT THIS';
+    // Every card says what Space does. Here Space ends the game's last level and
+    // returns to the attract title (the `LEVELS[state.level + 1]` miss below), so
+    // that is what the cue promises.
+    $('complete-prompt').textContent = 'YOU BUILT THIS · PRESS SPACE FOR THE TITLE SCREEN';
   } else if (state.level === 24) {
-    document.querySelector('.complete-title').textContent = 'YOU TYPED YOUR NAME';
+    // Only claim a typed name when one was (Level 24's board shows YOU otherwise).
+    document.querySelector('.complete-title').textContent =
+      state.l24NameTyped ? 'YOU TYPED YOUR NAME' : 'SHIFT MASTERED';
     $('complete-prompt').textContent = 'PRESS SPACE FOR THE LAST LEVEL';
   } else if (state.level === 23) {
     document.querySelector('.complete-title').textContent = 'CORNER CABINETS CLEARED';
@@ -1197,7 +1308,9 @@ function showLevelComplete() {
     $('complete-prompt').textContent = 'PRESS SPACE FOR THE MYSTERY';
   } else if (state.level === 4) {
     document.querySelector('.complete-title').textContent = 'HOME ROW COMPLETE';
-    $('complete-prompt').textContent = 'THE MYSTERY CABINET AWAITS';
+    // Space goes on to Level 5 (the Mystery cinematic follows Level 5, not 4),
+    // so the cue says NEXT LEVEL and the flavour line rides in front of it.
+    $('complete-prompt').textContent = 'THE MYSTERY CABINET AWAITS · PRESS SPACE FOR NEXT LEVEL';
   } else {
     document.querySelector('.complete-title').textContent = 'LEVEL COMPLETE';
     $('complete-prompt').textContent = 'PRESS SPACE FOR NEXT LEVEL';
@@ -1446,6 +1559,10 @@ function showKeyboardPreview() {
 }
 
 function startGame() {
+  // The name this game is played and credited under is the ACTIVE saved game's
+  // own name, read at the moment play starts (levels/onboarding.md §Which game is
+  // playing). Done first: the Name Moment and Level 24 both read state.playerName.
+  syncActiveIdentity();
   // Force a fresh shuffle for each new free-play session, even on a level
   // the player has already played free-play on.
   freePlayLevelCache = null;
@@ -1454,6 +1571,8 @@ function startGame() {
   state.currentPattern = 0;
   state.currentIndex = 0;
   state.patternsCompleted = 0;
+  clearPendingPromptRender();
+  state.levelEnding = false;
 
   // Decide the Name Moment BEFORE building patterns, so buildPatterns knows
   // whether this is the guaranteed-moment level (nameMomentWord set → it does
@@ -1647,6 +1766,7 @@ function startGame() {
   state.survival.patternDeadline = null;
   state.survival.remainingAtPause = null;
   state.survival.lettersTyped = 0;
+  state.survival.spareAwarded = false;
   $('hud-quarters-line').classList.toggle('hidden', !state.survival.active);
   $('survival-timer-track').classList.toggle('hidden', !state.survival.active);
   $('hud-bonus').classList.add('hidden');
@@ -1698,10 +1818,184 @@ function showSlotsScreen() {
   state.selectBypass = false;
   state.freePlay = false;
   state.slotsEraseConfirm = false;
+  state.renameSlot = null;
+  state.pendingNewGame = false;
   if (typeof state.slotsSelected !== 'number') state.slotsSelected = 0;
   applyLevelTheme(1); // arcade-era chrome, like the title
-  renderSlotsScreen(state, Slots.listSlots());
+  renderSlotsScreen(state, pickerSlots());
   showScreen('slots', state);
+}
+
+// The picker's rows: Slots.listSlots() plus each game's ARCADE-bank progress, so the
+// row can print "★ found / total" (levels/onboarding.md). `cardsFound` counts every
+// bank and must never be printed over TOTAL_CARDS (INV-100).
+function pickerSlots() {
+  return Slots.listSlots().map((s, i) => (s
+    ? { ...s, arcade: bankProgress('arcade', Slots.slotCards(i)) }
+    : s));
+}
+
+// Bring the live identity (the name the READY screen and HUD print, and the
+// select-screen gate) in line with the ACTIVE saved game. Called whenever the
+// active game may have changed, and at every game start, so the name on screen is
+// always the game being credited (levels/onboarding.md §Which game is playing).
+function syncActiveIdentity() {
+  const name = Slots.activeName();
+  if (name && name !== state.playerName) {
+    state.playerName = name;
+    Object.assign(settings, saveSettings({ ...settings, playerName: name }));
+  }
+  if (!state.selectBypass) state.maxUnlockedLevel = getProgress().furthestLevel;
+}
+
+// The name field, shown for one of its two jobs: a NEW game (or a brand-new
+// machine's first name) or the picker's labelled RENAME. The label says which, so
+// a player can always tell "who are you?" from "rename this game" — the absence of
+// that label is how DAD became WOPR (Trevor, 2026-10-30).
+const NAME_LABEL_NEW = 'ENTER YOUR NAME';
+const NAME_LABEL_RENAME = 'RENAME THIS GAME';
+function showNameEntry(label, value) {
+  showScreen('title', state);
+  state.coinInserted = true;
+  $('insert-coin').classList.add('hidden');
+  $('reboot-hint').classList.add('hidden');
+  $('settings-hint').classList.add('hidden');
+  $('wopr-text').textContent = '';
+  $('name-label').textContent = label;
+  $('name-confirm-verb').textContent = label === NAME_LABEL_RENAME ? 'TO SAVE' : 'TO START';
+  $('name-setup').classList.remove('hidden');
+  prefillNameField(value);
+}
+
+// The pre-filled name is a DEFAULT, not a draft: the first thing typed replaces
+// it (onboarding.md §Name Entry — "any key press clears the default and starts
+// typing fresh"; the rename field behaves the same). Native select-all alone was
+// not enough — a click into the field, or keys typed before the old deferred
+// select() ran, left the caret inside the old name and the typing was inserted
+// into it ("GRAM" + GRANDMA → "GRANDMAGRAM"). So the field remembers that it is
+// still pristine and the FIRST edit of any kind (typing, paste, Backspace)
+// clears the default before it lands. Arrow/Home/End keys mean "I want to edit
+// this name", so they end the pristine state without clearing. Focus is taken
+// synchronously: the key that opened the field (Space/Return/R) has already had
+// its default prevented, so it can never be typed into it.
+let nameFieldPristine = false;
+function prefillNameField(value) {
+  const input = $('player-name-input');
+  input.value = value;
+  nameFieldPristine = value !== '';
+  input.focus();
+  input.select();
+}
+
+function initNameField() {
+  const input = $('player-name-input');
+  if (!input) return;
+  input.addEventListener('keydown', (e) => {
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+      nameFieldPristine = false;
+    }
+  });
+  input.addEventListener('beforeinput', (e) => {
+    if (!nameFieldPristine) return;
+    nameFieldPristine = false;
+    // Deleting the selected default clears it whole — the same thing Backspace
+    // does to a selection. Anything inserted starts from an empty field.
+    input.value = '';
+    if (e.inputType && e.inputType.startsWith('delete')) e.preventDefault();
+  });
+}
+
+// R on the picker: rename the highlighted game, and nothing else. Never changes
+// which game is active; Escape backs out unchanged; both return to the picker.
+function startRenameFlow(slotIndex) {
+  const info = Slots.listSlots()[slotIndex];
+  if (!info) return;
+  state.renameSlot = slotIndex;
+  state.pendingNewGame = false;
+  applyLevelTheme(1);
+  showNameEntry(NAME_LABEL_RENAME, info.name);
+}
+
+// Index comparison kept apart from the null check (INV-94's shape: index 0 is falsy).
+function activeSlotIs(idx) {
+  const a = Slots.getActive() !== null ? Slots.getActive() : -1;
+  return a === idx;
+}
+
+function finishRename(name) {
+  const idx = state.renameSlot;
+  state.renameSlot = null;
+  $('name-label').textContent = NAME_LABEL_NEW;
+  $('name-confirm-verb').textContent = 'TO START';
+  if (name !== null && Slots.listSlots()[idx]) {
+    // (compared to null: index 0 is falsy — INV-94). Renaming never changes which
+    // game is active — including when NONE is (it used to set active to idx).
+    Slots.renameSlot(idx, name);
+    if (Slots.getActive() !== null && activeSlotIs(idx)) syncActiveIdentity(); // renamed the game being played: show it
+  }
+  state.slotsSelected = idx;
+  showSlotsScreen();
+}
+
+// The attract title, clean: INSERT COIN showing, no name field live. Used wherever
+// the game falls back to the title so a stale name field can never be left open.
+function showAttractTitle() {
+  applyLevelTheme(1);
+  state.coinInserted = false;
+  showScreen('title', state);
+  $('insert-coin').classList.remove('hidden');
+  $('reboot-hint').classList.remove('hidden');
+  $('settings-hint').classList.remove('hidden');
+  $('name-setup').classList.add('hidden');
+  $('name-label').textContent = NAME_LABEL_NEW;
+  $('name-confirm-verb').textContent = 'TO START';
+  $('wopr-text').textContent = '';
+}
+
+// The select screen's heading. "GREETINGS PROFESSOR FALKEN / SHALL WE PLAY A GAME?"
+// is the WarGames easter egg's answer (easter-eggs.md — "eggs are for finding, not
+// telling"); now that a saved game reaches the arcade from READY on the ordinary
+// route, the ordinary route gets a plain heading and the egg keeps its line.
+function syncSelectHeading() {
+  const t = document.querySelector('#select-screen .select-title');
+  const st = document.querySelector('#select-screen .select-subtitle');
+  if (!t || !st) return;
+  if (state.selectBypass) {
+    t.textContent = 'GREETINGS PROFESSOR FALKEN';
+    st.textContent = 'SHALL WE PLAY A GAME?';
+  } else {
+    t.textContent = 'THE ARCADE';
+    st.textContent = 'PICK A CABINET';
+  }
+}
+
+function showSelect() {
+  syncSelectHeading();
+  renderSelectScreen(state);
+  showScreen('select', state);
+}
+
+// Escape on READY with a saved game: the arcade, gates honoured
+// (levels/onboarding.md §The arcade from READY, Trevor 2026-10-30). It used to
+// drop into name entry, where any typing + Return silently renamed the game.
+// The gate comes from the active game's own progress; only the WOPR bypass (a
+// flag this never sets) lifts it, so locked cabinets and wings show honestly.
+function showArcadeFromReady() {
+  syncActiveIdentity();
+  clearDoorFocus(state);
+  const max = state.selectBypass ? 25 : (state.maxUnlockedLevel || 1);
+  state.selectedLevel = Math.max(1, Math.min(state.level || 1, max));
+  showSelect();
+}
+
+// Choosing a cabinet for a saved game goes straight to READY — no name entry.
+function showReadyForActiveGame() {
+  syncActiveIdentity();
+  $('ready-name').textContent = state.playerName;
+  renderReadyScreenWithSurvivalTag();
+  applyLevelTheme(state.level);
+  Audio.start();
+  showScreen('ready', state);
 }
 
 // Route into name entry to CREATE a brand-new game. The name-entry confirm
@@ -1709,23 +2003,13 @@ function showSlotsScreen() {
 // an unlimited, growable list (Trevor: no reason to cap a family's members).
 function startNewGameFlow() {
   state.pendingNewGame = true;
+  state.renameSlot = null;
   state.level = 1;
   state.selectBypass = false;
   state.freePlay = false;
-  state.coinInserted = true; // straight to name entry, past INSERT COIN
   applyLevelTheme(1);
-  showScreen('title', state);
-  $('insert-coin').classList.add('hidden');
-  $('reboot-hint').classList.add('hidden');
-  $('settings-hint').classList.add('hidden');
-  $('name-setup').classList.remove('hidden');
-  $('wopr-text').textContent = '';
-  $('player-name-input').value = ''; // a fresh name for a fresh game
+  showNameEntry(NAME_LABEL_NEW, ''); // a fresh name for a fresh game, past INSERT COIN
   Audio.coin();
-  setTimeout(() => {
-    $('player-name-input').focus();
-    $('player-name-input').select();
-  }, 0);
 }
 
 // The collection gallery for a given slot — found cards revealed, still-locked
@@ -1756,22 +2040,28 @@ function showCollectionScreen(slotIndex) {
 
 // ─── Settings screen ────────────────────────────────────────────────────
 
-function renderSettingsScreen() {
+// `view` is what to DRAW: normally the live settings, but while a harder value is
+// awaiting its Y/N it is the pending (unsaved) settings, so the player sees what
+// they are being asked to keep.
+function renderSettingsScreen(view = settings) {
   const rows = getRows();
   const container = $('settings-rows');
   container.innerHTML = rows.map((row, i) => {
-    const active = row.active(settings);
+    const active = row.active(view);
     const selected = i === state.settingsSelectedRow;
-    const descriptor = row.action ? row.descriptor() : row.descriptor(settings[row.key]);
+    const descriptor = row.action ? row.descriptor() : row.descriptor(view[row.key]);
     // Value cell: rows with a `summary` (e.g. BLOCKED WORDS) always show their
-    // summary text; other action rows show PRESS RETURN when selected; ordinary
-    // rows show their cycled value. Everything here is fixed-code text or a
-    // count derived from sanitized settings — never a user-typed word (those
-    // are rendered only in the editor via textContent).
+    // summary text; other action rows show PRESS RETURN/ENTER when selected;
+    // ordinary rows show their cycled value. Everything here is fixed-code text
+    // or a count derived from sanitized settings — never a user-typed word
+    // (those are rendered only in the editor via textContent).
+    // The key label is `enterLabel` (RETURN on a Mac, ENTER elsewhere) — never a
+    // hard-coded word (CLAUDE.md §Platform Key Label): the boot-time
+    // [data-enter-key] swap cannot reach HTML rendered later, like this.
     let valueCell;
-    if (typeof row.summary === 'function') valueCell = row.summary(settings);
-    else if (row.action) valueCell = selected ? 'PRESS RETURN' : '';
-    else valueCell = row.display(settings[row.key]);
+    if (typeof row.summary === 'function') valueCell = row.summary(view);
+    else if (row.action) valueCell = selected ? `PRESS ${enterLabel}` : '';
+    else valueCell = row.display(view[row.key]);
     const cls = ['settings-row', selected ? 'selected' : '', active ? '' : 'inactive'].filter(Boolean).join(' ');
     return `
       <div class="${cls}">
@@ -1787,9 +2077,20 @@ function openSettings(returnTo) {
   state.settingsReturn = returnTo;
   state.settingsSelectedRow = 0;
   state.settingsEraseConfirm = false;
+  state.settingsPending = null;
   $('settings-erase-confirm').classList.add('hidden');
+  $('settings-harder-confirm').classList.add('hidden');
   renderSettingsScreen();
   showScreen('settings', state);
+}
+
+// Save + apply a settings change (the one place a value lands in kk-settings from
+// the settings screen).
+function applySettingsChange(next) {
+  Object.assign(settings, saveSettings(next));
+  Audio.setEnabled(settings.sound);
+  document.documentElement.classList.toggle('no-crt', !settings.crtEffects);
+  renderSettingsScreen();
 }
 
 function closeSettings() {
@@ -1824,6 +2125,21 @@ function handleSettingsKey(e) {
     return;
   }
 
+  // A HARDER value is waiting for its Y/N (product.md §Choosing a harder rule asks
+  // once, Trevor 2026-10-30). Only Y keeps it — and only then is it saved. Every
+  // other key (N, Escape, Tab, an arrow, anything) keeps the easier value already in
+  // `settings` and is consumed by the question, the same never-trap, never-act-on-
+  // ambiguity shape as the erase confirm above. Nothing was written to kk-settings
+  // while the question was up, so closing the tab here keeps the easier value too.
+  if (state.settingsPending) {
+    const pending = state.settingsPending;
+    state.settingsPending = null;
+    $('settings-harder-confirm').classList.add('hidden');
+    if (e.key === 'y' || e.key === 'Y') applySettingsChange(pending);
+    else renderSettingsScreen();
+    return;
+  }
+
   if (e.key === 'ArrowUp') {
     state.settingsSelectedRow = (state.settingsSelectedRow - 1 + rows.length) % rows.length;
     renderSettingsScreen();
@@ -1834,14 +2150,26 @@ function handleSettingsKey(e) {
     const row = rows[state.settingsSelectedRow];
     if (row.action) return;
     const dir = e.key === 'ArrowRight' ? 1 : -1;
-    Object.assign(settings, applyRowChange(settings, state.settingsSelectedRow, dir));
-    Audio.setEnabled(settings.sound);
-    document.documentElement.classList.toggle('no-crt', !settings.crtEffects);
-    renderSettingsScreen();
+    const { next, confirm } = previewRowChange(settings, state.settingsSelectedRow, dir);
+    if (confirm) {
+      // Show the harder value and ask; do NOT save it, do NOT apply it.
+      state.settingsPending = next;
+      $('settings-harder-text').textContent = confirm; // fixed literal from settings.js ROWS
+      $('settings-harder-confirm').classList.remove('hidden');
+      renderSettingsScreen(next);
+      return;
+    }
+    applySettingsChange(next);
   } else if (e.key === 'Enter' || e.key === ' ') {
     const row = rows[state.settingsSelectedRow];
     if (row.action && row.key === 'erase') {
       state.settingsEraseConfirm = true;
+      // Name what Y destroys — on a shared family machine "ERASE EVERYTHING?" did
+      // not say whose games go. A count only (never a name), fixed-literal words.
+      const n = Slots.count();
+      $('settings-erase-text').textContent = n === 0
+        ? 'NO SAVED GAMES TO ERASE. RESET ANYWAY?'
+        : n === 1 ? 'ERASE 1 SAVED GAME?' : `ERASE ALL ${n} SAVED GAMES?`;
       $('settings-erase-confirm').classList.remove('hidden');
     } else if (row.action && row.editor === 'blockwords') {
       // Save the current settings first (cheap, keeps kk-settings consistent),
@@ -2026,6 +2354,7 @@ function enterTextWorld() {
 function returnToArcadeFromTextWorld() {
   TextWorldHub.stop();
   focusDoor(state, 'textworld');   // land back on the act page we came through
+  syncSelectHeading();
   showScreen('select', state);
   renderSelectScreen(state);
 }
@@ -2113,6 +2442,7 @@ function showSpeedwayCard(id) {
 function returnToArcadeFromSpeedway() {
   if (Speedway) Speedway.stop();
   focusDoor(state, 'speedway', pendingTrackId);   // land back at the cabinet we came through
+  syncSelectHeading();
   showScreen('select', state);
   renderSelectScreen(state);
 }
@@ -2201,6 +2531,7 @@ function showHardwareCard(id) {
 function returnToArcadeFromHardware() {
   if (Hardware) Hardware.stop();
   focusDoor(state, 'hardware', pendingStationId);
+  syncSelectHeading();
   showScreen('select', state);
   renderSelectScreen(state);
 }
@@ -2297,9 +2628,10 @@ document.addEventListener('keydown', (e) => {
       // Rows = one per saved game + a trailing "＋ NEW GAME" row (index == count).
       // Navigate ↑/↓ (or number keys for the first nine games); Space/Enter
       // resumes a game or, on the NEW GAME row, starts one; N = new game; X =
-      // erase highlighted game (Y/N confirm); C = browse its cards; Escape → attract.
+      // erase highlighted game (Y/N confirm); C = browse its cards; R = rename it
+      // (the only rename path); Escape → attract, adopting the highlighted game.
       e.preventDefault();
-      const slots = Slots.listSlots();
+      const slots = pickerSlots();
       const rows = slots.length + 1;          // +1 for the NEW GAME row
       const newRow = slots.length;            // index of the NEW GAME row
       let sel = state.slotsSelected;
@@ -2309,7 +2641,7 @@ document.addEventListener('keydown', (e) => {
         // Only Y erases; N or ANY other key backs out — never trap the child.
         if ((e.key === 'y' || e.key === 'Y') && sel < slots.length) Slots.eraseSlot(sel);
         state.slotsEraseConfirm = false;
-        const after = Slots.listSlots();
+        const after = pickerSlots();
         if (state.slotsSelected > after.length) state.slotsSelected = after.length;
         renderSlotsScreen(state, after);
         break;
@@ -2350,16 +2682,20 @@ document.addEventListener('keydown', (e) => {
         }
       } else if (e.key === 'c' || e.key === 'C') {
         if (sel < slots.length) showCollectionScreen(sel);
+      } else if (e.key === 'r' || e.key === 'R') {
+        if (sel < slots.length) startRenameFlow(sel);
       } else if (e.key === 'Escape') {
         // Back to the attract title (settings via Tab, WOPR phrases, etc.).
-        applyLevelTheme(1);
-        state.coinInserted = false;
-        showScreen('title', state);
-        $('insert-coin').classList.remove('hidden');
-        $('reboot-hint').classList.remove('hidden');
-        $('settings-hint').classList.remove('hidden');
-        $('name-setup').classList.add('hidden');
-        $('wopr-text').textContent = '';
+        // The HIGHLIGHTED game becomes the active one, so whatever is played next —
+        // the WOPR shortcut included — is credited to the game the player last
+        // pointed at (levels/onboarding.md §Which game is playing). A Level 11 win
+        // was once credited to the previously-resumed game this way. On the NEW
+        // GAME row the active game is left as it was.
+        if (sel < slots.length) {
+          Slots.setActive(sel);
+          syncActiveIdentity();
+        }
+        showAttractTitle();
       }
       break;
     }
@@ -2391,7 +2727,15 @@ document.addEventListener('keydown', (e) => {
           e.preventDefault();
           break;
         }
-        if (e.key === ' ' || e.key === 'Enter') {
+        if ((e.key === ' ' || e.key === 'Enter') && Slots.anySlotExists()) {
+          // Saved games exist: the picker is the front door, never name entry —
+          // which would rename whichever game is active (levels/onboarding.md
+          // §The arcade from READY). Name entry stays for a brand-new machine.
+          e.preventDefault();
+          secretBuffer = '';
+          Audio.coin();
+          showSlotsScreen();
+        } else if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault();
           state.coinInserted = true;
           secretBuffer = '';
@@ -2400,14 +2744,14 @@ document.addEventListener('keydown', (e) => {
           $('insert-coin').classList.add('hidden');
           $('reboot-hint').classList.add('hidden');
           $('settings-hint').classList.add('hidden');
+          $('name-label').textContent = NAME_LABEL_NEW;
+          $('name-confirm-verb').textContent = 'TO START';
           $('name-setup').classList.remove('hidden');
           // Prefill from settings.playerName, then select it so the first
           // typed character natively overwrites the whole default (dimmed
           // "ready to be overwritten" behavior — onboarding.md §Name Entry).
           // Backspace clears the selection normally; an empty confirm keeps it.
-          $('player-name-input').value = settings.playerName || '';
-          $('player-name-input').focus();
-          $('player-name-input').select();
+          prefillNameField(settings.playerName || '');
         } else if (e.key === 'r' && secretBuffer === '') {
           e.preventDefault();
           location.reload();
@@ -2428,8 +2772,8 @@ document.addEventListener('keydown', (e) => {
             // regardless of saved progress.
             state.selectBypass = true;
             state.selectedLevel = 1;
-            renderSelectScreen(state);
-            showScreen('select', state);
+            syncActiveIdentity();
+            showSelect();
           } else if (EGGS[secretBuffer]) {
             e.preventDefault();
             showEggResponse(EGGS[secretBuffer]);
@@ -2439,18 +2783,27 @@ document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           const input = $('player-name-input').value.trim().toUpperCase();
-          const name = input || 'PLAYER ONE';
+          let name = input || 'PLAYER ONE';
+          // The picker's labelled RENAME: the ONLY path that changes a saved
+          // game's name. It returns to the picker, not into play.
+          if (state.renameSlot !== null) {
+            finishRename(name);
+            break;
+          }
           // Resolve which save this name belongs to:
           //   • a pending NEW GAME (from the slot picker) → append a new game,
-          //   • an active game being renamed (Escape-from-ready re-entry) → rename,
           //   • genuine first-time player (no games yet) → create the first game,
+          //   • otherwise an ACTIVE game exists and this is NOT a rename: the name
+          //     field must never rename it silently (that is how DAD became WOPR,
+          //     2026-10-30). Every route from a saved game now skips name entry, so
+          //     this is defensive — keep the game's own name and write nothing.
           //   • WOPR dev bypass into an existing machine with no active game →
           //     ephemeral: set the name only, persist nothing.
           if (state.pendingNewGame) {
             Slots.createSlot(name);
             state.pendingNewGame = false;
           } else if (Slots.getActive() !== null) {
-            Slots.setActiveName(name);
+            name = Slots.activeName() || name;
           } else if (!Slots.anySlotExists()) {
             Slots.createSlot(name);
           }
@@ -2463,6 +2816,16 @@ document.addEventListener('keydown', (e) => {
           applyLevelTheme(state.level);
           Audio.start();
           showScreen('ready', state);
+        } else if (e.key === 'Escape' && state.renameSlot !== null) {
+          // Backing out of RENAME: name unchanged, back to the picker.
+          e.preventDefault();
+          finishRename(null);
+        } else if (e.key === 'Escape' && state.pendingNewGame && Slots.anySlotExists()) {
+          // Backing out of NEW GAME: nothing created, back where it was started.
+          e.preventDefault();
+          $('name-label').textContent = NAME_LABEL_NEW;
+          $('name-confirm-verb').textContent = 'TO START';
+          showSlotsScreen();
         } else if (e.key === 'Escape') {
           e.preventDefault();
           state.coinInserted = false;
@@ -2486,13 +2849,18 @@ document.addEventListener('keydown', (e) => {
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        applyLevelTheme(1);
-        showScreen('title', state);
-        state.coinInserted = true;
-        $('insert-coin').classList.add('hidden');
-        $('name-setup').classList.remove('hidden');
-        $('player-name-input').focus();
-        $('player-name-input').select(); // ready to be overwritten (see title-branch)
+        secretBuffer = '';
+        if (Slots.getActive() !== null) {
+          // A saved game: Escape reaches the arcade (levels/onboarding.md §The
+          // arcade from READY). It used to re-open name entry, where typing +
+          // Return silently renamed this game — renaming is now the picker's R.
+          showArcadeFromReady();
+        } else {
+          // No saved game to protect (storage refused, or the ephemeral WOPR
+          // bypass): the old path back to the name field.
+          applyLevelTheme(1);
+          showNameEntry(NAME_LABEL_NEW, settings.playerName || '');
+        }
       } else if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
         secretBuffer += e.key.toLowerCase();
         if (SECRET_PHRASES.includes(secretBuffer)) {
@@ -2503,8 +2871,7 @@ document.addEventListener('keydown', (e) => {
           Slots.collectCardId(WARGAMES_CARD_ID); // secret WarGames card
           state.selectBypass = true; // WOPR dev/parent bypass — unlock all cabinets
           state.selectedLevel = 1;
-          renderSelectScreen(state);
-          showScreen('select', state);
+          showSelect();
         } else if (!SECRET_PHRASES.some(p => p.startsWith(secretBuffer))) {
           secretBuffer = '';
         }
@@ -2567,8 +2934,7 @@ document.addEventListener('keydown', (e) => {
         $('gameover-overlay').classList.add('hidden');
         stopAll();
         state.selectedLevel = state.level;
-        renderSelectScreen(state);
-        showScreen('select', state);
+        showSelect();
       }
       break;
 
@@ -2610,8 +2976,7 @@ document.addEventListener('keydown', (e) => {
           // Free play never triggers act cinematics or level advancement —
           // it always returns to the arcade so the player can hop cabinets.
           state.selectedLevel = state.level;
-          renderSelectScreen(state);
-          showScreen('select', state);
+          showSelect();
         } else if (state.level === 5) {
           // Mystery cabinet cinematic before entering Act 2
           document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -2622,7 +2987,7 @@ document.addEventListener('keydown', (e) => {
             renderReadyScreenWithSurvivalTag();
             applyLevelTheme(state.level);
             showScreen('ready', state);
-          });
+          }, { skippable: state.firstClear === false });
         } else if (state.level === 10) {
           // Basement cinematic before entering Act 3
           document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -2633,7 +2998,7 @@ document.addEventListener('keydown', (e) => {
             renderReadyScreenWithSurvivalTag();
             applyLevelTheme(state.level);
             showScreen('ready', state);
-          });
+          }, { skippable: state.firstClear === false });
         } else if (state.level === 15) {
           // Command Center cinematic before entering Act 4
           document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -2644,7 +3009,7 @@ document.addEventListener('keydown', (e) => {
             renderReadyScreenWithSurvivalTag();
             applyLevelTheme(state.level);
             showScreen('ready', state);
-          });
+          }, { skippable: state.firstClear === false });
         } else if (state.level === 20) {
           // Full Circle cinematic before entering Act 5
           document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -2655,7 +3020,7 @@ document.addEventListener('keydown', (e) => {
             renderReadyScreenWithSurvivalTag();
             applyLevelTheme(state.level);
             showScreen('ready', state);
-          });
+          }, { skippable: state.firstClear === false });
         } else if (LEVELS[state.level + 1]) {
           state.level++;
           renderReadyScreenWithSurvivalTag();
@@ -2680,24 +3045,27 @@ document.addEventListener('keydown', (e) => {
       }
       break;
 
+    // The act cinematics. Each module decides what a key means (first viewing:
+    // no skipping; replay: Space/Escape skip; title card: Space only) — main.js
+    // just hands it the key. A HELD key's auto-repeat is never a decision.
     case 'mystery':
       e.preventDefault();
-      Mystery.confirm();
+      if (!e.repeat) Mystery.confirm(e.key);
       break;
 
     case 'basement':
       e.preventDefault();
-      Basement.confirm();
+      if (!e.repeat) Basement.confirm(e.key);
       break;
 
     case 'commandcenter':
       e.preventDefault();
-      CommandCenter.confirm();
+      if (!e.repeat) CommandCenter.confirm(e.key);
       break;
 
     case 'fullcircle':
       e.preventDefault();
-      FullCircle.confirm();
+      if (!e.repeat) FullCircle.confirm(e.key);
       break;
 
     case 'textworld':
@@ -2754,19 +3122,22 @@ document.addEventListener('keydown', (e) => {
         // selection shouldn't slip a locked level through).
         if (isLevelLocked(state, state.selectedLevel)) break;
         state.level = state.selectedLevel;
-        state.coinInserted = true;
-        showScreen('title', state);
-        $('insert-coin').classList.add('hidden');
-        $('name-setup').classList.remove('hidden');
-        $('player-name-input').value = settings.playerName || '';
-        setTimeout(() => {
-          $('player-name-input').focus();
-          $('player-name-input').select(); // ready to be overwritten (see title-branch)
-        }, 0);
+        if (Slots.getActive() !== null) {
+          // A saved game: straight to READY, never through name entry (which
+          // would rename it — levels/onboarding.md §The arcade from READY).
+          showReadyForActiveGame();
+        } else {
+          applyLevelTheme(1);
+          showNameEntry(NAME_LABEL_NEW, settings.playerName || '');
+        }
       } else if (e.key === 'Escape') {
         state.freePlay = false;
         clearDoorFocus(state);       // leaving the select screen clears the bonus-act sub-state
-        showScreen('title', state);
+        // The ordinary route (a saved game, no WOPR) came from the picker side of
+        // the house, so it goes back there; the WOPR route goes back to a CLEAN
+        // attract title (it used to reveal a still-live name field).
+        if (!state.selectBypass && Slots.anySlotExists()) showSlotsScreen();
+        else showAttractTitle();
       }
       break;
   }
@@ -2789,6 +3160,7 @@ createStars();
   // Tell a touch-only visitor this cabinet wants a keyboard — informational only,
   // never a gate, and gone the moment a real key proves one is attached.
   initKeyboardNotice();
+  initNameField();
   // One-time wordgen health probe — fire-and-forget, never awaited; on static
   // hosting this fails fast once and wordgen stays silently dormant.
   initWordgen();

@@ -460,11 +460,22 @@ function drawVictoryOverlay() {
   ctx.fillRect(0, 0, W, H);
 }
 
+// The page counter. Two persona-playtest findings (2026-10-30):
+//  • it read "PAGES 111 / 22". pagesRead counts every correct key (it is the
+//    theme's win-gate accumulator and keeps climbing because the ENGINE's own
+//    minimum-patterns gate usually ends the level well after the book is full).
+//    The DISPLAY is clamped to the book's size — a counter never exceeds its own
+//    total — and the gate is untouched, so winnability is byte-identical.
+//  • it sat at (14,22), under the HUD's LEVEL badge (journal F30). It now lives
+//    in the top band, just right of the badge and clear of the prompt panel.
 function drawHUD() {
-  ctx.fillStyle = '#8a7050';
+  ctx.fillStyle = '#a88a60';
   ctx.font = '9px "Press Start 2P", monospace';
   ctx.textAlign = 'left';
-  ctx.fillText(`PAGES  ${pagesRead} / ${PAGES_TO_WIN}`, 14, 22);
+  ctx.textBaseline = 'middle';
+  const shown = Math.min(pagesRead, PAGES_TO_WIN);
+  ctx.fillText(`PAGES  ${shown} / ${PAGES_TO_WIN}`, Math.round(W * 0.125), Math.round(H * 0.045));
+  ctx.textBaseline = 'alphabetic';
 }
 
 // ─── Render loop ──────────────────────────────────────────────────────────────

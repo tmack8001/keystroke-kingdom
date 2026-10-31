@@ -39,7 +39,7 @@ export const GlimmerDeep = {
   gates: 'G',
   palette: {
     bg: '#05080e', you: '#ffd23f', glint: '#8fe3ff', accent: '#ffd23f',
-    dim: '#4a6a8a', title: '#8fe3ff', floor: '#2a3a4e', wall: '#3a4a5e', friend: '#7fffbf',
+    dim: '#4a6a8a', hint: '#6f90b6', title: '#8fe3ff',   // hint: readable cues, 6.0:1 on bg floor: '#2a3a4e', wall: '#3a4a5e', friend: '#7fffbf',
   },
   glyphs: {
     '#': { ch: '#', color: '#3a4a5e', walkable: false, opaque: true },
@@ -224,7 +224,7 @@ export const Whisperwood = {
   gates: 'G',
   palette: {
     bg: '#040a06', you: '#ffd23f', glint: '#eaff8f', accent: '#eaff8f',
-    dim: '#5a7a4a', title: '#a3e08f', floor: '#16281a', wall: '#1e3a22', friend: '#ffb84d',
+    dim: '#5a7a4a', hint: '#7a9c66', title: '#a3e08f',   // hint: readable cues, 6.4:1 on bg floor: '#16281a', wall: '#1e3a22', friend: '#ffb84d',
   },
   glyphs: {
     'T': { ch: 'T', color: '#2f6b3a', walkable: false, opaque: true },

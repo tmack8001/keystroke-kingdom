@@ -13,35 +13,64 @@
 //   • "ENTER YOUR NAME" blinks in the GAP BAND between prompt and keyboard
 //     (~0.43-0.49H) — fully visible, never behind a panel
 //   • HIGH SCORES title sits in the TOP BAND (~0.10H)
-// As the player types, the letters assemble INTO the #1 slot in the left
-// margin — your name entering the all-time list. (Each completed word resets
-// the slot so the freshly-typed word is what materialises; on level 24 the
-// player's own name is spliced into the pattern stream, so their name is
-// exactly what appears there.)
+// The #1 slot in the left margin holds ONLY the player's name: a blinking
+// placeholder through the warm-up drills, the name assembling letter by letter
+// as it is typed, then the name held there for the rest of the level. No other
+// word (drill, card word, pool word) is ever shown in it — see slotName().
 //
 // Modern-fidelity finale polish: a swinging spotlight beam, drifting golden
 // motes, a reflective floor sheen, and per-keystroke golden bursts.
 
+import { LEVELS } from '../levels.js';
+import { cardsForLevel } from '../history-cards.js';
+
 let canvas, ctx, animId;
 let active = false, victoryMode = false;
-let entryChars = [];   // characters of the word currently assembling into #1
 let totalTyped = 0;    // cumulative correct keys — drives the win gate
 let flashTimer = 0;    // extra flash when an uppercase (shift) char lands
 let flashPeak = 6;
-let slideT = 0;        // victory: #1 slot locks in (0..1)
-let bannerT = 0;       // victory: "NEW HIGH SCORE" banner fade-in (0..1)
-let gildIdx = -1;      // victory: how many letters of the name have gilded
+let bannerT = 0;       // victory: "NEW HIGH SCORE" banner fade-in (0..1), from time
+let victoryStartMs = 0;
+let fireworksFired = 0;
+let lettersLanded = 0; // victory: centre-stage letters that have landed (one burst each)
+let gildsBurst = 0;    // victory: slot letters that have gilded (one burst each)
 let sparkle = 0;
 let frame = 0;
 
 let particles = [];    // per-keystroke golden bursts
 let motes = [];        // ambient drifting golden dust
 let entryPulse = 0;    // eased "just landed a char" scale pulse on the #1 slot
-let everTyped = false; // once true, the #1 slot shows the assembling name
+
+// ── WHICH WORD WAS THE NAME ─────────────────────────────────────────────────
+// The victory used to gild whatever word happened to be typed LAST — usually the
+// history-card word, so a child who had just typed their own name watched
+// "Eniac" go up on the board under a card reading "YOU TYPED YOUR NAME" (persona
+// playtest, 2026-10-29). The theme must show what the player ACTUALLY typed.
+//
+// It may not read the player's name itself (theme-authoring.md §Security: text a
+// user typed arrives only through the engine's pattern stream). It does not need
+// to: js/main.js splices the capitalized name at index `intro.length` — "the very
+// first pattern after the warm-up drills" — so the name is the word completed at
+// that position. That position is validated before it is believed:
+//   • letters only, capital first — the shape main.js buildPlayerNamePattern()
+//     produces after stripping to [a-zA-Z] (security.md rule 3); a Free Play
+//     sentence (spaces, punctuation) can never pass;
+//   • when NO name was spliced (a name with no letters), the card word slides
+//     into that slot instead — so a Level-24 card word there is believed only if
+//     the same word comes round again two slots later, where the card sits when a
+//     name WAS spliced.
+// When nothing passes, the board shows "YOU" — never a claim that a name was typed.
+const INTRO_LEN = (LEVELS[24] && Array.isArray(LEVELS[24].intro)) ? LEVELS[24].intro.length : 7;
+const CARD_WORDS = new Set(cardsForLevel(24).map(c => c && c.word).filter(Boolean));
+const NAME_SHAPE = /^[A-Z][A-Za-z]{0,23}$/;
+const MAX_WORDS_KEPT = 16;
+let wordChars = [];    // the word being typed (display goes through slotName())
+let typedWords = [];   // completed words in order, bounded
+let championName = ''; // what the victory puts on the board ('' = no name typed)
 
 const WIN_CHARS = 24;
-const ENTRY_MAX = 12;
-const MAX_PARTICLES = 150;
+const ENTRY_MAX = 16;   // the name field's own cap (onboarding.md) — never truncate a name
+const MAX_PARTICLES = 260;
 
 // Pre-filled all-time board (ranks 2-6). Rank #1 is intentionally left OPEN
 // for the player. Scores are shown down the right margin.
@@ -63,18 +92,21 @@ function easeOutBack(t) {
 function init() {
   canvas = document.getElementById('invaders-canvas');
   ctx    = canvas.getContext('2d');
-  entryChars = [];
   totalTyped = 0;
   flashTimer = 0;
   flashPeak = 6;
-  slideT = 0;
   bannerT = 0;
-  gildIdx = -1;
+  lettersLanded = 0;
+  gildsBurst = 0;
   sparkle = 0;
   frame = 0;
   entryPulse = 0;
-  everTyped = false;
   victoryMode = false;
+  wordChars = [];
+  typedWords = [];
+  championName = '';
+  victoryStartMs = 0;
+  fireworksFired = 0;
   particles = [];
   motes = buildMotes();
 }
@@ -96,20 +128,26 @@ function buildMotes() {
 
 // ─── Particles ──────────────────────────────────────────────────────────────
 
-function spawnBurst(x, y, big) {
-  const n = big ? 26 : 12;
+// `hue` set = a victory FIREWORK: bigger, faster, longer-lived and drawn additively
+// with a white-hot core — on a dark scene a normal-alpha burst reads as specks
+// (journal L35: dark scenes need 'lighter', saturated colour, ~3-4x the size).
+function spawnBurst(x, y, big, hue = null) {
+  const fw = hue != null;
+  const n = fw ? 40 : big ? 26 : 12;
   for (let i = 0; i < n; i++) {
     if (particles.length >= MAX_PARTICLES) particles.shift();
     const ang = (Math.PI * 2 * i) / n + Math.random() * 0.4;
-    const speed = (big ? 1.6 : 1.0) + Math.random() * (big ? 2.6 : 1.6);
+    const speed = fw ? 2.6 + Math.random() * 4.2
+      : (big ? 1.6 : 1.0) + Math.random() * (big ? 2.6 : 1.6);
     particles.push({
       x, y,
       vx: Math.cos(ang) * speed,
       vy: Math.sin(ang) * speed - (big ? 0.8 : 0.3),
       life: 0,
-      maxLife: (big ? 46 : 30) + Math.random() * 14,
-      size: (big ? 2.2 : 1.4) + Math.random() * (big ? 2.2 : 1.4),
+      maxLife: fw ? 58 + Math.random() * 20 : (big ? 46 : 30) + Math.random() * 14,
+      size: fw ? 3.5 + Math.random() * 3.5 : (big ? 2.2 : 1.4) + Math.random() * (big ? 2.2 : 1.4),
       gold: Math.random() > 0.25,
+      hue,
     });
   }
 }
@@ -127,7 +165,21 @@ function updateParticles() {
 }
 
 function drawParticles() {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
   for (const p of particles) {
+    if (p.hue == null) continue;
+    const t = p.life / p.maxLife;
+    const alpha = 1 - easeOutCubic(t);
+    const size = p.size * (1 - t * 0.3);
+    ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${alpha})`;
+    ctx.fillRect(p.x - size, p.y - size, size * 2, size * 2);
+    ctx.fillStyle = `rgba(255,255,255,${alpha * 0.9})`;          // white-hot core
+    ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
+  }
+  ctx.restore();
+  for (const p of particles) {
+    if (p.hue != null) continue;
     const t = p.life / p.maxLife;
     const alpha = 1 - easeOutCubic(t);
     const size = p.size * (1 - t * 0.4);
@@ -259,8 +311,48 @@ function drawTitle(W, H) {
 }
 
 function entryName() {
-  const s = entryChars.join('');
-  return s.slice(0, ENTRY_MAX);
+  if (victoryMode) return championName || 'YOU';
+  return slotName();
+}
+
+// What the #1 slot shows MID-LEVEL ('' = the blinking placeholder).
+// Persona playtest 2026-10-30: the slot used to echo every word typed and, once
+// the theme's own char gate was met, stopped clearing — so the board read
+// "EniacRiverBla_" (card + pool words run together) while a child was waiting to
+// see their own name. It now follows the WHICH WORD WAS THE NAME rule above:
+//   • during the warm-up drills (word index < INTRO_LEN): placeholder;
+//   • while the name-position word is being typed: its letters, live — unless
+//     it is plainly turning into a Level-24 card word (the letterless-name case,
+//     where the card slides into that slot). Only prefixes of 3+ letters are
+//     hidden, so a real name sharing a card word's first letter or two (Emma,
+//     Isla vs Eniac, IBM) still lands from its very first keystroke;
+//   • after that: the resolved name, held — or the placeholder if none resolves.
+// Canvas text only (security.md rule 1); the letters arrive via keystroke().
+const CARD_PREFIX_HIDE = 3;
+function slotName() {
+  const idx = typedWords.length;            // completed words so far
+  if (idx < INTRO_LEN) return '';
+  if (idx === INTRO_LEN) {
+    const partial = wordChars.join('').slice(0, ENTRY_MAX);
+    if (!partial || !/^[A-Z][A-Za-z]*$/.test(partial)) return '';
+    for (const w of CARD_WORDS) {
+      if (partial.length >= CARD_PREFIX_HIDE && w.startsWith(partial)) return '';
+    }
+    return partial;
+  }
+  return resolveChampionName().slice(0, ENTRY_MAX);
+}
+function slotIsLive() {
+  return !victoryMode && typedWords.length === INTRO_LEN;
+}
+
+// The name the player typed, if this play can prove one was typed (see WHICH WORD
+// WAS THE NAME above). Returns '' when it cannot.
+function resolveChampionName() {
+  const cand = typedWords[INTRO_LEN];
+  if (typeof cand !== 'string' || !NAME_SHAPE.test(cand)) return '';
+  if (CARD_WORDS.has(cand) && typedWords[INTRO_LEN + 2] !== cand) return '';
+  return cand;
 }
 
 // Six rows: #1 (the player, top) + the five pre-filled board entries.
@@ -325,7 +417,8 @@ function drawBoard(W, H) {
     // Score (right margin, right-aligned)
     ctx.textAlign = 'right';
     if (champ) {
-      const scoreTxt = (victoryMode || everTyped) ? '99999' : (blinkOn ? '?????' : '     ');
+      const scoreTxt = victoryMode ? rolledScore()
+        : slotName() ? '99999' : (blinkOn ? '?????' : '     ');
       ctx.fillStyle = gold;
       ctx.shadowColor = gold;
       ctx.shadowBlur = 10;
@@ -348,7 +441,8 @@ function drawBoard(W, H) {
 // letters assemble here — your name entering the all-time list.
 function drawChampionName(x, y, fontSize, blinkOn) {
   ctx.save();
-  const showName = everTyped && entryChars.length > 0;
+  const nm = entryName();
+  const showName = victoryMode || nm.length > 0;
   const pulseScale = 1 + 0.16 * easeOutBack(entryPulse);
   const glow = 12 + (flashTimer > 0 ? flashPeak * 1.3 : 0);
 
@@ -361,28 +455,25 @@ function drawChampionName(x, y, fontSize, blinkOn) {
   ctx.shadowBlur = glow;
 
   if (showName) {
-    const cursor = blinkOn && !victoryMode ? '_' : '';
-    const nm = entryName();
+    const cursor = blinkOn && slotIsLive() ? '_' : '';
     if (!victoryMode) {
       ctx.fillText(nm + cursor, 0, 0);
     } else {
-      // VICTORY: the name locks into the #1 slot and gilds one letter at a time
-      // — the arcade's "your initials going up on the board" moment, stretched to
-      // a whole name because on this level the child typed a whole name.
-      // Travel is deliberately short: the name enters from just left of its slot,
-      // NOT from off-screen. A long slide crossed the rank number and rendered
-      // "1Eniac" for the first few frames — the board has a column for the rank
-      // and the name must not drive through it.
-      const slide = (1 - easeOutBack(Math.min(1, slideT / 0.45))) * -fontSize * 1.6;
-      ctx.translate(slide, 0);
-      let cx = 0;
-      for (let i = 0; i < nm.length; i++) {
-        const lit = i <= gildIdx;
-        ctx.fillStyle   = lit ? '#fffbe0' : '#bfa96a';
-        ctx.shadowColor = lit ? '#ffd84a' : '#7a6420';
-        ctx.shadowBlur  = lit ? 20 : 4;
-        ctx.fillText(nm[i], cx, 0);
-        cx += ctx.measureText(nm[i]).width;
+      // VICTORY: once the name has flown in from centre stage (drawNameStage), it
+      // sits in the #1 slot and gilds one letter at a time — the arcade's "your
+      // initials going up on the board", stretched to a whole name.
+      const e = victoryElapsed();
+      if (e >= T_LAND) {
+        const lit = Math.floor((e - T_LAND) / Math.max(60, GILD_MS / nm.length));
+        let cx = 0;
+        for (let i = 0; i < nm.length; i++) {
+          const on = i < lit;
+          ctx.fillStyle   = on ? '#fffbe0' : '#e8cf80';
+          ctx.shadowColor = on ? '#ffd84a' : '#7a6420';
+          ctx.shadowBlur  = on ? 20 : 6;
+          ctx.fillText(nm[i], cx, 0);
+          cx += ctx.measureText(nm[i]).width;
+        }
       }
     }
   } else {
@@ -397,6 +488,9 @@ function drawChampionName(x, y, fontSize, blinkOn) {
 // guide (~0.43-0.49H). Fully visible — never behind a panel.
 function drawCallToAction(W, H) {
   if (victoryMode) return;
+  // Once the name is up on the board the invitation has been answered — keep
+  // blinking it and the child is told to enter a name they already entered.
+  if (typedWords.length > INTRO_LEN && slotName()) return;
   const blinkOn = Math.floor(performance.now() / 500) % 2 === 0;
   if (!blinkOn) return;
   const fontSize = Math.max(9, Math.floor(W * 0.012));
@@ -461,6 +555,7 @@ function render() {
   drawTitle(W, H);
   drawBoard(W, H);
   drawCallToAction(W, H);
+  if (victoryMode) drawNameStage(W, H);
   updateParticles();
   drawParticles();
   if (sparkle > 0) { drawSparkles(W, H); sparkle--; }
@@ -469,20 +564,7 @@ function render() {
 
   if (flashTimer > 0) flashTimer--;
   if (entryPulse < 1) entryPulse = Math.min(1, entryPulse + 0.09);
-  if (victoryMode) {
-    if (slideT < 1) slideT += 0.022;          // the row slides in and settles
-    if (slideT > 0.35 && bannerT < 1) bannerT = Math.min(1, bannerT + 0.045);
-    // Gild the name one letter at a time, and fire a burst as each lands — the
-    // arcade's own "your initials going up on the board" beat, stretched to a
-    // whole name. Bursts are staged, not one-and-done.
-    const nm = entryName();
-    const want = Math.floor(Math.max(0, slideT - 0.3) / 0.7 * nm.length);
-    while (gildIdx < want - 1 && gildIdx < nm.length - 1) {
-      gildIdx++;
-      const W = canvas.width, H = canvas.height;
-      spawnBurst(Math.round(W * 0.07 + gildIdx * W * 0.016), Math.round(H * 0.20), true);
-    }
-  }
+  if (victoryMode) stepVictory(W, H);
 
   animId = requestAnimationFrame(render);
 }
@@ -507,9 +589,8 @@ export function keystroke(key) {
   if (!active || victoryMode) return;
   if (!(key && key.length === 1)) return;
 
-  everTyped = true;
   totalTyped++;
-  if (entryChars.length < ENTRY_MAX) entryChars.push(key);
+  if (wordChars.length < 32) wordChars.push(key);
   entryPulse = 0; // restart the eased landing pulse
 
   const W = canvas ? canvas.width : 0;
@@ -535,18 +616,13 @@ export function keystroke(key) {
 
 export function miss() {}
 
-// Word boundary: each completed pattern (word) clears the assembling slot so
-// the NEXT word freshly materialises into #1. On level 24 the player's own
-// name is spliced into the stream, so their name is what lands there.
+// Word boundary: record the finished word (what slotName() reads to decide what
+// the #1 slot shows). The win gate is the separate cumulative totalTyped, so
+// nothing here can ever move it backwards (theme-authoring.md §win-gate).
 export function patternComplete() {
-  const done = totalTyped >= WIN_CHARS;
-  if (!done && !victoryMode) {
-    // Word boundary: clear the assembling slot so the NEXT word freshly
-    // materialises into #1. Cumulative progress lives in totalTyped, so
-    // resetting the display never affects the win gate.
-    entryChars = [];
-  }
-  return done;
+  if (!victoryMode && typedWords.length < MAX_WORDS_KEPT) typedWords.push(wordChars.join(''));
+  wordChars = [];
+  return totalTyped >= WIN_CHARS;
 }
 
 // THE RITUAL THIS LEVEL IS ABOUT. Level 24 is the one where a child types their
@@ -564,14 +640,145 @@ export function patternComplete() {
 // It also returned nothing, so the engine fell back to a fixed 4000ms hold and
 // the card landed whenever it landed. It now declares its length, so the LEVEL
 // COMPLETE card arrives exactly as the name finishes gilding.
-const VICTORY_MS = 3600;
+//
+// 2026-10-30 (persona playtest): the gilding was right but it was the whole show,
+// and it gilded the wrong word (see WHICH WORD WAS THE NAME). It is now a staged
+// sequence on clamped elapsed time (journal L36), using the centre while the
+// engine has the DOM panels down for the celebration:
+//
+//      0-1400  YOUR NAME takes the stage — big gold letters drop in one at a
+//              time at centre, each landing with a burst
+//   1400-2400  it shines: a highlight sweeps across it, fireworks in the margins
+//   2400-3200  it flies up and left into the #1 slot, shrinking to row size,
+//              while the #1 score rolls up to 99999 and NEW HIGH SCORE pops
+//   3200-end   it gilds letter by letter in the slot; more fireworks
+//
+// Level 24 is "modern" fidelity (act5.md: particle systems, full resolution), so
+// the fireworks are additive multi-colour particle bursts.
+const VICTORY_MS = 4800;
+const T_SHINE = 1400, T_FLY = 2400, T_LAND = 3200, GILD_MS = 1000;
+const FIREWORK_TIMES = [1500, 1850, 2200, 3400, 3800, 4200];
+
+function victoryElapsed() {
+  return Math.min(VICTORY_MS, Math.max(0, performance.now() - victoryStartMs));
+}
+function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+function rolledScore() {
+  const e = victoryElapsed();
+  const k = Math.min(1, Math.max(0, (e - T_FLY) / (T_LAND - T_FLY + 300)));
+  return String(Math.round(99999 * easeOutCubic(k))).padStart(5, '0');
+}
+
+// Geometry of the #1 slot (must match drawBoard's row 0).
+function slotGeom(W, H) {
+  return { x: Math.round(W * 0.07), y: H * 0.20, fs: Math.max(11, Math.floor(W * 0.015)) };
+}
+function stageFont(W, len) {
+  return Math.max(16, Math.floor(Math.min(W * 0.055, (W * 0.78) / Math.max(1, len))));
+}
+
+function drawNameStage(W, H) {
+  const e = victoryElapsed();
+  if (e >= T_LAND) return;              // it lives in the slot now
+  const nm = entryName();
+  const big = stageFont(W, nm.length);
+  const slot = slotGeom(W, H);
+
+  // Flight: centre -> #1 slot, scaling big -> row font.
+  const fk = easeInOut(Math.min(1, Math.max(0, (e - T_FLY) / (T_LAND - T_FLY))));
+  const fs = big + (slot.fs - big) * fk;
+  ctx.save();
+  ctx.font = `${Math.round(fs)}px "Press Start 2P", monospace`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  const totalW = ctx.measureText(nm).width;
+  const sx = W / 2 - totalW / 2, sy = H * 0.44;
+  const x0 = sx + (slot.x - sx) * fk;
+  const y0 = sy + (slot.y - sy) * fk;
+
+  // A warm pool of light under the name while it holds the stage.
+  if (fk < 1) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(W / 2, sy, 0, W / 2, sy, W * 0.32);
+    g.addColorStop(0, `rgba(255,200,90,${0.22 * (1 - fk)})`);
+    g.addColorStop(1, 'rgba(255,200,90,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, sy - W * 0.32, W, W * 0.64);
+    ctx.restore();
+  }
+
+  let cx = x0;
+  const per = 1100 / Math.max(1, nm.length);
+  const sweep = (e - T_SHINE) / 700;                 // shine highlight position
+  for (let i = 0; i < nm.length; i++) {
+    const land = 150 + i * per;
+    const cw = ctx.measureText(nm[i]).width;
+    if (e >= land) {
+      const a = Math.min(1, (e - land) / 260);
+      const drop = (1 - easeOutBack(a)) * -H * 0.12;
+      const near = Math.abs(sweep * (nm.length + 4) - 2 - i) < 1.2;
+      ctx.fillStyle = near ? '#ffffff' : '#ffe27a';
+      ctx.shadowColor = '#ffb020';
+      ctx.shadowBlur = near ? 34 : 18;
+      ctx.fillText(nm[i], cx, y0 + drop * (1 - fk));
+    }
+    cx += cw;
+  }
+  ctx.restore();
+  ctx.shadowBlur = 0;
+}
+
+function spawnFirework(W, H, n) {
+  // Margins and the top band only — never where the name is on stage.
+  const spots = [[0.12, 0.30], [0.88, 0.30], [0.30, 0.13], [0.70, 0.13], [0.12, 0.66], [0.88, 0.66]];
+  const [fx, fy] = spots[n % spots.length];
+  const hue = (n * 67 + 30) % 360;
+  for (let r = 0; r < 2; r++) spawnBurst(Math.round(W * fx), Math.round(H * fy), true, (hue + r * 40) % 360);
+}
+
+function stepVictory(W, H) {
+  const e = victoryElapsed();
+  bannerT = Math.min(1, Math.max(0, (e - (T_FLY + 200)) / 500));
+  const nm = entryName();
+  const per = 1100 / Math.max(1, nm.length);
+  // One burst per centre-stage letter as it lands.
+  const big = stageFont(W, nm.length);
+  while (lettersLanded < nm.length && e >= 150 + lettersLanded * per + 200) {
+    ctx.save();
+    ctx.font = `${big}px "Press Start 2P", monospace`;
+    const totalW = ctx.measureText(nm).width;
+    const lx = W / 2 - totalW / 2 + ctx.measureText(nm.slice(0, lettersLanded)).width + big / 2;
+    ctx.restore();
+    spawnBurst(Math.round(lx), Math.round(H * 0.44), false);
+    lettersLanded++;
+  }
+  // One burst per slot letter as it gilds.
+  if (e >= T_LAND) {
+    const slot = slotGeom(W, H);
+    const lit = Math.floor((e - T_LAND) / Math.max(60, GILD_MS / nm.length));
+    while (gildsBurst < Math.min(nm.length, lit)) {
+      spawnBurst(Math.round(slot.x + (gildsBurst + 0.5) * slot.fs), Math.round(slot.y), true);
+      gildsBurst++;
+    }
+  }
+  while (fireworksFired < FIREWORK_TIMES.length && e >= FIREWORK_TIMES[fireworksFired]) {
+    spawnFirework(W, H, fireworksFired);
+    fireworksFired++;
+  }
+}
+
 export function victory() {
+  // Resolve the name ONCE, from what was typed, before anything is drawn.
+  championName = resolveChampionName();
   victoryMode = true;
-  slideT = 0;            // now actually drives the lock-in (see drawBoard)
+  victoryStartMs = performance.now();
   sparkle = 150;
-  everTyped = true;
   bannerT = 0;
-  gildIdx = -1;
+  lettersLanded = 0;
+  gildsBurst = 0;
+  fireworksFired = 0;
   return VICTORY_MS;
 }
 

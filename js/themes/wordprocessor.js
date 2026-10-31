@@ -58,6 +58,12 @@ let cursorEase = 1;      // 0..1 eased "just typed" pulse on the cursor
 
 const WIN_KEYSTROKES = 30;
 const MAX_INK = 90;
+const MAX_CONFETTI = 80;
+
+// Victory state — all of it driven by clamped elapsed ms (journal L36).
+let victoryStartMs = 0;
+let confetti = [];
+let confettiWaves = 0;
 const MAX_PUFF_PARTICLES = 60;
 
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
@@ -82,6 +88,9 @@ function init() {
   inkParticles = [];
   eraserPuffs = [];
   cursorEase = 1;
+  victoryStartMs = 0;
+  confetti = [];
+  confettiWaves = 0;
 }
 
 // ─── The desk ───────────────────────────────────────────────────────────────
@@ -488,7 +497,8 @@ function render() {
   drawInk();
   updateEraserPuffs();
   drawEraserPuffs();
-  drawProgress(W, H);
+  if (victoryMode) drawVictory(W, H, px, py, pw, ph);
+  else drawProgress(W, H);
   if (helloEggTimer > 0) { drawHelloEgg(W, H); helloEggTimer--; }
 
   if (flashTimer > 0) flashTimer--;
@@ -606,16 +616,195 @@ export function beginFinale(subLens) {
 }
 
 export function patternComplete() {
+  // Display only: a word boundary is a space on the page. Patterns carry no trailing
+  // space, so the document used to read "jjf jfhello worldyou did it". The finale
+  // manages its own sub-line spacing (keystroke() above), so it is left alone; the
+  // win gate (progressCount) is untouched.
+  if (!finaleActive && !victoryMode && text.length && !/\s$/.test(text)) text += ' ';
   return progressCount >= WIN_KEYSTROKES;
+}
+
+// ─── THE CELEBRATION — after the story, after the manifesto ─────────────────
+//
+// This used to replace the whole document with 'THE END.', return nothing (the
+// engine's legacy 4000ms hold) and leave a blinking cursor: 5 of 8 captured frames
+// were byte-identical (persona playtest 2026-10-29). Level 25 is the last level in
+// the game and act5.md names its beat: "Credits roll. In a terminal font. The
+// player typed them."
+//
+// The story stays on the page — it is the child's, and the MY STORY coda and the
+// Hacker Manifesto capstone are what it just finished. Over it, on clamped elapsed
+// time:
+//      0-900   THE END. stamps onto the page with an ink bloom
+//    700-3400  the 26 letters the coda made them type — A to Z — burst out of it
+//              as confetti, in two waves, tumbling down over the desk
+//   2000-end   the credits roll up a little terminal on the desk: the player
+//              wrote it, typed it, every letter; Backspace was "making it right"
+//              (the level's own framing, act5.md)
+const VICTORY_MS = 5600;
+const T_STAMP = 0, T_CONFETTI = [700, 1700], T_CREDITS = 2000;
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const CREDITS = [
+  ['MY STORY', ''],
+  ['', ''],
+  ['WRITTEN BY', 'YOU'],
+  ['TYPED BY', 'YOU'],
+  ['EVERY LETTER', 'A TO Z'],
+  ['BACKSPACE', 'MAKING IT RIGHT'],
+  ['', ''],
+  ['THE END', ''],
+];
+
+function spawnLetterConfetti(x, y, wave) {
+  for (let i = 0; i < ALPHABET.length; i++) {
+    if (confetti.length >= MAX_CONFETTI) confetti.shift();
+    const ang = -Math.PI / 2 + ((i / (ALPHABET.length - 1)) - 0.5) * 2.6 + (Math.random() - 0.5) * 0.2;
+    const sp = 6 + Math.random() * 5 + wave;
+    confetti.push({
+      ch: ALPHABET[i], x, y,
+      vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+      rot: (Math.random() - 0.5) * 0.6, vr: (Math.random() - 0.5) * 0.18,
+      hue: Math.round((i / ALPHABET.length) * 360 + wave * 23) % 360,
+      size: 14 + Math.random() * 10,
+      life: 1,
+    });
+  }
+}
+
+function drawLetterConfetti(H) {
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = confetti.length - 1; i >= 0; i--) {
+    const c = confetti[i];
+    c.x += c.vx; c.y += c.vy;
+    c.vy += 0.22; c.vx *= 0.99; c.rot += c.vr;
+    c.life -= 0.004;
+    if (c.life <= 0 || c.y > H + 40) { confetti.splice(i, 1); continue; }
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.rot);
+    ctx.globalAlpha = Math.min(1, c.life * 2);
+    ctx.font = `${Math.round(c.size)}px "Press Start 2P", monospace`;
+    ctx.fillStyle = `hsl(${c.hue}, 95%, 60%)`;
+    ctx.shadowColor = `hsl(${c.hue}, 100%, 70%)`;
+    ctx.shadowBlur = 10;
+    ctx.fillText(c.ch, 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawVictory(W, H, px, py, pw, ph) {
+  const e = Math.min(VICTORY_MS, Math.max(0, performance.now() - victoryStartMs));
+  const cx = px + pw / 2, cy = py + ph * 0.58;
+  const fs = Math.max(20, Math.floor(W * 0.042));
+
+  // A paper wash over the page body so the stamp reads, with the story still
+  // there underneath it.
+  const wash = Math.min(1, (e - T_STAMP) / 400);
+  ctx.fillStyle = `rgba(250,247,238,${(0.86 * wash).toFixed(3)})`;
+  ctx.fillRect(px, py + ph * 0.2, pw, ph * 0.8);
+  // A clean label for the stamp to land on.
+  ctx.fillStyle = `rgba(255,253,246,${wash.toFixed(3)})`;
+  ctx.fillRect(cx - fs * 5.2, cy - fs * 1.1, fs * 10.4, fs * 2.2);
+
+  // THE END. — stamped: drops from oversized to size with an ink bloom ring.
+  const k = Math.min(1, e / 520);
+  const scale = 1 + (1 - easeOutCubic(k)) * 1.6;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  ctx.globalAlpha = Math.min(1, e / 200);
+  ctx.font = `${fs}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#1d2433';
+  ctx.fillText('THE END.', 0, 0);
+  ctx.restore();
+  if (e > 480 && e < 1300) {
+    const r = (e - 480) / 820;
+    ctx.save();
+    ctx.globalAlpha = 1 - r;
+    ctx.strokeStyle = '#2f6fe0';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, fs * 3 + r * fs * 5, fs * 0.9 + r * fs * 2.2, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // The page glows warm once it is done.
+  if (e > 500) {
+    ctx.save();
+    ctx.globalAlpha = 0.35 + 0.15 * Math.sin(e / 240);
+    ctx.shadowColor = '#ffd766';
+    ctx.shadowBlur = 40;
+    ctx.strokeStyle = '#ffd766';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(px + 2, py + 2, pw - 4, ph - 4);
+    ctx.restore();
+  }
+
+  // A to Z, bursting out of the stamp.
+  while (confettiWaves < T_CONFETTI.length && e >= T_CONFETTI[confettiWaves]) {
+    spawnLetterConfetti(cx, cy, confettiWaves);
+    confettiWaves++;
+  }
+
+  // The credits — a little terminal on the desk, rolling up.
+  if (e >= T_CREDITS) {
+    const tx = W * 0.30, tw = W * 0.40, ty = H * 0.56, th = H * 0.38;
+    const open = Math.min(1, (e - T_CREDITS) / 300);
+    ctx.save();
+    ctx.fillStyle = `rgba(6,14,8,${(0.92 * open).toFixed(3)})`;
+    ctx.fillRect(tx, ty, tw, th);
+    ctx.strokeStyle = `rgba(57,255,20,${(0.6 * open).toFixed(3)})`;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(tx, ty, tw, th);
+    ctx.beginPath();
+    ctx.rect(tx + 4, ty + 4, tw - 8, th - 8);
+    ctx.clip();
+    const cfs = Math.max(9, Math.floor(W * 0.011));
+    const lineH = Math.round(cfs * 2.3);
+    const scroll = ((e - T_CREDITS) / 1000) * (th * 0.42);
+    ctx.font = `${cfs}px "Press Start 2P", monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#39ff14';
+    ctx.shadowBlur = 6;
+    CREDITS.forEach(([role, who], i) => {
+      const y = ty + th + lineH * 0.6 + i * lineH - scroll;
+      if (y < ty - lineH || y > ty + th + lineH) return;
+      ctx.fillStyle = i === 0 || i === CREDITS.length - 1 ? '#d8ffc8' : '#39ff14';
+      if (!who) {
+        ctx.textAlign = 'center';
+        ctx.fillText(role, tx + tw / 2, y);
+      } else {
+        ctx.textAlign = 'right';
+        ctx.fillText(role, tx + tw / 2 - cfs, y);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffe9a6';
+        ctx.fillText(who, tx + tw / 2 + cfs, y);
+      }
+    });
+    ctx.restore();
+  }
+
+  drawLetterConfetti(H);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
 }
 
 export function victory() {
   victoryMode = true;
-  // Restore the normal centered page render for the big "THE END." beat (the
-  // top-band finale clamp is for the scrolling manifesto, not the celebration).
+  // The story STAYS on the page. Restore the normal (non-top-band) page layout —
+  // the finale clamp existed to keep the manifesto clear of the prompt panel, which
+  // the engine takes down for the celebration.
   finaleActive = false;
-  text = 'THE END.';
   pageGlow = 60;
+  victoryStartMs = performance.now();
+  confetti = [];
+  confettiWaves = 0;
+  return VICTORY_MS;
 }
 
 window.addEventListener('resize', () => {

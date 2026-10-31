@@ -53,7 +53,7 @@
   <div class="settings-hint" id="settings-hint">PRESS TAB FOR SETTINGS</div>
   <div class="wopr-text" id="wopr-text"></div>
   <div class="name-setup hidden" id="name-setup">
-    <div class="name-label">ENTER YOUR NAME</div>
+    <div class="name-label" id="name-label">ENTER YOUR NAME</div>
     <input
       type="text"
       class="name-input"
@@ -67,7 +67,7 @@
       spellcheck="false"
       aria-label="player nickname"
     >
-    <div class="ready-text">PRESS <kbd data-enter-key>ENTER</kbd> TO START</div>
+    <div class="ready-text">PRESS <kbd data-enter-key>ENTER</kbd> <span id="name-confirm-verb">TO START</span></div>
   </div>
 </div>
 
@@ -75,9 +75,12 @@
 <div class="screen hidden" id="slots-screen">
   <div class="slots-title">CHOOSE YOUR GAME</div>
   <div class="slots-list" id="slots-list"></div>
-  <div class="slots-hint" id="slots-hint">SPACE PLAY &middot; N NEW GAME &middot; C CARDS &middot; X ERASE</div>
+  <div class="slots-hint" id="slots-hint">SPACE PLAY &middot; N NEW &middot; R RENAME &middot; C CARDS &middot; X ERASE</div>
   <div class="slots-erase hidden" id="slots-erase">
     <div class="slots-erase-title">ERASE THIS GAME?</div>
+    <!-- Names the game about to go: set by renderSlotsScreen via textContent ONLY
+         (the name is player-typed — security.md rule 1). -->
+    <div class="slots-erase-name" id="slots-erase-name"></div>
     <div class="slots-erase-opt">Y — YES, ERASE</div>
     <div class="slots-erase-opt">N — NO, KEEP IT</div>
   </div>
@@ -180,8 +183,19 @@
 <div class="screen hidden" id="settings-screen">
   <div class="settings-title">SETTINGS</div>
   <div class="settings-rows" id="settings-rows"></div>
+  <!-- The erase-all question NAMES what it destroys (a shared family machine holds
+       several games). #settings-erase-text is set by js/main.js from a COUNT only
+       (textContent, fixed-literal words) — no player name ever reaches it. -->
   <div class="settings-erase-confirm hidden" id="settings-erase-confirm">
-    ERASE EVERYTHING? <kbd>Y</kbd> / <kbd>N</kbd>
+    <span id="settings-erase-text">ERASE ALL SAVED GAMES?</span> <kbd>Y</kbd> / <kbd>N</kbd>
+    <div class="settings-erase-sub">YOUR SETTINGS STAY</div>
+  </div>
+  <!-- Moving a setting to a HARDER value (today: PLAY STYLE → SURVIVAL) asks first.
+       Only Y keeps it; any other key keeps the easier value, and the harder one is
+       never saved until Y (product.md §Choosing a harder rule asks once). The text is
+       a fixed literal from js/settings.js, set via textContent. -->
+  <div class="settings-erase-confirm settings-harder-confirm hidden" id="settings-harder-confirm">
+    <span id="settings-harder-text">YOU CHOSE 1979 RULES — KEEP IT?</span> <kbd>Y</kbd> / <kbd>N</kbd>
   </div>
   <div class="settings-hint-bottom">&uarr; &darr; SELECT &nbsp;&middot;&nbsp; &larr; &rarr; CHANGE &nbsp;&middot;&nbsp; ESC SAVE &amp; EXIT</div>
 </div>

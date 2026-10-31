@@ -16,7 +16,7 @@
  */
 
 import { KEY_REACH } from '../levels.js';
-import { getKeyGeometry, KEYBOARD_UNITS_PER_ROW } from './hud.js';
+import { getKeyGeometry, KEYBOARD_UNITS_PER_ROW, isSmallMark } from './hud.js';
 
 let canvas, ctx;
 let animId = null;
@@ -55,10 +55,10 @@ const KB_LAYOUT = getKeyGeometry()
   }));
 
 // How a key is labelled on the preview canvas. Letters show uppercase; the
-// eighth key is the '?' it is everywhere in player-facing text (never
-// "semicolon"); wide/structural keys spell their name.
+// eighth key shows the real mark printed on its keycap (its NAME is still never
+// said — that waits for the Level 20 confession); wide/structural keys spell
+// their name.
 function previewLabel(key) {
-  if (key === ';') return '?';
   if (key === 'Backspace') return '⌫';
   if (key === 'Shift') return 'SHIFT';
   if (key === ' ') return 'SPACE';
@@ -143,11 +143,15 @@ function drawKeyboard(knownKeys, newKeys, unitSize, kbOriginX, kbOriginY) {
     ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
     ctx.shadowBlur = 0;
 
-    // Label — wide keys (SHIFT, SPACE, multi-char labels) scale down to fit
+    // Label — wide keys (SHIFT, SPACE, multi-char labels) scale down to fit;
+    // the marks Press Start 2P draws as a few pixels (the eighth key's own
+    // glyph, comma, period, tick marks…) scale UP, the same set hud.js boosts.
     const isWideLabel = k.label.length > 1;
     const fontSize = isWideLabel
       ? Math.max(5, Math.floor(unitSize * 0.2))
-      : Math.max(6, Math.floor(unitSize * 0.32));
+      : isSmallMark(k.label)
+        ? Math.max(9, Math.floor(unitSize * 0.56))
+        : Math.max(6, Math.floor(unitSize * 0.32));
     ctx.font = `${fontSize}px "Press Start 2P", monospace`;
     ctx.fillStyle = col.text;
     ctx.textAlign = 'center';
@@ -438,7 +442,7 @@ function render() {
       const label = 'STRETCH YOUR ' + fingers.map(f => FINGER_NAMES[f]).join(' AND ') + ' FINGERS';
       drawLabel(label, W / 2, labelY, accent, glow);
     } else {
-      const keyNames = _newKeys.map(k => (k === ';' ? '?' : k === ',' ? ',' : k === '.' ? '.' : k === '/' ? '/' : k.toUpperCase())).join(' AND ');
+      const keyNames = _newKeys.map(k => k.toUpperCase()).join(' AND ');
       drawLabel('NEW KEYS: ' + keyNames, W / 2, labelY, accent, glow);
     }
   }

@@ -8,6 +8,8 @@ let animId = null;
 let active = false;
 let startTime = 0;
 let onDone = null;
+// Replay-only skipping (transitions.md: "Skippable after first completion").
+let skippable = false;
 let audioCtx = null;
 let chordNodes = [];
 let riserNodes = [];
@@ -440,7 +442,9 @@ function render(now) {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-export function start(callback) {
+// opts.skippable — false on the FIRST viewing (the default), true on replays.
+export function start(callback, opts = {}) {
+  skippable = !!(opts && opts.skippable);
   canvas = document.getElementById('invaders-canvas');
   ctx    = canvas.getContext('2d');
   canvas.width  = window.innerWidth;
@@ -461,14 +465,21 @@ export function start(callback) {
   animId    = requestAnimationFrame(render);
 }
 
-export function confirm() {
+// Every key during the cinematic arrives here. Before the title card: the FIRST
+// viewing ignores every key; a REPLAY skips to the title card on Space or Escape
+// only. On the title card: only Space continues — it is what the card says.
+// (Same rule as js/mystery.js — transitions.md "Skippable after first completion".)
+export function confirm(key) {
   if (!active) return;
   const ms = performance.now() - startTime;
   if (getPhase(ms) < 3) {
-    stopAllAudio();
-    startTime = performance.now() - P.TITLECARD.s;
+    if (skippable && (key === ' ' || key === 'Escape')) {
+      stopAllAudio();
+      startTime = performance.now() - P.TITLECARD.s;
+    }
     return;
   }
+  if (key !== ' ') return;
   stop();
   if (onDone) onDone();
 }

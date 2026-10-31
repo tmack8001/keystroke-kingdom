@@ -32,18 +32,23 @@
 const FERN = {
   id: 'fern', name: 'Fern the wood-sprite',
   riddles: [
-    { riddle: 'As I walked to town I met a traveler with seven bags, and in each bag seven cats, and with each cat seven kittens. But only I was going to town. How many of us were truly going?',
-      answers: ['one'],
-      hint: 'Read it again — only ONE of us is actually going anywhere. It starts with O.',
-      reward: 'Fern cackles and spins in the air. "Just ONE! Everybody counts the cats. Nobody ever counts right."' },
-    { riddle: 'I show up once in a minute, twice in a moment, but never once in a thousand years. What letter am I?',
-      answers: ['m'],
-      hint: 'Look closely at the spelling of the word "minute."',
-      reward: 'Fern claps twice. "The letter M! Sneaky, sneaky. Most travelers never look at the letters themselves."' },
+    // ORDER MATTERS: the first riddle is the first one a child ever meets in this
+    // wing. It used to be the seven-bags-seven-cats trick, which the 2026-10-30
+    // explorer playtest (8-9 years old) found too hard for a first meeting; Humpty
+    // Dumpty (research/act6-riddle-bank.md A10) now opens, and St Ives (A8) waits
+    // for a return visit. All three are unchanged — only the rotation order moved.
     { riddle: 'I sat high on a wall, round and smooth, until I had a great fall — and nobody could ever put me together again. What was I?',
       answers: ['egg', 'eggs'],
       hint: 'Humpty Dumpty was one of me. It starts with E.',
       reward: 'Fern giggles. "An EGG! Poor Humpty. Good thing you climb walls so much better."' },
+    { riddle: 'I show up once in a minute, twice in a moment, but never once in a thousand years. What letter am I?',
+      answers: ['m'],
+      hint: 'Look closely at the spelling of the word "minute."',
+      reward: 'Fern claps twice. "The letter M! Sneaky, sneaky. Most travelers never look at the letters themselves."' },
+    { riddle: 'As I walked to town I met a traveler with seven bags, and in each bag seven cats, and with each cat seven kittens. But only I was going to town. How many of us were truly going?',
+      answers: ['one'],
+      hint: 'Read it again — only ONE of us is actually going anywhere. It starts with O.',
+      reward: 'Fern cackles and spins in the air. "Just ONE! Everybody counts the cats. Nobody ever counts right."' },
   ],
 };
 
@@ -122,7 +127,7 @@ const DRAGON = {
 export const GreenDragon = {
   id: 'greendragon',
   title: 'THE GREEN DRAGON',
-  palette: { fg: '#4fe08a', dim: '#1f7a45', bg: '#00140a', accent: '#ffd23f' },
+  palette: { fg: '#4fe08a', dim: '#1f7a45', hint: '#2f9e5c', bg: '#00140a', accent: '#ffd23f' },  // hint 5.6:1 on bg
   start: 'clearing',
 
   intro: [

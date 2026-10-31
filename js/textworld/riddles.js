@@ -27,6 +27,11 @@ export const ANSWER_CAP = 20;    // riddle answer length cap (bounded free text)
 export const HINT_AT_TRY = 2;    // show the authored hint after this many wrong answers
 export const REVEAL_AT_TRY = 3;  // reveal the answer itself after this many (never stuck)
 
+// The riddle answer box's own footer cue, shared by both engines so the prose and
+// tile worlds teach the same thing in the same words. Backspace is named because
+// the 2026-10-30 playtest found children did not know it worked here.
+export const ANSWER_KEYS_CUE = 'BACKSPACE fixes a letter';
+
 function oneRiddle(r) {
   return {
     riddle: r && r.riddle ? String(r.riddle) : '',
@@ -53,4 +58,47 @@ export function answerMatches(riddle, typed) {
   if (!norm) return false;
   const answers = riddle && Array.isArray(riddle.answers) ? riddle.answers : [];
   return answers.some((a) => String(a).trim().toLowerCase() === norm);
+}
+
+// A TYPO, not a wrong idea: the typed word is exactly ONE letter-edit away from an
+// accepted answer (one letter added, dropped, or swapped for another). This is
+// NEVER accepted as right — `answerMatches` stays exact, so no wrong word can
+// ever solve a riddle. It only changes what the game SAYS: "so close — one letter
+// is off, Backspace can fix it", with the typed word left in place to be fixed.
+//
+// Why it exists (2026-10-30 explorer playtest): the answer box takes any letter,
+// so a 15%-error child who KNEW the answer typed `oxne` for `one`, was told "Not
+// quite", and had her answer wiped. Being told she was wrong when she was right
+// is the exact flow-stopping punishment the One Rule forbids. Fixing a letter is
+// the lesson (Backspace "is not going back — it's making it right", act5.md).
+//
+// Guarded so it cannot leak an answer: answers shorter than 3 letters never
+// report a near miss (any single letter is "one edit" from a one-letter answer,
+// so the cue would quietly say "the answer is one letter"), and neither does an
+// empty or one-letter guess.
+export function isNearMiss(riddle, typed) {
+  const norm = String(typed || '').trim().toLowerCase();
+  if (norm.length < 2) return false;
+  if (answerMatches(riddle, norm)) return false;
+  const answers = riddle && Array.isArray(riddle.answers) ? riddle.answers : [];
+  return answers.some((a) => {
+    const ans = String(a).trim().toLowerCase();
+    return ans.length >= 3 && oneEditApart(norm, ans);
+  });
+}
+
+// True when a and b differ by exactly one insertion, deletion or substitution.
+function oneEditApart(a, b) {
+  if (a === b) return false;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++edits > 1) return false;
+    if (a.length > b.length) i++;
+    else if (a.length < b.length) j++;
+    else { i++; j++; }
+  }
+  edits += (a.length - i) + (b.length - j);
+  return edits === 1;
 }

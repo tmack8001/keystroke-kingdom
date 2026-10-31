@@ -275,7 +275,7 @@
 
 .slot-row {
   display: grid;
-  grid-template-columns: 18px 20px 210px 66px 66px;
+  grid-template-columns: 18px 20px 210px 66px 108px;
   align-items: center;
   gap: 14px;
   padding: 12px 20px;
@@ -307,7 +307,7 @@
   text-overflow: ellipsis;
 }
 .slot-level { font-size: 9px; color: var(--crt-green); text-align: right; }
-.slot-cards { font-size: 9px; color: var(--crt-amber-dim); text-align: right; }
+.slot-cards { font-size: 9px; color: var(--crt-amber-dim); text-align: right; white-space: nowrap; }
 .slot-row.selected .slot-cards { color: var(--crt-amber); }
 
 /* The always-present "+ NEW GAME" row — breaks out of the 5-column game grid
@@ -341,6 +341,13 @@
   text-shadow: 0 0 6px rgba(255, 68, 68, 0.5);
   letter-spacing: 2px;
   margin-bottom: 16px;
+}
+
+.slots-erase-name {
+  font-size: 10px;
+  color: var(--atari-white);
+  letter-spacing: 2px;
+  margin: -6px 0 16px;
 }
 
 .slots-erase-opt {
@@ -917,16 +924,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.75);
+  /* 0.75 let theme art read through AROUND the card — a clipped fragment of
+     Level 4's scene sat just under the card's bottom edge, competing with it.
+     The scene is still there, dimmed to ambient (2026-10-30). */
+  background: rgba(0, 0, 0, 0.9);
   animation: fadeIn 0.4s ease-out;
 }
 
 .complete-modal {
   text-align: center;
   padding: 48px 64px;
+  /* Cap the card's width: Level 21+ list so many KEYS MASTERED that the card
+     grew to the full viewport, and the row wrapped a lone '=' onto its own line. */
+  box-sizing: border-box;
+  max-width: min(960px, 94vw);
   border: 2px solid var(--level-accent, var(--crt-amber));
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.92); /* 0.85 let bright theme art bleed through under stat text */
+  /* OPAQUE. 0.85, then 0.92, still let bright art read through UNDER the text:
+     Level 25's "THE END." and its credits ghosted through the stats (2026-10-30).
+     The card is a moment of its own — nothing behind it may compete. */
+  background: #000;
   box-shadow:
     0 0 30px rgba(0, 0, 0, 0.8),
     inset 0 0 20px rgba(0, 0, 0, 0.5),
@@ -957,6 +974,8 @@
   color: var(--atari-dim);
   line-height: 3;
   letter-spacing: 2px;
+  /* A long KEYS MASTERED row wraps into EVEN lines, never one stray key. */
+  text-wrap: balance;
 }
 
 .complete-stat .val {
@@ -964,11 +983,23 @@
   text-shadow: 0 0 8px var(--level-accent);
 }
 
+/* The next-level cue blinks ON-weighted, not 50/50. The shared `blink` is dark
+   for half of every 1.2s, so a player (or a screenshot) glancing at the card
+   had even odds of seeing only the quiet "PRESS R TO REPLAY" underneath — the
+   cue read as arriving late, and the dim secondary option looked like the
+   only way forward. This one is lit from the first frame the card appears and
+   is dark for only a quarter of each cycle: still an arcade blink, never
+   absent long enough to miss. */
 .complete-prompt {
   font-size: 8px;
   color: var(--level-accent);
   text-shadow: 0 0 6px var(--level-accent);
-  animation: blink 1.2s step-end infinite;
+  animation: cueBlink 1.6s step-end infinite;
+}
+
+@keyframes cueBlink {
+  0%, 100% { opacity: 1; }
+  75% { opacity: 0; }
 }
 
 /* Secondary "replay this level" affordance — dim, quiet, offered at the
@@ -1094,29 +1125,52 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
+/* Every text block on the card sets an explicit line-height. Press Start 2P's
+   glyphs fill their whole em box and its "normal" line-height is exactly 1em,
+   so ANY line that wraps sits flush against the next with zero leading — and
+   at 7px, under the CRT scanlines, two touching lines read as one smear. A
+   persona playtest found it on the very first card a new player earns: "THE
+   BUMPS ON F AND J · UNKNOWN" wrapped, and UNKNOWN printed straight into the
+   title above it, right under the big JF (2600: THE HACKER QUARTERLY the
+   same). The fix is leading, not shrinking: a title is allowed to wrap, it
+   just has to wrap like text. text-wrap:balance evens the two lines so the
+   year is not left dangling alone. Verified 2026-10-30 by rendering all 84
+   cards (arcade + wing + act) into this element and checking per-line boxes:
+   10 collided before, 0 after. */
 .history-card-header {
   font-size: 6px;
+  line-height: 1.8;
   letter-spacing: 1px;
   color: #6b5f43;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   text-align: center;
 }
 
 .history-card-word {
   font-size: 16px;
+  line-height: 1.4;
   letter-spacing: 2px;
   color: #2a2418;
   text-align: center;
   margin-bottom: 8px;
   word-break: break-word;
+  text-wrap: balance;
 }
 
 .history-card-meta {
   font-size: 7px;
+  line-height: 1.9;
   letter-spacing: 1px;
   color: #4a4030;
   text-align: center;
   margin-bottom: 12px;
+  text-wrap: balance;
+}
+
+/* The year wraps as one unit, so a range such as "1983–1994" never breaks
+   at its dash. */
+#history-card-year {
+  white-space: nowrap;
 }
 
 .history-card-fact {
@@ -1128,6 +1182,7 @@
 
 .history-card-count {
   font-size: 6px;
+  line-height: 1.8;
   letter-spacing: 1px;
   color: #6b5f43;
   text-align: right;
@@ -1528,6 +1583,19 @@
   font-size: 9px;
   color: var(--nudge-red);
   text-shadow: 0 0 8px rgba(255, 68, 68, 0.4);
+  letter-spacing: 1px;
+}
+
+.settings-harder-confirm {
+  color: var(--crt-amber);
+  text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+}
+
+.settings-erase-sub {
+  margin-top: 10px;
+  font-size: 7px;
+  color: var(--atari-dim);
+  text-shadow: none;
   letter-spacing: 1px;
 }
 

@@ -11,8 +11,8 @@
 // Scar tissue honored:
 //  - L16: all geometry is positioned in CANVAS space (fractions of W/H), never
 //    DOM space.
-//  - L17: the formation is anchored HIGH (top ~14–42% of the canvas) so it
-//    never collides with the centered letter prompt at W*0.5, H*0.5.
+//  - L17: the formation lives in the TOP BAND (FORM_TOP..FORM_BOTTOM, above the
+//    prompt panel's measured 0.177H border) and dives loop down the side margins.
 //  - F1: no sentinel animation-frame values reach arc/geometry math. Every
 //    dive and beam uses a clamped 0..1 progress; victory sets no giant frames.
 //  - 60fps: bounded arrays (stars, dives, blasts, bugs) — no per-frame
@@ -41,7 +41,7 @@ const MAX_DIVES = 10;
 let dives = [];
 
 // --- hit blasts (bounded pool) ---
-const MAX_BLASTS = 24;
+const MAX_BLASTS = 48;
 let blasts = [];
 
 // --- the twin-fighter capture-beam flourish ---
@@ -85,6 +85,11 @@ function clamp(v, lo, hi) {
   return v < lo ? lo : (v > hi ? hi : v);
 }
 
+function cubic(a, b, c, d, u) {
+  const m = 1 - u;
+  return m * m * m * a + 3 * m * m * u * b + 3 * m * u * u * c + u * u * u * d;
+}
+
 function spawnStars() {
   stars = [];
   const W = canvas.width, H = canvas.height;
@@ -104,14 +109,26 @@ function spawnStars() {
   }
 }
 
+// The formation's vertical budget, as canvas fractions. The prompt panel's top
+// edge MEASURES 0.177H at 1280x800 (the contract's "~0.19H" is the label, not the
+// panel border) — so the band ends at 0.160H, a clear gap above the border.
+const FORM_TOP = 0.015;
+const FORM_BOTTOM = 0.160;
+
 function spawnFormation() {
   bugs = [];
   const W = canvas.width, H = canvas.height;
-  const px = Math.max(2, Math.round(Math.min(W, H) / 260)); // sprite pixel size
+  // Size the sprite FROM the band, not from the canvas: 5 ranks of 8 sprite-pixels
+  // plus 4 gaps of >= 1.5 sprite-pixels must fit in (FORM_BOTTOM - FORM_TOP) * H.
+  // Integer pixels (era-faithful, no anti-aliasing); 2 is the legibility floor.
+  const bandH = (FORM_BOTTOM - FORM_TOP) * H;
+  const px = Math.max(2, Math.floor(bandH / (FORM_ROWS * 8 + (FORM_ROWS - 1) * 1.5)));
   const bugW = 8 * px;
   const bugH = 8 * px;
   const gapX = bugW * 0.6;
-  const gapY = bugH * 0.2;
+  // Spread the ranks to fill the band (Galaga's formation is airy), capped so a
+  // tall canvas doesn't pull them apart.
+  const gapY = Math.min(bugH * 0.5, (bandH - FORM_ROWS * bugH) / (FORM_ROWS - 1));
   const totalW = FORM_COLS * bugW + (FORM_COLS - 1) * gapX;
   const startX = (W - totalW) / 2;
   // L17 / the Theme Layout Contract: the formation lives in the TOP BAND
@@ -130,10 +147,11 @@ function spawnFormation() {
   // could not find the letter they were being asked to type.
   //
   // So the sprite shrank (px divisor 220 -> 260) and the formation moved to the
-  // very top. Five ranks now measure ~139px and span 0.015H-0.189H at 1280x800:
-  // entirely above the reserved edge, with all five ranks kept — faithful AND
-  // out of the way, which the earlier pass believed was impossible.
-  const startY = H * 0.015;
+  // very top — but "0.189H" was measured against the documented ~0.19H, and the
+  // panel's real border is at 0.177H, so the bottom rank still touched it (persona
+  // playtest, 2026-10-29). The sprite is now sized from the measured band above
+  // (FORM_TOP..FORM_BOTTOM): at 1280x800 px=2, five ranks span 0.015H-0.155H.
+  const startY = H * FORM_TOP;
 
   for (let row = 0; row < FORM_ROWS; row++) {
     for (let col = 0; col < FORM_COLS; col++) {
@@ -166,9 +184,24 @@ function bugCenter(b) {
   return { x: b.homeX + swayX + size / 2, y: b.homeY + size / 2, size };
 }
 
-function addBlast(x, y, color) {
+// `r` is the burst's full spread radius. Bug bursts pass a radius scaled to the
+// sprite so a burst on the bottom rank never reaches the prompt panel's border.
+// `big` marks a celebration burst: drawn additively ('lighter') with a white-hot
+// core, because ordinary alpha sparks vanish against deep-space black (L35).
+// Every burst is kept wholly inside the canvas: its centre never sits closer to
+// the top edge than its own spread + largest spark (journal L34 — budget to the
+// full box, not the anchor). The top rank lives at 0.015H, so an unclamped burst
+// there used to be sliced off by y=0 (persona playtest, 2026-10-30).
+const EDGE_MARGIN = 0.015;
+function addBlast(x, y, color, max = 18, r = 22, big = false) {
   if (blasts.length >= MAX_BLASTS) blasts.shift();
-  blasts.push({ x, y, color, frame: 0, max: 18 });
+  const H = canvas ? canvas.height : 0;
+  const minY = H * EDGE_MARGIN + r + (big ? 5 : 3);
+  blasts.push({ x, y: Math.max(y, minY), color, frame: 0, max, r, big });
+}
+
+function bugBlastRadius(b) {
+  return 8 * b.px * 1.1;
 }
 
 // --- hooks -----------------------------------------------------------------
@@ -186,20 +219,25 @@ export function keystroke() {
     const b = alive[Math.floor(Math.random() * alive.length)];
     const c = bugCenter(b);
     const W = canvas.width, H = canvas.height;
-    // dive toward lower-left or lower-right edge (never dead-center — L17),
-    // arcing down and back up.
-    const toLeft = c.x > W * 0.5;
+    // Peel off OUTWARD — a bug on the left half dives down the left margin, one
+    // on the right down the right margin. (It used to dive toward the OPPOSITE
+    // side, so every right-half bug swept straight through the prompt panel.)
+    // A cubic whose first handle sits level with the formation makes the bug
+    // slide SIDEWAYS through the top band before it drops, so even an inner-
+    // column bug clears the panel's top corner (~0.40W/0.177H); the loop then
+    // stays in the side margin (lowest ~0.40H, x < 0.15W or > 0.85W), beside the
+    // keyboard guide, never over it. L17 / the Theme Layout Contract.
+    const toLeft = c.x < W * 0.5;
+    const side = (lo, span) => (toLeft ? W * (lo + Math.random() * span) : W * (1 - lo - Math.random() * span));
     dives.push({
       bug: b,
       t: 0,                         // 0..1 clamped progress
       speed: 0.012 + Math.random() * 0.01,
       startX: c.x,
       startY: c.y,
-      // control + end points anchored toward an edge and the lower screen
-      ctrlX: toLeft ? W * (0.15 + Math.random() * 0.1) : W * (0.75 + Math.random() * 0.1),
-      ctrlY: H * (0.62 + Math.random() * 0.1),
-      endX: toLeft ? W * (0.08 + Math.random() * 0.08) : W * (0.84 + Math.random() * 0.08),
-      endY: H * (0.30 + Math.random() * 0.08),
+      p1X: side(0.08, 0.04), p1Y: H * 0.12,
+      p2X: side(0.05, 0.05), p2Y: H * (0.52 + Math.random() * 0.06),
+      endX: side(0.06, 0.05), endY: H * (0.28 + Math.random() * 0.06),
     });
   }
 }
@@ -224,7 +262,7 @@ export function patternComplete() {
     target.alive = false;
     alive.splice(idx, 1);
     const c = bugCenter(target);
-    addBlast(c.x, c.y, target.color);
+    addBlast(c.x, c.y, target.color, 18, bugBlastRadius(target));
   }
 
   // Won once the formation is essentially cleared. This becomes true and
@@ -243,30 +281,70 @@ export function miss() {
   }
 }
 
+// ─── Victory: the cleared formation lights up ────────────────────────────────
+// By the time the engine calls victory() the formation is normally already gone
+// (the win IS "every bug cleared"), so the old celebration — 12 sparks ringed at
+// (0.5W, 0.22H), i.e. BEHIND the prompt panel, for 18 frames — showed ~nothing,
+// then held 4s of dead air because it returned no duration (theme-authoring.md
+// "Victory must celebrate"). Now: two rainbow waves of bursts sweep the empty
+// formation slots in the top band (rank by rank down, then back up), the fighter
+// stays on screen, and the starfield runs faster. Built only from this scene's
+// own vocabulary; the Galaga wiki page documents no stage-clear screen, so no
+// historical stage-clear is claimed. Every step derives from CLAMPED elapsed ms
+// (F1/L36), so a throttled frame still lands coherently.
+const VICTORY_MS = 2400;
+const WAVE_MS = 900;          // one sweep across the five ranks
+const WAVE2_AT = 1100;        // the return sweep starts here
+// The panels are hidden through the victory window, so the celebration bursts
+// can be ~3x a gameplay burst without covering anything the child must read.
+const VICTORY_BURST_SCALE = 3.2;
+let victoryStart = 0;
+let victoryElapsed = 0;
+
 export function victory() {
   victoryMode = true;
   dives = [];
   beam.active = false;
-
-  // Celebratory: light up remaining bugs into blasts, one warm burst each.
-  // No sentinel frames — every blast uses a bounded 0..max frame counter.
+  victoryStart = performance.now();
+  victoryElapsed = 0;
   for (let i = 0; i < bugs.length; i++) {
     const b = bugs[i];
-    if (!b.alive) continue;
+    // Any straggler pops in the first wave like everyone else.
     b.alive = false;
-    const c = bugCenter(b);
-    addBlast(c.x, c.y, b.color);
+    b.wave1 = false;
+    b.wave2 = false;
   }
-  // A ring of extra sparks high on screen (well above the prompt).
-  const W = canvas.width, H = canvas.height;
-  const ringN = Math.min(MAX_BLASTS, 12);
-  for (let i = 0; i < ringN; i++) {
-    const a = (i / ringN) * Math.PI * 2;
-    addBlast(
-      W * 0.5 + Math.cos(a) * W * 0.18,
-      H * 0.22 + Math.sin(a) * H * 0.08,
-      BUG_COLORS[i % BUG_COLORS.length]
-    );
+  return VICTORY_MS;
+}
+
+function updateVictoryWaves() {
+  victoryElapsed = clamp(performance.now() - victoryStart, 0, VICTORY_MS);
+  const rankStep = WAVE_MS / FORM_ROWS;
+  // The celebration bursts are ~3x a gameplay burst, so on the top rank they
+  // would cross y=0. Rather than let addBlast pile the top three ranks onto one
+  // clamped line (which flattens the rank-by-rank sweep), shift the WHOLE wave
+  // down by one uniform amount so the top rank's burst just fits. The DOM panels
+  // are down for the celebration, so the lower ranks may pass where they sit.
+  const H = canvas.height;
+  let yShift = 0;
+  if (bugs.length) {
+    const r0 = bugBlastRadius(bugs[0]) * VICTORY_BURST_SCALE;
+    yShift = Math.max(0, H * EDGE_MARGIN + r0 + 5 - bugCenter(bugs[0]).y);
+  }
+  for (let i = 0; i < bugs.length; i++) {
+    const b = bugs[i];
+    const t1 = b.row * rankStep + b.col * (rankStep / FORM_COLS);
+    const t2 = WAVE2_AT + (FORM_ROWS - 1 - b.row) * rankStep + (FORM_COLS - 1 - b.col) * (rankStep / FORM_COLS);
+    if (!b.wave1 && victoryElapsed >= t1) {
+      b.wave1 = true;
+      const c = bugCenter(b);
+      addBlast(c.x, c.y + yShift, BUG_COLORS[(b.row + b.col) % BUG_COLORS.length], 34, bugBlastRadius(b) * VICTORY_BURST_SCALE, true);
+    }
+    if (!b.wave2 && victoryElapsed >= t2) {
+      b.wave2 = true;
+      const c = bugCenter(b);
+      addBlast(c.x, c.y + yShift, BUG_COLORS[(b.row + b.col + 3) % BUG_COLORS.length], 34, bugBlastRadius(b) * VICTORY_BURST_SCALE, true);
+    }
   }
 }
 
@@ -278,7 +356,8 @@ function update() {
   // starfield scroll (downward, depth-scaled)
   for (let i = 0; i < stars.length; i++) {
     const s = stars[i];
-    const spd = 0.3 + s.depth * 0.6;
+    // the starfield runs ~3x faster through the celebration
+    const spd = (0.3 + s.depth * 0.6) * (victoryMode ? 3 : 1);
     s.y += spd;
     if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
     s.tw += 0.05 + s.depth * 0.03;
@@ -306,7 +385,7 @@ function update() {
     if (blasts[i].frame >= blasts[i].max) blasts.splice(i, 1);
   }
 
-  if (victoryMode) return;
+  if (victoryMode) { updateVictoryWaves(); return; }
 
   // lone fighter drift along the bottom (ambient)
   fighter.x += fighter.driftDir * 0.8;
@@ -393,21 +472,19 @@ function drawDives() {
   for (let i = 0; i < dives.length; i++) {
     const d = dives[i];
     if (!d.bug.alive) continue;
-    // quadratic Bézier out (0..0.5) then mirror back to a home slot (0.5..1),
-    // all driven by clamped t — no sentinel values reach this math.
+    // cubic Bézier out (0..0.5) then the same loop reversed back to the home
+    // slot (0.5..1), all driven by clamped t — no sentinel values reach this math.
     const t = clamp(d.t, 0, 1);
     let px, py;
     if (t < 0.5) {
-      const u = t / 0.5;             // 0..1 down-arc
-      const mu = 1 - u;
-      px = mu * mu * d.startX + 2 * mu * u * d.ctrlX + u * u * d.endX;
-      py = mu * mu * d.startY + 2 * mu * u * d.ctrlY + u * u * d.endY;
+      const u = t / 0.5;             // 0..1 peel-off + down-arc
+      px = cubic(d.startX, d.p1X, d.p2X, d.endX, u);
+      py = cubic(d.startY, d.p1Y, d.p2Y, d.endY, u);
     } else {
       const u = (t - 0.5) / 0.5;     // 0..1 return-arc back to home
-      const mu = 1 - u;
       const home = bugCenter(d.bug);
-      px = mu * mu * d.endX + 2 * mu * u * d.ctrlX + u * u * home.x;
-      py = mu * mu * d.endY + 2 * mu * u * d.ctrlY + u * u * home.y;
+      px = cubic(d.endX, d.p2X, d.p1X, home.x, u);
+      py = cubic(d.endY, d.p2Y, d.p1Y, home.y, u);
     }
     const flap = Math.abs(Math.sin(t * 20)) * d.bug.px;
     drawSprite(BUG_SHAPE, px, py, d.bug.px, d.bug.color, flap);
@@ -420,9 +497,18 @@ function drawBlasts() {
     const p = clamp(bl.frame / bl.max, 0, 1);
     const alpha = 1 - p;
     ctx.globalAlpha = alpha;
-    const spread = p * 22;
-    const n = 8;
-    const sz = 2 + (1 - p) * 4;
+    const spread = p * bl.r;
+    const n = bl.big ? 12 : 8;
+    const sz = bl.big ? 3 + (1 - p) * 7 : 2 + (1 - p) * 4;
+    if (bl.big) {
+      ctx.globalCompositeOperation = 'lighter';
+      // white-hot core for the first third of the burst
+      if (p < 0.35) {
+        const core = (1 - p / 0.35) * bl.r * 0.35;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(bl.x - core / 2, bl.y - core / 2, core, core);
+      }
+    }
     for (let j = 0; j < n; j++) {
       const a = (j / n) * Math.PI * 2;
       const x = bl.x + Math.cos(a) * spread;
@@ -430,6 +516,7 @@ function drawBlasts() {
       ctx.fillStyle = j % 2 === 0 ? bl.color : '#ffffff';
       ctx.fillRect(x - sz / 2, y - sz / 2, sz, sz);
     }
+    ctx.globalCompositeOperation = 'source-over';
   }
   ctx.globalAlpha = 1;
 }
@@ -460,7 +547,7 @@ function drawBeam() {
   intensity = clamp(intensity, 0, 1);
 
   // trapezoid tractor beam from boss bug down toward the fighter
-  const topW = beam.by ? 14 : 14;
+  const topW = 14;
   const botW = 60;
   const topY = beam.by;
   const botY = fy;
@@ -496,10 +583,8 @@ function draw() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   drawStars();
-  if (!victoryMode) {
-    drawBeam();
-    drawFighter();
-  }
+  if (!victoryMode) drawBeam();
+  drawFighter();
   drawBugs();
   drawDives();
   drawBlasts();

@@ -58,7 +58,7 @@
 // hand-tuned pixel constant is exactly how the title and the developer line ended up
 // drawn on top of each other (Trevor, 2026-09-13; journal O20's class of bug).
 
-import { kitFor, readScene, textHeight, textWidth, lineStep } from '../render/kit.js';
+import { kitFor, readScene, textHeight, textWidth, lineStep, overlaps } from '../render/kit.js';
 
 const kit = kitFor('mode7');
 
@@ -72,6 +72,14 @@ const FOV = 180;
 const ROAD_HALF = 1.6;         // world units; the kit maps this to ~0.28W on screen
 const CURB = 2.1;
 const LAP_DEPTH = 260;         // world units of road in one lap
+// The ghost's drawn distance: true up to GHOST_NEAR world units ahead, then eased
+// so it never sits further than GHOST_NEAR + GHOST_SPAN (drawing only — see the
+// ghost block in drawScene).
+const GHOST_NEAR = 6;
+const GHOST_SPAN = 12;
+// The ghost's look — ONE definition, read by the road AND the legend, so the key
+// can never drift from the thing it names.
+const GHOST_ALPHA = 0.6;
 
 // Sprites are 1-bit masks; a multi-colour SNES sprite is several masks in
 // different palette inks, which is exactly how the hardware composed one.
@@ -306,15 +314,34 @@ function drawScene(ctx, W, H, state) {
     }
 
     // ── the ghost: you, last time, actually translucent this era ────────────
+    // FINDABLE, not just present (persona playtest, 2026-10-29: on lap 2 the ghost
+    // was "a tiny speck at the horizon"). Two changes, both drawing-only — the
+    // ghost's real position comes from `ghostProgress` and nothing here writes to
+    // it or to the lap (INV-78):
+    //   · DEPTH COMPRESSION — near you it sits at its true distance; beyond
+    //     GHOST_NEAR world units it is eased toward GHOST_NEAR + GHOST_SPAN, so a
+    //     ghost half a lap ahead reads as "up the road", never as a pixel. The
+    //     order is preserved (further ahead is always drawn further away).
+    //   · A SCALE FLOOR of 2 and a GHOST name-plate over it, so it can be found at
+    //     a glance. The plate is opaque night with cyan letters — the cyan of the
+    //     ghost's own canopy — so it reads over the city skyline.
     if (s.ghostProgress !== null) {
       const rel = s.ghostProgress - s.progress;
-      const gv = camZ + rel * LAP_DEPTH + 2.4;
-      if (rel > -0.05 && rel < 0.5) {
-        p.withAlpha(0.55, () => {
-          const hit = p.billboard(CRAFT, -0.55, gv, C.white, { size: 0.075 });
+      if (rel > -0.05) {
+        const d = rel * LAP_DEPTH;
+        const dVis = d <= GHOST_NEAR ? d
+          : GHOST_NEAR + GHOST_SPAN * (1 - Math.exp(-(d - GHOST_NEAR) / GHOST_SPAN));
+        const gv = camZ + dVis + 2.4;
+        // billboard scale = round(dy * size), dy = FOV / depth; pick a size whose
+        // scale is never below 2 however far away the ghost is drawn.
+        const size = Math.max(0.075, 2.2 * Math.max(0.5, dVis + 2.4) / FOV);
+        let plate = null;
+        p.withAlpha(GHOST_ALPHA, () => {
+          const hit = p.billboard(CRAFT, -0.55, gv, C.white, { size });
           if (hit) {
             p.blit1bit(CANOPY, hit.x - hit.w * 0.19, hit.y - hit.h * 0.72, C.cyan,
               { scale: Math.max(1, Math.round(hit.scale * 0.6)) });
+            plate = hit;
             if (s.ghostWaiting) {
               // Waiting at the line, cheering, until you get there (spec §5.5).
               const bob = Math.sin(T / 180) * 3;
@@ -325,6 +352,21 @@ function drawScene(ctx, W, H, state) {
             }
           }
         });
+        // The plate only while the ghost is small (once it is beside you its body
+        // and canopy say it), kept clear of the title block and the engine's band.
+        if (plate && plate.scale <= 3 && !s.celebrating) {
+          const tw = textWidth('GHOST', 1);
+          const th = textHeight(1);
+          // the bottom of the NINTENDO 1990 line — the same arithmetic the title
+          // block below uses (titleTop + lineStep(2, 0.85) + one text row)
+          const subBottom = Math.round(0.020 * PH) + lineStep(2, 0.85) + th;
+          const ty = Math.max(subBottom + 3, plate.y - plate.h - th - 4 - (s.ghostWaiting ? 12 : 0));
+          if (ty + th < resTop - 2) {
+            const tx = Math.round(plate.x - tw / 2);
+            p.rect(tx - 2, ty - 2, tw + 4, th + 4, C.night);
+            p.text('GHOST', tx, ty, C.cyan, { scale: 1 });
+          }
+        }
       }
     }
 
@@ -431,6 +473,8 @@ function drawScene(ctx, W, H, state) {
     p.text('F-ZERO', 0.255 * PW, titleTop, C.pale, { scale: 2 });
     p.text('NINTENDO 1990', 0.255 * PW, subTop, C.cyan, { scale: 1 });
 
+    drawLegend(p, PW, PH, resTop, s);
+
     // ── the dash sliver below the engine's panel: F-Zero's own power gauge ──
     // Laid out left to right from measured widths, so no caption can grow into the
     // next one: MODE 7 · CHARGE · the gauge, each clear of the last by a glyph cell.
@@ -458,6 +502,69 @@ function drawScene(ctx, W, H, state) {
         t > 0.75 ? C.pale : (t > 0.45 ? C.cyan : C.blue));
     }
   });
+}
+
+// ── the legend: WHICH ONE IS WHICH ─────────────────────────────────────────
+// Monaco GP carries a fascia legend (YOU / THE FIELD / GHOST); this track had only
+// the GHOST name-plate, so on lap 2 a child saw a faint white machine with no key
+// to it (persona playtest, 2026-10-30). Same job here, in this tier's vocabulary:
+// each row is drawn with the SAME sprite, inks and translucency the road uses, so
+// the key is literally a small copy of the thing it names.
+// PLACEMENT: the top-right sky — the right-margin stage region, clear of the title
+// block (0.255W), of the ghost's plate (which rides the left lane, ~0.3–0.4W) and
+// of the engine's reserved band far below. Opaque night backing, because the
+// skyline's towers stand behind it. It steps aside for any engine overlay card and
+// for the celebration camera (the win moment owns the screen). Drawing only — it
+// reads `ghostProgress` and writes nothing (INV-78).
+function drawLegend(p, PW, PH, resTop, s) {
+  if (s.celebrating) return;
+  const rows = s.ghostProgress !== null ? 3 : 2;
+  const th = textHeight(1);
+  const rowH = Math.max(CRAFT.length, th) + 3;
+  const gx = Math.round(0.735 * PW);                 // glyph column
+  const tx = gx + CRAFT[0].length + 4;               // label column
+  const y0 = Math.round(0.020 * PH) + 2;
+  const pad = 3;
+  const left = gx - pad, top = y0 - pad;
+  const w = (tx + textWidth('THE FIELD', 1)) - gx + pad * 2;
+  const h = rows * rowH - 3 + pad * 2;
+  if (left + w > PW - 1) return;                      // it fits, or it waits
+  if (top + h > resTop - 2) return;
+  if (overlaps(s.overlay, left / PW, top / PH, (left + w) / PW, (top + h) / PH)) return;
+
+  p.rect(left, top, w, h, C.night);
+  // a 1px purple frame, so the card reads as a card against the night sky band
+  p.rect(left, top, w, 1, C.purple);
+  p.rect(left, top + h - 1, w, 1, C.purple);
+  p.rect(left, top, 1, h, C.purple);
+  p.rect(left + w - 1, top, 1, h, C.purple);
+  const labelY = (y) => y + Math.round((CRAFT.length - th) / 2);
+
+  // YOU — the player's craft, exactly as on the road (blue body, navy + rose
+  // stripes, cyan canopy), at scale 1.
+  let y = y0;
+  p.blit1bit(CRAFT, gx, y, C.blue);
+  p.rect(gx + 1, y + CRAFT.length - 2, CRAFT[0].length - 2, 1, C.navy);
+  p.rect(gx + 2, y + CRAFT.length - 1, CRAFT[0].length - 4, 1, C.rose);
+  p.blit1bit(CANOPY, gx + (CRAFT[0].length - CANOPY[0].length) / 2, y + 1, C.cyan);
+  p.text('YOU', tx, labelY(y), C.pale, { scale: 1 });
+
+  // THE FIELD — a rival in the first of the neutral inks the road uses.
+  y += rowH;
+  p.blit1bit(RIVAL, gx + (CRAFT[0].length - RIVAL[0].length) / 2,
+    y + Math.round((CRAFT.length - RIVAL.length) / 2), RIVAL_INKS[1]);
+  p.text('THE FIELD', tx, labelY(y), C.pale, { scale: 1 });
+
+  // GHOST — only while one is actually on the road: your body, white, at the
+  // ghost's own translucency, with the same cyan canopy and a cyan label that
+  // matches its name-plate.
+  if (rows < 3) return;
+  y += rowH;
+  p.withAlpha(GHOST_ALPHA, () => {
+    p.blit1bit(CRAFT, gx, y, C.white);
+    p.blit1bit(CANOPY, gx + (CRAFT[0].length - CANOPY[0].length) / 2, y + 1, C.cyan);
+  });
+  p.text('GHOST', tx, labelY(y), C.cyan, { scale: 1 });
 }
 
 export const TRACK = Object.freeze({

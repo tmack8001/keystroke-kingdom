@@ -209,6 +209,27 @@ export const DIFFICULTY_DESCRIPTOR = {
   expert: 'FOR SHOWOFFS',
 };
 
+// Word-length descriptors — every rung names its REAL direction (product.md §Word-length
+// labels say which way is harder, 2026-10-30). The MAX row used to read "— EASIER" on every
+// rung, including 24, its HARDEST one: a higher MAX lets longer words in, so it climbs
+// toward harder, and 24 is the WIZARD-equivalent top. A higher MIN demands longer words,
+// so it also climbs toward harder. ANY is the default on both and names itself so.
+export function minWordLenDescriptor(v) {
+  if (v === 0) return 'ANY LENGTH — SHORT WORDS WELCOME';
+  if (v <= 4) return `ONLY WORDS ${v}+ LETTERS — A BIT HARDER`;
+  if (v <= 7) return `ONLY WORDS ${v}+ LETTERS — HARDER`;
+  return `ONLY WORDS ${v}+ LETTERS — HARDEST`;
+}
+
+export function maxWordLenDescriptor(v) {
+  if (v === 0) return 'ANY LENGTH — THE LEVEL\'S OWN MIX';
+  if (v <= 5) return `NOTHING OVER ${v} LETTERS — EASIEST`;
+  if (v <= 8) return `NOTHING OVER ${v} LETTERS — EASIER`;
+  if (v <= 12) return `UP TO ${v} LETTERS — HARDER`;
+  if (v < 24) return `UP TO ${v} LETTERS — LONG WORDS, HARDER STILL`;
+  return 'UP TO 24 LETTERS — THE LONGEST WORDS, HARDEST';
+}
+
 // ─── Settings screen rows ────────────────────────────────────────────────
 // Declarative row model: each row knows its label, how to read/cycle its
 // value, how to render its display string, and whether it's active given
@@ -225,6 +246,11 @@ const ROWS = [
       ? 'QUARTERS ON THE LINE. TIME PRESSURE. 1979 RULES.'
       : 'NO TIMERS. NO LIVES. JUST YOU AND THE KEYS.',
     active: () => true,
+    // Moving to a HARDER value asks first (product.md §Choosing a harder rule asks
+    // once, Trevor 2026-10-30). SURVIVAL is opt-in, and Tab → → Esc used to save it
+    // instantly, machine-wide. Moving back to ADVENTURE (easier) never asks.
+    harder: (from, to) => from !== 'survival' && to === 'survival',
+    confirmPrompt: 'YOU CHOSE 1979 RULES — KEEP IT?',
   },
   {
     key: 'lives',
@@ -255,9 +281,7 @@ const ROWS = [
     label: 'MIN WORD LENGTH',
     values: MIN_WORD_LEN_VALUES,
     display: (v) => v === 0 ? 'ANY' : `${v} LETTERS`,
-    descriptor: (v) => v === 0
-      ? 'NO MINIMUM — SHORT WORDS OK'
-      : `ONLY WORDS ${v}+ LETTERS — TOUGHER`,
+    descriptor: (v) => minWordLenDescriptor(v),
     active: () => true,
   },
   {
@@ -265,9 +289,7 @@ const ROWS = [
     label: 'MAX WORD LENGTH',
     values: MAX_WORD_LEN_VALUES,
     display: (v) => v === 0 ? 'ANY' : `${v} LETTERS`,
-    descriptor: (v) => v === 0
-      ? 'NO LIMIT — LONGEST WORDS TOO'
-      : `NOTHING OVER ${v} LETTERS — EASIER`,
+    descriptor: (v) => maxWordLenDescriptor(v),
     active: () => true,
   },
   {
@@ -361,4 +383,20 @@ export function applyRowChange(settings, rowIndex, dir) {
   if (!row || row.action || !row.active(settings)) return settings;
   const next = { ...settings, [row.key]: cycleValue(row, settings[row.key], dir) };
   return saveSettings(next);
+}
+
+// The settings SCREEN's path (product.md §Choosing a harder rule asks once): compute
+// the next settings WITHOUT saving, and report whether the move needs a Y/N first.
+// Returns { next, confirm } where `confirm` is the row's fixed prompt text when the
+// move is to a HARDER value, else null. Nothing here touches localStorage, so an
+// unconfirmed harder value can never reach kk-settings — not even if the tab is
+// closed while the question is on screen. The caller saves `next` itself: at once
+// when `confirm` is null, only after Y otherwise. A no-op row returns
+// { next: settings, confirm: null }, mirroring applyRowChange.
+export function previewRowChange(settings, rowIndex, dir) {
+  const row = ROWS[rowIndex];
+  if (!row || row.action || !row.active(settings)) return { next: settings, confirm: null };
+  const next = sanitize({ ...settings, [row.key]: cycleValue(row, settings[row.key], dir) });
+  const harder = typeof row.harder === 'function' && row.harder(settings[row.key], next[row.key]);
+  return { next, confirm: harder ? row.confirmPrompt : null };
 }

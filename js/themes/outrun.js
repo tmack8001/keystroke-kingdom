@@ -372,16 +372,22 @@ function drawRival() {
 // ─── HUD ─────────────────────────────────────────────────────────────────
 function drawHUD() {
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
+  ctx.textBaseline = 'middle';
   ctx.font = '10px "Press Start 2P", monospace';
   ctx.fillStyle = '#ffe89a';
   ctx.shadowColor = '#ff5aa0';
   ctx.shadowBlur = 6;
   const stage = Math.min(sequencesCompleted, winSequences);
-  ctx.fillText(`STAGE ${stage}/${winSequences}`, 14, 22);
+  // Top band, just right of the HUD's LEVEL badge (which ends ~0.105W) and well
+  // above the prompt panel (~0.177H). It used to sit at (14,22) — UNDER the badge
+  // (persona playtest 2026-10-30; journal F30). The widest form, "STAGE 21/21" at
+  // WIZARD 3.5x, is ~110px and stays inside the band at every tier.
+  ctx.fillText(`STAGE ${stage}/${winSequences}`, Math.round(W * 0.125), Math.round(H * 0.045));
+  ctx.textBaseline = 'alphabetic';
 
-  // Checkpoint flash banner (top band, out of the reserved center).
-  if (checkpointFlash > 0) {
+  // Checkpoint flash banner (top band, out of the reserved center). Not during
+  // the victory, where it stacked on top of YOU MADE IT!.
+  if (checkpointFlash > 0 && !victoryMode) {
     ctx.textAlign = 'center';
     ctx.font = '14px "Press Start 2P", monospace';
     const a = Math.min(1, checkpointFlash / 40);

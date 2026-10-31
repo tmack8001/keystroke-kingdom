@@ -143,6 +143,12 @@ const HERO_B = [
   '..#####..',
   '...###...'
 ];
+// THE GHOST — your own last lap. It is drawn with YOUR body (HERO_A) at half ink
+// (an ordered dither), so it can never be mistaken for the field's hollow cars,
+// and the fascia legend shows exactly this glyph beside the word GHOST.
+const GHOST_CAR = HERO_A;
+const GHOST_INK = { stipple: 1 };
+
 // The marshal at the finish line, two frames, waving.
 const CHEER_A = ['..#..', '.###.', '#.#.#', '.###.', '..#..', '.#.#.', '#...#'];
 const CHEER_B = ['..#..', '.###.', '#####', '..#..', '..#..', '.#.#.', '#...#'];
@@ -371,6 +377,11 @@ function drawScene(ctx, W, H, state) {
     }
 
     // ── the ghost: you, last time, dithered ─────────────────────────────────
+    // It wears YOUR silhouette (the solid slab), dithered — never the field's
+    // hollow outline car. It used to be a dithered CAR_N, which at one ink read as
+    // just another rival, and the legend had no entry for it (persona playtest,
+    // 2026-10-29: the ghost "cannot be told from the field"). Same body as you,
+    // half the ink: "you, last time" said in the only translucency 1979 had.
     if (s.ghostProgress !== null) {
       let gy = carY - (s.ghostProgress - s.progress) * PH * AHEAD;
       const gx = xc - (half - 7) * 0.45;
@@ -379,12 +390,12 @@ function drawScene(ctx, W, H, state) {
         // there (spec §5.5 rule 2 — there is never a moment where you are alone
         // on a track someone else has already left).
         gy = Math.max(0.06 * PH, Math.min(gy, PH - 12));
-        drawCar(p, CAR_N, gx, gy, { stipple: 1 });
+        drawCar(p, GHOST_CAR, gx, gy, GHOST_INK);
         const wave = Math.floor(T / 220) % 2 === 0;
         p.blit1bit(wave ? CHEER_A : CHEER_B, xc + half + 4, gy - 9, INK);
         p.blit1bit(wave ? CHEER_B : CHEER_A, xc - half - 9, gy - 9, INK);
       } else if (gy > -14 && gy < PH + 14) {
-        drawCar(p, CAR_N, gx, gy, { stipple: 1 });
+        drawCar(p, GHOST_CAR, gx, gy, GHOST_INK);
       }
     }
 
@@ -592,6 +603,19 @@ function drawLegend(p, PW, PH, resTop, s) {
   const x2 = x + HERO_A[0].length + 4 + textWidth('YOU', 1) + textWidth('MM', 1);
   p.blit1bit(CAR_N, x2, y + (HERO_A.length - CAR_N.length) / 2, INK);
   p.text('THE FIELD', x2 + CAR_N[0].length + 4, mid, INK, { scale: 1 });
+
+  // Row two, only while a ghost is actually on the road: the SAME glyph and the
+  // same dither it is drawn with, under YOU, so the eye reads "you — and you,
+  // fainter". There is no room for a third entry on row one (THE FIELD already
+  // reaches the CHARGE rail's neighbourhood), and stacking it under YOU pairs the
+  // two cars that share a body.
+  if (s.ghostProgress === null) return;
+  const y2 = y + HERO_A.length + Math.round(textHeight(1) * 0.8);
+  if (y2 + GHOST_CAR.length > resTop - 2) return;          // it fits, or it waits
+  if (overlaps(s.overlay, 0.24, y2 / PH, 0.82, (y2 + GHOST_CAR.length) / PH)) return;
+  p.blit1bit(GHOST_CAR, x, y2, INK, GHOST_INK);
+  p.text('GHOST', x + GHOST_CAR[0].length + 4,
+    y2 + GHOST_CAR.length / 2 - Math.round(textHeight(1) / 2), INK, { scale: 1 });
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════╗

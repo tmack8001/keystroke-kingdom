@@ -14,6 +14,7 @@ import * as Maker from './maker.js';
 import * as ImFriend from './imfriend.js';
 import { GreenDragon } from './greendragon.js';
 import { GlimmerDeep, Whisperwood } from './tile-worlds.js';
+import { enterLabel } from '../key-label.js';
 
 let canvas, ctx, animId;
 let active = false;
@@ -24,7 +25,9 @@ let onWorldComplete = null; // (id) → persistence hook
 let currentId = null;       // id of the world currently playing (for win-credit)
 let cursor = 0;
 
-const PAL = { fg: '#4fe08a', dim: '#1f7a45', bg: '#00140a', accent: '#ffd23f' };
+// hint: the colour for lines a child reads (subtitle, world tags, the key footer) —
+// 5.6:1 on bg. dim (3.6:1) was below a comfortable reading contrast.
+const PAL = { fg: '#4fe08a', dim: '#1f7a45', hint: '#2f9e5c', bg: '#00140a', accent: '#ffd23f' };
 
 const WORLDS = [
   { id: GreenDragon.id, name: GreenDragon.title, tag: 'a prose adventure — read, then type',
@@ -134,7 +137,7 @@ function renderMenu() {
 
   const sub = Math.max(9, Math.floor(W * 0.011));
   ctx.font = `${sub}px "Press Start 2P", monospace`;
-  ctx.fillStyle = PAL.dim;
+  ctx.fillStyle = PAL.hint;
   ctx.fillText('the door opens on more than one', W / 2, Math.round(H * 0.26));
 
   const item = Math.max(12, Math.floor(W * 0.016));
@@ -150,15 +153,15 @@ function renderMenu() {
     ctx.fillText((sel ? '▸  ' : '   ') + w.name, W / 2, y);
     ctx.shadowBlur = 0;
     ctx.font = `${tag}px "Press Start 2P", monospace`;
-    ctx.fillStyle = PAL.dim;
-    ctx.globalAlpha = sel ? 0.9 : 0.5;
+    ctx.fillStyle = PAL.hint;
+    ctx.globalAlpha = sel ? 1 : 0.9;   // unselected tag still 4.7:1
     ctx.fillText(w.tag, W / 2, y + Math.round(item * 1.4));
   });
   ctx.globalAlpha = 1;
 
   ctx.font = `${sub}px "Press Start 2P", monospace`;
-  ctx.fillStyle = PAL.dim;
-  ctx.fillText('↑ ↓ CHOOSE    ·    SPACE / ENTER    ·    ESC: BACK TO THE ARCADE', W / 2, Math.round(H * 0.88));
+  ctx.fillStyle = PAL.hint;
+  ctx.fillText(`↑ ↓ CHOOSE    ·    SPACE / ${enterLabel()}    ·    ESC: BACK TO THE ARCADE`, W / 2, Math.round(H * 0.88));
 
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = 'rgba(0,0,0,0.10)';

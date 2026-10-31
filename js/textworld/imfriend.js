@@ -35,6 +35,7 @@
 //   start({onComplete}), stop(), handleKey(e), isActive(), hasWon()
 
 import * as Audio from '../audio.js';
+import { enterLabel } from '../key-label.js';
 import { sendChat } from '../chat.js';
 import {
   CURATED,
@@ -51,7 +52,8 @@ const PAL = {
   bg: '#0a0018',
   panel: '#160b2e',
   fg: '#eae4ff',
-  dim: '#8a7fb8',
+  dim: '#8a7fb8',   // 5.7:1 on bg at full opacity — never draw a cue below ~0.8 alpha
+  hint: '#a59bd1',  // friend blurbs: 8.0:1, still readable when unselected (0.8 → 5.4:1)
   you: '#9fe0ff',
   accent: '#ffd23f',
   warn: '#ff9c6b',
@@ -466,8 +468,8 @@ function renderPicker(W, H) {
     ctx.shadowBlur = 0;
     if (it.blurb) {
       ctx.font = `${tag}px "Press Start 2P", monospace`;
-      ctx.fillStyle = PAL.dim;
-      ctx.globalAlpha = sel ? 0.9 : 0.45;
+      ctx.fillStyle = PAL.hint;
+      ctx.globalAlpha = sel ? 1 : 0.8;
       ctx.fillText(it.blurb, W / 2, y + Math.round(item * 1.3));
     }
   });
@@ -479,8 +481,8 @@ function renderPicker(W, H) {
   ctx.font = `${sub}px "Press Start 2P", monospace`;
   ctx.fillStyle = PAL.dim;
   const hint = canForget
-    ? '↑ ↓ CHOOSE  ·  ENTER CHAT  ·  X FORGET  ·  ESC BACK'
-    : '↑ ↓ CHOOSE  ·  ENTER / SPACE CHAT  ·  ESC BACK';
+    ? `↑ ↓ CHOOSE  ·  ${enterLabel()} CHAT  ·  X FORGET  ·  ESC BACK`
+    : `↑ ↓ CHOOSE  ·  ${enterLabel()} / SPACE CHAT  ·  ESC BACK`;
   ctx.fillText(hint, W / 2, Math.round(H * 0.9));
 
   if (forgetId) drawForgetConfirm(W, H);
@@ -541,7 +543,7 @@ function renderMake(W, H) {
     const sm = Math.max(9, Math.floor(W * 0.011));
     ctx.font = `${sm}px "Press Start 2P", monospace`;
     ctx.fillStyle = PAL.dim;
-    const hint = step.optional ? 'type letters  ·  ENTER (or just ENTER to skip)' : 'type letters  ·  ENTER to keep going';
+    const hint = step.optional ? `type letters  ·  ${enterLabel()} (or just ${enterLabel()} to skip)` : `type letters  ·  ${enterLabel()} to keep going`;
     ctx.fillText(hint, W / 2, Math.round(H * 0.62));
   } else {
     const choices = step.choices;
@@ -565,12 +567,14 @@ function renderMake(W, H) {
     const sm = Math.max(9, Math.floor(W * 0.011));
     ctx.font = `${sm}px "Press Start 2P", monospace`;
     ctx.fillStyle = PAL.dim;
-    ctx.fillText('↑ ↓ CHOOSE  ·  ENTER to keep going', W / 2, Math.round(H * 0.82));
+    ctx.fillText(`↑ ↓ CHOOSE  ·  ${enterLabel()} to keep going`, W / 2, Math.round(H * 0.82));
   }
 
   ctx.font = `${Math.max(9, Math.floor(W * 0.01))}px "Press Start 2P", monospace`;
   ctx.fillStyle = PAL.dim;
-  ctx.fillText('ESC — back to your friends', W / 2, Math.round(H * 0.92));
+  // TRUE wording (INV-52): Escape is the HUB's key in every imfriend view, so it
+  // goes to the Text Worlds chooser — not back to the friends list.
+  ctx.fillText('ESC — back to the Text Worlds', W / 2, Math.round(H * 0.92));
   ctx.textBaseline = 'alphabetic';
 }
 
@@ -618,7 +622,8 @@ function renderChat(W, H) {
   // hint
   ctx.font = `${Math.max(9, Math.floor(W * 0.0105))}px "Press Start 2P", monospace`;
   ctx.fillStyle = PAL.dim;
-  ctx.fillText('ENTER — send   ·   ESC — back to your friends', marginX, Math.round(H * 0.93));
+  // TRUE wording (INV-52): Escape goes to the Text Worlds chooser, not the friends list.
+  ctx.fillText(`${enterLabel()} — send   ·   ESC — back to the Text Worlds`, marginX, Math.round(H * 0.93));
   ctx.textBaseline = 'alphabetic';
 }
 

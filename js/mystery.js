@@ -13,6 +13,9 @@ let audioCtx = null;
 let crtHumNode = null;
 let chordNodes = [];
 let skipped = false;
+// Replay-only skipping (transitions.md: "Skippable after first completion").
+// main.js passes { skippable } from progress read BEFORE the level was recorded.
+let skippable = false;
 
 // DOM elements we defensively hide for the duration of the cinematic so no
 // title-screen markup (logo, INSERT COIN, prompts) can ever bleed through on
@@ -1017,7 +1020,9 @@ function render(now) {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-export function start(callback) {
+// opts.skippable — false on the FIRST viewing (the default, so a caller that
+// forgets can never let a stray key cut the reveal short), true on replays.
+export function start(callback, opts = {}) {
   canvas = document.getElementById('invaders-canvas');
   ctx    = canvas.getContext('2d');
   canvas.width  = window.innerWidth;
@@ -1025,6 +1030,7 @@ export function start(callback) {
 
   onDone     = callback;
   active     = true;
+  skippable  = !!(opts && opts.skippable);
   skipped    = false;
   lastPhase  = -1;
   termEvents = null;
@@ -1040,7 +1046,7 @@ export function start(callback) {
   animId    = requestAnimationFrame(render);
 }
 
-// Skip to title card (Space/Escape before sequence ends)
+// Skip to title card. Only ever reached on a REPLAY via Space/Escape (confirm()).
 export function skip() {
   if (!active || getPhase(performance.now() - startTime) >= 5) return;
   stopCRTHum();
@@ -1048,15 +1054,21 @@ export function skip() {
   startTime = performance.now() - P.TITLECARD.s;
 }
 
-// Called when user confirms on title card
-export function confirm() {
+// Every key during the cinematic arrives here (main.js 'mystery' case).
+//   • Before the title card — the FIRST viewing ignores every key: a stray key
+//     at ~8s used to jump straight to ACT 2, so the child never saw "HELLO. YOU
+//     FOUND ME.", the secret door or the Computer Wing. On a REPLAY only Space
+//     or Escape skip to the title card (transitions.md, "Skippable after first
+//     completion (Space or Escape)").
+//   • On the title card — only Space continues, because Space is what it says.
+export function confirm(key) {
   if (!active) return;
   const ms = performance.now() - startTime;
   if (getPhase(ms) < 5) {
-    skip();
-    return; // first press skips to title card
+    if (skippable && (key === ' ' || key === 'Escape')) skip();
+    return;
   }
-  // Second press (or press while on title card): done
+  if (key !== ' ') return;
   stop();
   if (onDone) onDone();
 }

@@ -26,7 +26,8 @@
 // The engine gives each run()/when()/desc() an `api` of world-mutation helpers.
 
 import * as Audio from '../audio.js';
-import { buildPool, answerMatches, ANSWER_CAP, HINT_AT_TRY, REVEAL_AT_TRY } from './riddles.js';
+import { buildPool, answerMatches, isNearMiss, ANSWER_CAP, HINT_AT_TRY, REVEAL_AT_TRY, ANSWER_KEYS_CUE } from './riddles.js';
+import { enterLabel } from '../key-label.js';
 
 let canvas, ctx, animId;
 let active = false;
@@ -56,6 +57,7 @@ let activeRiddler = null;  // the creature def currently asking
 let activeRiddle = null;   // the pooled riddle it is currently posing
 let riddleAnswer = '';     // the letters-only word being typed as an answer
 let riddleTries = 0;       // wrong attempts on the CURRENT riddle (drives hint/reveal)
+let riddleNearMisses = 0;  // typos on the CURRENT riddle — the first one is free (see submitRiddle)
 const riddleCursors = new Map();  // riddler id → next pool index (rotation across asks)
 
 // Hybrid "hints fade" (Act 6 design): the offered-command hints start fully shown
@@ -66,10 +68,14 @@ let hintBoostT = 0;       // frames of forced-full hints (nudge / room change)
 let lastActMs = 0;        // performance.now() of the last keypress (idle → reassure)
 
 // Default palette (emerald phosphor); a world may override via world.palette.
-const DEFAULT_PALETTE = { fg: '#4fe08a', dim: '#1f7a45', bg: '#001204', accent: '#ffd23f' };
+// `hint` is the colour for the lines a child must READ — the offered commands, the
+// answer cue, the BACKSPACE line. It clears 4.5:1 on `bg` (5.7:1); `dim` (3.6:1) is
+// kept for decoration only (separators, the faded-with-mastery mode).
+const DEFAULT_PALETTE = { fg: '#4fe08a', dim: '#1f7a45', hint: '#2f9e5c', bg: '#001204', accent: '#ffd23f' };
 let palette = DEFAULT_PALETTE;
 
 const MAX_LINES_KEPT = 200; // hard cap so the log can never grow unbounded
+const WIN_HOLD_FRAMES = 360; // the arrival hold before the auto-return (~6s at 60fps)
 
 // ─── The api handed to world data (run/when/desc) ───────────────────────────
 const api = {
@@ -139,7 +145,12 @@ export function stop() {
 // by the router (exit to the arcade) BEFORE this runs; everything else is command
 // typing. Returns nothing — all effects are internal + the onComplete callback.
 export function handleKey(e) {
-  if (!active || won) return;
+  if (!active) return;
+  // Arrived. Space/Return walks out now rather than waiting on the auto-return —
+  // the cue for it is drawn where the prompt was (drawWinExitCue), so the screen
+  // never ends on an empty '>' with nothing to say what to do (2026-10-30
+  // explorer playtest). Escape is the hub's, as everywhere in the wing.
+  if (won) { if (e.key === ' ' || e.key === 'Enter') finish(); return; }
   lastActMs = performance.now();
   if (mode === 'riddle') { handleRiddleKey(e); return; }
   const k = e.key;
@@ -220,6 +231,7 @@ function openRiddle(def) {
   mode = 'riddle';
   riddleAnswer = '';
   riddleTries = 0;
+  riddleNearMisses = 0;
   hintBoostT = 150;
   pushLine('');
   pushLine((def.name || 'A voice') + ' asks:');
@@ -240,8 +252,24 @@ function handleRiddleKey(e) {
 }
 
 function submitRiddle() {
+  if (!riddleAnswer) return;           // an empty Return is not a guess — nothing happens
   if (answerMatches(activeRiddle, riddleAnswer)) { solveRiddle(); return; }
   pushLine('> ' + riddleAnswer);
+  // A TYPO is not a wrong idea. The word is ONE letter off an accepted answer, so
+  // say so, and LEAVE IT IN THE BOX to be fixed with Backspace — never wipe what a
+  // child who knew the answer typed (riddles.js isNearMiss; it is never counted as
+  // right). The first typo on a riddle costs nothing toward the hint; later ones
+  // do, so the hint and then the answer still arrive and no one is ever stuck.
+  if (isNearMiss(activeRiddle, riddleAnswer)) {
+    riddleNearMisses++;
+    if (riddleNearMisses > 1) riddleTries++;
+    Audio.wrong();
+    nudgeT = 12;
+    hintBoostT = 150;
+    pushLine(`So close! One letter is off. BACKSPACE can fix it, then press ${enterLabel()}.`);
+    if (riddleTries >= HINT_AT_TRY) pushLine(hintLine());
+    return;
+  }
   riddleTries++;
   Audio.wrong();
   nudgeT = 12;
@@ -249,11 +277,15 @@ function submitRiddle() {
   if (riddleTries < HINT_AT_TRY) {
     pushLine('Not quite — but there is no hurry. Try again, or press SPACE to step back.');
   } else {
-    let h = 'hint: ' + (activeRiddle.hint || '');
-    if (riddleTries >= REVEAL_AT_TRY && activeRiddle.answers.length) h += '  (try: ' + activeRiddle.answers[0] + ')';
-    pushLine(h);
+    pushLine(hintLine());
   }
   riddleAnswer = '';
+}
+
+function hintLine() {
+  let h = 'hint: ' + (activeRiddle.hint || '');
+  if (riddleTries >= REVEAL_AT_TRY && activeRiddle.answers.length) h += '  (try: ' + activeRiddle.answers[0] + ')';
+  return h;
 }
 
 function solveRiddle() {
@@ -262,7 +294,7 @@ function solveRiddle() {
   mastery++;
   Audio.levelComplete();
   mode = 'command';
-  activeRiddler = null; activeRiddle = null; riddleAnswer = ''; riddleTries = 0;
+  activeRiddler = null; activeRiddle = null; riddleAnswer = ''; riddleTries = 0; riddleNearMisses = 0;
   hintBoostT = 120;
 }
 
@@ -270,7 +302,7 @@ function closeRiddle() {
   pushLine('You smile and step back. (Come ask again any time — there is always a new riddle.)');
   Audio.correct();
   mode = 'command';
-  activeRiddler = null; activeRiddle = null; riddleAnswer = ''; riddleTries = 0;
+  activeRiddler = null; activeRiddle = null; riddleAnswer = ''; riddleTries = 0; riddleNearMisses = 0;
   hintBoostT = 120;
 }
 
@@ -303,6 +335,8 @@ function triggerWin() {
   Audio.levelComplete();
 }
 
+function finish() { if (onComplete) { const cb = onComplete; onComplete = null; cb(); } }
+
 function pushLine(text) {
   lines.push(String(text));
   if (lines.length > MAX_LINES_KEPT) lines = lines.slice(-MAX_LINES_KEPT);
@@ -324,17 +358,20 @@ function render() {
   ctx.clearRect(0, 0, W, H);
   drawBackground(W, H);
   drawLog(W, H);
-  if (mode === 'riddle') drawRiddlePrompt(W, H);
+  if (won) drawWinExitCue(W, H);
+  else if (mode === 'riddle') drawRiddlePrompt(W, H);
   else drawPromptAndHints(W, H);
   if (won) drawWinFlourish(W, H);
   drawScanlines(W, H);
   if (nudgeT > 0) nudgeT--;
   if (hintBoostT > 0) hintBoostT--;
 
-  // After the victory flourish has landed, hand control back to the arcade.
+  // After the victory flourish has landed, hand control back to the Text Worlds
+  // chooser. ~6s, matching the tile worlds' hold (it was 2.5s, too short to read
+  // the outro); Space/Return leaves sooner.
   if (won) {
     winT++;
-    if (winT === 150 && onComplete) { const cb = onComplete; onComplete = null; cb(); }
+    if (winT === WIN_HOLD_FRAMES) finish();
   }
 
   animId = requestAnimationFrame(render);
@@ -467,8 +504,11 @@ function drawPromptAndHints(W, H) {
   ctx.shadowBlur = 0;
   let x = marginX;
   const label = dim ? '· ' : 'you can:  ';
-  ctx.globalAlpha = dim ? 0.3 : 0.75;
-  ctx.fillStyle = palette.dim;
+  // In 'full' mode these are the words a child reads to know what to type, so they
+  // get the readable `hint` colour at full opacity (>=4.5:1). Separators stay dim.
+  const readable = palette.hint || palette.dim;
+  ctx.globalAlpha = dim ? 0.3 : 1;
+  ctx.fillStyle = dim ? palette.dim : readable;
   ctx.fillText(label, x, hintY);
   x += ctx.measureText(label).width;
   cmds.forEach((cmd, idx) => {
@@ -479,8 +519,8 @@ function drawPromptAndHints(W, H) {
       ctx.fillText(sep, x, hintY); x += ctx.measureText(sep).width;
     }
     const matches = !dim && typed.length && cmd.startsWith(typed);
-    ctx.globalAlpha = dim ? 0.3 : (matches ? 1 : 0.7);
-    ctx.fillStyle = matches ? palette.fg : palette.dim;
+    ctx.globalAlpha = dim ? 0.3 : 1;
+    ctx.fillStyle = matches ? palette.fg : (dim ? palette.dim : readable);
     ctx.fillText(cmd, x, hintY);
     x += ctx.measureText(cmd).width;
   });
@@ -495,13 +535,36 @@ function drawRiddlePrompt(W, H) {
   const fontSize = fontFor(W);
   const marginX = Math.round(W * 0.07);
   const promptY = Math.round(H * 0.80);
-  const hintY = Math.round(H * 0.89);
+  const hintY = Math.round(H * 0.885);
+  const small = Math.max(9, Math.floor(fontSize * 0.72));
 
   ctx.font = `${fontSize}px "Press Start 2P", monospace`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
+  // The answer sits in a visible BOX, labelled, so it reads as a field you can
+  // edit — not as one more line of the story. A child who could not tell the
+  // answer apart from the log did not know a wrong letter could be taken back.
   const promptStr = '> ' + riddleAnswer;
+  const pad = Math.round(fontSize * 0.55);
+  const boxW = Math.max(ctx.measureText('> ' + 'M'.repeat(14)).width,
+    ctx.measureText(promptStr).width + fontSize) + pad * 2;
+  const boxX = marginX - pad, boxY = promptY - pad, boxH = fontSize + pad * 2;
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.strokeStyle = nudgeT > 0 ? '#d98a3f' : palette.accent;
+  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(boxX + 1, boxY + 1, boxW - 2, boxH - 2);
+  ctx.globalAlpha = 1;
+
+  ctx.font = `${small}px "Press Start 2P", monospace`;
+  ctx.fillStyle = palette.accent;
+  ctx.globalAlpha = 0.8;
+  ctx.fillText('YOUR ANSWER', boxX, boxY - Math.round(small * 1.5));
+  ctx.globalAlpha = 1;
+
+  ctx.font = `${fontSize}px "Press Start 2P", monospace`;
   ctx.fillStyle = nudgeT > 0 ? '#d98a3f' : palette.accent;
   ctx.shadowColor = ctx.fillStyle;
   ctx.shadowBlur = 8;
@@ -512,12 +575,29 @@ function drawRiddlePrompt(W, H) {
   }
   ctx.shadowBlur = 0;
 
-  const small = Math.max(9, Math.floor(fontSize * 0.72));
+  // Two lines, so the Backspace cue is never squeezed off the edge.
   ctx.font = `${small}px "Press Start 2P", monospace`;
-  ctx.fillStyle = palette.dim;
-  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = palette.hint || palette.dim;   // the cue a child must read (>=4.5:1)
+  ctx.globalAlpha = 1;
   const who = activeRiddler && activeRiddler.name ? activeRiddler.name + '  ·  ' : '';
-  ctx.fillText(who + 'type your answer, then ENTER   ·   SPACE: step back', marginX, hintY);
+  ctx.fillText(`${who}type your answer, then ${enterLabel()}`, marginX, hintY);
+  ctx.fillText(`${ANSWER_KEYS_CUE}   ·   SPACE: step back`, marginX, hintY + Math.round(small * 1.9));
+  ctx.globalAlpha = 1;
+  ctx.textBaseline = 'alphabetic';
+}
+
+// Where the prompt was, once you have arrived: say how to leave. Without this the
+// win ended on an empty '>' with nothing on it (2026-10-30 explorer playtest).
+function drawWinExitCue(W, H) {
+  if (winT < 45) return;                        // let the outro land first
+  const fontSize = fontFor(W);
+  const small = Math.max(9, Math.floor(fontSize * 0.8));
+  ctx.font = `${small}px "Press Start 2P", monospace`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = palette.accent;
+  ctx.globalAlpha = Math.min(1, (winT - 45) / 30) * (0.7 + 0.3 * Math.sin(winT / 14));
+  ctx.fillText('SPACE / ESC: BACK TO THE TEXT WORLDS', Math.round(W * 0.07), Math.round(H * 0.86));
   ctx.globalAlpha = 1;
   ctx.textBaseline = 'alphabetic';
 }
