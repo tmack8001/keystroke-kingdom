@@ -74,7 +74,9 @@ describe('the collection gallery shows every bank a player can reach', () => {
 
     // The denominators are the shelves' own sizes, never a shared total.
     for (const s of shelves) {
-      const total = Number(s.count.split('/')[1].trim());
+      // Shelf counts read 'glyph n / m' (arcade, wing, act) or 'KEYBOARD CARD n OF m' (the
+      // fourth bank, spec semicolon-teaching-beat 5.4 / Q11) - the denominator is the last number.
+      const total = Number(s.count.match(/(\d+)\s*$/)[1]);
       assert.equal(total, s.cells, `${s.heading}: denominator ${total} but ${s.cells} cells drawn`);
     }
 

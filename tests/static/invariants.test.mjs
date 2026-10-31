@@ -1,4 +1,4 @@
-// Enforces: INV-29, INV-30, INV-31, INV-34
+// Enforces: INV-29 (amended), INV-30, INV-31, INV-34
 // Static analysis of source files to enforce security rules (security.md),
 // language rules (no "semicolon" in player text, no hard-coded ENTER), and
 // the theme module contract. No browser, no game imports, pure fs + regex.
@@ -183,45 +183,37 @@ test('INV-31: no eval in scripts/*.sh', (t) => {
   assert.equal(issues.length, 0, `Shell eval violations found:\n${issues.join('\n')}`);
 });
 
-test('INV-29: no "semicolon" (case-insensitive) in player-facing strings', (t) => {
+// Enforces: INV-29 (amended 2026-10-31) — product.md §"The Key Names" (Trevor): the name is
+// taught at Level 13; docs/specs/semicolon-teaching-beat.md §10. The WORD is withheld from
+// every surface except the ONE allowlisted teaching module. The `;` GLYPH is never
+// restricted (INV-140).
+const WORD_ALLOWLIST = ['js/key-cards.js'];   // Phase 1: exactly this one file.
+
+test('INV-29: the word is nowhere in index.html (comments included)', () => {
+  const html = fs.readFileSync(`${REPO}/index.html`, 'utf8');
+  const hits = html.split('\n')
+    .map((l, i) => (/semicolon/i.test(l) ? `index.html:${i + 1}` : null)).filter(Boolean);
+  assert.equal(hits.length, 0, `the word appears in index.html:\n${hits.join('\n')}`);
+});
+
+test('INV-29: in js/** the word appears in comment-free source ONLY in the allowlisted teaching file', () => {
   const issues = [];
-
-  // Check index.html text content (not attributes that are not on display elements)
-  const htmlContent = fs.readFileSync(`${REPO}/index.html`, 'utf8');
-  // Simple approach: look for "semicolon" in the HTML, then verify it's not in a comment
-  const htmlLines = htmlContent.split('\n');
-  htmlLines.forEach((line, idx) => {
-    const lineNo = idx + 1;
-    // Skip HTML comments
-    if (line.trim().startsWith('<!--')) return;
-    if (/semicolon/i.test(line)) {
-      // Possible false positive from attribute values; be conservative
-      issues.push(`index.html:${lineNo}: contains "semicolon"`);
-    }
-  });
-
-  // Check JS string literals (not comments)
-  const jsFiles = findFilesMatching(`${REPO}/js`, /\.js$/);
-  jsFiles.forEach((file) => {
-    const code = fs.readFileSync(file, 'utf8');
-    const lines = code.split('\n');
-    lines.forEach((line, idx) => {
-      const lineNo = idx + 1;
-      const beforeComment = line.split('//')[0];
-      // Look for "semicolon" in quoted strings
-      if (/["'`].*semicolon.*["'`]/i.test(beforeComment)) {
-        issues.push(`${path.relative(REPO, file)}:${lineNo}: string contains "semicolon"`);
-      }
+  findFilesMatching(`${REPO}/js`, /\.js$/).forEach((file) => {
+    const rel = path.relative(REPO, file);
+    if (WORD_ALLOWLIST.includes(rel)) return;
+    const code = stripComments(fs.readFileSync(file, 'utf8'));
+    code.split('\n').forEach((line, idx) => {
+      if (/semicolon/i.test(line)) issues.push(`${rel}:${idx + 1}: ${line.trim().slice(0, 100)}`);
     });
   });
+  assert.equal(issues.length, 0,
+    `the word leaked outside the allowlist ${JSON.stringify(WORD_ALLOWLIST)}:\n${issues.join('\n')}`);
+});
 
-  // Note: false positives in error messages or data structures are acceptable;
-  // this grep is conservative to catch real player-facing violations
-  assert.equal(
-    issues.length,
-    0,
-    `"semicolon" found in player-facing strings:\n${issues.join('\n')}`
-  );
+test('INV-29: the allowlist is exactly one existing file in Phase 1, and it really is where the word lives', () => {
+  assert.equal(WORD_ALLOWLIST.length, 1);
+  const code = stripComments(fs.readFileSync(`${REPO}/${WORD_ALLOWLIST[0]}`, 'utf8'));
+  assert.ok(/semicolon/i.test(code), 'the teaching module must be the one place the word is spelled');
 });
 
 test('INV-30: hard-coded ENTER display strings must use [data-enter-key] in index.html', (t) => {

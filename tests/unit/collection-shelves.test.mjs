@@ -23,8 +23,11 @@ const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const cards = await import('../../js/history-cards.js');
 const { collectionShelves } = await import('../../js/ui/screens.js');
+const { KEY_CARDS } = await import('../../js/key-cards.js');
 
-const ALL_BANK_CARDS = [...cards.HISTORY_CARDS, ...cards.WING_CARDS, ...cards.ACT_CARDS];
+// Design moved 2026-10-31: a FOURTH bank (keyboard cards) — docs/specs/semicolon-teaching-beat.md
+// §5.1/§5.4 + INV-154 ("its own array... a shelf appears only once its cards are reachable").
+const ALL_BANK_CARDS = [...cards.HISTORY_CARDS, ...cards.WING_CARDS, ...cards.ACT_CARDS, ...KEY_CARDS];
 const everyId = ALL_BANK_CARDS.map(c => c.id);
 
 // The most-progressed save the game can produce: finished the whole curriculum and
@@ -167,5 +170,33 @@ describe('L41 — the gallery`s copies of cabinet-art facts stay in agreement', 
     assert.ok(shelfNames, 'could not find ACT_NAMES in screens.js');
     const mine = [...shelfNames[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
     assert.deepEqual(mine, names, 'a shelf heading names an act differently than the select screen does');
+  });
+});
+
+// ── THE KEYBOARD shelf (fourth bank) ───────────────────────────────────────────
+// Enforces: INV-154 / INV-162 — docs/specs/semicolon-teaching-beat.md §5.4: "The KEYBOARD
+// shelf is visible once furthestLevel >= min(KEY_CARDS.level), or under bypass"; counts are
+// scoped to the shelf's own bank (INV-100).
+describe('INV-154/162 — THE KEYBOARD shelf appears at its first card`s level, counting only itself', () => {
+  const firstLevel = Math.min(...KEY_CARDS.map(c => c.level));
+  const keyShelf = (opts) => collectionShelves(opts).find(s => s.id === 'keyboard');
+
+  test('hidden the level before, shown at its level', () => {
+    assert.equal(keyShelf({ furthestLevel: firstLevel - 1, collectedIds: [] }), undefined);
+    assert.ok(keyShelf({ furthestLevel: firstLevel, collectedIds: [] }));
+  });
+
+  test('the WOPR bypass opens it, like every other gate', () => {
+    assert.ok(keyShelf({ furthestLevel: 1, collectedIds: [], bypass: true }));
+  });
+
+  test('a held keyboard card is shown even below the gate (hiding an earned card is the bug)', () => {
+    assert.ok(keyShelf({ furthestLevel: 1, collectedIds: [KEY_CARDS[0].id] }));
+  });
+
+  test('its found / total counts keyboard cards only', () => {
+    const held = [...cards.HISTORY_CARDS.slice(0, 3).map(c => c.id), KEY_CARDS[0].id];
+    const s = keyShelf({ furthestLevel: 25, collectedIds: held });
+    assert.deepEqual({ found: s.found, total: s.total }, { found: 1, total: KEY_CARDS.length });
   });
 });
