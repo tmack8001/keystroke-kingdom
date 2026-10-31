@@ -318,7 +318,8 @@ class Run {
 // ── DOM / canvas observation ─────────────────────────────────────────────────
 // Which screen is up, plus the expected token, read straight out of the DOM the
 // same way scripts/record-playthrough.js does (reversing hud.js's promptDisplay
-// glyph map — '?' is the eighth key, '␣' space, '⌫' Backspace, '⇧' Shift; case
+// glyph map — '?' (the old glyph) or ';' (shown since 2026-10-30)
+// is the eighth key, '␣' space, '⌫' Backspace, '⇧' Shift; case
 // is preserved, so 'A' means Shift+a).
 const SNAPSHOT = () => {
   const vis = (id) => {
@@ -329,12 +330,12 @@ const SNAPSHOT = () => {
   let token = null;
   if (el) {
     const t = el.textContent || '';
-    token = t === '?' ? ';' : t === '␣' ? ' ' : t === '⌫' ? 'Backspace' : t === '⇧' ? 'Shift' : t;
+    token = (t === '?' || t === ';') ? ';' : t === '␣' ? ' ' : t === '⌫' ? 'Backspace' : t === '⇧' ? 'Shift' : t;
   }
   const seqEls = Array.from(document.querySelectorAll('#prompt-sequence .prompt-letter'));
   const sequence = seqEls.map((n) => {
     const t = n.textContent || '';
-    return t === '?' ? ';' : t === '␣' ? ' ' : t === '⌫' ? '⌫' : t === '⇧' ? '⇧' : t;
+    return (t === '?' || t === ';') ? ';' : t === '␣' ? ' ' : t === '⌫' ? '⌫' : t === '⇧' ? '⇧' : t;
   }).join('');
   const ga = document.querySelector('#game-screen .game-area');
   const badge = (document.getElementById('level-badge-text') || {}).textContent || '';
@@ -1233,7 +1234,7 @@ const PSNAP = () => {
   let token = null;
   if (el) {
     const t = el.textContent || '';
-    token = t === '?' ? ';' : t === '␣' ? ' ' : t === '⌫' ? 'Backspace' : t === '⇧' ? 'Shift' : t;
+    token = (t === '?' || t === ';') ? ';' : t === '␣' ? ' ' : t === '⌫' ? 'Backspace' : t === '⇧' ? 'Shift' : t;
   }
   const seq = Array.from(document.querySelectorAll('#prompt-sequence .prompt-letter'))
     .map((n) => n.textContent || '').join('');
@@ -1742,7 +1743,11 @@ function printPersonaReport(pctx, wallMs, consoleErrorCount) {
     const over = budget && t.personaMs > budget * 60000;
     const wpm = t.personaMs > 0 ? Math.round((t.presses / 5) / (t.personaMs / 60000)) : 0;
     console.log(`  Level ${String(t.level).padStart(2)}:       ${fmtMs(t.personaMs)} persona time, ${t.presses} correct keys, ~${wpm} WPM effective` +
-      (budget ? `  — ${over ? '⚠ ACCEPTANCE MISS: over' : 'within'} the ${budget}-minute budget` : ''));
+      (budget ? `  — ${over ? '⚠ ACCEPTANCE MISS: over' : 'within'} the ${budget}-minute budget` +
+        // WARN-ONLY by decision (Trevor, 2026-10-30): an over-budget level never changes
+        // the exit code. Persona time is EXTRAPOLATED from compressed waits when
+        // --pace<1, so the verdict is printed beside the pace it was measured at.
+        ` (at --pace=${pctx.pace}${pctx.pace < 1 ? '; budget not trustworthy below --pace=1' : ''})` : ''));
   }
   const ruleLine = pctx.violations.length
     ? `✗ ${pctx.violations.length} VIOLATION(S)`

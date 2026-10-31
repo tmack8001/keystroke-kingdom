@@ -121,7 +121,7 @@ run for which kind of change.
 | `family-parent` | a grown-up on the shared machine | HOTSHOT 2.25×, length 4–8, hints subtle | ~1 s, 4% wrong | **3 games** (OONA L12, DAD L20, GRAM L4), resumes DAD · WOPR · root |
 | `speedrunner` | ~90 WPM, every lever up | WIZARD 3.5×, length 6–24, hints subtle | 100–130 ms, 1% wrong | fresh · WOPR · root |
 | `speedrunner:survival` | the same hands, opted into Survival | SURVIVAL, EXPERT, 1 quarter | as above | fresh · WOPR · root |
-| `explorer-8yo` | a steady early typist who opens every door | defaults | ~10 WPM, 15% wrong | fresh · WOPR · **prefix** (refuses the root shape) |
+| `explorer` | a steady early typist who opens every door | defaults | ~10 WPM, 15% wrong | fresh · WOPR · **prefix** (refuses the root shape) |
 
 `node scripts/playtest.mjs --persona=list` prints the same, plus each persona's **focus list**:
 the `--at` targets it exists for and what to judge at each.
@@ -151,8 +151,9 @@ What changes under a persona:
 
 The run ends with a **PERSONA REPORT**: settings (and whether they were verified in the live
 game), levels reached, prompt turnovers, correct vs injected keys by kind, wall time, persona
-time (the uncompressed estimate under `--pace`), per-level time against the persona's budget,
-effective WPM, the One Rule verdict, observations, console errors, and the **decision-trace
+time (the uncompressed estimate under `--pace`), per-level time against the persona's budget
+(**warn-only** — an over-budget level never changes the exit code; the pace is printed beside
+the verdict, and **the budget is not trustworthy below `--pace=1`**), effective WPM, the One Rule verdict, observations, console errors, and the **decision-trace
 hashes**. Under `--shot`, `persona-trace.json` holds the full trace.
 
 **The reproducibility proof:** run it twice with the same seed and compare the `first-50 hash`
@@ -173,7 +174,7 @@ node scripts/playtest.mjs --persona=struggling-beginner --plan=20 --seed=7      
 # the explorer refuses the root shape — serve the published one:
 mkdir -p /tmp/pagesroot && ln -sfn "$PWD" /tmp/pagesroot/keystroke-kingdom
 python3 -m http.server 8809 --directory /tmp/pagesroot
-node scripts/playtest.mjs --url=http://127.0.0.1:8809/keystroke-kingdom/ --at=coda:25 --persona=explorer-8yo
+node scripts/playtest.mjs --url=http://127.0.0.1:8809/keystroke-kingdom/ --at=coda:25 --persona=explorer
 ```
 
 **Adding or changing a persona** is an edit to `scripts/personas.mjs` alone.

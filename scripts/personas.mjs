@@ -6,8 +6,8 @@
 //   node scripts/playtest.mjs --at=level:8 --persona=struggling-beginner
 //   node scripts/playtest.mjs --at=level:4 --persona=speedrunner:survival --seed=7
 //
-// WHY THIS EXISTS. Five persona testers were run as PROSE briefs ("you are a 5-year-
-// old, pause 2-5 s before each key, get a quarter of them wrong…"). Every run had to
+// WHY THIS EXISTS. Five persona testers were run as PROSE briefs ("you are a first-
+// timer, pause 2-5 s before each key, get a quarter of them wrong…"). Every run had to
 // re-invent its settings, its typing behaviour, its seeded save and its focus list from
 // that prose — so two runs of "the struggling beginner" were two different testers, and
 // a finding could not be re-played to check a fix. A persona is now a named, versioned,
@@ -21,6 +21,9 @@
 // only personal datum is a display name (security.md rule 8: no ages, no surnames, no
 // location). EXPERIENCE is "to a player's typing experience (never age)" (product.md
 // §Toggleable Settings), so a persona's settings are chosen by typing experience too.
+// The same holds for its NAME: a persona id or label never carries an age (the explorer
+// was once `explorer-8yo`; renamed 2026-10-30, Trevor — security.md rule 8 in spirit).
+// tests/unit/personas.test.mjs fails on any age-shaped token in an id or label.
 //
 // REPRODUCIBILITY — what is and is not fixed by --seed. The persona's DECISIONS are a
 // pure function of (persona id, variant, seed): how long it pauses, whether this press
@@ -294,7 +297,7 @@ const PERSONAS = [
     acceptance: { wrongKeyNeverAdvances: true, idleNeverPunishes: true, maxLevelMinutes: 8 },
   },
   {
-    id: 'explorer-8yo',
+    id: 'explorer',
     label: 'E — the explorer',
     who: 'A steady early typist (~10 WPM) who wants to open every door, on the PUBLISHED static host with no backend.',
     settings: { ...ADVENTURE_DEFAULTS },

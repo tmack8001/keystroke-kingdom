@@ -158,7 +158,10 @@
  *   #prompt-sequence. The ACTIVE one has class `.active` and `data-index=i`.
  *   We read the expected key from the active letter's textContent and reverse
  *   the display mapping (promptDisplay in hud.js):
- *       '?' -> ';'   (the eighth key)     '␣' -> ' '  (space)
+ *       '?' or ';' -> ';'  (the eighth key — hud.js used to SHOW it as '?' and
+ *                          now shows the ';' glyph; both are accepted, 2026-10-30.
+ *                          No curriculum token is a literal '?', so this is safe)
+ *       '␣' -> ' '  (space)
  *       '⌫' -> 'Backspace'                 '⇧' -> Shift (display only)
  *       anything else -> the char as-is. textContent preserves case even
  *       though css text-transform:uppercase makes everything LOOK uppercase
@@ -240,7 +243,7 @@
  *   drive input (the gameSnapshot DOM reads + the #hud-streak oracle). We read
  *   the full visible sequence from #prompt-sequence's .prompt-letter divs,
  *   reverse-mapping each display glyph exactly as the expected-token read does
- *   ('?'->';' '␣'->' ' '⌫'->Backspace, case preserved for Shift tokens).
+ *   ('?' or ';'->';' '␣'->' ' '⌫'->Backspace, case preserved for Shift tokens).
  * =============================================================================
  */
 
@@ -880,7 +883,7 @@ function renderTimelineMarkdown(events, hdr) {
       if (!el) { out.token = null; out.activeIdx = null; }
       else {
         const t = (el.textContent || '');
-        out.token = t === '?' ? ';'
+        out.token = (t === '?' || t === ';') ? ';'
           : t === '␣' ? ' '
           : t === '⌫' ? 'Backspace'
           : t === '⇧' ? 'Shift'
@@ -914,7 +917,7 @@ function renderTimelineMarkdown(events, hdr) {
     return withRetry(() => page.evaluate(() => {
       const letters = Array.from(
         document.querySelectorAll('#prompt-sequence .prompt-letter'));
-      const rev = (t) => t === '?' ? ';'
+      const rev = (t) => (t === '?' || t === ';') ? ';'
         : t === '␣' ? ' '
         : t === '⌫' ? 'Backspace'
         : t === '⇧' ? 'Shift'
