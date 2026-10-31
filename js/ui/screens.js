@@ -1,7 +1,8 @@
-import { displayKey } from './hud.js';
+import { displayKey, hideKeyNameCaption } from './hud.js';
 import {
   HISTORY_CARDS, WING_CARDS, bankProgress, cardsForAct, actCardsUnlocked,
 } from '../history-cards.js';
+import { KEY_CARDS } from '../key-cards.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -9,6 +10,10 @@ export function showScreen(name, state) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   $(name + '-screen').classList.remove('hidden');
   state.screen = name;
+  // The key-name caption belongs to one moment of one level. Leaving the game
+  // screen for ANY other screen removes it outright (spec §5.3: "removed on
+  // level end, pause, Escape and screen change") — a belt to main.js's braces.
+  if (name !== 'game') hideKeyNameCaption({ immediate: true });
 }
 
 export function applyLevelTheme(level) {
@@ -178,9 +183,10 @@ export function renderSlotsScreen(state, slots) {
 
 // ─── The card collection gallery — SHELVES, one per bank ────────────────────
 //
-// The game has THREE card banks (js/history-cards.js): the 75-card arcade
-// curriculum bank, WING_CARDS (bonus wings, keyed {wing, station}), and
-// ACT_CARDS (the room's own cards, keyed {act}). Until 2026-09-16 this screen
+// The game has FOUR card banks: the 75-card arcade curriculum bank, WING_CARDS
+// (bonus wings, keyed {wing, station}), ACT_CARDS (the room's own cards, keyed
+// {act}) — all in js/history-cards.js — and KEY_CARDS (js/key-cards.js, what a
+// symbol key is called). The keyboard bank was added 2026-10-31. Until 2026-09-16 this screen
 // rendered `allCards()` — the arcade bank ONLY — so the eight wing/act cards a
 // player could already collect were counted by the slot picker's ★ and then
 // shown on no screen in the game, ever. Trevor's ruling: "give each wing its
@@ -282,7 +288,28 @@ export function collectionShelves(opts) {
     cards: HISTORY_CARDS, found: arcade.found, total: arcade.total,
   });
 
-  // 2. The bonus wings.
+  // 2. THE KEYBOARD — the fourth bank (js/key-cards.js): what a symbol key is
+  // CALLED. Shown once the save has reached the first level that teaches a key's
+  // name (Level 13 today), never before, unless the player already holds one.
+  // Its tiles follow a stricter rule than every other shelf, enforced in
+  // renderCollectionScreen: a LOCKED tile may show the key's glyph (INV-140 —
+  // the mark is printed on the keycap) but never its name word (INV-29).
+  // The shelf heading and count are generic on purpose — they can never name a
+  // key either.
+  const keyCards = Array.isArray(KEY_CARDS) ? KEY_CARDS : [];
+  if (keyCards.length) {
+    const firstKeyLevel = Math.min(...keyCards.map(c => Number(c.level) || Infinity));
+    if (reached(firstKeyLevel) || holdsAny(keyCards)) {
+      const counted = countFound(keyCards, ids);
+      shelves.push({
+        id: 'keyboard', heading: 'THE KEYBOARD', glyph: '▢', cards: keyCards, ...counted,
+        keyboard: true,
+        countText: `KEYBOARD CARD ${counted.found} OF ${counted.total}`,
+      });
+    }
+  }
+
+  // 3. The bonus wings.
   for (const w of WING_SHELVES) {
     const cards = WING_CARDS.filter(c => c.wing === w.wing);
     if (!cards.length) continue;
@@ -290,7 +317,7 @@ export function collectionShelves(opts) {
     shelves.push({ id: 'wing:' + w.wing, heading: w.heading, glyph: w.glyph, cards, ...countFound(cards, ids) });
   }
 
-  // 3. The rooms — one shelf per act that has cards.
+  // 4. The rooms — one shelf per act that has cards.
   const actLayerOpen = actCardsUnlocked(lvl) || bypass;
   for (let act = 1; act <= ACT_NAMES.length; act++) {
     const cards = cardsForAct(act);
@@ -331,7 +358,7 @@ export function renderCollectionScreen(state, shelves, collectedSet) {
     name.textContent = shelf.heading;
     const count = document.createElement('span');
     count.className = 'collection-shelf-count';
-    count.textContent = shelf.glyph + ' ' + shelf.found + ' / ' + shelf.total;
+    count.textContent = shelf.countText || (shelf.glyph + ' ' + shelf.found + ' / ' + shelf.total);
     head.append(name, count);
     section.appendChild(head);
 
@@ -347,6 +374,17 @@ export function renderCollectionScreen(state, shelves, collectedSet) {
       const label = document.createElement('span');
       label.className = 'collection-cell-label';
       label.textContent = owned ? card.word.toUpperCase() : '???';
+
+      // A locked KEYBOARD tile shows the key's mark above its '???' — the glyph
+      // is always allowed (INV-140), the name word never before it is owned
+      // (INV-29). The word is read ONLY on the owned branch above.
+      if (!owned && shelf.keyboard && typeof card.glyph === 'string' && card.glyph) {
+        cell.className += ' key-glyph-tile';
+        const mark = document.createElement('span');
+        mark.className = 'collection-cell-glyph';
+        mark.textContent = card.glyph;
+        cell.appendChild(mark);
+      }
       cell.appendChild(label);
 
       if (owned) {

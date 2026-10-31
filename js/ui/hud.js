@@ -17,14 +17,16 @@ const $ = (id) => document.getElementById(id);
 //      quiet caption underneath using the game's own established kid-facing
 //      names (levels.js hint text calls the backtick a "tick mark"; the
 //      product docs use "comma"/"period"/"apostrophe" directly — never
-//      inventing new names, never "semicolon" for the eighth key).
+//      inventing new names, and never naming the eighth key here — its name
+//      is taught once, by the Level 13 key-name beat, from js/key-cards.js).
 // Normal letters, digits, and the existing ␣/⌫/⇧ glyphs are untouched.
 //
 // The eighth key is in the set because it now shows its REAL glyph (Trevor,
 // 2026-10-30). It used to be masked as '?', and a five-year-old looking down
 // at her own keyboard hunted for a '?' that is not on the right-pinky key.
-// "Never say semicolon" was always about the WORD, which the game withholds
-// until the Level 20 confession — never about the mark printed on the keycap.
+// The rule was always about the WORD, which the game withholds until the
+// Level 13 key-name beat teaches it (js/key-cards.js holds the only copy) —
+// never about the mark printed on the keycap.
 // Press Start 2P draws that mark as a few pixels, so it is boosted like the
 // others. It gets NO caption: a caption would have to name it.
 const SMALL_GLYPH_BOOST = new Set(['`', "'", ',', '.', '-', '=', ';']);
@@ -368,6 +370,10 @@ export function getKeyGeometry() {
 
 export function renderKeyboard(level, activeKey, wrongKey, state) {
   const guide = $('keyboard-guide');
+  if (!guide) return;
+  // Remembered so glowGuideKey() can re-draw the guide in place without the
+  // engine having to pass its state again (see the key-name beat below).
+  lastKeyboardArgs = [level, activeKey, wrongKey, state];
 
   const GAP = 4;
   const available = Math.min((window.innerWidth || 1280) - 96, 820);
@@ -399,6 +405,14 @@ export function renderKeyboard(level, activeKey, wrongKey, state) {
     else if (!learned) { cls += ' fog'; }  // shape only — key not learned yet
     else if (k === ';' && state.level === 4) { cls += ' mystery'; label = displayKey(k); }
     else { cls += ' highlight'; label = displayKey(k); }
+
+    // The key-name beat's glow rides ON TOP of whatever state the key is in
+    // (learned, active, the Level 4 mystery pulse), so it never hides the
+    // active-key cue a child is reading. A glowing key always shows its mark.
+    if (glowingKeys.has(k) && !never) {
+      cls += ' key-name-glow';
+      if (!label) label = displayKey(k);
+    }
 
     if (label && isGlyphLabel(label)) cls += ' key-box-glyph';
     else if (label && isSmallMarkLabel(label)) cls += ' key-box-mark';
@@ -451,4 +465,120 @@ export function renderPrompt(state, level, pattern) {
   $('finger-hint').innerHTML = '';
 
 
+}
+
+// ─── The key-name beat (the key-name teaching-beat spec in docs/specs/, §5.3) ─────────
+//
+// When a key's NAME word is typed (Level 13's beat), three cosmetic things
+// happen and none of them pauses play: a two-line caption, a glow on that key
+// in the guide, and a flourish on the prompt letters (the `key-name-flourish`
+// class in css/screens.css — main.js adds it). The engine decides WHEN; these
+// functions only render. They never take focus, never listen for keys, never
+// delay the next prompt — the caption is aria-live text in a box with
+// pointer-events: none, nothing more.
+//
+// Security (security.md rules 1–2): every string arrives from the fixed
+// records in js/key-cards.js and is written with textContent only. Nothing
+// here builds markup from a variable.
+
+// Tokens (KEY_LAYOUT `k` values) currently lit by the beat. Module state on
+// purpose: renderKeyboard() rebuilds the guide's DOM on EVERY prompt, so a
+// class patched onto the old boxes would vanish on the next keystroke. The
+// glow therefore lives here and is re-applied by every render.
+const glowingKeys = new Set();
+let lastKeyboardArgs = null;
+
+// A glyph may be one mark (';') or, in Phase 2, a pair written with a space
+// ('[ ]'). Only marks that ARE keys in KEY_LAYOUT can glow — geometry has one
+// source, so a glyph with no key of its own (a Shift symbol) simply does not.
+function glyphTokens(glyph) {
+  if (typeof glyph !== 'string') return [];
+  const layoutKeys = new Set(getKeyGeometry().filter(g => g.key && !g.never).map(g => g.key));
+  return [...glyph].filter(ch => ch !== ' ' && layoutKeys.has(ch));
+}
+
+/**
+ * Light (on = true) or un-light (on = false) the guide key for `glyph`.
+ * Idempotent; safe before the guide exists. The glow persists across every
+ * re-render until it is switched off.
+ * @param {string} glyph e.g. ';'
+ * @param {boolean} on
+ */
+export function glowGuideKey(glyph, on) {
+  const tokens = glyphTokens(glyph);
+  if (!tokens.length) return;
+  let changed = false;
+  for (const t of tokens) {
+    if (on && !glowingKeys.has(t)) { glowingKeys.add(t); changed = true; }
+    if (!on && glowingKeys.delete(t)) changed = true;
+  }
+  if (changed && lastKeyboardArgs && $('keyboard-guide')) renderKeyboard(...lastKeyboardArgs);
+}
+
+// Line 2 arrives ~1.5s after line 1 — long enough for a beginning reader to
+// finish the first line, short enough that a parent reading aloud never waits.
+const KEY_NAME_LINE2_DELAY_MS = 1500;
+const KEY_NAME_FADE_MS = 600;   // must match .key-name-caption's transition
+let keyNameLineTimer = null;
+let keyNameFadeTimer = null;
+
+/**
+ * Show the key-name caption. `lines` is an array of 1–2 strings (fixed
+ * literals from js/key-cards.js); anything else is ignored. Line 1 shows at
+ * once, line 2 about 1.5s later. Re-calling replaces the caption.
+ * @param {string[]} lines
+ */
+export function showKeyNameCaption(lines) {
+  const el = $('key-name-caption');
+  if (!el || !Array.isArray(lines)) return;
+  const text = lines.filter(l => typeof l === 'string' && l.length).slice(0, 2);
+  if (!text.length) return;
+
+  clearTimeout(keyNameLineTimer);
+  clearTimeout(keyNameFadeTimer);
+  el.textContent = '';
+  const rows = text.map(t => {
+    const row = document.createElement('div');
+    row.className = 'key-name-caption-line';
+    row.textContent = t;
+    return row;
+  });
+  // Reserve the box's FINAL size up front, so line 2 arriving never makes the
+  // box jump wider and taller under a child who is still reading line 1.
+  // A CSS custom property, not markup: the widest line's length in characters.
+  el.style.setProperty('--kn-chars', String(Math.max(...text.map(t => t.length))));
+  el.style.setProperty('--kn-lines', String(text.length));
+  // Un-hide BEFORE inserting, so aria-live announces the line (a live region
+  // that is display:none when its text arrives stays silent).
+  el.classList.remove('hidden', 'fading');
+  el.appendChild(rows[0]);
+  if (rows[1]) {
+    keyNameLineTimer = setTimeout(() => {
+      keyNameLineTimer = null;
+      if (!el.classList.contains('hidden') && !el.classList.contains('fading')) el.appendChild(rows[1]);
+    }, KEY_NAME_LINE2_DELAY_MS);
+  }
+}
+
+/**
+ * Fade the caption out and empty it. Idempotent; safe if the element is
+ * missing or already hidden. Pass { immediate: true } to skip the fade (level
+ * end / screen change, where a fade would outlive its screen).
+ * @param {{immediate?: boolean}} [opts]
+ */
+export function hideKeyNameCaption(opts) {
+  clearTimeout(keyNameLineTimer);
+  keyNameLineTimer = null;
+  const el = $('key-name-caption');
+  if (!el || el.classList.contains('hidden')) return;
+  const finish = () => {
+    keyNameFadeTimer = null;
+    el.classList.add('hidden');
+    el.classList.remove('fading');
+    el.textContent = '';
+  };
+  if (opts && opts.immediate) { clearTimeout(keyNameFadeTimer); finish(); return; }
+  if (el.classList.contains('fading')) return;     // already on its way out
+  el.classList.add('fading');
+  keyNameFadeTimer = setTimeout(finish, KEY_NAME_FADE_MS);
 }

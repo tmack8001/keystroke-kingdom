@@ -21,6 +21,16 @@
 // This file only exports data + pure helpers — no DOM, no state, no storage
 // (mirrors freeplay.js). `legacyLevel` tags the original 17 one-per-level cards
 // so slots.js can migrate a pre-slots kk-cards array (level numbers) to ids.
+//
+// FOUR BANKS (2026-10-31): HISTORY_CARDS (the arcade — the only bank TOTAL_CARDS
+// counts), WING_CARDS, ACT_CARDS, and KEY_CARDS (keyboard cards — what a symbol
+// key is called; spec: see the js/key-cards.js header). KEY_CARDS lives in its
+// OWN module, js/key-cards.js, because it is the only module permitted to spell
+// the eighth key's name (INV-29). Never copy a key card's strings into this file —
+// import them. bankOf()/bankProgress()/cardById() know all four banks.
+
+import { KEY_CARDS, keyCardForLevel, keyCardById } from './key-cards.js';
+export { KEY_CARDS, keyCardForLevel };
 
 export const HISTORY_CARDS = [
   // ── THE FIRST CARD IN THE GAME, and the reason it exists ──────────────────
@@ -570,6 +580,7 @@ export function bankOf(id) {
   if (HISTORY_CARDS.some(c => c.id === id)) return 'arcade';
   if (WING_CARDS.some(c => c.id === id)) return 'wing';
   if (ACT_CARDS.some(c => c.id === id)) return 'act';
+  if (KEY_CARDS.some(c => c.id === id)) return 'keyboard';
   return null;
 }
 
@@ -577,8 +588,15 @@ export function bankOf(id) {
 // Ids the game no longer knows (a card removed in a later build) are ignored
 // rather than counted — a stale save must never read as MORE complete than the
 // bank it is counted against (security.md rule 4: localStorage is untrusted).
+//
+// 'keyboard' counts KEY_CARDS only, so the reveal reads "KEYBOARD CARD 1 OF 1" —
+// never an arcade total with a keyboard card folded into it (INV-154). Any other
+// or unknown bank name keeps the legacy behaviour and counts the arcade.
 export function bankProgress(bank, collectedIds) {
-  const pool = bank === 'wing' ? WING_CARDS : bank === 'act' ? ACT_CARDS : HISTORY_CARDS;
+  const pool = bank === 'wing' ? WING_CARDS
+    : bank === 'act' ? ACT_CARDS
+    : bank === 'keyboard' ? KEY_CARDS
+    : HISTORY_CARDS;
   const ids = new Set(Array.isArray(collectedIds) ? collectedIds : []);
   let found = 0;
   for (const c of pool) if (ids.has(c.id)) found += 1;
@@ -610,9 +628,12 @@ export function pickGuaranteedStationCard(wingId, stationId, collectedIds, rotat
   return pickFromPool(cardsForStation(wingId, stationId), collectedIds, rotation);
 }
 
+// The ARCADE bank only. Never add WING_CARDS, ACT_CARDS or KEY_CARDS here.
 export const TOTAL_CARDS = HISTORY_CARDS.length;
 
-// All cards (identity export — the collection gallery renders over this).
+// All ARCADE cards (identity export — the collection gallery's arcade shelf renders
+// over this). Deliberately excludes the other banks; each has its own export
+// (WING_CARDS, ACT_CARDS, KEY_CARDS) and its own shelf.
 export function allCards() {
   return HISTORY_CARDS;
 }
@@ -626,6 +647,7 @@ export function cardById(id) {
   return HISTORY_CARDS.find(c => c.id === id)
       || WING_CARDS.find(c => c.id === id)
       || ACT_CARDS.find(c => c.id === id)
+      || keyCardById(id)
       || null;
 }
 

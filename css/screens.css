@@ -1718,3 +1718,121 @@
   margin-top: 6px;
   animation: blink 1.2s step-end infinite;
 }
+
+/* ===== THE KEY-NAME BEAT (the key-name teaching-beat spec in docs/specs/, §5.3) =====
+   A key's name word was just typed. Three cosmetic responses, none of which
+   pauses play: a two-line caption, a glow on that key in the guide, and a
+   flourish on the prompt letters. js/ui/hud.js renders; js/main.js decides when.
+
+   ONE TINT for all three, chosen to belong to nothing else on screen: a pale
+   lilac. NOT --nudge-red (that answers a mistake), NOT the Name Moment's warm
+   personal gold (that is the child's own name), NOT the home-row diagram's
+   welcome green — and NOT a blue: the first version was ice-blue, and on
+   Level 13 (Myst's slate-blue accent, where the beat actually runs) the glowing
+   key was indistinguishable from the ACTIVE key, i.e. it read as "press this".
+   The glow is also shaped differently (an outline ring, no scale) so it never
+   competes with the active-key cue. Contrast: #d8c4ff on the caption's
+   rgba(0,0,0,0.82) scrim is > 12:1 — far past 4.5:1. Dimming, if ever needed, is a darker colour, never
+   element opacity (journal L2/F3); `opacity` here is ONLY the fade-out. */
+:root { --key-name-tint: #d8c4ff; --key-name-glow: rgba(200, 170, 255, 0.55); }
+
+/* The caption sits just BELOW the prompt panel, in the gap band between it and
+   the keyboard guide (~0.43–0.49H at 1280×800), centred — so the words appear
+   directly above the key that is glowing. It is a child of .prompt-area only
+   so it can anchor to the panel's bottom edge; top:100% puts its whole box
+   OUTSIDE the panel, and its height is budgeted to the 50px gap (40px flex
+   gap + the guide's 10px margin) so it never touches the guide either. */
+.key-name-caption {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  box-sizing: border-box;
+  max-height: 40px;
+  padding: 5px 12px;
+  /* Final size reserved from the start (hud.js sets --kn-chars / --kn-lines):
+     Press Start 2P is monospace, so one character = 1ch + the 1px tracking. */
+  min-width: calc(var(--kn-chars, 0) * (1ch + 1px) + 26px);
+  min-height: calc(var(--kn-lines, 1) * 14px + 12px);
+  background: rgba(0, 0, 0, 0.82);
+  border: 1px solid rgba(216, 196, 255, 0.40);
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;              /* never takes a click, never takes focus */
+  opacity: 1;
+  transition: opacity 0.6s ease-out; /* = KEY_NAME_FADE_MS in hud.js */
+  /* opacity-only entrance: a transform here would fight the translateX centring */
+  animation: keyNameBoxIn 0.4s ease-out;
+}
+
+/* The top-band fallback (spec §5.3): just ABOVE the panel instead, between the
+   HUD corners. Only used if a theme ever claims the gap band. */
+.key-name-caption { font-size: 9px; }   /* so 1ch above is the lines' own advance */
+
+.key-name-caption.top-band {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+.key-name-caption.fading { opacity: 0; }
+
+.key-name-caption-line {
+  font-size: 9px;
+  line-height: 14px;
+  letter-spacing: 1px;
+  color: var(--key-name-tint);
+  text-shadow: 0 0 6px rgba(200, 170, 255, 0.45);
+  animation: keyNameIn 0.4s ease-out;
+}
+
+@keyframes keyNameIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes keyNameBoxIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* The guide key glows for the caption's lifetime. Layered over whatever the key
+   already is (learned / active / Level 4's mystery pulse) and given ID-level
+   specificity so a level palette cannot swallow it. */
+#keyboard-guide .key-box.key-name-glow {
+  border-color: var(--key-name-tint);
+  color: var(--key-name-tint);
+  text-shadow: 0 0 8px var(--key-name-tint);
+  outline: 2px solid var(--key-name-tint);
+  outline-offset: 3px;
+  animation: keyNameGlow 1.6s ease-in-out infinite;
+}
+
+@keyframes keyNameGlow {
+  0%, 100% { box-shadow: 0 0 10px var(--key-name-glow), inset 0 0 6px rgba(200, 170, 255, 0.18); }
+  50%      { box-shadow: 0 0 24px rgba(214, 190, 255, 0.85), inset 0 0 12px rgba(200, 170, 255, 0.30); }
+}
+
+/* The flourish main.js adds to the prompt letters the moment the name word
+   completes. Cosmetic only; a brief lilac lift, never gold. */
+.prompt-letter.key-name-flourish {
+  color: var(--key-name-tint) !important;
+  opacity: 1 !important;
+  text-shadow: 0 0 12px rgba(220, 200, 255, 0.95), 0 0 28px rgba(180, 140, 255, 0.55);
+  animation: keyNameFlourish 1.2s ease-out both;
+  animation-delay: var(--key-name-delay, 0ms);
+}
+
+@keyframes keyNameFlourish {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  30%  { transform: scale(1.22); filter: brightness(1.5); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+
+/* KEYBOARD shelf: a locked tile shows the key's MARK above its ??? (spec §5.4).
+   Press Start 2P draws ; , . ' ` as a few pixels, so the mark is boosted like
+   the guide's .key-box-mark. Muted grey: it is a locked silhouette, not a prize. */
+.collection-cell-glyph {
+  font-size: 26px;
+  line-height: 1;
+  color: #8a8a8a;
+}

@@ -1,7 +1,7 @@
 import * as Audio from './audio.js';
 import { LEVELS, FINGER_MAP } from './levels.js';
-import { updateHUD, showFingerHint, showHomeRowDiagram, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter } from './ui/hud.js';
-import { showScreen, applyLevelTheme, renderReadyScreen, renderSlotsScreen, renderCollectionScreen, collectionShelves, scrollCollection, revealCollection, createStars } from './ui/screens.js';
+import { updateHUD, showFingerHint, showHomeRowDiagram, displayKey, renderKeyboard, renderPrompt, computeWPM, renderQuarters, flashBonusQuarter, showKeyNameCaption, hideKeyNameCaption, glowGuideKey } from './ui/hud.js';
+import { showScreen as showScreenRaw, applyLevelTheme, renderReadyScreen, renderSlotsScreen, renderCollectionScreen, collectionShelves, scrollCollection, revealCollection, createStars } from './ui/screens.js';
 import { renderSelectScreen, updateSelectHighlight, navigateAct, navigateWithinAct, selectByPosition, isLevelLocked, focusedDoor, focusedWingEntry, focusDoor, clearDoorFocus } from './ui/cabinet-art.js';
 import { Themes, activeTheme, stopAll } from './themes/index.js';
 import * as KeyboardPreview from './ui/keyboard-preview.js';
@@ -10,7 +10,7 @@ import * as Basement from './basement.js';
 import * as CommandCenter from './commandcenter.js';
 import * as FullCircle from './fullcircle.js';
 import { FREEPLAY_KEYS, buildFreePlayPatterns } from './freeplay.js';
-import { TOTAL_CARDS, ACT_CARD_UNLOCK_LEVEL, bankOf, bankProgress, actOfLevel, actCardsUnlocked, pickGuaranteedActCard, wordToTokens, patternMatchesCard, cardsForLevel, cardById, pickGuaranteedCard } from './history-cards.js';
+import { TOTAL_CARDS, ACT_CARD_UNLOCK_LEVEL, bankOf, bankProgress, actOfLevel, actCardsUnlocked, pickGuaranteedActCard, wordToTokens, patternMatchesCard, cardsForLevel, cardById, pickGuaranteedCard, KEY_CARDS, keyCardForLevel } from './history-cards.js';
 import { assembleCoda, pickKeyboardStory, buildStoryPool } from './keyboard-story.js';
 import { prefetchKeyboardStories, takeKeyboardStories } from './keyboard-story-gen.js';
 import { addGeneratedStories } from './keyboard-story-cache.js';
@@ -51,7 +51,19 @@ const EGGS = {
 // it — the eighth key keeps its in-game anonymity (CLAUDE.md) while the player is
 // let in on what programmers call it. It never interrupts flow: the complete
 // overlay is a natural pause point, and this is pure decoration on it.
-const EIGHTH_KEY_CONFESSION = 'THE EIGHTH KEY HAS A NAME.\nPROGRAMMERS END EVERY LINE WITH IT;';
+//
+// TWO VARIANTS since the Level 13 key-name beat (the key-name teaching-beat spec in
+// docs/specs/, §5.8): A builds on the name the child met at Level 13; B is for a save
+// that never met it (a WOPR jump, or L13 cleared before the beat shipped). Only
+// the line-1 literals live here. Line 2 — the CODE lesson — is read from the
+// keyboard-card record's `code` field, so that sentence has exactly ONE source
+// (js/key-cards.js). The old line 2 said "EVERY LINE", which is false (the
+// research page's §Corrections): many languages, an instruction, not a line.
+// ⚠️ The key's NAME must never be written in this file (INV-29) — the record is
+// looked up by its glyph, never by an id string that spells the word.
+const EIGHTH_KEY_CONFESSION_MET = 'YOU MET ITS NAME AT LEVEL 13.';
+const EIGHTH_KEY_CONFESSION_ANON = 'THE EIGHTH KEY HAS A NAME.';
+const EIGHTH_KEY_CARD = KEY_CARDS.find(c => c && c.glyph === ';') || null;
 
 // ─── The rubber duck (easter-eggs.md proposal #4) ──────────────────────────
 // The duck itself is set dressing on the Level 20 terminal cabinet (drawn in
@@ -205,6 +217,25 @@ const state = {
   // preferring a card not yet collected in the active slot. Everything about the
   // card gate — sparkle detect, win-gate, reveal — keys off this one object.
   currentCard: null,
+  // ── The key-name beat (the key-name teaching-beat spec in docs/specs/ §5.2) ──
+  // The keyboard-card record armed for THIS play (js/key-cards.js), or null. When
+  // set, `currentCard` is the same record, so the existing card gate (sparkle
+  // latch, cardPending, reveal) carries the beat with no second gate. At most one
+  // beat per play; never in Free Play. The collected card id is the latch.
+  keyBeat: null,
+  // Index in state.patterns where the beat word was spliced (adjacency guard for
+  // the Name Moment splice), or null.
+  keyBeatAt: null,
+  // `isNew` from the IMMEDIATE credit at beat completion — the overlay reads this,
+  // because by LEVEL COMPLETE the id is already in the save and a second
+  // collectCardId() would always answer "not new".
+  keyBeatNew: false,
+  // The caption's lifetime: { glyph, shownAt, patternsAt } while it is up, else
+  // null. Retired only when BOTH >= KEY_BEAT_CAPTION_MIN_MS have passed AND
+  // KEY_BEAT_CAPTION_MIN_PATTERNS more patterns are done; torn down at once on
+  // level end, pause, game over and any screen change.
+  keyBeatCaption: null,
+  keyBeatCaptionTimer: null,
   // Whether the LEVEL COMPLETE panel that is currently being assembled carries a
   // history card. Set by showLevelComplete, read by showCompleteOverlay — which
   // runs later, when the panel is finally displayed — so the pick-up-off-the-
@@ -674,8 +705,25 @@ function survivalTick() {
   state.survival.rafId = requestAnimationFrame(survivalTick);
 }
 
+// The armed key-name beat is a LESSON, not a race (spec §5.7, Trevor Q5): while it
+// is the current pattern no clock runs, so a timeout can neither cost a quarter
+// nor replace the word. The clock resumes on the next pattern. Only the beat is
+// exempt — every other guaranteed word keeps its clock.
+function isArmedKeyBeatPattern(pattern) {
+  return !!(state.keyBeat && !state.cardWordTyped && pattern
+    && patternMatchesCard(pattern, state.keyBeat));
+}
+
 function startSurvivalPatternTimer(pattern) {
   if (!state.survival.active) return;
+  if (isArmedKeyBeatPattern(pattern)) {
+    stopSurvivalTimer();
+    state.survival.patternDeadline = null;
+    state.survival.remainingAtPause = null;
+    const t = $('survival-timer-track');
+    if (t) t.classList.add('hidden');
+    return;
+  }
   const duration = survivalPatternDuration(pattern);
   state.survival.patternDuration = duration;
   state.survival.patternDeadline = Date.now() + duration;
@@ -745,6 +793,9 @@ function handleSurvivalTimeout() {
   // otherwise untouched.
   const level = getLevelData();
   state.currentIndex = 0;
+  // Read what is on screen BEFORE it is replaced: if it is a guaranteed word the
+  // win gate is still waiting on, it must come back (TF-V1 / INV-170).
+  const lost = getNextPattern();
   const fresh = drawRandomPattern();
   // Only write back into the live pattern list when currentPattern actually
   // indexes into it. In Free Play (and any run) the initial list can be
@@ -756,12 +807,51 @@ function handleSurvivalTimeout() {
   if (state.currentPattern < state.patterns.length) {
     state.patterns[state.currentPattern] = fresh;
   }
+  requeueGuaranteedPattern(lost);
   renderPrompt(state, level, fresh);
   startSurvivalPatternTimer(fresh);
 }
 
+// Is `pattern` a GUARANTEED injection whose win gate is still armed? These words
+// exist only as one-off splices in state.patterns — never in any drawable pool —
+// so a pattern that is overwritten and not put back can never be served again,
+// and its gate (cardPending / namePending / l24NamePending in handleGameKey)
+// would hold the level open forever. Covers every guarantee that shares that
+// shape: the curriculum history card, the Free Play ACT card and the key-name
+// beat (all three ride state.currentCard / cardWordTyped), the Name Moment, and
+// Level 24's own name.
+function isUnmetGuaranteedPattern(pattern) {
+  if (!Array.isArray(pattern) || pattern.length === 0) return false;
+  if (state.currentCard && !state.cardWordTyped
+      && patternMatchesCard(pattern, state.currentCard)) return true;
+  if (!state.freePlay && state.nameMomentWord && !state.nameMomentDone
+      && patternMatchesName(pattern, state.nameMomentWord)) return true;
+  if (!state.freePlay && state.l24NameWord && !state.l24NameTyped
+      && patternsEqual(pattern, state.l24NameWord)) return true;
+  return false;
+}
+
+// TF-V1 (Trevor's ruling, the key-name teaching-beat spec in docs/specs/ §5.7): a Survival
+// timeout keeps its clock and its quarter, and still swaps the prompt for a fresh
+// one — but an UNMET guaranteed word it displaced is RE-QUEUED as the very next
+// pattern (currentPattern + 1, right after the fresh replacement). The level stays
+// winnable at every tier: the word comes back every time it is lost, until typed.
+// The key-name beat is clock-exempt and so never reaches this path; it is covered
+// here only defensively. Nothing is re-queued when the replacement already IS the
+// word (the pool can contain it — e.g. a card word that is also a warm-up drill).
+function requeueGuaranteedPattern(lost) {
+  if (!isUnmetGuaranteedPattern(lost)) return;
+  const fresh = state.patterns[state.currentPattern];
+  if (fresh && patternsEqual(fresh, lost)) return;
+  const at = state.currentPattern + 1;
+  // getNextPattern() above persisted the current slot, so `at` is at most one past
+  // the end — splice is then a plain append, never a sparse write.
+  state.patterns.splice(Math.min(at, state.patterns.length), 0, lost.slice());
+}
+
 function showGameOver() {
   stopSurvivalTimer();
+  clearKeyBeatCaption();
   const track = $('survival-timer-track');
   if (track) track.classList.add('hidden');
   $('game-screen').querySelector('.game-area').classList.add('hidden');
@@ -913,6 +1003,14 @@ function handleGameKey(e) {
             void promptArea.offsetWidth;
             promptArea.classList.add('card-glint');
           }
+          // The key-name beat: credit NOW, not at LEVEL COMPLETE — leaving must
+          // never drop what the player did (the hardware wing's wakeUp() lesson).
+          // Then the cosmetic beat: caption, guide glow, letter flourish. None of
+          // it pauses, gates or delays the next prompt.
+          if (state.keyBeat && card === state.keyBeat) {
+            state.keyBeatNew = Slots.collectCardId(state.keyBeat.id);
+            fireKeyBeat(state.keyBeat);
+          }
         }
       }
 
@@ -945,6 +1043,9 @@ function handleGameKey(e) {
       // Level 25 coda: once active, every completed pattern is a coda line served as
       // the tail (startCoda) — count them toward the coda's completion gate.
       if (state.codaActive) state.codaTyped++;
+
+      // The key-name caption retires once enough time AND enough play has passed.
+      maybeRetireKeyBeatCaption();
 
       // SURVIVAL: timer stops between patterns — no clock runs during the
       // brief transition, exactly like the base engine has no penalty here.
@@ -1153,7 +1254,14 @@ function renderEighthKeyConfession(show) {
   if (!modal || !prompt) return;
   const el = document.createElement('div');
   el.id = 'eighth-key-confession';
-  el.textContent = EIGHTH_KEY_CONFESSION;
+  // Variant A if this save met the key's name at Level 13, else B (spec §5.8).
+  // Line 2 is the record's own `code` sentence. Read at the moment of reveal, so
+  // a WOPR jump straight to L20 on a save without the card reads B. A tampered
+  // save holding the id only flips this to A — harmless (spec §6).
+  const met = !!EIGHTH_KEY_CARD && Slots.collectedIds().includes(EIGHTH_KEY_CARD.id);
+  const line2 = EIGHTH_KEY_CARD ? EIGHTH_KEY_CARD.code : '';
+  el.textContent = [met ? EIGHTH_KEY_CONFESSION_MET : EIGHTH_KEY_CONFESSION_ANON, line2]
+    .filter(Boolean).join('\n');
   el.style.cssText = [
     'margin:26px auto 28px',
     // The couplet breaks on its own newline (pre-line) rather than on whatever
@@ -1192,6 +1300,8 @@ function showCompleteOverlay() {
 
 function showLevelComplete() {
   stopSurvivalTimer();
+  // The key-name caption never outlives the level (spec §5.3, INV-160).
+  clearKeyBeatCaption();
   const elapsed = Date.now() - state.startTime;
   const acc = state.totalAttempts > 0
     ? Math.round((state.totalCorrect / state.totalAttempts) * 100)
@@ -1250,11 +1360,27 @@ function showLevelComplete() {
     ? (state.currentCard && bankOf(state.currentCard.id) === 'act' ? state.currentCard : null)
     : state.currentCard;
   if (card && state.cardWordTyped) {
-    const isNew = Slots.collectCardId(card.id);
+    // A keyboard card was already credited the instant its word was typed, so a
+    // second collectCardId() here would always say "not new" — the beat's own
+    // answer is the true one. Its body is the LITERACY lesson only, never the code
+    // meaning: that waits for the Level 20 terminal (INV-161).
+    const isKeyBeat = state.keyBeat && card === state.keyBeat;
+    const isNew = isKeyBeat ? (Slots.collectCardId(card.id) || state.keyBeatNew) : Slots.collectCardId(card.id);
+    // Where the card was "found": a keyboard card comes off the keyboard, every
+    // other card the overlay can show (arcade, act) keeps the arcade-floor line.
+    // Set on every reveal, so a keyboard card never leaves its header behind for
+    // the next level's card. (The hardware wing draws its own "FOUND BESIDE THE
+    // MACHINE" on canvas and never reaches this overlay.)
+    const header = historyCard.querySelector('.history-card-header');
+    if (header) {
+      header.textContent = bankOf(card.id) === 'keyboard'
+        ? 'FOUND ON THE KEYBOARD'
+        : 'FOUND ON THE ARCADE FLOOR';
+    }
     $('history-card-word').textContent = card.word.toUpperCase();
     $('history-card-title').textContent = card.title;
     $('history-card-year').textContent = card.year;
-    $('history-card-fact').textContent = card.fact;
+    $('history-card-fact').textContent = isKeyBeat ? card.literacyFact : card.fact;
     // Scoped to the card's OWN bank — see bankOf/bankProgress in history-cards.js.
     // An unscoped count against the arcade total reads "CARD 63 OF 60" as soon as
     // any bonus-wing card exists.
@@ -1263,7 +1389,9 @@ function showLevelComplete() {
     // against the arcade bank and would read its total, not its own. Same class
     // of bug as INV-100, one bank later; caught before act cards had any content.
     const prog = bankProgress(bankOf(card.id) || 'arcade', Slots.collectedIds());
-    $('history-card-count').textContent = `CARD ${prog.found} OF ${prog.total}`;
+    $('history-card-count').textContent = bankOf(card.id) === 'keyboard'
+      ? `KEYBOARD CARD ${prog.found} OF ${prog.total}`
+      : `CARD ${prog.found} OF ${prog.total}`;
     $('history-card-new').classList.toggle('hidden', !isNew);
     historyCard.classList.remove('hidden');
   } else {
@@ -1523,6 +1651,98 @@ function fireNameFlourish() {
   }, 1600);
 }
 
+// ── The key-name beat (the key-name teaching-beat spec in docs/specs/ §5.3) ──
+// The moment the key's NAME word is completed: a two-line literacy caption in the
+// gap band, the key glowing on the guide in pale lilac with an outline ring, and a
+// brief pale-lilac lift on the prompt letters (--key-name-tint, css/screens.css;
+// its own class — never the Name Moment's personal gold, never the mistake red). All cosmetic: no focus, no listener, no pause, and the next
+// prompt arrives on its normal beat. Every string comes from the fixed record in
+// js/key-cards.js and reaches the DOM via textContent (hud.js) — security.md 1–2.
+// No chime: the spec makes one optional, and the correct-key sound already lands
+// on this keystroke, so nothing here depends on audio (works muted / deaf).
+const KEY_BEAT_CAPTION_MIN_MS = 10000;
+const KEY_BEAT_CAPTION_MIN_PATTERNS = 3;
+let keyBeatFlourishTimer = null;
+
+function fireKeyBeat(record) {
+  clearKeyBeatCaption();
+  showKeyNameCaption(record.literacy);
+  glowGuideKey(record.glyph, true);
+  state.keyBeatCaption = {
+    glyph: record.glyph,
+    shownAt: Date.now(),
+    // The count AFTER the beat itself is recorded (it is bumped just after this
+    // runs), so "3 further patterns" means three patterns past the beat word.
+    patternsAt: state.patternsCompleted + 1,
+  };
+  // The time half of the lifetime can be the LAST half to be met (a fast typist
+  // clears three patterns in a few seconds), so check once more when it lands.
+  state.keyBeatCaptionTimer = setTimeout(() => {
+    state.keyBeatCaptionTimer = null;
+    maybeRetireKeyBeatCaption();
+  }, KEY_BEAT_CAPTION_MIN_MS);
+
+  const letters = document.querySelectorAll('.prompt-letter');
+  letters.forEach((el, i) => {
+    el.classList.remove('key-name-flourish');
+    void el.offsetWidth;
+    el.style.setProperty('--key-name-delay', (i * 60) + 'ms');
+    el.classList.add('key-name-flourish');
+  });
+  clearTimeout(keyBeatFlourishTimer);
+  keyBeatFlourishTimer = setTimeout(() => {
+    document.querySelectorAll('.prompt-letter.key-name-flourish').forEach(el => {
+      el.classList.remove('key-name-flourish');
+      el.style.removeProperty('--key-name-delay');
+    });
+  }, 1600);
+}
+
+function maybeRetireKeyBeatCaption() {
+  const c = state.keyBeatCaption;
+  if (!c) return;
+  if (Date.now() - c.shownAt < KEY_BEAT_CAPTION_MIN_MS) return;
+  if (state.patternsCompleted - c.patternsAt < KEY_BEAT_CAPTION_MIN_PATTERNS) return;
+  clearTimeout(state.keyBeatCaptionTimer);
+  state.keyBeatCaptionTimer = null;
+  state.keyBeatCaption = null;
+  hideKeyNameCaption();          // the fade is cosmetic
+  glowGuideKey(c.glyph, false);
+}
+
+// Immediate teardown: level end, pause, game over, any screen change. Idempotent
+// and safe when no beat ever fired (it is called on every screen switch).
+function clearKeyBeatCaption() {
+  clearTimeout(state.keyBeatCaptionTimer);
+  state.keyBeatCaptionTimer = null;
+  const c = state.keyBeatCaption;
+  state.keyBeatCaption = null;
+  hideKeyNameCaption({ immediate: true });
+  if (c) glowGuideKey(c.glyph, false);
+}
+
+// Every screen change tears the caption down (spec §5.3). Wrapping the import
+// once here catches all ~40 call sites, including ones added later.
+function showScreen(name, st) {
+  if (name !== 'game') clearKeyBeatCaption();
+  return showScreenRaw(name, st);
+}
+
+// Where the beat word goes (spec §5.2): one past the first intro drill that
+// introduces the LAST of the level's new keys, clamped to [1, intro.length]. Early
+// enough that the caption has real play left under it (at 1x the post-intro slot
+// is effectively the level's final pattern), late enough that every key the word
+// needs has been met. Level 13: c at 0, ',' at 3 → index 4.
+function keyBeatSpliceIndex(level) {
+  const intro = Array.isArray(level.intro) ? level.intro : [];
+  let last = 0;
+  for (const k of (level.newKeys || [])) {
+    const i = intro.findIndex(p => Array.isArray(p) && p.includes(k));
+    if (i > last) last = i;
+  }
+  return Math.max(1, Math.min(intro.length, last + 1));
+}
+
 // A small bounded burst of decorative gold sparkles over one letter. Fixed
 // cap, self-removing, no name text — purely ornamental divs.
 function spawnSparkles(anchorEl) {
@@ -1675,7 +1895,38 @@ function startGame() {
       actCardSpliced = true;
     }
   }
+  // ── The key-name beat (the key-name teaching-beat spec in docs/specs/ §5.2) ──
+  // A keyboard card still uncollected at this level ARMS the beat and takes this
+  // play's one guaranteed card slot. It deliberately does NOT call
+  // pickGuaranteedCard and does NOT bump the level's card rotation: the arcade
+  // rotation must sit exactly where it was, so the next (non-beat) play serves the
+  // arcade card it would have served anyway. The collected id is the latch, so a
+  // replay after collection arms nothing and erasing a game brings it back.
+  clearKeyBeatCaption();
+  state.keyBeat = null;
+  state.keyBeatAt = null;
+  state.keyBeatNew = false;
+  let keyBeatSpliced = false;
   if (!state.freePlay) {
+    const beat = keyCardForLevel(state.level, Slots.collectedIds());
+    if (beat) {
+      state.keyBeat = beat;
+      state.currentCard = beat;
+      // Guaranteed content: spliced, never drawn from the length-filtered pool, so
+      // MIN/MAX WORD LENGTH can never remove it. The existing cardPending gate holds
+      // the level open until it is typed; it sits inside the intro, so it is served
+      // long before any win is possible, at every EXPERIENCE tier.
+      let at = keyBeatSpliceIndex(level);
+      // Never adjacent to Level 24's guaranteed name (already at intro.length):
+      // splicing AT intro.length would put the beat immediately before it. Inert
+      // in Phase 1 (only Level 13 holds a keyboard card); here for Phase 2's L24.
+      if (state.l24NameWord && at >= level.intro.length) at = Math.max(1, level.intro.length - 1);
+      state.patterns.splice(Math.min(at, state.patterns.length), 0, wordToTokens(beat.word));
+      state.keyBeatAt = Math.min(at, state.patterns.length - 1);
+      keyBeatSpliced = true;
+    }
+  }
+  if (!state.freePlay && !state.keyBeat) {
     const chosen = pickGuaranteedCard(
       state.level, Slots.collectedIds(), Slots.getCardRotation(state.level));
     if (chosen) {
@@ -1686,7 +1937,7 @@ function startGame() {
     }
   }
   const card = state.currentCard;
-  if (card && !actCardSpliced) {
+  if (card && !actCardSpliced && !keyBeatSpliced) {
     // Inject right after the intro drills — before the earliest possible
     // level-win — so the moment word is always reached in real play. The
     // completion gate also waits for it (cards are earned, never missable).
@@ -1710,8 +1961,16 @@ function startGame() {
   // missable, exactly like a card. Later levels don't inject here; the name
   // instead joins the pool at low frequency inside buildPatterns above.
   if (state.nameMomentWord) {
-    const insertAt = level.intro.length + (card ? 1 : 0);
-    state.patterns.splice(insertAt, 0, state.nameMomentWord.split(''));
+    // On a key-name beat play the beat lives INSIDE the intro (one more pattern
+    // there), so `intro.length + 1` is still "right after the intro drills".
+    let insertAt = level.intro.length + (card ? 1 : 0);
+    // ...and never adjacent to the beat (INV-164). Only reachable if a level's
+    // splice index clamps to intro.length; then the name moves one slot later so
+    // a drill sits between the two guaranteed injections.
+    if (state.keyBeatAt != null && Math.abs(insertAt - state.keyBeatAt) <= 1) {
+      insertAt = state.keyBeatAt + 2;
+    }
+    state.patterns.splice(Math.min(insertAt, state.patterns.length), 0, state.nameMomentWord.split(''));
   }
 
   // ── Level 25 "MY STORY" coda (js/keyboard-story.js) ──
@@ -2919,6 +3178,7 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         state.paused = true;
         pauseSurvivalTimer();
+        clearKeyBeatCaption();   // the caption never sits on the pause menu
         $('pause-overlay').classList.remove('hidden');
       } else {
         handleGameKey(e);
