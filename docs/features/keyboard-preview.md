@@ -4,7 +4,7 @@ code: [js/ui/keyboard-preview.js]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-07-13
+verified: 2026-10-30 (eighth key shows its real ';' glyph; small-mark boost via hud.js isSmallMark)
 ---
 
 # Keyboard Preview ("KNOW YOUR KEYS")
@@ -30,7 +30,7 @@ independently duplicated (journal F5) — now structurally impossible to drift.
 
 ## Labels — `previewLabel(key)`
 
-`';' → '?'` (never "semicolon"), `Backspace → ⌫`, `Shift → SHIFT`, `' ' → SPACE`,
+`';'` is no longer masked — it shows the mark printed on its keycap (the WORD "semicolon" stays withheld until the Level 20 confession; 2026-10-30), `Backspace → ⌫`, `Shift → SHIFT`, `' ' → SPACE`,
 `Tab`/`Caps` spelled out literally, lowercase letters uppercased. `Enter` resolves
 to a module-level `ENTER_LABEL` constant — `/Mac/.test(navigator.platform ||
 navigator.userAgent) ? 'RETURN' : 'ENTER'` — computed once at load (platform never
@@ -44,6 +44,9 @@ coloring" below) — so `previewLabel('Enter')` is dead code on the only path th
 currently reaches it. The fix is correct and future-proofed (if `Enter` is ever
 taught/highlighted, its label will already be platform-aware) but changes nothing
 observable today.
+
+Marks Press Start 2P draws as a few pixels (`isSmallMark` from `hud.js` — `` ` ' , . - = ; ``) are
+drawn at `max(9, unitSize*0.56)` instead of the usual `unitSize*0.32`.
 
 ## Three-tier key coloring
 
@@ -63,8 +66,8 @@ x-positions anchored to actual home-key columns from `KB_LAYOUT`; the reaching f
 lifts toward the target key, animated by a sine wave.
 
 Label priority above the keyboard: the level's own `hint` string → a generated
-"STRETCH YOUR \<FINGER\> FINGERS" line → "NEW KEYS: X AND Y" (with `; → ?`
-substitution inline). Blinking "PRESS SPACE TO CONTINUE" at the bottom.
+"STRETCH YOUR \<FINGER\> FINGERS" line → "NEW KEYS: X AND Y" (plain `toUpperCase()` —
+the `; → ?` substitution was removed 2026-10-30, so the eighth key reads `;`). Blinking "PRESS SPACE TO CONTINUE" at the bottom.
 
 ## Interaction
 

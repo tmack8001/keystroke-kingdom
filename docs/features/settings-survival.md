@@ -4,7 +4,7 @@ code: [js/settings.js]
 rules: [.claude/rules/product.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-07-13
+verified: 2026-10-30 (harder-value Y/N confirm + previewRowChange; truthful word-length descriptors; Survival 10 s floor + 1-quarter spare; rows/ranges re-checked against code)
 ---
 
 # Settings & Survival Mode
@@ -94,9 +94,16 @@ rows, both defaulting to **ANY** (0 = no bound) — an untouched Settings screen
 nothing.
 
 ```js
-export const MIN_WORD_LEN_VALUES = [0, 3, 4, 5, 6, 7];
-export const MAX_WORD_LEN_VALUES = [4, 5, 6, 7, 8, 10, 12, 0];
+export const MIN_WORD_LEN_VALUES = [0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+export const MAX_WORD_LEN_VALUES = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, …, 24, 0]; // single steps to 24
 ```
+
+**Descriptors name the real direction** *(2026-10-30)* via exported `minWordLenDescriptor(v)` /
+`maxWordLenDescriptor(v)`. The MAX row used to say "— EASIER" on every rung including 24, its
+hardest. Now MIN: `ANY LENGTH — SHORT WORDS WELCOME`, then `ONLY WORDS n+ LETTERS — A BIT
+HARDER` (≤4) / `— HARDER` (≤7) / `— HARDEST`. MAX: `ANY LENGTH — THE LEVEL'S OWN MIX`,
+`NOTHING OVER n LETTERS — EASIEST` (≤5) / `— EASIER` (≤8), `UP TO n LETTERS — HARDER` (≤12),
+`… — LONG WORDS, HARDER STILL` (<24), `UP TO 24 LETTERS — THE LONGEST WORDS, HARDEST`.
 
 `getWordLengthRange()` is the single source of truth for the live range — same
 pattern as `getWinRatio()`: reads cached settings, tolerates garbage, always returns
@@ -133,20 +140,36 @@ DIFFICULTY_DESCRIPTOR = { novice: 'PLENTY OF TIME', arcade: 'THE CLASSIC PACE', 
 Higher multiplier = more time per pattern (applied in `main.js`'s
 `survivalPatternDuration()`). The mercy-quarter mechanic (15-streak → quarter back) is
 **not** in this file — it's `js/main.js`'s `state.survival.survivalStreak` +
-`maybeAwardMercyQuarter()`.
+`maybeAwardMercyQuarter()`. Two Survival rules added 2026-10-30 live in `main.js` too: a
+**10 s floor** per prompt (`SURVIVAL_MIN_PATTERN_MS`; a one-letter prompt was ~5.4 s at EXPERT,
+harsher than a long one — the clock is otherwise not retuned) and, at **1 quarter**, a
+**one-time spare** quarter on the run's first 15-streak (otherwise the mercy was unreachable
+exactly where it matters). Both are documented at [[engine-flow]] §Survival wrapper.
 
 ## Settings rows (`getRows()`)
 
-Twelve declarative rows, in display order: `playStyle`, `lives`, `difficulty`,
+Thirteen declarative rows, in display order: `playStyle`, `lives`, `difficulty`,
 `winRatio` (EXPERIENCE), `minWordLen` (MIN WORD LENGTH), `maxWordLen` (MAX WORD
 LENGTH), `hintStyle`, `mistakeDisplay`, `sound`, `crtEffects`, `statsVisible`,
-`erase`. Each row
+`blockedWords`, `erase`. Each row
 has `label`, `values`, `display(v)`, `descriptor(v)`, `active(settings)` (whether
 interactive right now — `lives`/`difficulty` are active only when
 `playStyle === 'survival'`), and optionally `action: true` (only `erase` — a trigger,
 not a cycling value). `applyRowChange(settings, rowIndex, dir)` is the pure
 state-transition helper `main.js`'s Settings controller calls on `ArrowLeft`/`Right`;
 no-ops on inactive/action rows, otherwise cycles the value and persists immediately.
+
+**Choosing a harder rule asks once** *(2026-10-30, product.md)*: the Settings screen no longer
+calls `applyRowChange`; it calls `previewRowChange(settings, rowIndex, dir)` →
+`{ next, confirm }`, which computes the sanitized next settings **without saving**. A row can
+declare `harder(from, to)` + `confirmPrompt`; today only `playStyle` does
+(`from !== 'survival' && to === 'survival'`, prompt `YOU CHOSE 1979 RULES — KEEP IT?`). When
+`confirm` is non-null `main.js` holds `next` in `state.settingsPending`, shows
+`#settings-harder-confirm`, and saves only on `Y` — any other key keeps the easier value, and
+because nothing was written, closing the tab mid-question keeps it too. ⚠️ `docs/screenshots/screens/settings-survival-active.png` is captured by cycling PLAY STYLE and shooting without answering, so it now shows the *pending* question (`YOU CHOSE 1979 RULES — KEEP IT? Y / N`) over the Survival rows rather than the confirmed state; the script should press `Y` first (tooling debt). Moving back to
+ADVENTURE (easier) never asks. `applyRowChange` remains for non-UI callers and tests. The
+erase row's confirm now names a count (`ERASE 1 SAVED GAME?` / `ERASE ALL n SAVED GAMES?`) with
+"YOUR SETTINGS STAY" beneath, .
 
 ## Invocation
 

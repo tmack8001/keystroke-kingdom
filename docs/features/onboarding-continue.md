@@ -4,7 +4,7 @@ code: [js/ui/screens.js]
 rules: [.claude/rules/levels.md, .claude/rules/transitions.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-10-29 (shelved collection gallery)
+verified: 2026-10-30 (picker `★ found / total`, R RENAME, erase names the game, context-aware hint, name-field label; earlier 2026-10-29: shelved collection gallery)
 ---
 
 # Onboarding, the Slot Picker & Collection Gallery
@@ -44,16 +44,16 @@ collection gallery's data — lives at [[save-slots]]; this section covers only 
 `js/ui/screens.js` itself renders.
 
 `renderSlotsScreen(state, slots)` — `slots` is `Slots.listSlots()`: an array of
-`{ name, furthestLevel, cardsFound }`, one per existing saved game (no fixed count, no
+`{ name, furthestLevel, cardsFound }` (main.js's `pickerSlots()` adds `arcade: { found, total }`), one per existing saved game (no fixed count, no
 null padding — see [[save-slots]] "no fixed cap"). Rebuilds `#slots-list` from scratch
 on every call, via `createElement`/`textContent` only (never `innerHTML` for the
 player-chosen name — security.md rule 1): one row per game (cursor, number, name,
-`LV <furthestLevel>`, `★ <cardsFound>`), highlighted when `i === state.slotsSelected`,
+`LV <furthestLevel>`, `★ <found> / <total>` for the arcade bank — falls back to the bare `★ <cardsFound>` only for an older caller that supplies no `arcade`, since `cardsFound` counts every bank and over `TOTAL_CARDS` it would print the `CARD 63 OF 60` defect, INV-100), highlighted when `i === state.slotsSelected`,
 **plus an always-appended trailing "+ NEW GAME" row** (`.slot-row.slot-new`,
 highlighted when `state.slotsSelected === slots.length`). The erase-confirm sub-panel
 (`#slots-erase`) and the action hint (`#slots-hint`) are mutually exclusive — showing
 one hides the other, so the child is never shown two conflicting instructions at once
-(the same rule the old continue screen's erase-confirm followed).
+(the same rule the old continue screen's erase-confirm followed). *(2026-10-30)* The erase panel also fills `#slots-erase-name` (`NAME · LV n`, `textContent`), and `#slots-hint` is set per row: `SPACE PLAY · N NEW · R RENAME · C CARDS · X ERASE` on a game, `SPACE START A NEW GAME` on the NEW GAME row or an empty list. The name field's `#name-label` / `#name-confirm-verb` (`index.html`) are set by `main.js` — `ENTER YOUR NAME … TO START` vs `RENAME THIS GAME … TO SAVE`.
 
 ## The collection gallery (`collection` screen)
 

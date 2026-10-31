@@ -51,7 +51,7 @@ const STALL_TIMEOUT_MS = 8000;
 const PER_LEVEL_TIMEOUT_MS = 240_000;
 
 function displayGlyphToToken(display) {
-  if (display === '?') return ';';
+  if (display === '?' || display === ';') return ';'; // old glyph '?' OR the shown ';'
   if (display === '␣') return ' ';
   if (display === '⌫') return 'Backspace';
   return display;

@@ -4,7 +4,7 @@ code: [js/ui/cabinet-art.js]
 rules: [.claude/rules/levels.md]
 screenshots: docs/screenshots/acts/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-10-29 (Free Play banner text; earlier: console-station cabinet art overhaul + control panels + screen/year fixes — see git log js/ui/cabinet-art.js)
+verified: 2026-10-30 (heading now route-dependent; earlier 2026-10-29: Free Play banner text; earlier: console-station cabinet art overhaul + control panels + screen/year fixes — see git log js/ui/cabinet-art.js)
 ---
 
 # Select Screen ("GREETINGS PROFESSOR FALKEN")
@@ -13,6 +13,13 @@ The level-select screen. Five acts (`ACTS`, cabinet-art.js:3-9), each showing fi
 cabinets at a time: Act 1 The Arcade (1-5), Act 2 The Computer Wing (6-10), Act 3 The
 Basement (11-15), Act 4 The Command Center (16-20), Act 5 Full Circle (21-25).
 `renderSelectScreen(state)` fully rebuilds `#select-cabinets` on every call.
+
+**Heading (2026-10-30, set by `js/main.js` `syncSelectHeading()`, not by this file):** the title
+reads `GREETINGS PROFESSOR FALKEN` / `SHALL WE PLAY A GAME?` **only on the WOPR route**
+(`state.selectBypass`); the ordinary route a saved game now takes (READY → Escape →
+`showArcadeFromReady()`) reads `THE ARCADE` / `PICK A CABINET`, so the egg keeps its line. The
+reference frames in `docs/screenshots/acts/` are captured via WOPR and still show the
+Falken heading. Details: [[engine-flow]] §Name entry.
 
 ## Cabinet art system
 

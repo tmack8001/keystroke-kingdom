@@ -4,7 +4,7 @@ code: [js/themes/terminal.js]
 rules: [.claude/rules/easter-eggs.md]
 screenshots: docs/screenshots/easter-eggs/
 capture: node docs/screenshots/capture-eggs.js
-verified: 2026-10-29 (terminal victory moved the binary/HELLO lines)
+verified: 2026-10-30 (terminal victory re-staged, 5200 ms; earlier 2026-10-29: moved the binary/HELLO lines)
 ---
 
 # Easter Eggs (The Hidden Layer)
@@ -93,7 +93,7 @@ html>`, decoding byte-by-byte to `SHALL WE PLAY` (three words: SHALL, WE, PLAY).
 
 *Note (2026-10-19): the scrolling log no longer prints the binary→HELLO lines; `terminal.js`
 `victory()` now clears the log and animates the five bytes, `H E L L O`, and `YOUR FIRST PROGRAM`
-(4800ms) — see [[level-themes]].*
+(5200ms since the 2026-10-30 re-stage: binary types back, resolves to letters, `RUN`, HELLO floods the screen) — see [[level-themes]].*
 
 No separate probability system — these are plain entries mixed into the existing
 `POOL_FRAGMENTS` array (20 entries total; the last 5 are the hacker-history whispers:

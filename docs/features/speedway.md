@@ -4,7 +4,7 @@ code: [js/speedway/hub.js, js/speedway/track.js, js/speedway/ghost.js, js/speedw
 rules: [.claude/rules/product.md, .claude/rules/security.md, .claude/rules/theme-authoring.md, docs/specs/act7-speed-racing.md]
 screenshots: docs/screenshots/speedway/
 capture: node docs/screenshots/capture-speedway.js
-verified: 2026-09-13
+verified: 2026-10-30 (ghost legends on both tracks; Monaco ghost wears YOUR body; F-Zero ghost depth compression; earlier 2026-09-13 full pass)
 ---
 
 # Act 7 — THE SPEEDWAY
@@ -367,6 +367,20 @@ never decreases when tracks are ordered by `year`, and no two tracks share a
   rotation hardware showed a spin), and a marshal waves at the line. Its road band
   lives in the LEFT margin with the course board and a segmented CHARGE rail in the
   right margin, composing around the engine's panel.
+- **Ghost legends — "which one is which"** *(persona playtests 2026-10-29/30; drawing-only,
+  they read `ghostProgress` and write nothing, INV-78).* **Monaco GP**: the ghost is no
+  longer a dithered rival car (`CAR_N`) but **your own body** (`HERO_A`) at half ink — an
+  ordered dither (`GHOST_INK = { stipple: 1 }`) — so it cannot be mistaken for the field's
+  hollow cars. The fascia legend (YOU / THE FIELD) gains a second row, drawn only while a
+  ghost is actually on the road: the same glyph and dither beside `GHOST`; it waits if it
+  would not fit above the result strip or would overlap an engine overlay. **F-Zero**: lap 2
+  used to show "a tiny speck at the horizon" with no key. The ghost is now **findable** —
+  depth compression (true distance up to `GHOST_NEAR = 6` world units, eased toward
+  `GHOST_NEAR + GHOST_SPAN` = 18 beyond, order preserved), a billboard scale floor of 2, and
+  a `GHOST` name-plate (opaque night, cyan letters matching its canopy) while it is small —
+  and a **top-right sky legend** (`drawLegend`: YOU / THE FIELD, plus GHOST only while one is
+  on the road) where each row is a small copy of the sprite, inks and translucency the road
+  uses. The legend steps aside for any engine overlay card and the celebration camera.
 - **F-Zero** — Mode 7: a raster ground plane rotated and scaled, everything else a
   sprite, dusk sky drawn as raster **bands** (the tier has no gradient). F-Zero's
   power meter, lives and retirement are all gone; the craft has no damage state.

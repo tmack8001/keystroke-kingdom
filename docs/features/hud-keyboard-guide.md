@@ -4,7 +4,7 @@ code: [js/ui/hud.js]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-07-12
+verified: 2026-10-30 (eighth key shows its real ';' glyph; ';' joins SMALL_GLYPH_BOOST; isSmallMark export)
 ---
 
 # HUD & Keyboard Guide
@@ -44,21 +44,23 @@ plus the target letter when the active token is uppercase.
 
 ## The eighth key
 
-`displayKey(k)`: `';' → '?'`, `'Shift' → '⇧'`, `' ' → '␣'`, `'Backspace' → '⌫'`,
+`displayKey(k)`: `';'` is **no longer masked as `?`** (2026-10-30): a five-year-old looking at her own keyboard hunted for a `?` that is not on the right-pinky key, so the guide, the prompt and the first-time home-row hand diagram (`showHomeRowDiagram`, right hand `J K L ;`) all show the mark printed on the keycap. "Never say semicolon" always meant the *word*, which stays withheld until the Level 20 confession. `'Shift' → '⇧'`, `' ' → '␣'`, `'Backspace' → '⌫'`,
 everything else uppercased. `promptDisplay(token)` is the case-preserving prompt-side
-variant (needed for Level 24/25). Neither function, nor any string literal in this
+variant (needed for Level 24/25; its old `';' → '?'` case was removed). Neither function, nor any string literal in this
 file, ever renders "semicolon".
 
 ## `SMALL_GLYPH_BOOST`
 
 Fix for Press Start 2P's near-invisible small punctuation (backtick renders as a
 single stray pixel at normal size — journal O11):
-`new Set(['`', "'", ',', '.', '-', '='])`. These get class `small-glyph` (64px
+`new Set(['`', "'", ',', '.', '-', '=', ';'])` (`;` added 2026-10-30 because it is now shown as itself and draws as a few pixels; the home-row diagram draws it at 15px instead of 9px). These get class `small-glyph` (64px
 font-size + glow) in the active prompt. Four genuinely ambiguous marks
 (`` ` ' , . ``) additionally get a quiet caption (`SMALL_GLYPH_CAPTION`, e.g. "TICK
-MARK") under the prompt, shown only for the currently active character, via a lazily
+MARK") under the prompt (the eighth key gets **no** caption — a caption would have to name it), shown only for the currently active character, via a lazily
 created `#kk-prompt-caption` element. Styles are injected once via a dedicated
 `<style>` tag rather than added to `css/screens.css`.
+
+`isSmallMark(label)` is exported so [[keyboard-preview]] boosts exactly the same set — one set, three consumers.
 
 ## `renderPrompt(state, level, pattern)`
 

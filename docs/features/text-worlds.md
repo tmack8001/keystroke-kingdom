@@ -1,10 +1,10 @@
 ---
 feature: text-worlds
-code: [js/textworld/hub.js, js/textworld/engine.js, js/textworld/greendragon.js, js/textworld/tileworld.js, js/textworld/tile-worlds.js, js/textworld/riddles.js, js/textworld/maker.js, js/textworld/imfriend.js, js/textworld/personas.js, js/textworld/, js/chat.js, main.go]
+code: [js/key-label.js, js/textworld/hub.js, js/textworld/engine.js, js/textworld/greendragon.js, js/textworld/tileworld.js, js/textworld/tile-worlds.js, js/textworld/riddles.js, js/textworld/maker.js, js/textworld/imfriend.js, js/textworld/personas.js, js/textworld/, js/chat.js, main.go]
 rules: [.claude/rules/product.md, .claude/rules/security.md, docs/handoffs/im-friend-build.md]
 screenshots: docs/screenshots/textworlds/
 capture: node docs/screenshots/capture-textworlds.js
-verified: 2026-10-29 (IM-friend replies also checked against the parent's blocked-words list)
+verified: 2026-10-30 (explorer-playtest pass: key-label.js, readable hint colour, arrival exit cue, answer box + typo recovery, tile-world stride, Fern's opening riddle; earlier 2026-10-29: IM-friend replies also checked against the parent's blocked-words list)
 ---
 
 # Act 6 — The Text Worlds
@@ -550,6 +550,55 @@ worlds 1-4 (INV-42 through INV-47) — has no describe block for World 5**
 `docs/ROADMAP.md`'s §3 entry stating "JS/browser integration tests (INV-48+)
 added this session." This is a documentation-vs-reality gap worth flagging to
 the session orchestrator/test-engineer, not something this page can resolve.
+
+## The 2026-10-30 explorer-playtest pass (cross-cutting)
+
+An 8–9-year-old "explorer" persona played the wing (journal/roadmap defects 2026-10-30); the
+behaviour changes below are all implemented in code and apply as stated. None touches a win
+gate or the INV-55 BFS floor.
+
+- **Platform key label on canvas.** New `js/key-label.js` (`enterLabel()` → `RETURN` on a Mac,
+  `ENTER` elsewhere, same `/Mac/` test as main.js's `[data-enter-key]` swap; safe without a
+  browser). Every canvas string in `hub.js`, `engine.js`, `tileworld.js`, `maker.js` and
+  `imfriend.js` that names the key uses it — canvas text cannot be reached by the DOM swap. The
+  handlers still read `e.key === 'Enter'`.
+- **True exit wording.** Escape is the hub's key everywhere, so the IM-friend views say `ESC —
+  back to the Text Worlds` (was "back to your friends"), and the maker's outro says `SPACE /
+  RETURN: back to the Text Worlds` (it returns to the chooser, not the arcade).
+- **Readable cues.** Each palette gained a `hint` colour (>= 4.5:1 on its bg; `dim` at 3.6:1
+  stays for decoration and the deliberate faded-with-mastery mode). Offered commands, the
+  answer cue, world tags and the key footers draw in `hint` at full opacity.
+- **Arrival is no longer a dead end.** Green Dragon (`engine.js`): on `won`, Space/Return calls
+  `finish()` at once, `drawWinExitCue` shows `SPACE / ESC: BACK TO THE TEXT WORLDS` where the
+  prompt was, and the auto-return hold is `WIN_HOLD_FRAMES = 360` (~6 s, was 150 frames). The
+  tile worlds already held 330 frames and still do.
+- **Riddle answer box + typo recovery** (shared `riddles.js`, both engines). The answer is drawn
+  in a labelled `YOUR ANSWER` box with a two-line cue (`type your answer, then RETURN` /
+  `BACKSPACE fixes a letter   ·   SPACE: step back`; `ANSWER_KEYS_CUE`). `isNearMiss(riddle,
+  typed)` is true when the typed word is exactly ONE edit (insert, delete, substitute) from an
+  accepted answer — answers shorter than 3 letters and guesses shorter than 2 never qualify, so
+  it cannot leak a short answer. It is **never** accepted as right (`answerMatches` stays
+  exact). A near miss says `So close! One letter is off. BACKSPACE can fix it, then press
+  RETURN.`, **leaves the word in the box**, and the first typo per riddle costs nothing toward
+  the hint (later ones count, so the hint and then the answer still arrive). An empty Return is
+  not a guess. Per-riddle counters reset on open/close.
+- **Tile-world stride** (`tileworld.js`). Moving one tile per typed word made a world ~140 moves
+  (~700 keystrokes). After `STRIDE_UNLOCK_WORDS = 3` whole direction words, a typed WORD becomes
+  a **run** (`wordMove` → `startRun`, one tile every `RUN_FRAMES = 3` frames, at most
+  `RUN_MAX = 10` tiles) that stops at a wall, a creature at your side (its riddle opens), the
+  goal, a change of ground, coming level with an exit or the goal, or a screen crossing. The
+  run is announced once (`announceStride`); a single letter `n/s/e/w` stays one careful step,
+  so reachability is only widened and the one-tile BFS floor is unchanged. The first time a
+  letter alias fires before it has been taught, the game says what happened (`"s" is a
+  shortcut: one step SOUTH (down)…`) and thereafter the hint shows the four shortcuts
+  (`aliasesTaught`). The rest of a compass word whose first letter walked you up to a creature
+  is eaten rather than becoming the first letters of an answer. Riddle "not quite / so close"
+  feedback is visible in the riddle panel (`riddleNote`).
+- **Green Dragon rotation order.** The first riddle a child meets is Fern's Humpty Dumpty
+  (`research/act6-riddle-bank.md` A10; seen in `greendragon-riddle-standalone.png`). The
+  seven-bags-seven-cats St Ives trick (A8) was too hard for a first meeting (8-9-year-old
+  playtest) and waits for a return visit; the "once in a minute" letter-M riddle sits between.
+  All riddles unchanged; only the rotation order moved.
 
 ## Screenshot sets (`docs/screenshots/textworlds/`)
 

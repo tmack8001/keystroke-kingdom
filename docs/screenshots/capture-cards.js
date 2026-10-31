@@ -99,7 +99,7 @@ const STALL_TIMEOUT_MS = 8000;
 // for a few tokens than the literal character the engine's keydown handler
 // expects. Typing the glyph itself would never match `expected`.
 function displayGlyphToToken(display) {
-  if (display === '?') return ';';
+  if (display === '?' || display === ';') return ';'; // old glyph '?' OR the shown ';'
   if (display === '␣') return ' ';
   if (display === '⌫') return 'Backspace';
   return display;

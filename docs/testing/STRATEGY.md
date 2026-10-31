@@ -166,8 +166,8 @@ climbing; never hardcode a count, always derive it from `HISTORY_CARDS.length`.)
 - **INV-28** (L2) Platform key label: Mac shows RETURN, others ENTER, via `[data-enter-key]`; handler is `e.key === 'Enter'` everywhere.
 
 ### Language & content rules — CLAUDE.md, security.md
-- **INV-29** (L0) The word "semicolon" never appears in player-facing strings (index.html text, JS string literals rendered to players; the eighth key rule).
-- **INV-30** (L0) No display string hard-codes ENTER outside `[data-enter-key]` wrappers.
+- **INV-29** (L0) The WORD "semicolon" never appears in player-facing strings (index.html text, JS string literals rendered to players; the eighth key rule). *(Clarified 2026-10-30, Trevor: the check is on the WORD, never on the `;` GLYPH, which the prompt and every on-screen keyboard now show — see INV-140.)*
+- **INV-30** (L0) No display string hard-codes ENTER outside `[data-enter-key]` wrappers. *(Extended 2026-10-30: canvas strings — the bonus wings draw on the shared canvas where no element can be swapped — must ask `js/key-label.js enterLabel()`; see INV-133.)*
 - **INV-31** (L0) Security greps hold: no `eval`/`new Function`/string timers; `playerName` (and any user-influenced value) never meets `innerHTML`/`insertAdjacentHTML`/`document.write`; no external network calls in js/ (only same-origin `/api/*`).
 - **INV-32** (L1) Free-text → pattern-stream boundary allowlists (`buildPlayerNamePattern` strips to `[a-zA-Z]`; wordgen chain: charset ⊆ level keys, length caps, blocklist, lowercase, dedup; structurally bad batches dropped whole).
 - **INV-33** (L3) Server-side wordgen mirrors the same chain (exists; keep green and extend).
@@ -204,7 +204,7 @@ climbing; never hardcode a count, always derive it from `HISTORY_CARDS.length`.)
 
 ### Act 6 — Text Worlds: the tile-world redesign — product.md §Core Principles (the One Rule), `research/wiki/tech/ascii-overhead-world-conventions.md`, module headers (`js/textworld/tileworld.js`, `js/textworld/tile-worlds.js`)
 *(added 2026-07-17 — the two tile worlds were rebuilt much bigger and grounded: typed movement, chained screens, fog-of-war, authored riddle creatures. INV-45 above was revised in the same pass.)*
-- **INV-53** (L2) **Typed movement prefix-matcher** (tileworld.js copies engine.js's guided prefix-matcher): the child TYPES a direction — `up`/`down`/`left`/`right` (shown, mastery-fading) plus aliases `n`/`s`/`e`/`w` and `north`/`south`/`east`/`west`. A key is appended only while the buffer stays a prefix of some offered direction; a key outside every offered prefix (and every alias) is REJECTED with a gentle nudge and the buffer WAITS — it is never reset, so completing the same word afterward still fires the move (the One-Rule wrong-key contract, product.md §"Reinforce, Don't Punish"). An exact unambiguous direction fires a move; a single-letter alias fires instantly from an empty buffer and silently swallows the rest of the word it abbreviates (typing the full `north` after `n` already fired never corrupts the buffer). Backspace edits; Space/non-letters are ignored in move mode (never a nudge). Verified end-to-end: a world still WINS after a Backspace probe, an alias-swallow probe, and a mid-word prefix-break-then-complete probe — the only way that happens is if the buffer behaves exactly as documented.
+- **INV-53** (L2) **Typed movement prefix-matcher** (tileworld.js copies engine.js's guided prefix-matcher): the child TYPES a direction — `up`/`down`/`left`/`right` (shown, mastery-fading) plus aliases `n`/`s`/`e`/`w` and `north`/`south`/`east`/`west`. A key is appended only while the buffer stays a prefix of some offered direction; a key outside every offered prefix (and every alias) is REJECTED with a gentle nudge and the buffer WAITS — it is never reset, so completing the same word afterward still fires the move (the One-Rule wrong-key contract, product.md §"Reinforce, Don't Punish"). An exact unambiguous direction fires a move; a single-letter alias fires instantly from an empty buffer and silently swallows the rest of the word it abbreviates (typing the full `north` after `n` already fired never corrupts the buffer). Backspace edits; Space/non-letters are ignored in move mode (never a nudge). *(Revised 2026-10-30, the explorer playtest — see INV-142: after the player has typed three whole direction WORDS, a whole word becomes a run of several tiles to the next thing worth stopping for; a single-letter alias remains EXACTLY one step, and every single step stays available, so the one-tile reachability floor of INV-45/55 is unchanged.)* Verified end-to-end: a world still WINS after a Backspace probe, an alias-swallow probe, and a mid-word prefix-break-then-complete probe — the only way that happens is if the buffer behaves exactly as documented.
 - **INV-54** (L1/L2) **Fog-of-war data integrity** (tileworld.js `glyphSpec`; `research/wiki/tech/ascii-overhead-world-conventions.md`): the tile worlds render roguelike lit/dark fog — undiscovered tiles hidden, ever-seen tiles remembered dim, the torch radius lit via line-of-sight, and creatures + the goal glint appearing only once their tile is lit. Fog RENDERING is canvas-only and not pixel-asserted (STRATEGY §2); its testable PRECONDITION is data integrity: every glyph that appears in any screen's map of either world is explicitly declared in that world's `glyphSpec` (walkability/opacity/color), so the LOS/fog renderer can never meet an undeclared tile. A pure data assertion over the worlds' own `tile-worlds.js` maps + glyph tables.
 - **INV-55** (L1/L2) **Riddle creatures — One-Rule floor (SAFETY-CRITICAL)**: authored (curated, NO-LLM) riddle creatures live in the tile worlds. The safety floor is proven by DATA — an engine-equivalent BFS over each world's own screens/exits/glyphs, with every gate CLOSED and every riddle-creature tile blocked, still reaches the goal, so a riddle can NEVER block the only path (tileworld.js: "a riddle is ALWAYS optional/bonus: it can never block the only path to the goal"). Behaviorally: stepping adjacent to a creature opens its authored riddle and captures typed keys as an ANSWER (not movement); the answer field allowlists to LETTERS ONLY (a spliced digit is rejected, never appended — security.md rules 1/3/6) and is length-capped, matched case-insensitively/trimmed against the creature's OWN authored acceptable-answers; wrong answers never crash or falsely-solve (gentle nudge; an authored hint after 2 tries, the answer after 3); the authored correct answer solves it (warm reaction + optional gate→floor); Space steps back — engaging or solving a riddle never traps forward progress (proven by the world still completing after wrong-then-correct answers on the approach tile). (product.md One Rule; module headers.)
 
@@ -840,6 +840,129 @@ respected exactly as written; and (d) `consoleErrors`.
   ⚠️ **Numbering note:** proposed as "INV-101/102 (next free)" — both were already taken (the act-card
   gate and the act-card hang guard). This is exactly the race §"Reserving INV numbers" below warns
   about; §5 is the only authority for a landed number.
+
+### The 2026-10-30 sign-off wave — saved-game safety, held keys, Survival floors, eighth-key glyph, cards, wings
+
+*(added 2026-10-30 — six lanes changed behaviour under Trevor's sign-off; each INV below cites the design
+clause the lane wrote into the docs FIRST. **Numbering note:** 107–119 and 120–127 are held by unbuilt-spec
+reserved blocks (hardware-wing.md, act-exclusive-cards.md — see §"Reserving INV numbers"), so this wave
+takes a fresh contiguous block at 130+ rather than racing them.)*
+
+- **INV-130** (L2) **Escape on READY reaches the arcade for a saved game — gates honoured, name untouched —
+  and choosing a cabinet goes straight to READY.** With a saved game, Escape on the READY screen shows the
+  arcade select screen; a locked cabinet stays `.locked` and unselectable and only the WOPR bypass lifts that;
+  the game's name is unchanged by the trip; picking a cabinet there lands on READY (no name entry); and Space
+  on the attract title, when saved games exist, opens the "CHOOSE YOUR GAME" picker rather than name entry.
+  (levels/onboarding.md §"The arcade from READY, and why name entry no longer appears for a saved game",
+  Trevor 2026-10-30.)
+- **INV-131** (L2) **A saved game is never renamed by accident; R RENAME is the only way a name changes.**
+  The picker's R opens the name field labelled RENAME THIS GAME pre-filled with the HIGHLIGHTED game's name;
+  Return renames only that game; Escape leaves the name alone; both return to the picker, and neither changes
+  which game is active. Escape out of new-game name entry creates nothing. The original defect — typing
+  `wopr` then Return in name entry from a saved game renaming it — cannot be reproduced by any route.
+  (onboarding.md §Returning Player Flow `R`, §Design Rules "A saved game is never renamed by accident".)
+- **INV-132** (L2) **The active game is unambiguous whenever a game starts.** Escape from the picker makes the
+  HIGHLIGHTED game active (on the ＋ NEW GAME row the active game is left as it was); a level won through the
+  WOPR shortcut afterwards is credited to that game, not the previously-resumed one; the READY screen and the
+  in-game HUD print the ACTIVE game's name. (onboarding.md §"Which game is playing" — a Level 11 win was once
+  credited to the wrong family member.)
+- **INV-133** (L0/L1) **No canvas or DOM string hard-codes the confirm key's name.** No `PRESS RETURN` /
+  `PRESS ENTER` / `ENTER to …`-style literal exists in `js/` (the wings draw on the canvas, where
+  `[data-enter-key]` cannot reach); such strings ask `js/key-label.js` `enterLabel()`, which is RETURN on a Mac,
+  ENTER otherwise, and is safe to import where no `navigator` exists. (CLAUDE.md §Platform Key Label — Oona
+  was confused when the screen said ENTER and her keyboard said RETURN; extends INV-28/30.)
+- **INV-134** (L1/L2) **Choosing a harder rule asks once, and an unconfirmed harder value is never saved.**
+  `previewRowChange` reports `confirm` only for ADVENTURE→SURVIVAL, never writes storage, and moving back to
+  ADVENTURE never asks. On the Settings screen only Y keeps SURVIVAL; N, Escape, Tab, an arrow or any other
+  key keeps ADVENTURE, and a reload while the question is up still finds ADVENTURE. (product.md §"Choosing a
+  harder rule asks once", Trevor 2026-10-30; INV-9's opt-in law made tamper-proof.)
+- **INV-135** (L2) **Holding a key down is ONE press.** Keyboard auto-repeat (`e.repeat`) is ignored for every
+  typed token: a held WRONG key logs exactly one mistake (not +8…+13), a held RIGHT key on a doubled-letter
+  pattern advances once, and the first (non-repeat) keydown is judged exactly as before — the wrong-key
+  contract (letter waits, nothing advances) is untouched. (product.md §3 "Holding a key down is ONE press".)
+- **INV-136** (L2) **The letter the player sees is the letter being judged.** A key pressed in the ~300 ms
+  beat between one pattern finishing and the next appearing draws the next pattern FIRST and is judged against
+  it; a finished letter is never re-highlighted, so no letter is both completed and active; a key pressed
+  after the level's last pattern while the win is shown is ignored. (product.md §3 "The letter the player sees
+  is the letter being judged".)
+- **INV-137** (L1/L2) **Survival is challenging, never cruel — two floors.** A one-letter prompt is allowed at
+  least ~10 s at every difficulty tier (no prompt is ever given less than the floor), and at ONE quarter the
+  first 15-streak of a run earns one spare quarter, once per run (again after TRY AGAIN starts a new run).
+  (product.md §"Survival is challenging, never cruel — two floors".)
+- **INV-138** (L1) **Word-length descriptors name their real direction.** No MAX rung above 8 says EASIER, MAX
+  24 reads as the hardest rung, and no MIN rung says EASIER (a higher MIN demands longer words, which is
+  harder). (product.md §"Word-length labels say which way is harder".)
+- **INV-139** (L2) **The picker's `★ found / total` counts the ARCADE bank only.** The total is
+  `TOTAL_CARDS` (read from `js/history-cards.js`); a seeded wing or act card is never added to `found`
+  (extends INV-100/106 to the front door). (onboarding.md "★ found / total counts the arcade card bank only".)
+- **INV-140** (L0/L2) **The eighth key's GLYPH is shown; its WORD is withheld.** The prompt and every on-screen
+  keyboard (the in-game guide and KNOW YOUR KEYS) print `;` for the eighth key — never a stand-in `?` — while
+  the engine token is still `;` and INV-29 (no WORD "semicolon" in player text) stays green. (CLAUDE.md
+  §Levels footnote; levels/act1.md Level 4; easter-eggs.md "What is withheld is the WORD, never the glyph".)
+- **INV-141** (L2) **A history card is legible, and the way forward is visible from the first frame.** For
+  every card in `HISTORY_CARDS ∪ WING_CARDS ∪ ACT_CARDS`, once the card has settled, the title and year lines
+  never overlap the large word header (no two text lines of the card overlap vertically), and the next-level
+  cue is shown (not dimmed away) the moment the card appears. (css/screens.css `.history-card-*` comment —
+  "10 collided before, 0 after"; product.md §History Cards "a little business card…with the story" must be
+  readable; playtest.md "legible to a machine and confusing to a person".)
+- **INV-142** (L2) **Text-world tile movement: a whole word is EARNED stride, a single letter stays one step,
+  the goal stays reachable.** (Revises INV-53.) After three whole direction words a whole word walks several
+  tiles; a single-letter alias is exactly one step at every stage; every world's goal remains reachable by
+  single steps alone with all gates closed and all riddles unsolved (the INV-45/55 floor, unchanged).
+  (tileworld.js header "A WHOLE WORD WALKS YOU FAR", 2026-10-30 explorer playtest; ascii-overhead-world-
+  conventions.md ref [1].)
+- **INV-143** (L1/L2) **A typo in a riddle never counts as correct.** `answerMatches` stays exact; a word one
+  letter off an accepted answer (a "near miss", answers of 3+ letters only) is answered with a warm "so
+  close" line, left in the box to be fixed with Backspace, and never solves the riddle or fires its reward —
+  in BOTH engines. A genuinely wrong word never solves either. (riddles.js `isNearMiss` header; One Rule.)
+- **INV-144** (L2) **Arriving in the Green Dragon shows how to leave, and Space/Escape both leave.** When the
+  win lands the screen says how to go back (SPACE / ESC) rather than ending on an empty prompt; Space (or
+  Return) hands control back to the Text Worlds chooser, Escape is the hub's and does the same, and the win is
+  credited either way. (engine.js `drawWinExitCue`; INV-46/TF-T1.)
+
+- **INV-145** (L2) **Act cinematics skip by ONE rule — never a stray key on a first viewing.** For all four
+  (Mystery after L5, Basement after L10, Command Center after L15, Full Circle after L20): on a FIRST viewing
+  (the gating level not yet cleared in this saved game) every key is ignored before the end card, Space and
+  Escape included; on a REPLAY only Space or Escape jump to the end card and every other key is ignored; the
+  title card continues on Space only; Full Circle's last screen (TYPE YOUR NAME) takes Space or a typed
+  character after its 1 s fade-in and nothing for Escape/Tab/arrows/Shift; a held key's auto-repeat never
+  counts; a cinematic started without the replay flag is unskippable. (transitions.md §"Skipping — one rule
+  for all four act cinematics", Trevor 2026-10-30.)
+- **INV-146** (L2) **Every LEVEL COMPLETE card says what Space really does.** Level 4's card tells the player
+  to press Space for the NEXT LEVEL (and Space goes to Level 5, not to a cinematic); Level 25's card says
+  Space goes to the TITLE SCREEN, and Space really does; Escape on a complete card is UNCHANGED and pinned as
+  a decision — it leaves the card for READY on the same level with progress already saved. (js/main.js
+  complete-card copy + Space/Escape handling; product.md §Level Completion; the card's cue must not promise
+  a destination the key does not reach.)
+- **INV-147** (L1/L2) **The pre-filled name is a default, not a draft — in RENAME and in first-time name
+  entry alike.** The first typed or pasted character, or the first Backspace, REPLACES the pre-filled name
+  (GRAM + typing GRANDMA is GRANDMA, never GRANDMAGRAM); a key typed within a few ms of pressing R is not
+  lost; ←/→/Home/End mean "edit this name" and keep it; Return saves, Escape leaves the name alone; renaming
+  with NO active game leaves active null (`renameSlot`), and renaming the active game updates the name shown
+  on READY and the HUD. (onboarding.md §Returning Player Flow `R`, §Name Entry "any key press clears the
+  default", 2026-10-30; extends INV-131.)
+- **INV-148** (L2) **An erase prompt names what it destroys, as text.** The picker's per-game erase shows the
+  game's name and level (`GRAM · LV 4`), rendered with textContent (a name containing `<b>` appears
+  literally, never as markup); Settings → ERASE ALL says `ERASE ALL n SAVED GAMES?` (`ERASE 1 SAVED GAME?`
+  for one) with `YOUR SETTINGS STAY`, settings really do stay, and with zero games it reads NO SAVED GAMES TO
+  ERASE. (onboarding.md §Returning Player Flow `X`/Settings erase, 2026-10-30; security.md rule 1.)
+- **INV-149** (L2) **The picker's hint line offers only keys that do something there.** On a game row the
+  full line (SPACE PLAY · N NEW · R RENAME · C CARDS · X ERASE); on the ＋ NEW GAME row, and on a picker with
+  no games, only the start-a-new-game hint. (onboarding.md §Returning Player Flow "The hint line offers only
+  keys that do something there", 2026-10-30.)
+- **INV-150** (L2) **Level 24's #1 slot holds only the player's name.** A placeholder through the warm-up
+  drills, the typed name live as it is typed, then held; a history-card word (Eniac, IBM) is never shown as
+  the name once 3 or more of its letters would appear; the complete card claims "YOU TYPED YOUR NAME" only
+  when a name was typed. (act5.md §Level 24 "the player types their own name… personal, irreplaceable";
+  highscore.js `slotName` header; observed through the words the theme draws.)
+- **INV-151** (L2) **A footer that names where Escape goes names the real destination.** In every IM-friend
+  view Escape belongs to the hub (INV-52) and returns to the Text Worlds chooser; the chat and make-a-friend
+  footers say "back to the Text Worlds", never "back to your friends", and pressing Escape does go to the
+  chooser. (INV-52; imfriend.js "TRUE wording".)
+- **INV-152** (L2) **A theme counter never exceeds its own total.** The words a counter draws (Myst PAGES n /
+  m, Out Run STAGE n/m, Q*bert CUBES n/m and WORDS n/m) always satisfy n <= m through a whole winning play —
+  a counter that reads "PAGES 111 / 22" is a bug to a child who can read. (themes' own win gates are
+  untouched; journal F30; observed through drawn strings only, no geometry.)
 
 ### ⚠️ Reserving INV numbers while a spec is unbuilt
 

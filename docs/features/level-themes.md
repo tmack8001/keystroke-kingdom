@@ -1,10 +1,10 @@
 ---
 feature: level-themes
 code: [js/themes/]
-rules: [.claude/rules/theme-authoring.md, .claude/rules/levels.md, .claude/rules/levels/act5.md]
+rules: [.claude/rules/theme-authoring.md, .claude/rules/levels.md, .claude/rules/levels/act1.md, .claude/rules/levels/act2.md, .claude/rules/levels/act3.md, .claude/rules/levels/act4.md, .claude/rules/levels/act5.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-10-29 (L19 + L20 victory celebrations)
+verified: 2026-10-30 (new/rebuilt victories L2/L4/L17/L20/L24/L25; formation-in-top-band and counter relocations; GoldenEye first-person rebuild; earlier 2026-10-29: L19 + L20 victory celebrations)
 ---
 
 # Level Themes
@@ -204,12 +204,49 @@ add a rounded multiple of 5 extra completed words on top of the pyramid — same
   (header band, double border) slides up from the bottom-right stage (`px ≈ 0.52W`), and three rows
   count up with ease-out: **EXP** → 2970, **AP** → 90, **GIL** → 1997 (the cabinet's year). The HP
   bars are hidden while it plays. Resets in `start()`.
-- **`terminal.js` `victory()`** returns `VICTORY_MS = 4800`. The scrolling log is cleared and the
+- **`terminal.js` `victory()`** returns `VICTORY_MS = 5200` *(re-staged 2026-10-30 — see "Victory pass" below; this paragraph is the 2026-10-19 original)*. The scrolling log is cleared and the
   Level 20 payoff is drawn live: the five binary bytes `01001000 01000101 01001100 01001100
   01001111` type out, then `H E L L O` pop in beneath them in bright green with a bloom, then
   `YOUR FIRST PROGRAM` fades in and a `>` cursor blinks. The binary/H E L L O lines were formerly
   pushed into the scroll log in `victory()`; they are now this animation. Both draw under the
   barrel-glass pass and use explicit `textAlign`/`textBaseline`.
+
+## Victory pass and layout fixes — 2026-10-30 (persona playtests)
+
+All driven by persona playtests (2026-10-29/30). Every beat below is a function of **clamped
+elapsed milliseconds** (journal L36), not a frame counter, and every `victory()` returns its
+duration so the LEVEL COMPLETE card lands as the animation does. No win gate changed.
+
+| Level | Theme | `victory()` returns | What the celebration is now |
+|---|---|---|---|
+| 2 | `invaders.js` | `VICTORY_MS = 1700` | The ship-takeoff + 10-explosion ring already existed but returned nothing (the engine's 4000 ms dead-air fallback). It now declares the ~1.1 s takeoff / ~1.6 s trail window, so the card arrives with it. |
+| 4 | `fighter.js` (Galaga) | `2400` | "The cleared formation lights up": two rainbow waves of additive bursts sweep the (by then empty) formation positions at `VICTORY_BURST_SCALE = 3.2x` (panels are down, so large is safe), with `WAVE_MS = 900` / `WAVE2_AT = 1100`; stragglers pop in the first wave. |
+| 17 | `goldeneye.js` | `4400` | **MISSION COMPLETE**: all four friends walk up to every screen and wave, their dots meet at the exit on the shared map, gadgets fountain; each quadrant flashes in its owner's colour round the table. |
+| 20 | `terminal.js` | `5200` | Re-staged on clamped ms: 0-1000 the machine types the binary back one byte at a time; 1000-2000 each byte RESOLVES into its letter under the eight bits that encode it, with an additive phosphor flash; 2000-2500 the prompt returns and types `RUN`; 2500-end `HELLO` pours down the screen line after line (a plate behind the big word keeps it legible), then `YOUR FIRST PROGRAM`. The earlier frame-counter version had landed every beat by ~2 s ("HELLO just brightens"). No language/listing/year is asserted. |
+| 24 | `highscore.js` | `4800` | Staged: 0-1400 YOUR NAME at centre, gold letters dropping in with bursts; 1400-2400 shine sweep + fireworks in the margins; 2400-3200 the name flies into the #1 slot, shrinking to row size while the score rolls to 99999 and NEW HIGH SCORE pops; 3200-end it gilds letter by letter. `resolveChampionName()` now picks **the word the player actually typed as their name** (the word completed at `intro.length`, validated as letters-only, capital first) instead of gilding whatever word was last — previously usually the history-card word (`Eniac` under a card reading "YOU TYPED YOUR NAME"). The #1 slot shows only the name (blinking placeholder -> assembling -> held). The complete card says `SHIFT MASTERED` instead when no name was typed ([[engine-flow]]). |
+| 25 | `wordprocessor.js` | `5600` | After the story and the manifesto: `THE END.` stamps onto the page with an ink bloom (0-900), the 26 letters the coda made the player type burst out as tumbling A-Z confetti in two waves (700-3400), and credits roll up a little terminal on the desk from 2000 ms (`MY STORY / WRITTEN BY YOU / TYPED BY YOU / EVERY LETTER A TO Z / BACKSPACE MAKING IT RIGHT / THE END`). It previously replaced the document with 'THE END.' and returned nothing (5 of 8 captured frames identical). The story stays on the page. Also: display-only word boundaries are now drawn as spaces (the document read `jjf jfhello worldyou did it`). |
+
+**Level 17 was rebuilt, not just given a victory.** `goldeneye.js` keeps the 2026-09-14
+"four friends in ONE arena" idea (theme-authoring.md "DEPICTING THE FORMAT IS NOT DEPICTING THE
+MECHANIC") but draws it as what the split screen looked like: each quadrant a bright flat-shaded
+N64 first-person corridor in perspective, the room ahead one of the arena's named features
+(STAIRS, a SILO, a row of CELLS, a floor GRATE), the other three friends as big colour-coded,
+name-tagged low-poly figures who wave "HI!" when they meet, and one large shared map in the top
+band so "same arena" is seen. The earlier version (four tiny top-down route maps) was unreadable
+to a six-year-old. Kid-safe abstraction unchanged: four friends racing to find hidden gadgets, no
+weapon drawn.
+
+**Layout-contract fixes (journal F30 class, measured prompt-panel border = 0.177H at 1280x800):**
+`invaders.js` (L2) and `fighter.js` (L4) now size their formation from the **top band**
+(`FORM_TOP..FORM_BOTTOM`, ends 0.160H, integer sprite pixel >= 2) instead of a fixed 3 px rack
+that ran through "TYPE THE LETTER"; the Invaders step-down is capped at `FORM_BOTTOM`, and bursts
+on the top rank are clamped fully on-canvas (journal L34). `qbert.js` (L22) moved its CUBES / WORDS
+counters from the HUD badge's reserved corner to a scoreboard under the pyramid in the left stage,
+and anchors the speech bubble to Q*bert's upper-right (text centred in the box, top edge never
+above 0.015H). `outrun.js` (L21) moved its STAGE counter to the top band just right of the badge
+and suppresses the checkpoint banner during the victory; `myst.js` (L13) did the same for its page
+counter and clamps the display to the book's size (`PAGES 111 / 22` -> never exceeds the total; the
+win-gate accumulator is untouched).
 
 ## Act 4 (Levels 16-20) — the shared white rabbit + the Y2K clock (added 2026-09-11)
 
@@ -269,8 +306,8 @@ engine-side flow (`js/keyboard-story.js`, `js/keyboard-story-gen.js`,
   tier-scaled sequence the theme can no longer derive from `js/finale-quote.js` alone
   (a legacy/defensive fallback still exists for a missing `subLens`). This is a
   render-side newline, NOT a typed Enter — themes never gate input
-  (theme-authoring.md). `victory()` clears the coda render state for the normal
-  centered "THE END." beat.
+  (theme-authoring.md). `victory()` clears the coda render state and (2026-10-30) runs the
+  THE END. stamp + A-Z letter confetti + rolling credits celebration (table above).
 - **Measured wrap width (fixed 2026-09-11).** `maxCharsPerLine` is derived from
   `ctx.measureText('M').width` (falling back to `fontSize` if measurement returns 0),
   not from a hard-coded `fontSize * 0.62`. Press Start 2P's advance is exactly 1.0x

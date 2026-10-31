@@ -210,7 +210,7 @@ const CODA_MAX_KEYS = 6000;
 // few tokens than the literal character the engine's keydown handler expects, so
 // typing the glyph itself would never match. (Same mapping capture-cards.js uses.)
 function displayGlyphToToken(display) {
-  if (display === '?') return ';';
+  if (display === '?' || display === ';') return ';'; // old glyph '?' OR the shown ';'
   if (display === '␣') return ' ';
   if (display === '⌫') return 'Backspace';
   return display;

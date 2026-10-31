@@ -54,7 +54,7 @@ async function readActiveToken(page) {
   });
 }
 function displayGlyphToToken(display) {
-  if (display === '?') return ';';
+  if (display === '?' || display === ';') return ';'; // old glyph '?' OR the shown ';'
   if (display === '␣') return ' ';
   if (display === '⌫') return 'Backspace';
   return display;
@@ -73,7 +73,16 @@ async function fetchCardIds(page, baseUrl) {
   await page.goto(baseUrl);
   return page.evaluate(async () => {
     const mod = await import('/js/history-cards.js');
-    return { total: mod.TOTAL_CARDS, ids: mod.HISTORY_CARDS.map(c => c.id) };
+    return {
+      total: mod.TOTAL_CARDS,
+      ids: mod.HISTORY_CARDS.map(c => c.id),
+      // The two OTHER banks (bonus-wing + act cards). Separate arrays on purpose —
+      // TOTAL_CARDS counts only the arcade bank — so the gallery renders them as
+      // their own shelves. Seeding them is the only way a capture shows a shelf
+      // holding an EARNED card rather than a row of ??? (2026-10-30).
+      wingIds: (mod.WING_CARDS || []).map(c => c.id),
+      actIds: (mod.ACT_CARDS || []).map(c => c.id),
+    };
   });
 }
 
@@ -250,7 +259,7 @@ async function playUntilOverlay(page, overlayId, maxKeys = 400, stallMs = 8000) 
   // ── 5b. Collection gallery (filter name: "collection") ──────────────────
   if (shouldRun('collection')) {
     try {
-      const { ids } = await fetchCardIds(page, baseUrl);
+      const { ids, wingIds, actIds } = await fetchCardIds(page, baseUrl);
       // A MIX of collected ids so found cards render AND some ??? locked cells
       // show. Every other id + rubber-duck/hello-world (their now-wrapping
       // labels are worth exercising).
@@ -258,6 +267,11 @@ async function playUntilOverlay(page, overlayId, maxKeys = 400, stallMs = 8000) 
       for (const must of ['rubber-duck', 'hello-world']) {
         if (ids.includes(must) && !mix.includes(must)) mix.push(must);
       }
+      // ...plus the SAME found/??? split on the wing and act shelves (every other
+      // id, at least one each), so THE HARDWARE and ACT 1 shelves render with an
+      // earned card on them. Ids come from js/history-cards.js, never literals.
+      const half = (list) => list.filter((_, i) => i % 2 === 0);
+      for (const id of [...half(wingIds), ...half(actIds)]) if (!mix.includes(id)) mix.push(id);
       const store = {
         v: 1,
         active: 0,
@@ -274,6 +288,17 @@ async function playUntilOverlay(page, overlayId, maxKeys = 400, stallMs = 8000) 
       await page.waitForSelector('.collection-cell.owned', { timeout: 3000 });
       await page.waitForTimeout(200);
       await shot('collection-gallery');
+
+      // The wing/act shelves sit BELOW the arcade bank's cells, so the first frame
+      // may not reach them. Scroll the last shelf into view for its own frame.
+      const shelfCount = await page.locator('.collection-shelf').count();
+      if (shelfCount > 1) {
+        await page.locator('.collection-shelf').last().scrollIntoViewIfNeeded();
+        await page.waitForTimeout(200);
+        await shot('collection-gallery-shelves');
+      } else {
+        fail('collection-gallery-shelves', `expected wing/act shelves, found ${shelfCount} shelf`);
+      }
     } catch (e) { fail('collection-gallery', e.message); }
   }
 

@@ -4,7 +4,7 @@ code: [js/slots.js]
 rules: [.claude/rules/security.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-09-13 (Act 7 `speedway` ghost store; storyRotation added to the schema block)
+verified: 2026-10-30 (R RENAME + `renameSlot`, erase confirm names the game, name-entry funnel reduced to cases that still exist; earlier 2026-09-13: Act 7 `speedway` ghost store; storyRotation added to the schema block)
 ---
 
 # Save Slots — "CHOOSE YOUR GAME"
@@ -94,8 +94,13 @@ plays exactly as before.
   keeping `kk-settings`. The Settings screen's "ERASE ALL PROGRESS / ERASE EVERYTHING?" row
   calls this (via `main.js` `eraseProgress()`); a reload afterward cold-opens as a
   brand-new machine. Distinct from the picker's per-game erase.
-- `setActiveName(name)` / `activeName()` — rename the active game (used when a player
-  re-enters name entry via the ready screen's Escape, on an already-active game).
+- `renameSlot(i, name)` *(2026-10-30)* — relabel game `i` **without touching which game is
+  active** (empty name → `PLAYER ONE`, capped at `NAME_MAX`; out-of-range `i` is a no-op).
+  The picker's `R RENAME` is the only caller. The old route (`setActive(i)` + `setActiveName` +
+  restore) left a game active when none had been.
+- `setActiveName(name)` / `activeName()` — rename / read the *active* game's name
+  (`activeName()` feeds `syncActiveIdentity()`; the ready-screen-Escape rename route that
+  used `setActiveName` no longer exists).
 
 ## Progress + card collection, scoped to the active game
 
@@ -195,24 +200,39 @@ Behaviorally:
   straight to the READY screen (not the select screen). On the NEW GAME row, routes into
   name entry (`startNewGameFlow()`, below).
 - **N**: starts a new game directly, regardless of which row is highlighted.
+- **R** *(2026-10-30)*: on a game row, renames it (`startRenameFlow(i)` → the name field
+  labelled `RENAME THIS GAME`, confirm verb `TO SAVE`; Return → `Slots.renameSlot`, Escape →
+  unchanged; both return to the picker). The only rename path in the game.
 - **X**: on a game row, shows a Y/N erase confirmation sub-panel (`slots-erase`,
   toggled with `slots-hint`, matching the old continue screen's "never show two
-  conflicting instructions" rule). Only `Y`/`y` erases; any other key backs out —
+  conflicting instructions" rule). The panel now names the target
+  (`#slots-erase-name`: `<NAME> · LV <n>`, set via `textContent`) so a shared family
+  machine can tell WHOSE game Y erases. Only `Y`/`y` erases; any other key backs out —
   the child is never trapped.
 - **C**: opens the read-only collection gallery for the highlighted game (see
   [[history-cards]] "Collection gallery").
-- **Escape**: back to the attract title screen.
+- **Escape**: back to the attract title screen (`showAttractTitle()`), first making the
+  **highlighted** game the active one (`Slots.setActive` + `syncActiveIdentity()`) so a later
+  WOPR-shortcut win is credited to the game last pointed at; on the NEW GAME row the active
+  game is left alone.
+- **Hint line** is context-aware: `SPACE PLAY · N NEW · R RENAME · C CARDS · X ERASE` on a
+  game row, `SPACE START A NEW GAME` on the NEW GAME row / an empty machine (R/C/X are not
+  promised where they would do nothing). Row text is `★ found / total` scoped to the
+  **arcade bank** (`pickerSlots()` adds `arcade: bankProgress(...)`; `cardsFound` counts every
+  bank, INV-100).
 
 ### Starting a new game — the shared name-entry funnel
 
 `startNewGameFlow()` sets `state.pendingNewGame = true` and re-enters the SAME
-`#name-setup` UI the first-time cold open uses (skipping past "INSERT COIN"), with the
+`#name-setup` UI the first-time cold open uses (skipping past "INSERT COIN"), labelled
+`ENTER YOUR NAME`, with the
 input cleared (not prefilled — a fresh name for a fresh game, unlike the returning-name
-prefill elsewhere). On `Enter`, `main.js`'s name-confirm handler resolves which of four
-cases applies, in order:
+prefill elsewhere). On `Enter`, `main.js`'s name-confirm handler first handles the rename
+job (`state.renameSlot !== null` → `finishRename`), then resolves which case applies, in order:
 1. `state.pendingNewGame` → `Slots.createSlot(name)` (append a new game).
-2. `Slots.getActive() !== null` → `Slots.setActiveName(name)` (renaming the
-   already-active game — the ready screen's Escape path).
+2. `Slots.getActive() !== null` → **keeps the game's own name and writes nothing**
+   (defensive since 2026-10-30: every route from a saved game now skips name entry, and the
+   silent rename this branch used to perform is how `DAD` became `WOPR`).
 3. `!Slots.anySlotExists()` → `Slots.createSlot(name)` (the genuine first-time player,
    still on the untouched cold open — this is how the very first game gets created).
 4. Otherwise → the WOPR dev/parent bypass with no active game: the name is set on

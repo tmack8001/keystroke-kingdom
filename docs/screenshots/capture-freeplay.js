@@ -61,7 +61,7 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
           return el ? el.textContent : null;
         });
         if (!display) break;
-        const token = display === '␣' ? 'Space' : (display === '⌫' ? 'Backspace' : (display === '?' ? ';' : display));
+        const token = display === '␣' ? 'Space' : (display === '⌫' ? 'Backspace' : ((display === '?' || display === ';') ? ';' : display));
         await page.keyboard.press(token, { delay: 5 });
         await page.waitForTimeout(120);
       }
@@ -124,7 +124,7 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
           return el ? el.textContent : null;
         });
         if (!display) break;
-        const token = display === '␣' ? 'Space' : (display === '⌫' ? 'Backspace' : (display === '?' ? ';' : display));
+        const token = display === '␣' ? 'Space' : (display === '⌫' ? 'Backspace' : ((display === '?' || display === ';') ? ';' : display));
         await page.keyboard.press(token, { delay: 5 });
         await page.waitForTimeout(120);
       }

@@ -4,7 +4,7 @@ code: [css/base.css, css/screens.css, css/levels.css]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-10-29 (collection shelves + scroll markers)
+verified: 2026-10-30 (complete-card opacity/cue blink, slot picker column, settings confirms; earlier 2026-10-29: collection shelves + scroll markers)
 ---
 
 # Visual Styling
@@ -104,6 +104,30 @@ Two small additions in `css/screens.css` came with Act 7 ([[speedway]]):
   **scrim panel with full-opacity text over it, never element opacity** (journal
   L2/F3), the same a11y pattern as the prompt/keyboard scrims above. `.speedway-prompt`
   reuses the shared `blink` keyframes.
+
+## Level-complete card, slot picker and settings-confirm styling (2026-10-30, persona playtests)
+
+All in `css/screens.css`; none touches a theme or the z-index stack.
+
+- **`.complete-overlay`** background `rgba(0,0,0,0.75)` -> `0.9`: theme art read through around the
+  card (a clipped fragment of Level 4's scene sat under its bottom edge). The inner **card**
+  (`.complete-modal`) is now fully opaque `#000` (was `0.92`) — Level 25's "THE END." and credits
+  ghosted through the stats — and is width-capped (`box-sizing: border-box; max-width: min(960px,
+  94vw)`) because Level 21+ KEYS MASTERED rows grew the card to the viewport and wrapped a lone `=`.
+  The KEYS MASTERED row uses `text-wrap: balance`.
+- **The next-level cue** (`.complete-prompt`) uses a new `cueBlink` (1.6 s, lit from frame one, dark
+  only the last quarter) instead of the shared 50/50 `blink`, so the cue is never absent when a player
+  or a screenshot lands on the card.
+- **History card text** gets explicit `line-height`s (1.4-1.9), `text-wrap: balance` on title/body, a
+  tighter title margin, and `#history-card-year { white-space: nowrap }` so a year range never breaks at
+  its dash — Press Start 2P's `normal` line-height is exactly 1em, so any wrapped line touched the next
+  ("UNKNOWN" printed into the title under JF). Checked by rendering all 84 cards: 10 collided before, 0
+  after.
+- **Slot picker:** the last grid column widened (`grid-template-columns: 18px 20px 210px 66px 108px`) and
+  `.slot-cards { white-space: nowrap }` so `★ 14 / 76` fits; `.slots-erase-name` styles the new
+  "NAME · LV n" line in the erase confirm.
+- **Settings confirms:** `.settings-harder-confirm` (amber, glow) for the Survival Y/N and
+  `.settings-erase-sub` (7px, dim) for "YOUR SETTINGS STAY" under the erase question.
 
 ## Touch-device keyboard notice (added 2026-09-11)
 

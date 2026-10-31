@@ -235,6 +235,28 @@ strings. Orchestrator triage notes added; final call is Trevor's.*
   documented "writes never throw" / "every read... tolerates garbage" promise,
   worth a one-line try/catch around that guard clause.
 
+## 2026-10-30 sign-off wave (test-engineer lane) — no new game-vs-doc defects
+
+INV-130..144 (STRATEGY §5, "The 2026-10-30 sign-off wave") were built against the working tree
+and every behaviour matched the doc the lanes wrote first: no `TF-NN` opened, no `t.todo`.
+Each new integration file was also run against a `git archive HEAD` copy of the OLD game to prove
+it bites (saved-game routes 26 of 30 fail on HEAD, harder-rule 12 of 13, eighth-key 5 of 7,
+held-key/gap 4 of 10, survival floors 5 of 10, tile stride 2 of 2, history-card layout 10/84 cards
+— the lane's own count). Observations that are NOT defects but are worth a human glance:
+
+- **Test-environment, not game:** the tile worlds' arrival ("reveal") scene draws at ~1.5 fps in
+  headless Chromium's software canvas (150 motes with `shadowBlur`), so its ~5.5 s auto-return is
+  ~220 s wall-clock there. Real GPU browsers are unaffected. The tests press Space on arrival (the
+  documented way out) rather than wait the hold out. If anyone ever wants the auto-return itself
+  tested, it needs a headed/GPU run.
+- **Doc gap (small):** `js/ui/cabinet-art.js navigateAct` parks the select cursor on the FIRST
+  cabinet of a wholly-locked act ("which stays unselectable at Enter time"). onboarding.md says
+  locked cabinets are "unselectable" but not that the cursor can rest on one. INV-130's test asserts
+  the real contract (Enter on it does nothing; walking along an act never lands on a locked cabinet).
+- **Driver limit:** `readHUD()` returns null for every field while a win is being shown (the whole
+  `.hud` panel is hidden), so tests that need the mistake count in that window read
+  `#hud-mistakes` text directly.
+
 ## Dismissed at close-out (test misread the doc; tests corrected 2026-07-12)
 
 ### ex-TF-1 — index.html "ENTER YOUR NAME" — DISMISSED

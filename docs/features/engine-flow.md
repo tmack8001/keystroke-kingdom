@@ -4,7 +4,7 @@ code: [js/main.js, js/finale-quote.js, js/keyboard-story.js, js/keyboard-story-g
 rules: [.claude/rules/tech.md, .claude/rules/security.md, .claude/rules/easter-eggs.md, research/wiki/culture/hacker-manifesto.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js
-verified: 2026-10-29 (showCompleteOverlay + card sound; shelved gallery wiring; collection markup in index.html)
+verified: 2026-10-30 (held-key/levelEnding/pattern-gap guards; Survival 10 s floor + 1-quarter spare; name entry now has two labelled jobs + R RENAME; Escape on READY reaches the arcade; settings harder-confirm; cinematic firstClear; complete-card Space cues). Earlier 2026-10-29: showCompleteOverlay + card sound; shelved gallery wiring
 ---
 
 **Graph gap note:** three surfaces documented here have no reference frame, flagged
@@ -46,14 +46,46 @@ per-screen module owning its own listener.
 
 ## Name entry — the `#player-name-input` reveal sites
 
-Three places reveal the same `#player-name-input` field, always prefilled with
-`settings.playerName` (or `'PLAYER ONE'`): the title screen's coin-insert (`case
-'title':`, `!state.coinInserted` branch), the ready screen's `Escape` (back to
-name entry), and the select screen's `Enter`/`Space` on an unlocked cabinet
-(`case 'select':` — this is the "select-screen rename" path; it re-enters the
-title-screen name-entry UI rather than owning separate markup).
+*Reworked 2026-10-30 (Trevor: a stray name-entry visit once renamed a saved game "DAD"
+into "WOPR").* Every reveal now goes through `showNameEntry(label, value)`, which sets
+`#name-label` (new in `index.html`) and `#name-confirm-verb`, so the field always says
+which of its **two jobs** it is doing: **`ENTER YOUR NAME` / `... TO START`** (a NEW game,
+or a brand-new machine's first name) or **`RENAME THIS GAME` / `... TO SAVE`** (the slot
+picker's `R`). Routes:
 
-**Fixed 2026-07-13 (docs/testing/FINDINGS.md TF-H1):** all three sites now call
+- **Title, Space/Enter:** if `Slots.anySlotExists()` the picker is the front door
+  (`showSlotsScreen()`), never name entry; name entry stays only for a brand-new machine.
+- **Picker `N` / the NEW GAME row:** `startNewGameFlow()` → `showNameEntry(NEW, '')`
+  with `state.pendingNewGame`; Escape backs out to the picker with nothing created.
+- **Picker `R`:** `startRenameFlow(i)` sets `state.renameSlot = i`; Return →
+  `finishRename(name)` → `Slots.renameSlot(i, name)` (a label change that **never changes
+  which game is active**, even when none is) and back to the picker; Escape → unchanged.
+  This is the **only** path that renames a saved game. The confirm handler's
+  "otherwise an ACTIVE game exists" branch now keeps the game's own name and writes
+  nothing (defensive — no route reaches it).
+- **READY, Escape:** with an active saved game → `showArcadeFromReady()` (the select
+  screen, gates honoured, `state.selectBypass` never set) — it used to re-open name
+  entry where typing + Return silently renamed the game. With no saved game (storage
+  refused / ephemeral WOPR bypass) it falls back to name entry.
+- **Select, Space/Enter on a cabinet:** saved game → `showReadyForActiveGame()` (straight
+  to READY, no name entry); no saved game → name entry.
+- **Select, Escape:** a saved-game player (`!selectBypass && anySlotExists()`) goes back
+  to the picker; the WOPR route goes to `showAttractTitle()` (clean attract, no live
+  name field). Picker Escape adopts the highlighted game as active, then
+  `showAttractTitle()`.
+
+`syncActiveIdentity()` (called at every game start, on picker Escape and when entering
+the arcade) pulls `state.playerName`/`settings.playerName` and `maxUnlockedLevel` from
+the **active** game, so a win is credited to the game the player last pointed at. The
+select screen's heading is `syncSelectHeading()`: `THE ARCADE` / `PICK A CABINET` on the
+ordinary route, `GREETINGS PROFESSOR FALKEN` / `SHALL WE PLAY A GAME?` only on the WOPR
+route (the egg keeps its line). The pre-filled name is a *default, not a draft*
+(`prefillNameField` / `initNameField`): the field stays "pristine" until the first
+`beforeinput`, which clears the default before the edit lands (arrow/Home/End end
+pristine without clearing), so `GRAM` + typing `GRANDMA` can no longer yield
+`GRANDMAGRAM`; focus is taken synchronously.
+
+**Fixed 2026-07-13 (docs/testing/FINDINGS.md TF-H1):** (historical — written when three sites revealed the field) all reveal sites call
 `.select()` on the input immediately after `.focus()`, so the prefilled default
 is shown selected — matching onboarding.md's "selected and ready to be
 overwritten" and transitions.md's "any key press clears the default." Before
@@ -84,6 +116,20 @@ match), `' '`, `'Backspace'`. Regex gate:
 keys are ignored entirely (never counted as a mistake). Case rule: an uppercase A-Z
 expected token requires an exact match (Shift held); every other token is compared
 lowercase, so CapsLock never affects levels 1-23.
+
+**Held keys and the beat between patterns (2026-10-30, product.md §Reinforce):**
+`handleGameKey` returns early on `e.repeat` — a held key is **one** press (one hold of a
+wrong key used to log +8..+13 mistakes, and one hold of a right key on `jj` typed both);
+this includes Space and Backspace, so a held Backspace cannot skip the L25 typo gag. It
+also returns when `state.levelEnding` (set the moment the win is decided, before
+`showLevelComplete`'s 400 ms timer) so keys during the win aren't judged against a pattern
+that will never be drawn. Between patterns the ~300 ms paced beat is a
+`schedulePromptRender(fn, ms)`; a key arriving inside the beat calls
+`flushPendingPromptRender()` first, so the key is judged against the letter now on screen.
+The 150 ms "re-light the next letter" timer captures the pattern/index at schedule time and
+stands down if the player moved on (it used to re-highlight the already-completed first
+letter for a fast typist). Wrong-key contract unchanged. `startGame()` clears the pending
+render and `levelEnding`.
 
 **Correct key**: advance `currentIndex`; on pattern completion, check the history-card
 glint against `state.currentCard` (see [[history-cards]]), advance
@@ -191,8 +237,14 @@ patternDeadline, patternDuration, remainingAtPause, rafId, lettersTyped`) — al
 additive, never read/written unless `settings.playStyle === 'survival'`. Per-pattern
 countdown via `requestAnimationFrame`; timeout **replaces the current pattern**
 (`drawRandomPattern()`) without penalizing progress — wrong keys never cost time or
-quarters, only the clock does. Mercy: every 15-correct-streak returns one quarter (up
-to the starting count, `maybeAwardMercyQuarter()`). Zero quarters →
+quarters, only the clock does. **Floor (2026-10-30):** `survivalPatternDuration` is
+`max(SURVIVAL_MIN_PATTERN_MS = 10000, base × difficulty × paceScale)` — a one-letter prompt
+was ~5.4 s at EXPERT, harsher than a long one; no prompt now gets less than 10 s. Mercy:
+every 15-correct-streak returns one quarter (up to the starting count,
+`maybeAwardMercyQuarter()`); **at 1 quarter** (where there is never one to hand back) the
+FIRST 15-streak of a run earns one **spare** quarter, once per run (`sv.spareAwarded`,
+reset in `startGame()`); the purse (`renderPurse()`) draws `max(total, remaining)` dots so
+the spare shows. Zero quarters →
 `showGameOver()`. See [[settings-survival]].
 
 ## Returning-player persistence — now per save slot (`js/slots.js`)
@@ -204,7 +256,9 @@ It now lives inside whichever save slot is active (`Slots.getProgress()` /
 delegate to `Slots`, so every existing call site in this file (`{ furthestLevel: 1-25,
 completed: { "<n>": true, ... }, nameMoment, textWorlds }`) is unchanged in shape.
 `recordLevelComplete(n)` never regresses `furthestLevel`; Free Play never records.
-`Slots.anySlotExists()` gates `boot()`'s choice between the slot picker and the
+The picker rows are built by `pickerSlots()` = `Slots.listSlots()` plus each game's
+**arcade-bank** progress (`bankProgress('arcade', Slots.slotCards(i))`), so a row prints
+`★ found / total` rather than the all-banks `cardsFound` (INV-100). `Slots.anySlotExists()` gates `boot()`'s choice between the slot picker and the
 first-time cold-open/title flow (see [[save-slots]] for the picker itself and the
 one-time `kk-progress`/`kk-cards` → `kk-slots` migration). `eraseProgress()` is the
 single shared erase helper — it now calls `Slots.eraseActiveSlot()` (clears the active
@@ -604,7 +658,7 @@ all deliberately small and all obeying "never interrupt flow":
 
 Tests for all three: `tests/integration/hidden-layer.test.mjs`.
 
-The eighth key is never rendered as "semicolon" anywhere in this file (`;` → "THE
+The eighth key is never rendered as "semicolon" anywhere in this file (the *glyph* `;` is shown as itself on the guide/prompt since 2026-10-30; `;` → "THE
 EIGHTH KEY" wherever a label is built). `[data-enter-key]` elements are swapped to
 "RETURN" on Mac / "ENTER" elsewhere via `navigator.platform` detection at module load —
 the event handler itself stays `e.key === 'Enter'` on every platform.
@@ -629,6 +683,26 @@ cards included). `showCollectionScreen(slot)` builds shelves via `collectionShel
 `index.html` replaced `#collection-count`/`#collection-grid` with `#collection-shelves` + scroll
 markers, and the settings BLOCKED WORDS blurb now reads "BLOCKS EVERY WORD THE GAME MAKES UP — AND
 YOUR FRIEND'S REPLIES. LESSON WORDS ARE HAND-PICKED AND CHECKED SEPARATELY."
+
+**Complete-card cues and cinematic gating (2026-10-30):** every level-complete card says what
+Space does — L4 `THE MYSTERY CABINET AWAITS · PRESS SPACE FOR NEXT LEVEL`, L24 title
+`YOU TYPED YOUR NAME` only when `state.l24NameTyped` else `SHIFT MASTERED`, L25 `YOU BUILT
+THIS · PRESS SPACE FOR THE TITLE SCREEN`. `showLevelComplete` also sets `state.firstClear`
+(read before `recordLevelComplete`) and the Level 5/10/15/20 Space handlers pass
+`{ skippable: state.firstClear === false }` to the cinematic — see [[cinematics]].
+
+## Settings screen — harder values ask first (2026-10-30)
+
+`handleSettingsKey` no longer calls `applyRowChange`; it calls `previewRowChange` (from
+`js/settings.js`), which returns `{ next, confirm }` without saving. A move **to** a harder
+value (today only PLAY STYLE → SURVIVAL, `row.harder`) shows `#settings-harder-confirm`
+("YOU CHOSE 1979 RULES — KEEP IT? Y / N"), holds the value in `state.settingsPending`
+(drawn via `renderSettingsScreen(view)` but **never** in `settings` or `kk-settings`), and
+only `Y` saves it (`applySettingsChange`); every other key keeps the easier value. The
+erase-all confirm names the count (`ERASE 1 SAVED GAME?` / `ERASE ALL n SAVED GAMES?` /
+`NO SAVED GAMES TO ERASE. RESET ANYWAY?`, plus "YOUR SETTINGS STAY"); action-row cues use
+`PRESS ${enterLabel}` (RETURN on a Mac) because HTML rendered after boot is out of reach of
+the `[data-enter-key]` swap. Details: [[settings-survival]].
 
 ## Replay (landed 2026-07-12)
 

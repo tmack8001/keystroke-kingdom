@@ -4,7 +4,7 @@ code: [js/hardware/hub.js, js/hardware/stations.js, js/hardware/]
 rules: [docs/specs/hardware-wing.md, .claude/rules/theme-authoring.md, .claude/rules/security.md]
 screenshots: docs/screenshots/hardware/
 capture: DEV_URL=<url> node scripts/playtest.mjs --at=hardware:apple-iie --laps=2 --shot=docs/screenshots/hardware && DEV_URL=<url> node scripts/playtest.mjs --at=hardware:msdos-pc --laps=2 --shot=docs/screenshots/hardware
-verified: 2026-10-29 (arcade bank is 76; reveal + SPACE hint + historyCard sound re-checked)
+verified: 2026-10-30 (drawn `]` prompt, card font-fit, SPACE exit hint moved above the bench; earlier 2026-10-29: arcade bank is 76; reveal + SPACE hint + historyCard sound re-checked)
 ---
 
 # Act 8 — THE HARDWARE
@@ -61,6 +61,11 @@ art is sourced from actual photographs shipped (`research/wiki/tech/console-hard
 silhouettes.md`), per the project's "DRAW A REAL THING" rule (`theme-authoring.md`). Each
 station's `boot` array is `{ type: <the line to type>, says: [<lines the machine prints
 back>] }`; the prompt character (`]` for the Apple II, `C:\>` for DOS) is drawn per-station.
+**The Apple II `]` is drawn, not typed** *(2026-10-30 explorer playtest)*: in Press Start 2P a
+`]` reads as a `J` at prompt size, so `]CATALOG` looked like a J had to be typed first.
+`drawPrompt()` paints a real bracket — taller than a capital and reaching below the baseline,
+with a gap before the command; log echo entries now carry `{ kind:'echo', prompt, text }` so
+the echoed line draws the same bracket. Any other prompt (`C:\>`) is plain text.
 Typing the machine's actual command language is the whole point — `RUN STICKYBEAR` and
 `GIZMOS` are what a family would really have typed to launch those programs.
 
@@ -99,6 +104,13 @@ Verified live (`scripts/playtest.mjs --at=hardware:<station> --laps=2`, screensh
 4`); visit 2 (a fresh replay) rotates to a different card, **THE APPLE IIe** (`CARD 2 OF 4`) —
 the guaranteed-card rotation is working exactly as the arcade's does. Same for `msdos-pc`:
 visit 1 → **THE CD-ROM**, visit 2 → **THE MPC BADGE**.
+
+*2026-10-30 polish (hub.js):* `fitFontSize(text, size, maxW)` shrinks the card's word and
+`title · year` lines (to no less than 60% of base) so a long station title can never run off
+the stock — a no-op for today's four cards, there for the planned 14. The way out, **`SPACE ·
+BACK TO THE WALL`**, now sits just under the card on its own dark plate (`y = min(0.815H,
+centre + ch/2 + 0.065H)`, brighter `#8fd0a4`, fading in) instead of at 0.90H on top of the
+bench boards in the dimmest green, where a child's eye was least likely to find it.
 
 ## The card model — a THIRD bank, deliberately separate from the arcade's 60
 

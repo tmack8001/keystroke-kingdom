@@ -4,7 +4,7 @@ code: [js/mystery.js, js/basement.js, js/commandcenter.js, js/fullcircle.js]
 rules: [.claude/rules/transitions.md]
 screenshots: docs/screenshots/cinematics/
 capture: node docs/screenshots/capture-cinematics.js && node docs/screenshots/capture-fullcircle.js
-verified: 2026-09-11 (dial-up handshake chirp in mystery.js phase 5)
+verified: 2026-10-30 (skip policy: first viewing unskippable, replays Space/Escape, title card Space only)
 ---
 
 # Act-Transition Cinematics
@@ -26,25 +26,39 @@ Full narrative/design intent: `.claude/rules/transitions.md`. This page covers
 
 None follow the `js/themes/*.js` module contract
 ([[level-themes]] — `start/stop/keystroke/miss/patternComplete/victory`). They share a
-different, self-consistent contract instead: `start(callback)`, `confirm()`, `stop()`
-(mystery.js additionally exports a standalone `skip()`, folded into `confirm()` in the
-other three). Every module: a `P`/`PHASE_ORDER` timing table (ms offsets), a shared
+different, self-consistent contract instead: `start(callback, { skippable })`,
+`confirm(key)`, `stop()` (mystery.js additionally exports a standalone `skip()`, folded
+into `confirm()` in the other three). Every module: a `P`/`PHASE_ORDER` timing table (ms offsets), a shared
 `getPhase(ms)`/`phaseT(phaseIdx, ms)` pair, a `hideAllScreens()`/`restoreHiddenScreens()`
 belt-and-suspenders DOM guard (verbatim comment across all four files), and a
 `window.resize` handler that keeps the shared `#invaders-canvas` sized to the viewport
 while active. `js/main.js`'s global keydown switch calls `.confirm()` unconditionally
 on **any** keydown while `state.screen` is one of `mystery`/`basement`/`commandcenter`/
-`fullcircle` — dispatch is not Space/Escape-specific at the routing level; each
-module's own `confirm()` decides skip-vs-advance from the current phase.
+`fullcircle` (ignoring OS auto-repeat: `if (!e.repeat) X.confirm(e.key)`) — dispatch is
+not key-specific at the routing level; each module's own `confirm(key)` decides from
+the key and the current phase.
 
-### Skip behavior — diverges from the design doc
+### Skip behavior — first viewing unskippable, replays skippable *(2026-10-30)*
 
-`confirm()` in every module: if not yet on the final phase, time-warps
-`startTime` so the next frame renders the final phase immediately (skip). If already
-on the final phase, calls `stop()` and the `onDone` callback. **There is no
-localStorage-backed "seen it once" flag anywhere in these four files** — the design
-doc's "skippable after first completion" is not implemented; every playthrough,
-first-time or repeat, is skippable on the very first keypress.
+`transitions.md` says "Skippable after first completion"; this is now implemented. In
+`js/main.js` `showLevelComplete()` sets `state.firstClear = !freePlay &&
+!getProgress().completed[level]`, read **before** `recordLevelComplete` writes the flag
+(same derived-latch trick as the eighth-key confession — no new storage). The Space
+handler passes `{ skippable: state.firstClear === false }` to each `start()`; the
+modules default to `skippable = false`, so a caller that forgets can never let a stray
+key cut a first viewing short. Rules in every module's `confirm(key)`:
+
+- **Before the final card, first viewing:** every key is ignored. (Before this, a stray
+  key at ~8 s jumped Mystery straight to ACT 2, so a child never saw "HELLO. YOU FOUND
+  ME." or the secret door.)
+- **Before the final card, replay:** only **Space or Escape** time-warps `startTime` to
+  the final phase; any other key does nothing.
+- **On the title card** (Mystery / Basement / Command Center): only **Space** continues
+  — it is what the card says ("PRESS SPACE TO CONTINUE"). Escape and other keys do
+  nothing.
+- **Full Circle's OPENING screen** is not a title card (it says TYPE YOUR NAME): after a
+  1 s fade-in guard, **Space or any single typed character** hands off to Level 21;
+  Escape, Tab, arrows and lone modifiers do nothing.
 
 ### Replayability — aspirational, not built
 
@@ -72,7 +86,7 @@ fallback to "PLAYER ONE").
 - **commandcenter.js**: `MILESTONE(0-8s) → TEXT(8-14s) → STAIRCASE(14-24s) →
   TITLECARD(24s+)`. Milestone rolls a lit-key wave across all three letter rows.
 - **fullcircle.js**: `TERMINAL(0-12s) → RETURN(12-24s) → ARCADE(24-34s) →
-  OPENING(34s+, open-ended until Space)`. RETURN subdivides into 4 equal "room flash"
+  OPENING(34s+, open-ended until Space or a typed character)`. RETURN subdivides into 4 equal "room flash"
   beats (Command Center, Basement, Computer Wing, Arcade door), each with its own
   fade-in/hold/fade-out envelope and 2-3 note audio motif. ARCADE draws all 5 Act-1
   cabinets running live pixel-art impressions plus the 3 dim/flickering Act-5 Corner
