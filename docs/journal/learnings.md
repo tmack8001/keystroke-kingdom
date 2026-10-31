@@ -21,6 +21,8 @@
 | [[L47-a-correct-decision-can-silently-disable-a-safety-net-elsewhere\|L47]] | A locally-correct decision can silently disable a safety net in a dimension nobody was looking at | adopted | high | tooling | 2026-09-13 |  |
 | [[L49-a-rule-scoped-to-one-subsystem-was-applied-to-another-because-both-said-word\|L49]] | A rule scoped to one subsystem got applied to another because both said "word" — and it cost the beginner levels their collect loop for fourteen months | adopted | high | docs-process | 2026-09-15 |  |
 | [[L50-a-citation-pass-checks-values-not-connectives\|L50]] | A citation pass checks VALUES, not CONNECTIVES — every number was right and the conclusion was still false | adopted | high | research-integrity | 2026-09-18 |  |
+| [[L51-a-rule-about-a-word-was-built-as-a-mask-on-the-glyph-and-its-test-could-only-see-the-word\|L51]] | A rule about a WORD was built as a mask on the GLYPH — and the test that guarded it could only see the word | adopted | high | pedagogy | 2026-10-30 |  |
+| [[L52-one-input-two-jobs-no-label-an-easter-egg-typed-into-it-renamed-a-family-save\|L52]] | One input surface, two jobs, no label — an easter egg typed into it silently renamed a family's saved game | adopted | high | game-design | 2026-10-30 |  |
 | [[L1-go-binary-embeds-assets-at-compile-time\|L1]] | The Go binary embeds assets at compile time | adopted | medium | engine | 2026-07-11 |  |
 | [[L6-karpathy-llm-wiki-scales-down-gracefully\|L6]] | Karpathy's llm-wiki scales down gracefully | adopted | medium | tooling | 2026-07-11 |  |
 | [[L7-obsidian-table-links-need-escaped-pipes\|L7]] | Obsidian table links need escaped pipes | adopted | medium | tooling | 2026-07-11 |  |

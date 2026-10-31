@@ -2234,3 +2234,42 @@ same-night cleanup batch; see Swarm follow-ups below.)*
   modemChirp and nothing for a card pickup. A flip, as distinct from the drop-in, is also unbuilt.)*
 - The keyboard-preview screen ("KNOW YOUR KEYS") is skipped in Free Play — should a
   condensed version appear the first time Free Play is ever entered?
+
+---
+
+## 2026-10-30/31 — the persona-playtest wave (journal F34, L51, L52)
+
+Five reproducible persona testers (first-timer, struggling-beginner, family-parent, speedrunner,
+explorer) played the branch; two fix waves and a regression re-run followed. All persona runs name
+their seed and decision-trace hash (see `.claude/rules/playtest.md` §Personas).
+
+**Built.** The persona harness (`scripts/personas.mjs`, `--persona` / `--seed` / `--pace` on
+`scripts/playtest.mjs`; 23 unit tests). `explorer` replaced an age-bearing persona id.
+
+**Fixed, and played by a persona afterwards** (frames opened; regression runs on the final fix wave
+for Escape-to-arcade, rename, active-game attribution, `;` glyph, Survival confirm and floors, held
+keys and the pattern gap, card-header overlap, Return/Enter labels, L17/L20/L24/L25 and L2/L4/L22
+overlaps and victories, Speedway ghost legends, tile-world length (~690 → ~100 keystrokes), riddle
+typo recovery, the Hardware `]` prompt and caption):
+- A returning player can reach the arcade select screen in the UI (Escape on READY), unlock gates
+  honoured; rename is the labelled **R** action. Previously Escape dropped into an unlabeled name
+  field where typing `wopr` + Return renamed a family's saved game (DAD → WOPR). The active game is
+  unambiguous whenever a game starts; a win is credited to the game the player last pointed at.
+- The eighth key shows its real `;` glyph on the prompt and every keyboard. The WORD "semicolon" stays
+  withheld (INV-29). The docs now say so (CLAUDE.md, easter-eggs.md, levels.md, act1.md).
+- Survival asks Y/N before being saved; held keys count as one press; a key in the 300 ms pattern gap
+  is judged against the drawn pattern; a one-letter Survival prompt allows ≥ ~9.5 s; at 1 quarter a
+  15-streak earns one spare quarter (once per run, again after TRY AGAIN).
+- History-card headers no longer collide (10 of 84 before, 0 after). The next-level cue is visible from
+  the first frame. The slot picker shows `★ found / total` for the arcade bank (76).
+
+**Fixed in the second pass, verified by the lanes' own play and 63 new tests (INV-145..152) — not yet
+re-run by a persona:** the four act cinematics are unskippable on a first viewing and skip only with
+Space/Escape on replays (title card: Space only); Level 4 and Level 25 complete cards carry a Space
+cue; the rename field clears on the first key; erase prompts name what they erase; picker hints match
+context; `renameSlot` never changes the active game; L13/L21/L24 counters and the L24 board;
+top-edge clipping on L2/L4/L22; IM-friend footers tell the truth; Text Worlds hint contrast
+(worst lines 1.8–2:1 → ≥ 4.7:1); the F-Zero ghost legend.
+
+**Decisions recorded (Trevor):** per-slot difficulty is a separate PR; Escape on the complete card
+stays as is (progress is saved); persona time-budget overruns warn only; the persona id is `explorer`.

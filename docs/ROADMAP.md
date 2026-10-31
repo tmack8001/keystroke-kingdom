@@ -94,22 +94,46 @@ one.
 Each verified open against source by the 2026-09-16 audit.
 
 ### Player-facing
-- **Settings hard-codes `'PRESS RETURN'`** — `js/main.js:1773` (action-row value cell). A Windows/Linux
-  player sees RETURN on a keyboard that says ENTER (CLAUDE.md §Platform Key Label). The boot-time
-  `[data-enter-key]` swap cannot reach HTML rendered later, so the fix is to use `enterLabel`
-  (`main.js:2776`) directly.
-- **Question for Trevor — Survival is one keypress from the title:** Tab → → Esc lands in SURVIVAL (`PLAY STYLE` is
-  `ROWS[0]`, `applyRowChange` saves immediately, `js/settings.js`). Opt-in is honoured, but a child can opt in by
-  accident; `kk-settings` is also global, so it reaches every save slot. Ruling needed before any change.
-- **Six themes declare no victory duration** — `breakout.js` (L1), `invaders.js` (L2), `pacman.js` (L3),
-  `fighter.js` (**L4 Galaga**), `pokemon.js` (**L15, the FULL KEYBOARD UNLOCKED milestone**),
-  `wordprocessor.js` (L25). Each gets the engine's legacy fixed 4000ms hold. ⚠️ **Not yet a known
-  defect** — "declares no duration" ≠ "has no animation". Measure with `--at=victory:<N>` (it reports
-  distinct-frame counts), then declare the duration that matches what is on screen.
+
+> **Landed 2026-10-30/31 (UNCOMMITTED until the final gate passes):** the persona-playtest fix waves —
+> see `roadmap-history.md` for what was verified. If no commit exists for it, reconciliation was missed.
+
+- **Still open from the persona waves** (each seen by a persona tester; none fixed):
+  - **Per-slot difficulty — its own PR.** `kk-settings` is global, so one save's Survival/WIZARD reaches
+    every other game. Needs `product.md` §Save Slots edited FIRST, then tests, then code, then
+    `/security-review` (schema change).
+  - **Survival EXPERT does not age with the player** — the clock is ~40× slack at 90 wpm
+    (`js/main.js` ~600). Retune deferred by ruling; the 1-life spare and 10 s floor were the plain defects.
+  - **Stale keyboard-guide timer in the wrong-key branch** — wrong key then right key within 300 ms
+    re-lights the old letter until the next keypress. Left untouched (wrong-key contract); ask first.
+  - **No escape hatch on a first Mystery viewing** — by ruling nothing skips it (~50 s); if a child is
+    distressed there is no exit. Revisit if a real child finds it long.
+  - **The word "semicolon" is taught nowhere.** Trevor's intent: taught later in the game. Today only the
+    L20 couplet says the key HAS a name; it needs a design.
+  - **ERASE ALL leaves `kk-friends` and `kk-stories`** (only `kk-slots` goes). "YOUR SETTINGS STAY" is
+    true but does not mention friends; decide whether ERASE ALL should wipe them.
+  - **L21's opening screen says TYPE YOUR NAME**, but L21 is dash and equals (`js/fullcircle.js`).
+  - **L21 victory banner covers the STAGE counter**, L2's invader palette is multi-colour (flagged invented
+    in the 2026-09-13 audit), and the L4 victory is dim — pre-existing, found by Themes lanes.
+  - **Free Play on cabinet 24**: the first word of a sentence likely flashes in the #1 slot (the theme
+    cannot tell Free Play apart).
+  - **L25 takes ~11 min at 55% wrong keys**; re-measure tile worlds at `--pace=1`.
+  - **Tile-world map is pinned left of the screen** (camera quirk noticed by tester E) — unexamined.
+  - **Locked cabinets/wings give no "unlocks at…" hint** — by design; revisit if a child is confused.
+  - **Orphan "· LATE 1980s" line** on the Masters of Deception card title.
+  - **Capture tooling:** `capture-speedway.js monaco-lap` fails on lap 2 (one Space after the pit board;
+    `playtest.mjs returnToHub` loops up to five); `capture-screens.js` leaves the Survival Y/N pending in
+    `settings-survival-active.png`; `tests/helpers/game-driver.mjs` localStorage seed re-applies on every
+    navigation (a `seedOnce` option would be cleaner); `scripts/playtest.mjs` / `personas.mjs` have no
+    feature page (propose a `playtest-tooling` page).
+
+- **Three themes still declare no victory duration** — `breakout.js` (L1), `pacman.js` (L3),
+  `pokemon.js` (**L15, the FULL KEYBOARD UNLOCKED milestone**). Each gets the engine's legacy fixed
+  4000ms hold. (L2 `invaders.js`, L4 `fighter.js` and L25 `wordprocessor.js` were given real
+  celebrations 2026-10-30.) ⚠️ **Not yet a known defect** — "declares no duration" ≠ "has no
+  animation". Measure with `--at=victory:<N>` (distinct-frame counts), then declare the duration that
+  matches what is on screen.
 - **Levels 7 and 10 are near-static mid-play**, payoff concentrated in `victory()`.
-- **Level 24's #1 high-score slot shows the wrong word** — `victory()` never latches the player name;
-  `drawChampionName` renders whatever `entryChars` last held (the file's own comment cites `"1Eniac"`).
-  Content bug only; the celebration itself was fixed 2026-09-14.
 - ~~**Collection gallery clips its last row**~~ **RESOLVED 2026-09-16 by the shelved gallery** — the
   fixed `max-height: 60vh` grid became a single flex-height scroller with `▲ MORE ABOVE` / `▼ MORE
   BELOW` fade bands and keyboard scrolling. ⚠️ *Worth keeping from that work:* the builder measured
