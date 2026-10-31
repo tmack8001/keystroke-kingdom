@@ -4,7 +4,7 @@ code: [js/ui/hud.js]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-10-30 (eighth key shows its real ';' glyph; ';' joins SMALL_GLYPH_BOOST; isSmallMark export)
+verified: 2026-10-31 (key-name beat renderers: showKeyNameCaption/hideKeyNameCaption/glowGuideKey; earlier 2026-10-30: eighth key glyph)
 ---
 
 # HUD & Keyboard Guide
@@ -44,10 +44,28 @@ plus the target letter when the active token is uppercase.
 
 ## The eighth key
 
-`displayKey(k)`: `';'` is **no longer masked as `?`** (2026-10-30): a five-year-old looking at her own keyboard hunted for a `?` that is not on the right-pinky key, so the guide, the prompt and the first-time home-row hand diagram (`showHomeRowDiagram`, right hand `J K L ;`) all show the mark printed on the keycap. "Never say semicolon" always meant the *word*, which stays withheld until the Level 20 confession. `'Shift' → '⇧'`, `' ' → '␣'`, `'Backspace' → '⌫'`,
+`displayKey(k)`: `';'` is **no longer masked as `?`** (2026-10-30): a five-year-old looking at her own keyboard hunted for a `?` that is not on the right-pinky key, so the guide, the prompt and the first-time home-row hand diagram (`showHomeRowDiagram`, right hand `J K L ;`) all show the mark printed on the keycap. "Never say semicolon" always meant the *word*, which stays withheld until the Level 13 key-name beat teaches it (the code meaning waits for the Level 20 terminal). `'Shift' → '⇧'`, `' ' → '␣'`, `'Backspace' → '⌫'`,
 everything else uppercased. `promptDisplay(token)` is the case-preserving prompt-side
 variant (needed for Level 24/25; its old `';' → '?'` case was removed). Neither function, nor any string literal in this
 file, ever renders "semicolon".
+
+## The key-name beat renderers (2026-10-31)
+
+Cosmetic hooks the engine calls when the Level 13 beat word is typed ([[history-cards]] Bank 4,
+[[engine-flow]] "The key-name beat"). They render only; `js/main.js` decides when.
+- `showKeyNameCaption(lines)` fills the empty `#key-name-caption` (`index.html`, a child of the
+  prompt area, `aria-live="polite"`, `pointer-events:none`) with up to two `textContent` rows: line 1
+  at once, line 2 about 1.5 s later. The box's final size is reserved up front via
+  `--kn-chars` / `--kn-lines` so line 2 never makes it jump. It sits just **below** the prompt panel in
+  the gap band above the guide (`top:100%+5px`, max-height 40px); `.top-band` is the unused fallback.
+- `hideKeyNameCaption({immediate})` fades (0.6 s) and empties it; `immediate` skips the fade (level end,
+  screen change). Idempotent and safe if the element is missing.
+- `glowGuideKey(glyph, on)` adds/removes the glyph's key from module state `glowingKeys` and re-renders the
+  guide (`lastKeyboardArgs`), because `renderKeyboard` rebuilds the DOM on EVERY prompt. Glowing keys get
+  `.key-name-glow` (pale-lilac outline ring, no scale, so it never reads as the active-key cue) and always
+  show their mark. Only glyphs that are keys in `KEY_LAYOUT` can glow.
+Styles (`--key-name-tint #d8c4ff`, caption, glow, `.prompt-letter.key-name-flourish`) are in
+`css/screens.css`; see [[visual-styling]].
 
 ## `SMALL_GLYPH_BOOST`
 

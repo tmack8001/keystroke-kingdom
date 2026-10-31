@@ -311,6 +311,43 @@ contain both label literals. Static test now exempts a line containing both
   was deferred to whoever writes the content.** The transferable rule: *the moment a bank,
   registry or table stops being empty is a moment that needs a play, not a re-run.*
 
+## Survival (2026-10-31, test-engineer lane)
+
+### TF-V1 — A Survival clock expiry deletes a GUARANTEED word; the level then can never be won (One Rule violation) — RESOLVED 2026-10-31
+- **Invariant:** INV-170. **Design:** product.md §1 ("No forced failure states"), §History Cards ("a level
+  won't end until a moment word has appeared"), §The Name Moment, act5.md §Level 24, CLAUDE.md One Rule.
+- **Symptom:** In Survival, letting the clock run out while the current prompt is the history-card moment
+  word or the Name Moment word costs the quarter AND permanently removes that word from the level. The win
+  gate (`cardPending` / `namePending`, js/main.js ~981-1005) stays armed forever, so no amount of correct
+  typing ends the level. The player is not punished by the clock but by an unwinnable level.
+- **Cause (js/main.js `handleSurvivalTimeout`, ~731-760):** `state.patterns[state.currentPattern] = drawRandomPattern()`
+  overwrites the pattern list slot. Guaranteed words exist ONLY as one-off splices in that list
+  (`startLevel`, ~1620-1710); `getNextPattern()` only redraws from the level pool, which never contains them,
+  and nothing re-injects an unmet guarantee. The suspected counter-hypothesis (a refill/re-injection) is
+  REFUTED by play.
+- **Reproduction (played through the real driver, Survival / EXPERT / 5 quarters, Date.now skewed to expire the clock):**
+  - Card: Level 4, card `ada` as the current prompt (the other L4 card, `asdf`, is also a warm-up drill and
+    must be marked collected so `ada` is the one injected). Expire on `ada`: quarter 5 -> 4, prompt becomes a
+    random word, `ada` never returns in 250 presses; LEVEL COMPLETE never appears. Control (no expiry): won.
+  - Name Moment: Level 4, player name `sala` (not in the L4 pool). Expire on `sala`: same outcome. Control: won.
+  - Level 24 name: ONE expiry on the name is survivable, because the name is also spliced a second time into
+    the level's pool region (that copy is served later). Expiring on BOTH copies (two idles at exactly those
+    prompts) strands the level the same way.
+- **Resolution (2026-10-31, lane B2; Trevor's ruling in docs/specs/semicolon-teaching-beat.md §5.7):** the timeout
+  keeps its quarter cost and its clock, and an unmet guaranteed word it displaced is re-queued as the next
+  pattern (`requeueGuaranteedPattern`, js/main.js). Verified by running the file against the fixed engine: card
+  `ada` and Name Moment `sala` both reappear after the expiry and the level is won; Level 24's name expired
+  FOUR times in a row (4 of 5 quarters) is won; with a 1-life purse the expiry that spends the last quarter
+  ends in the ordinary game over. The old "expire on EVERY appearance" case was a harness flaw once the
+  word returns each time — a finite purse makes unbounded expiries a legitimate game over — so it now expires
+  on the first FOUR appearances, and a separate case pins the empty-purse game over.
+- **Test:** tests/integration/survival-guaranteed-word.test.mjs — all six cases are real, none `t.todo`.
+- **Intended behaviour:** keep the quarter cost and the fresh prompt if wanted, but the guaranteed word must be
+  re-queued (e.g. put the interrupted word back in the list after the replacement, or only overwrite a slot
+  that is not a guaranteed injection). No game code was changed by this lane.
+- **Free Play:** `handleSurvivalTimeout` is shared; not exercised here (Survival + act card in Free Play is a
+  plausible third victim; unverified).
+
 ## Driver follow-ups (tests/helpers/game-driver.mjs — tracked in ROADMAP §3)
 - Concurrency flake: under `--test-concurrency=3`, 4 tests failed (null prompt
   tokens at winLevel start; continue-screen asserts catching title-screen) that are

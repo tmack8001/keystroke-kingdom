@@ -166,7 +166,7 @@ climbing; never hardcode a count, always derive it from `HISTORY_CARDS.length`.)
 - **INV-28** (L2) Platform key label: Mac shows RETURN, others ENTER, via `[data-enter-key]`; handler is `e.key === 'Enter'` everywhere.
 
 ### Language & content rules — CLAUDE.md, security.md
-- **INV-29** (L0) The WORD "semicolon" never appears in player-facing strings (index.html text, JS string literals rendered to players; the eighth key rule). *(Clarified 2026-10-30, Trevor: the check is on the WORD, never on the `;` GLYPH, which the prompt and every on-screen keyboard now show — see INV-140.)*
+- **INV-29** (L0) The WORD "semicolon" is withheld from every surface except ONE allowlisted teaching surface. *(Amended 2026-10-31, Trevor — product.md §"The Key Names": the name is taught at Level 13, the programming meaning waits for the Level 20 terminal; docs/specs/semicolon-teaching-beat.md §10.)* (a) It appears NOWHERE in `index.html` (comments included). (b) In `js/**` it appears in comment-free source ONLY in the allowlisted file `js/key-cards.js` — exactly that one file in Phase 1; adding a second allowlisted file is a design change (spec first). Every other module reads the record by its glyph and imports its sentences, never restating the word. (c) The `;` GLYPH is never restricted (INV-140). *(History: 2026-10-30 clarified the check is on the WORD, never the glyph.)*
 - **INV-30** (L0) No display string hard-codes ENTER outside `[data-enter-key]` wrappers. *(Extended 2026-10-30: canvas strings — the bonus wings draw on the shared canvas where no element can be swapped — must ask `js/key-label.js enterLabel()`; see INV-133.)*
 - **INV-31** (L0) Security greps hold: no `eval`/`new Function`/string timers; `playerName` (and any user-influenced value) never meets `innerHTML`/`insertAdjacentHTML`/`document.write`; no external network calls in js/ (only same-origin `/api/*`).
 - **INV-32** (L1) Free-text → pattern-stream boundary allowlists (`buildPlayerNamePattern` strips to `[a-zA-Z]`; wordgen chain: charset ⊆ level keys, length caps, blocklist, lowercase, dedup; structurally bad batches dropped whole).
@@ -963,6 +963,70 @@ takes a fresh contiguous block at 130+ rather than racing them.)*
   m, Out Run STAGE n/m, Q*bert CUBES n/m and WORDS n/m) always satisfy n <= m through a whole winning play —
   a counter that reads "PAGES 111 / 22" is a bug to a child who can read. (themes' own win gates are
   untouched; journal F30; observed through drawn strings only, no geometry.)
+- **INV-170** (L2) **A Survival clock expiry never deletes a guaranteed word or strands the level.** In
+  Survival a timed-out prompt costs a quarter and is replaced, but a GUARANTEED moment — a history-card moment
+  word, the Name Moment, Level 24's own name — that was the current prompt must still come back, and the level
+  stays winnable. (product.md §1 "No lives lost. No timers running out. No forced failure states… Survival
+  Mode is opt-in only"; §History Cards "A card is always guaranteed — a level won't end until a moment word has
+  appeared"; §The Name Moment; act5.md §Level 24; CLAUDE.md One Rule. RESOLVED 2026-10-31 as
+  TF-V1: the displaced word is re-queued as the next pattern and the clock is kept; all cases in
+  survival-guaranteed-word.test.mjs are live.)
+
+- **INV-153** (L1) **A keyboard card's level is derived, and pinned.** For every `KEY_CARDS` record, `level ===
+  max(L_key, L_name)` and `codeLevel === max(level, terminal)`, recomputed from the real `LEVELS` `newKeys`
+  (terminal = the level whose newKeys are exactly 1 and 0; Shift = the level naming `'Shift'`); the word is
+  spellable at its level. `key-semicolon` is level 13, codeLevel 20. A curriculum move fails loudly instead of
+  silently moving the lesson. (semicolon-teaching-beat.md §5.1; act3.md L13; act4.md L20.)
+- **INV-154** (L1) **Keyboard cards are a separate fourth bank.** `TOTAL_CARDS` stays the arcade denominator
+  (`HISTORY_CARDS.length`, secret card included); no `KEY_CARDS` id appears in another bank; `bankOf` says
+  `'keyboard'`; `bankProgress('keyboard')` counts `KEY_CARDS` only and `bankProgress('arcade')` never counts them;
+  the gallery has a shelf for them (extends INV-96/100/101/104). (spec §5.1/§5.4; history-cards.js header.)
+- **INV-155** (L2) **The beat is served, guaranteed, and credited immediately.** On a curriculum Level 13 play in
+  a slot without `key-semicolon`, the word is the pattern at the derived splice index (4 for L13) and the level
+  cannot end before it is typed; the card is collected the moment the last letter lands (before LEVEL COMPLETE)
+  and survives Escape straight afterwards; quitting before the word does not collect it. (spec §5.2.)
+- **INV-156** (L2) **Latch, replay, rotation, Free Play.** The collected id is the latch: with it held, Level 13
+  serves no beat and serves an arcade card; a beat play does not advance the level's arcade card rotation (the
+  next play serves the card it would have served anyway); Free Play never serves the beat. (spec §5.2, §5.6;
+  playtest.md §The Second Run.)
+- **INV-157** (L2) **Wrong-key contract on the beat.** A wrong key leaves the prompt and the active letter
+  unchanged; the right key then advances exactly one letter. (CLAUDE.md §Wrong Keypress; spec §5.3.)
+- **INV-158** (L2) **Guaranteed under every lever.** At MIN WORD LENGTH 12 / MAX 4 and separately at WIZARD 3.5x,
+  the beat appears exactly once and the level is won. (product.md §Word Length "guaranteed content is never
+  filtered"; §EXPERIENCE.)
+- **INV-159** (L2) **Survival never clocks the beat.** While the beat is the current prompt there is no timer bar
+  and an idle past any pattern duration loses no quarter and does not replace the prompt; the clock is back on the
+  next pattern; the level is won. (spec §5.7; One Rule.)
+- **INV-160** (L2) **The caption: two literacy lines, non-modal.** After the word, the caption holds exactly the
+  record's two `literacy` lines (line 2 arrives after line 1), the `;` guide key gains a glow class, the next
+  pattern accepts a correct key at once, the caption survives until >= 10 s AND >= 3 further patterns and then
+  retires with the glow, and it is gone on pause/Escape and by LEVEL COMPLETE. Placement in the gap band and the
+  glow tint are PERSONA-PLAY ONLY (testing.md rule 4) — never asserted. (spec §5.3.)
+- **INV-161** (L2) **No code meaning at Level 13.** Throughout an L13 beat play and its LEVEL COMPLETE card —
+  including on a save that already cleared Level 20 — the page text contains neither `record.code`, nor
+  `record.codeFact`, nor any of CODER / PROGRAMM / INSTRUCTION; the card body equals `record.literacyFact`; the
+  count line reads `KEYBOARD CARD n OF m` and the word reads SEMICOLON. (Trevor 2026-10-31: "the programming
+  meaning is NOT revealed at Level 13"; spec §5.2.)
+- **INV-162** (L2) **The word is withheld before Level 13.** On a slot with furthestLevel <= 12 and no keyboard
+  card, the picker, the gallery and Levels 4 and 12 played to completion never show the word; at furthest 13 an
+  unowned KEYBOARD tile shows the glyph and `???`, an owned one shows SEMICOLON. (INV-29 amended; INV-140.)
+- **INV-163** (L0/L1) **Research gate.** Every keyboard record's `source` exists under `research/`; no `⟦`
+  placeholder; no record text matches 1494 or "invent" (the print is "first printed", February 1496); no
+  code sentence says every / all / line (semicolon.md §Corrections); the literacy text never calls the mark a
+  sentence-ender and never mentions code. (CLAUDE.md "Research anything historical"; semicolon.md §2, §4, §5.)
+- **INV-164** (L2) **One beat per play, never adjacent to another guaranteed injection.** The beat pattern appears
+  exactly once, and a Name Moment word (e.g. `chloe` at Level 13) is never the pattern immediately before or after
+  it. (spec §5.2.)
+- **INV-165** (L1) **Copy fits.** Every caption line is <= 34 characters, uppercase, and inside the Press Start 2P
+  charset; there are exactly two. The couplet's one-line render at 1280x800 is PERSONA-PLAY ONLY (no geometry).
+  (spec §5.1; theme-authoring.md glyph coverage.)
+- **INV-166** (L2) **The Level 20 eighth-key confession has two true variants.** On a save's FIRST Level 20 clear:
+  variant A (keyboard card collected) reads `YOU MET ITS NAME AT LEVEL 13.` / `record.code`; variant B (not
+  collected, e.g. a WOPR jump) reads `THE EIGHTH KEY HAS A NAME.` / `record.code`; exactly two lines, ending in
+  the `;` glyph, never the word, never EVERY; no confession on a save that already cleared Level 20. (spec §5.8;
+  easter-eggs.md §The eighth-key confession.)
+- **INV-167** is spec-numbered for the Survival guaranteed-word defect; it landed in this catalog as **INV-170**
+  (TF-V1), which already holds it.
 
 ### ⚠️ Reserving INV numbers while a spec is unbuilt
 

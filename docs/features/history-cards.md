@@ -1,10 +1,10 @@
 ---
 feature: history-cards
-code: [js/history-cards.js]
-rules: [research/computing-history-moments.md, research/hacker-culture.md, research/educational-software.md, docs/specs/act-exclusive-cards.md, docs/specs/hardware-wing.md]
+code: [js/history-cards.js, js/key-cards.js]
+rules: [research/computing-history-moments.md, research/hacker-culture.md, research/educational-software.md, docs/specs/act-exclusive-cards.md, docs/specs/hardware-wing.md, docs/specs/semicolon-teaching-beat.md, research/wiki/tech/semicolon.md, .claude/rules/product.md]
 screenshots: docs/screenshots/history-cards/
 capture: node docs/screenshots/capture-cards.js
-verified: 2026-10-29 (arcade bank 76; shelved gallery; fidelity pass)
+verified: 2026-10-31 (fourth bank KEY_CARDS: js/key-cards.js, keyCardForLevel, bankOf/bankProgress('keyboard'), KEYBOARD shelf, FOUND ON THE KEYBOARD header; earlier 2026-10-29: arcade bank 76; shelved gallery)
 ---
 
 # History Cards
@@ -14,16 +14,17 @@ normal play and never missable. `js/history-cards.js` is pure data + helpers (no
 no state) — the injection, detection, and gating logic live in `js/main.js`; the
 collection **persistence** lives in `js/slots.js` (see [[save-slots]]).
 
-## THREE banks, as of 2026-09-14/15 — not one
+## FOUR banks (three as of 2026-09-14/15; the fourth landed 2026-10-31) — not one
 
-`js/history-cards.js` now exports **three separate card arrays**, each with its own
-denominator, never merged:
+`js/history-cards.js` exports **three separate card arrays** and re-exports a fourth from
+`js/key-cards.js`, each with its own denominator, never merged:
 
 | Bank | Export | Attaches to | Current size | Where it's shown |
 |---|---|---|---|---|
 | Arcade (the original) | `HISTORY_CARDS` | a curriculum level (1-25) | **76** (`TOTAL_CARDS`) | Level-complete overlay, [[free-play]] |
 | The wing | `WING_CARDS` | a bonus-wing station (`wing`+`station`) | **4** | [[hardware-wing]]'s own canvas-drawn card reveal |
 | The act | `ACT_CARDS` | a whole act (1-5), gated at Level 15 | **4** (Act 1 only) | [[free-play]]'s complete panel only |
+| The keyboard | `KEY_CARDS` (own module `js/key-cards.js`) | a symbol key's NAME, at `max(L_key, L_name)` | **1** (`key-semicolon`, Level 13) | Level-complete overlay on the beat play; the KEYBOARD gallery shelf |
 
 **Why three arrays and not one filtered list (`docs/specs/hardware-wing.md` §5.4.1,
 `docs/specs/act-exclusive-cards.md`):** `TOTAL_CARDS` is the denominator a player reads
@@ -33,9 +34,9 @@ moment a new bonus layer shipped — a number the child already earned getting w
 because the game grew a room they haven't opened yet. Keeping the banks separate means
 each keeps its own total and no existing save's "CARD n OF N" line ever regresses.
 
-`bankOf(id)` reports which bank an id belongs to (`'arcade' | 'wing' | 'act' | null`),
-and `bankProgress(bank, collectedIds)` returns `{found, total}` **scoped to that one
-bank** — both exist because of a real bug (below). `cardById(id)` searches all three
+`bankOf(id)` reports which bank an id belongs to (`'arcade' | 'wing' | 'act' | 'keyboard' | null`),
+and `bankProgress(bank, collectedIds)` (`'keyboard'` counts `KEY_CARDS` only; unknown names fall back to arcade) returns `{found, total}` **scoped to that one
+bank** — both exist because of a real bug (below). `cardById(id)` searches all four
 banks (arcade first) so a single lookup always works regardless of which bank an id
 came from.
 
@@ -175,7 +176,7 @@ no sound, never pauses input. Flow is never interrupted per the One Rule.
 
 `showLevelComplete()` populates the `#history-card` panel via `textContent`: word
 (uppercased), title, year, fact, and `"CARD {found} OF {total}"` **scoped to the
-revealed card's own bank** (`bankProgress(bankOf(card.id) || 'arcade', …)` — see "THREE
+revealed card's own bank** (`bankProgress(bankOf(card.id) || 'arcade', …)` — see "FOUR
 banks" above), plus a "NEW!" tag when `Slots.collectCardId(card.id)` reports the card
 wasn't previously owned **in the active save slot**.
 
@@ -347,6 +348,47 @@ existing progress — no new save field).
   (see "Level-complete pickup" above). The rotation key is namespaced `act:<n>` so it
   can't collide with a level-number key or a wing's `hw:<station>` key in the same
   string-keyed rotation map.
+
+## Bank 4 — the keyboard (`KEY_CARDS`, `js/key-cards.js`) — what a key is CALLED (2026-10-31)
+
+Spec: `docs/specs/semicolon-teaching-beat.md`; facts only from `research/wiki/tech/semicolon.md`;
+design in `.claude/rules/product.md` "The Key Names". A keyboard card teaches a symbol key's
+**name and its job in writing**; its **code meaning is withheld until the Level 20 terminal**.
+
+**The rule it carries (INV-29, amended):** the word for the eighth key is withheld until
+Level 13. `js/key-cards.js` is the ONLY module allowed to hold that word as a string; every other
+file in `js/**` and `index.html` stays anonymous. The `;` **glyph** is never restricted (it is
+printed on the keycap and shown from Level 4 — INV-140). The code meaning ("many coders end an
+instruction with it") appears only in the Level 20 couplet, never at Level 13 (INV-161).
+
+Record fields (`KEY_CARDS[0]`, `key-semicolon`): `topic:'keyboard'` (reserved, unread), `glyph:';'`,
+`keys:[';']`, `word`, `level:13` (= `max(L_key, L_name)`: `;` is L4, the name's last new letter `c`
+is L13), `title:'THE SEMICOLON'`, `year:'1496'` (first *printed*, Venice — never 1494, never
+"invented"), `literacy` (the two caption lines, <=34 chars), `literacyFact` (card body, also
+aliased as `fact`), `codeLevel:20`, `code` (couplet line 2), `codeFact` (reserved for a future
+card-detail view; never shown). Pure helpers: `keyLevelOf`, `nameLevelOf`, `terminalLevel`,
+`deriveCardLevel`, `deriveCodeLevel` (derive attachment from `js/levels.js`, pinned by INV-153),
+`keyCardForLevel(level, collectedIds)` (first uncollected record for that level — the **collected
+id is the latch**, so no new storage), `keyCardById`, `isKeyCardId`, `firstKeyCardLevel`.
+`js/history-cards.js` re-exports `KEY_CARDS` and `keyCardForLevel`.
+
+How the engine uses it (`js/main.js`; detail in [[engine-flow]] "The key-name beat"): on the first
+play of Level 13 for a save without `key-semicolon`, `startGame()` arms the beat INSTEAD of
+`pickGuaranteedCard` and without bumping the level's card rotation, splicing the word at intro
+index 4 (`keyBeatSpliceIndex`). Typing it credits the card immediately (`Slots.collectCardId`),
+fires a caption + guide glow + prompt flourish, and the LEVEL COMPLETE card is revealed with the
+header **FOUND ON THE KEYBOARD** (every other card keeps FOUND ON THE ARCADE FLOOR), the
+literacy fact only, and the count line **`KEYBOARD CARD 1 OF 1`**. Free Play never arms it;
+replays after collection serve the arcade card as usual; erasing a game brings the beat back.
+
+Gallery: a **THE KEYBOARD** shelf (`id:'keyboard'`, count text `KEYBOARD CARD n OF m`) sits second,
+after THE CABINETS, shown once the browsed game's `furthestLevel >= 13` or it holds the card (WOPR
+bypass opens it). A locked tile shows the key's glyph above `???` (`.collection-cell-glyph`,
+`.key-glyph-tile`) — never the name; an owned tile shows `SEMICOLON` + `THE SEMICOLON`. The slot
+picker's ★ and `TOTAL_CARDS` stay on the arcade bank. Reference frames:
+`docs/screenshots/history-cards/keyboard-semicolon.png` (the reveal) and
+`docs/screenshots/screens/collection-gallery-shelves.png` (THE KEYBOARD shelf with its glyph tile).
+The two captures marked ad-hoc below have no script slot yet (see docs/screenshots/README.md).
 
 ## Easter egg — the secret WarGames card
 

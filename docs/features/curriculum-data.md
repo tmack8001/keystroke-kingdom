@@ -4,7 +4,7 @@ code: [js/levels.js]
 rules: [.claude/rules/levels.md, .claude/rules/levels/act5.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-10-30 (eighth key glyph; earlier 2026-10-29: blocklisted `dead`/`drug`/`gun47` removed; digit-bearing card tokens L16-23)
+verified: 2026-10-31 (eighth-key word now taught at Level 13; no data change; earlier 2026-10-30: eighth key glyph)
 ---
 
 # Curriculum Data
@@ -16,7 +16,7 @@ state — exporting exactly three constants consumed throughout the engine.
 
 Character → uppercase English finger description (e.g. `'f': 'LEFT INDEX FINGER'`,
 `' ': 'THUMB — THE BIG KEY'`, `'Backspace': 'RIGHT PINKY — TOP CORNER'`). `FINGER_MAP[';']
-= 'RIGHT PINKY FINGER'` — the word "semicolon" never appears in this file (the *glyph* `;` is shown as itself downstream — only the WORD is withheld). Consumed by
+= 'RIGHT PINKY FINGER'` — the word for the eighth key never appears in this file (the *glyph* `;` is shown as itself downstream — only the WORD is withheld). Consumed by
 `showFingerHint()` in [[hud-keyboard-guide]].
 
 ## `KEY_REACH`
@@ -98,8 +98,8 @@ added entry.
 ### The eighth key
 Represented in data only as the literal character `';'` — the guide, prompt and
 preview show it as the `;` printed on the keycap (the old `?` display mask was removed
-2026-10-30 — [[hud-keyboard-guide]]/[[keyboard-preview]]); only the WORD "semicolon" is
-withheld (the ready screen says "THE EIGHTH KEY").
+2026-10-30 — [[hud-keyboard-guide]]/[[keyboard-preview]]); only the WORD is
+withheld until Level 13 teaches it (the ready screen says "THE EIGHTH KEY"; the name lives only in `js/key-cards.js`, see [[history-cards]] Bank 4).
 Introduced at Level 4 alongside `a` (hint: "THE FINAL TWO KEYS"); gets a purple-pulse
 `mystery` CSS treatment in the guide during Level 4 only.
 

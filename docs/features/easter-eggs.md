@@ -4,7 +4,7 @@ code: [js/themes/terminal.js]
 rules: [.claude/rules/easter-eggs.md]
 screenshots: docs/screenshots/easter-eggs/
 capture: node docs/screenshots/capture-eggs.js
-verified: 2026-10-30 (terminal victory re-staged, 5200 ms; earlier 2026-10-29: moved the binary/HELLO lines)
+verified: 2026-10-31 (eighth-key confession corrected: no more "EVERY LINE"; variants A/B; earlier 2026-10-30: terminal victory)
 ---
 
 # Easter Eggs (The Hidden Layer)
@@ -176,10 +176,22 @@ Two halves, in two files:
 ## The eighth-key confession (Level 20 complete, `js/main.js` — built 2026-09-11)
 
 The one hidden line that is a REVEAL rather than a summons — nothing is typed to get
-it. `EIGHTH_KEY_CONFESSION` is a two-line couplet stating that the eighth key has a name
-and that programmers end every line with it, **ending with the character without ever
-naming it** — so the in-game anonymity rule (CLAUDE.md; static check INV-29) stays
-green while the player is let in on the joke.
+it. Since 2026-10-31 it is the **code reveal** of the key-name teaching beat: a two-line
+couplet whose line 2 says `MANY CODERS END AN INSTRUCTION WITH IT;`, **ending with the
+character without ever naming it** — so `js/main.js` stays off the INV-29 allowlist. *(Corrected
+2026-10-31: the original line 2 said programmers "END EVERY LINE" with it. That is false —
+Python needs one only to join statements, JavaScript and Go insert it for you, and C blocks and
+`if (...)` carry none — see `research/wiki/tech/semicolon.md` §4. The rule is "many", not
+"every", and "instruction", not "line".)* The word rule in one breath: the name is withheld
+until **Level 13**, where the key-name beat teaches it ([[history-cards]] Bank 4, [[engine-flow]]);
+the `;` glyph is always shown; and the code meaning waits for this Level 20 terminal moment.
+
+**Two variants** (`EIGHTH_KEY_CONFESSION_MET` / `_ANON` in `js/main.js`), chosen when the
+confession renders by whether `key-semicolon` is in `Slots.collectedIds()`:
+- **A** (met the name at Level 13): `YOU MET ITS NAME AT LEVEL 13.` / `MANY CODERS END AN INSTRUCTION WITH IT;`
+- **B** (anonymous — a WOPR jump to L20, or L13 cleared before the beat shipped): `THE EIGHTH KEY HAS A NAME.` / the same line 2.
+Line 2 is read from the keyboard-card record's `code` field (`js/key-cards.js`), so the sentence
+has one source. A tampered save holding the id only flips A on — harmless.
 
 - **Trigger**: `showLevelComplete()` computes
   `eighthKeyReveal = !state.freePlay && state.level === 20 && !getProgress().completed['20']`
@@ -194,9 +206,9 @@ green while the player is let in on the joke.
 - **It never gates anything** — the complete overlay is already a natural pause point;
   this is decoration on it. Invariant: **INV-73**.
 
-**No reference frame**: `docs/screenshots/screens/level-complete-overlay.png` is
-captured at Level 1 (the fastest level, no history card), and no capture script drives a
-first-ever Level 20 completion. Flagged rather than left silently unvalidated.
+**Reference frames (ad-hoc, 2026-10-31):** `docs/screenshots/screens/level-complete-eighth-key-anon.png` (variant B, WOPR
+route) and `level-complete-eighth-key-met.png` (variant A, card seeded) — each line renders on ONE line at 1280x800. No capture
+script drives them yet, so a full `capture-screens.js` run will not regenerate them (tooling debt, reported).
 
 ## The dial-up handshake (built 2026-09-11)
 

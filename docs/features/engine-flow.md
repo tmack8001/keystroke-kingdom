@@ -4,7 +4,7 @@ code: [js/main.js, js/finale-quote.js, js/keyboard-story.js, js/keyboard-story-g
 rules: [.claude/rules/tech.md, .claude/rules/security.md, .claude/rules/easter-eggs.md, research/wiki/culture/hacker-manifesto.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js && node docs/screenshots/capture-eggs.js
-verified: 2026-10-30 (held-key/levelEnding/pattern-gap guards; Survival 10 s floor + 1-quarter spare; name entry now has two labelled jobs + R RENAME; Escape on READY reaches the arcade; settings harder-confirm; cinematic firstClear; complete-card Space cues). Earlier 2026-10-29: showCompleteOverlay + card sound; shelved gallery wiring
+verified: 2026-10-31 (key-name beat: arming/splice/credit/caption/reveal; Survival guaranteed-word re-queue + beat clock exemption; L20 couplet A/B; earlier 2026-10-30: guards, Survival floor, name entry)
 ---
 
 **Graph gap note:** three surfaces documented here have no reference frame, flagged
@@ -12,7 +12,8 @@ rather than silently left unvalidated. (1) The Name Moment's golden flourish —
 transient CSS animation over the existing game screen, not a distinct screen state.
 (2) The eighth-key confession on the level-complete card — `capture-screens.js` shoots
 `level-complete-overlay.png` at Level 1, and no script drives a first-ever Level 20
-completion. (3) The duck hint line — needs a wrong keypress at Level 22+. All three
+completion; the two variants were captured ad-hoc 2026-10-31 as
+`screens/level-complete-eighth-key-anon.png` (B) and `-met.png` (A), but are not script-regenerable. (3) The duck hint line — needs a wrong keypress at Level 22+. All three
 could join `docs/screenshots/screens/` if `capture-screens.js` grows the capture paths.
 Adaptive pacing needs none: it is observable as `data-pace`, never visual.
 
@@ -246,6 +247,19 @@ FIRST 15-streak of a run earns one **spare** quarter, once per run (`sv.spareAwa
 reset in `startGame()`); the purse (`renderPurse()`) draws `max(total, remaining)` dots so
 the spare shows. Zero quarters →
 `showGameOver()`. See [[settings-survival]].
+
+**Guaranteed words survive a timeout (TF-V1 / INV-170, 2026-10-31).** `handleSurvivalTimeout`
+used to overwrite the on-screen pattern with a fresh draw. A history-card word, the Name Moment
+word and Level 24's name exist only as one-off splices (never in a drawable pool), so losing one
+left `cardPending` / `namePending` / `l24NamePending` true forever and the level could never be
+won. Now it reads the displaced pattern first (`getNextPattern()`), and `requeueGuaranteedPattern(lost)`
+re-splices it at `currentPattern + 1` (right after the fresh replacement) when
+`isUnmetGuaranteedPattern(lost)` — covering the card (curriculum, Free Play act card and the key-name
+beat, all via `state.currentCard`), the Name Moment and the L24 name. It does nothing if the fresh
+pattern already equals the word. **The clock and the quarter are unchanged** (Trevor: guaranteed words
+are NOT clock-exempt). The one exemption is the key-name beat: `startSurvivalPatternTimer` starts no
+clock, clears the deadline and hides `#survival-timer-track` while `isArmedKeyBeatPattern(pattern)`;
+the clock resumes on the next pattern.
 
 ## Returning-player persistence — now per save slot (`js/slots.js`)
 
@@ -632,6 +646,46 @@ at load and brick all 25 levels; loaded on demand it costs exactly one warm card
   active; when it is not, **any** key walks out on the unbuilt card and Escape walks
   out while still loading — never a dead end (the One Rule; INV-86).
 
+## The key-name beat (Level 13 — built 2026-10-31)
+
+Spec `docs/specs/semicolon-teaching-beat.md`; design in `.claude/rules/product.md` "The Key Names";
+data in `js/key-cards.js` ([[history-cards]] Bank 4). The first time a save plays Level 13 the
+engine serves the key's name as one guaranteed pattern and teaches it without pausing play.
+**Writing role only — no code meaning at Level 13 (INV-161); that waits for the Level 20 couplet.**
+
+- **Arming** (`startGame()`, curriculum plays only, never Free Play): `keyCardForLevel(state.level,
+  Slots.collectedIds())` returns the first uncollected record; the id being collected IS the latch.
+  It sets `state.keyBeat = state.currentCard = record` and takes this play's one card slot **instead
+  of** `pickGuaranteedCard`, and does **not** bump the level's card rotation, so the next play serves the
+  arcade card it would have. `state.keyBeatNew`, `state.keyBeatAt`, `state.keyBeatCaption*` hold the rest.
+- **Splice** at `keyBeatSpliceIndex(level)` = one past the first intro drill introducing the LAST of the
+  level's new keys, clamped to `[1, intro.length]` (Level 13: `c` at 0, `,` at 3, so **index 4**), done
+  with `keyBeatSpliced` so the generic card splice is skipped. It is guaranteed content, never drawn from
+  the length-filtered pool, so MIN/MAX WORD LENGTH and EXPERIENCE cannot remove it. Never adjacent
+  to the Name Moment (moved to `keyBeatAt + 2` if within 1, INV-164) or Level 24's name. The existing
+  `cardPending` gate holds the level open until it is typed; the wrong-key contract is untouched.
+- **Credit now** (in `handleGameKey`, when the beat word completes): `state.keyBeatNew =
+  Slots.collectCardId(id)` immediately, so Escape right afterwards keeps the card (the hardware wing's
+  `wakeUp()` lesson), then `fireKeyBeat(record)`.
+- **`fireKeyBeat`**: `showKeyNameCaption(record.literacy)` (exactly two lines, e.g. `ITS NAME IS ...` /
+  `IT CAN JOIN TWO SENTENCES.`), `glowGuideKey(record.glyph, true)` and a staggered `.key-name-flourish`
+  on the prompt letters (about 1.6 s). Caption lifetime: it retires (`maybeRetireKeyBeatCaption`) only
+  when BOTH 10 s (`KEY_BEAT_CAPTION_MIN_MS`) have passed AND 3 more patterns are done
+  (`KEY_BEAT_CAPTION_MIN_PATTERNS`); a timer re-checks when the 10 s lands. `clearKeyBeatCaption()` tears
+  it down at once on level end (`showLevelComplete`), game over, pause (Escape) and any screen change:
+  `main.js` wraps the imported `showScreen` (`showScreenRaw`) and `screens.js` `showScreen` also hides it
+  on any non-`game` screen. No focus, no key listener, no delay; no audio dependency.
+- **Reveal**: `showLevelComplete` shows the card with header `FOUND ON THE KEYBOARD`, body =
+  `record.literacyFact` (never `codeFact`), count `KEYBOARD CARD n OF m`, NEW tag from
+  `Slots.collectCardId(...) || state.keyBeatNew` (the early credit means a second collect alone would say "not new").
+- **Survival**: the beat pattern is clock-exempt (see Survival wrapper above).
+- **Level 20**: the first-clear couplet's variants A/B ([[easter-eggs]]).
+- Tests: `tests/integration/key-name-beat.test.mjs`, `key-name-beat-contexts.test.mjs`,
+  `survival-guaranteed-word.test.mjs`, `tests/unit/key-cards.test.mjs` (read-only for the librarian).
+- Screenshots: `docs/screenshots/screens/key-name-beat.png` (caption + glowing key),
+  `docs/screenshots/history-cards/keyboard-semicolon.png` (the reveal) and
+  `docs/screenshots/screens/collection-gallery-shelves.png` (KEYBOARD shelf). The first two are ad-hoc captures (no `capture-screens.js` slot yet).
+
 ## Easter eggs & WOPR bypass
 
 `EGGS`, `SECRET_PHRASES`, and the Konami handler all live in this file — full catalog
@@ -640,14 +694,18 @@ all deliberately small and all obeying "never interrupt flow":
 
 - **Two more magic words** in `EGGS` — `sudo` and `allyourbase`. Plain table entries;
   no new mechanism, listener, or matching logic.
-- **`EIGHTH_KEY_CONFESSION`** — a two-line couplet rendered onto the level-complete
-  card by `renderEighthKeyConfession(show)`, the FIRST time a saved game finishes Level
+- **`EIGHTH_KEY_CONFESSION_MET` / `_ANON`** *(variants since 2026-10-31; was one literal ending
+  "PROGRAMMERS END EVERY LINE WITH IT;", which was false)* — a two-line couplet rendered onto the
+  level-complete card by `renderEighthKeyConfession(show)`, the FIRST time a saved game finishes Level
   20. The one-time latch is *derived*, not stored:
   `!state.freePlay && state.level === 20 && !getProgress().completed['20']`, evaluated
   in `showLevelComplete()` **before** `recordLevelComplete` writes that flag — so no new
-  persisted field exists and the latch is naturally per saved game. The couplet ends
-  with the eighth key's character without ever naming it, so the anonymity rule below
-  stays intact. `textContent` + inline styles, `white-space:pre-line`, full-opacity
+  persisted field exists and the latch is naturally per saved game. Line 1 is variant A
+  `YOU MET ITS NAME AT LEVEL 13.` when `Slots.collectedIds()` holds the keyboard card (looked up by
+  glyph via `EIGHTH_KEY_CARD = KEY_CARDS.find(c => c.glyph === ';')`), else B
+  `THE EIGHTH KEY HAS A NAME.`; line 2 is that record's `code` field,
+  `MANY CODERS END AN INSTRUCTION WITH IT;`. The couplet ends with the eighth key's character
+  without ever naming it, so `main.js` stays off the INV-29 allowlist. See [[easter-eggs]]. `textContent` + inline styles, `white-space:pre-line`, full-opacity
   muted green rather than element opacity (journal L2/F3). **INV-73**.
 - **`DUCK_HINT` / `maybeShowDuckHint()`** — from Level 22 on, the first finger hint
   earned after a wrong keypress carries `STUCK? TELL THE DUCK.` appended beneath it,
@@ -658,7 +716,7 @@ all deliberately small and all obeying "never interrupt flow":
 
 Tests for all three: `tests/integration/hidden-layer.test.mjs`.
 
-The eighth key is never rendered as "semicolon" anywhere in this file (the *glyph* `;` is shown as itself on the guide/prompt since 2026-10-30; `;` → "THE
+The eighth key's name is never written in this file (it lives only in `js/key-cards.js`, INV-29; taught at Level 13 by the key-name beat below, code meaning at Level 20) (the *glyph* `;` is shown as itself on the guide/prompt since 2026-10-30; `;` → "THE
 EIGHTH KEY" wherever a label is built). `[data-enter-key]` elements are swapped to
 "RETURN" on Mac / "ENTER" elsewhere via `navigator.platform` detection at module load —
 the event handler itself stays `e.key === 'Enter'` on every platform.
@@ -678,7 +736,7 @@ keypress skipping the celebration — go through `showCompleteOverlay()`, which 
 `#complete-overlay` and, if `state.completeCardShown` (set in `showLevelComplete` from whether
 `.history-card` is visible), plays `Audio.historyCard()` so the sound never precedes or gates the
 reveal. Level-complete's `CARD n OF N` uses `bankProgress(bankOf(card.id) || 'arcade', …)` (act
-cards included). `showCollectionScreen(slot)` builds shelves via `collectionShelves` and calls
+cards included; a keyboard card reads `KEYBOARD CARD n OF m` under the header `FOUND ON THE KEYBOARD`, set on every reveal so it never leaks onto the next card). `showCollectionScreen(slot)` builds shelves via `collectionShelves` and calls
 `revealCollection()`; on the `collection` screen non-exit keys go to `scrollCollection`.
 `index.html` replaced `#collection-count`/`#collection-grid` with `#collection-shelves` + scroll
 markers, and the settings BLOCKED WORDS blurb now reads "BLOCKS EVERY WORD THE GAME MAKES UP — AND

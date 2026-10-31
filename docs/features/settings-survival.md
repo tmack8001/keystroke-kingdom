@@ -4,7 +4,7 @@ code: [js/settings.js]
 rules: [.claude/rules/product.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-10-30 (harder-value Y/N confirm + previewRowChange; truthful word-length descriptors; Survival 10 s floor + 1-quarter spare; rows/ranges re-checked against code)
+verified: 2026-10-31 (pointer to Survival re-queue + beat clock exemption; earlier 2026-10-30: confirm/floor)
 ---
 
 # Settings & Survival Mode
@@ -144,7 +144,7 @@ Higher multiplier = more time per pattern (applied in `main.js`'s
 **10 s floor** per prompt (`SURVIVAL_MIN_PATTERN_MS`; a one-letter prompt was ~5.4 s at EXPERT,
 harsher than a long one — the clock is otherwise not retuned) and, at **1 quarter**, a
 **one-time spare** quarter on the run's first 15-streak (otherwise the mercy was unreachable
-exactly where it matters). Both are documented at [[engine-flow]] §Survival wrapper.
+exactly where it matters). Both are documented at [[engine-flow]] §Survival wrapper. *(2026-10-31)* Two more Survival rules live there too: a timeout no longer destroys an unmet guaranteed word (it is re-queued, clock and quarter unchanged), and the Level 13 key-name beat pattern is clock-exempt.
 
 ## Settings rows (`getRows()`)
 

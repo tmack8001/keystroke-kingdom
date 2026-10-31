@@ -139,6 +139,9 @@ Numbering note: INV-107..127 are held by unbuilt-spec reserved blocks, so this w
 | `tests/integration/held-key-and-pattern-gap.test.mjs` | L2 | INV-135, 136 (+ INV-1/3/4 unchanged) |
 | `tests/integration/survival-floors.test.mjs` | L2 | INV-137 (10 s floor, 1-quarter spare once per run) |
 | `tests/integration/eighth-key-glyph.test.mjs` | L2 | INV-140 (prompt, guide, KNOW YOUR KEYS, finger diagram) |
+| `tests/unit/key-cards.test.mjs` | L1 | INV-153, 154, 163, 165, 161 (data half) - keyboard card attachment, fourth bank, research gate, copy fit |
+| `tests/integration/key-name-beat.test.mjs` | L2 | INV-155, 156, 157, 160, 161, 164 - the Level 13 beat start to finish (helpers/key-beat.mjs) |
+| `tests/integration/key-name-beat-contexts.test.mjs` | L2 | INV-156 (Free Play), 158 (levers), 159 (Survival), 162 (withheld; gallery), 166 (L20 couplet) |
 | `tests/integration/history-card-layout.test.mjs` | L2 | INV-141 (all 3 banks; real-win cue visibility) |
 | `tests/integration/textworld-2026-10-30.test.mjs` | L2 | INV-142, 143, 144 |
 | `tests/integration/cinematic-skip.test.mjs` | L2 | INV-145 (first view unskippable / replay Space+Escape / title card Space only / Full Circle typed char / held key / default unskippable) — ~5 min, test-only page clock |

@@ -4,7 +4,7 @@ code: [js/ui/screens.js]
 rules: [.claude/rules/levels.md, .claude/rules/transitions.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-10-30 (picker `★ found / total`, R RENAME, erase names the game, context-aware hint, name-field label; earlier 2026-10-29: shelved collection gallery)
+verified: 2026-10-31 (KEYBOARD shelf + glyph tiles; showScreen hides the key-name caption on any non-game screen; earlier 2026-10-30: picker)
 ---
 
 # Onboarding, the Slot Picker & Collection Gallery
@@ -59,11 +59,11 @@ one hides the other, so the child is never shown two conflicting instructions at
 
 `renderCollectionScreen(state, shelves, collectedSet)` — `shelves` is the output of
 `collectionShelves({furthestLevel, collectedIds, bypass})` (one shelf per card bank: THE CABINETS
-= the 76-card arcade bank incl. the secret, THE HARDWARE from Level 20, ACT n shelves from
+= the 76-card arcade bank incl. the secret, THE KEYBOARD from Level 13 (the fourth bank, `KEYBOARD CARD n OF m`; a locked tile shows the key glyph above `???`, never the name; `.collection-cell-glyph`), THE HARDWARE from Level 20, ACT n shelves from
 Level 15; see [[history-cards]] "Collection gallery"), `collectedSet` a `Set` of collected ids for
 whichever game the picker's `C` key was pressed on (`furthestLevel` comes from that slot, not the
 active game). Rebuilds `#collection-shelves`: each shelf gets a head (`.collection-shelf-name` +
-`.collection-shelf-count` `glyph found / total`, scoped to its own bank) and a grid of cells —
+`.collection-shelf-count` `glyph found / total` (or the shelf's own `countText`), scoped to its own bank) and a grid of cells —
 owned cards show their word (uppercase) + title, `.owned` styled (green if `card.secret`); unfound
 show `???`, `.locked`. There is deliberately **no single headline total** (the old
 `#collection-count` was removed). The shelves scroll as one column: ↑/↓/PgUp/PgDn/Home/End via

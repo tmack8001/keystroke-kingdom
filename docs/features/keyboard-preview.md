@@ -4,7 +4,7 @@ code: [js/ui/keyboard-preview.js]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/screens/
 capture: node docs/screenshots/capture-screens.js
-verified: 2026-10-30 (eighth key shows its real ';' glyph; small-mark boost via hud.js isSmallMark)
+verified: 2026-10-31 (eighth-key word-withholding note updated; no code change; earlier 2026-10-30: ; glyph)
 ---
 
 # Keyboard Preview ("KNOW YOUR KEYS")
@@ -30,7 +30,7 @@ independently duplicated (journal F5) — now structurally impossible to drift.
 
 ## Labels — `previewLabel(key)`
 
-`';'` is no longer masked — it shows the mark printed on its keycap (the WORD "semicolon" stays withheld until the Level 20 confession; 2026-10-30), `Backspace → ⌫`, `Shift → SHIFT`, `' ' → SPACE`,
+`';'` is no longer masked — it shows the mark printed on its keycap (the WORD "semicolon" stays withheld until the Level 13 key-name beat teaches it; 2026-10-30), `Backspace → ⌫`, `Shift → SHIFT`, `' ' → SPACE`,
 `Tab`/`Caps` spelled out literally, lowercase letters uppercased. `Enter` resolves
 to a module-level `ENTER_LABEL` constant — `/Mac/.test(navigator.platform ||
 navigator.userAgent) ? 'RETURN' : 'ENTER'` — computed once at load (platform never

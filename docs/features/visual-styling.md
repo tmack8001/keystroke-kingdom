@@ -4,7 +4,7 @@ code: [css/base.css, css/screens.css, css/levels.css]
 rules: [.claude/rules/visual-validation.md]
 screenshots: docs/screenshots/levels/
 capture: node docs/screenshots/capture-all.js
-verified: 2026-10-30 (complete-card opacity/cue blink, slot picker column, settings confirms; earlier 2026-10-29: collection shelves + scroll markers)
+verified: 2026-10-31 (key-name beat styles; earlier 2026-10-30: complete-card opacity/cue blink)
 ---
 
 # Visual Styling
@@ -87,6 +87,16 @@ prints only its own bank's `n / total`), and `.collection-more` / `.collection-m
 bottom/top fade + `▼ MORE BELOW` / `▲ MORE ABOVE` markers — the real scroll affordance, since a macOS
 overlay scrollbar is invisible). `docs/screenshots/screens/collection-gallery.png` regenerated
 2026-10-29.
+
+## The key-name beat styles (added 2026-10-31)
+
+`css/screens.css` gained one tint, `--key-name-tint: #d8c4ff` (pale lilac; deliberately not
+`--nudge-red`, not the Name Moment's gold, not welcome-green, and not blue, which vanished against
+Level 13's slate-blue accent), used by: `.key-name-caption` / `-line` (scrim box anchored under the
+prompt panel, ~12:1 contrast, opacity used ONLY for the fade), `#keyboard-guide .key-box.key-name-glow`
+(outline ring + pulsing box-shadow, no scale), `.prompt-letter.key-name-flourish` (1.2 s lilac lift,
+staggered by `--key-name-delay`), and `.collection-cell-glyph` (the grey mark on a locked KEYBOARD tile).
+Behavior: [[hud-keyboard-guide]], [[engine-flow]], [[history-cards]] Bank 4.
 
 ## Back-wall door labels + `#speedway-screen` cards (added 2026-09-13)
 
