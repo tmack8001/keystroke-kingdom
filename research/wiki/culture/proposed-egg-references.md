@@ -26,8 +26,9 @@ None of these are implemented yet. Per the hub doc, they're a menu for future wo
   BELONG TO YOU."
 - **hello world** (see [[hello-world]] for the fully-built history-card version at
   Level 25) — a *second*, separate proposed use awaits the Level 25 free-type mode
-- **The eighth-key confession** — the semicolon's identity revealed only after Level
-  20, as a programmer's rite: `PROGRAMMERS END EVERY LINE WITH IT;`
+- **The eighth-key confession** — the semicolon's code meaning revealed at Level
+  20, as a programmer's rite: `MANY CODERS END AN INSTRUCTION WITH IT;` *(corrected 2026-10-31 from the
+  false original, `PROGRAMMERS END EVERY LINE WITH IT;` — see [[semicolon]])*
 - **Themed 404** (`LEVEL NOT FOUND. INSERT COIN TO CONTINUE.`) — internal design idea,
   no external citation applicable
 - **Hopper's moth** as a rare clickable on the select screen — see

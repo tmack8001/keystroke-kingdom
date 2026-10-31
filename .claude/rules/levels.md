@@ -83,7 +83,7 @@ Per-level detail lives in each act file (last column links to it).
 | 1 | The Arcade | J, F | Breakout | Atari | 1976 | [act1.md](levels/act1.md) |
 | 2 | The Arcade | D, K | Space Invaders | Taito | 1978 | [act1.md](levels/act1.md) |
 | 3 | The Arcade | S, L | Pac-Man | Namco | 1980 | [act1.md](levels/act1.md) |
-| 4 | The Arcade | A, the eighth key (`;` — glyph shown, word withheld) | Galaga | Namco | 1981 | [act1.md](levels/act1.md) |
+| 4 | The Arcade | A, the eighth key (`;` — glyph shown, word withheld until Level 13) | Galaga | Namco | 1981 | [act1.md](levels/act1.md) |
 | 5 | The Arcade | G, H | Joust | Williams | 1982 | [act1.md](levels/act1.md) |
 | 6 | Computer Wing | E, I | Donkey Kong | Nintendo | 1981 | [act2.md](levels/act2.md) |
 | 7 | Computer Wing | R, U | Dragon's Lair | Cinematronics | 1983 | [act2.md](levels/act2.md) |
@@ -123,7 +123,7 @@ Per-level detail lives in each act file (last column links to it).
 | Act 2, L10 | + Q P | Words | stop, drop, trip, spell, sport, quick |
 | Act 3, L11 | + V M | Words | move, arm, farm, warm, firm, storm, brave |
 | Act 3, L12 | + B N | Words | bone, burn, kind, mind, brain, train, town |
-| Act 3, L13 | + C , | Words + comma phrases | cool, care, face, nice, slice — "word, word" |
+| Act 3, L13 | + C , | Words + comma phrases | cool, care, face, nice, slice — "word, word"; semicolon (beat — the eighth key's name, first play only) |
 | Act 3, L14 | + X . | Words + full sentences | mix, fix, next, text, extra — "Skill is built." |
 | Act 3, L15 | + Z / | Words + sentences | zero, buzz, jazz, blaze, prize |
 | Act 4 | + 0–9 | Equations, dates | Type your age. Type 10 + 5. |

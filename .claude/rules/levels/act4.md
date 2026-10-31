@@ -72,6 +72,8 @@ is online is its own future wing (docs/ROADMAP.md §2).
 ```
 The whole game has been building here. Letters are numbers. Numbers are electricity. Typing is computation. The first program a kid ever types.
 
+**Level 20 — the code reveal** *(Trevor, 2026-10-31)*: the terminal is where the eighth key's PROGRAMMING meaning lands. The one-time eighth-key confession (first clear per save; easter-eggs.md) is a couplet whose second line is the code lesson, `MANY CODERS END AN INSTRUCTION WITH IT;` ("many", not "every"; "instruction", not "line" — `research/wiki/tech/semicolon.md` §4). Line 1 has two variants: **A**, for a save that met the name at Level 13, `YOU MET ITS NAME AT LEVEL 13.`; **B**, for a save that never did (a WOPR jump, or a save that cleared Level 13 before the beat existed), `THE EIGHTH KEY HAS A NAME.` Both end on the `;` glyph and neither says the word. No upgraded card state in this phase.
+
 **Word content:** Numbers don't expand the word bank, but unlock new prompt types — equations, addresses, dates, phone numbers. *"Type your age." "Type the year." "Type 10 + 5."* Simple, personal, grounding.
 
 ---

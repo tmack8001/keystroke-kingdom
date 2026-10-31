@@ -172,16 +172,32 @@ local-LLM clients feature-detect on (`js/wordgen.js` branches on `status === 404
 ### The eighth-key confession *(js/main.js — built 2026-09-11)*
 The first time a saved game finishes **Level 20** — the terminal, once the computer is truly
 earned — the level-complete card carries a two-line couplet revealing that the eighth key has
-a name, and ends with the character **without ever naming it**. One time per saved game; the
+a name, and ends with the character **without ever naming it** (the word is taught earlier, at
+Level 13 — product.md §The Key Names — but this couplet itself never says it). One time per saved game; the
 latch is derived from `!getProgress().completed['20']`, read before the level is recorded, so
 no storage field was added and a replay never re-fires it.
-*(The semicolon secret, withheld until the machine is earned. **What is withheld is the
+*(The semicolon secret: the NAME is taught at Level 13, the code meaning withheld until the machine is earned. **What is withheld is the
 WORD, never the glyph** (Trevor, 2026-10-30): the `;` glyph is on the prompt and the keyboard
 guide from Level 4 on, like any other key — the child has typed it hundreds of times by
 Level 20. The secret this couplet keeps is that the mark has a NAME; it ends on the glyph
 they already know and still does not say the word. INV-29 — the "never say semicolon"
-static check — checks the WORD in player-facing strings, never the `;` character, and stays
-green.)*
+static check — checks the WORD in an allowlisted set of surfaces, never the `;` character, and
+stays green.)*
+
+**The couplet was rewritten 2026-10-31 (Trevor; spec `docs/specs/semicolon-teaching-beat.md` §5.8).**
+The old second line, `PROGRAMMERS END EVERY LINE WITH IT;`, was **false** — only some lines of
+some languages end in `;` (Python needs one only to put two statements on a line; JavaScript and
+Go insert it for you; in C, `{`, `}` and `if (…)` carry none) — and the egg research had taken it
+from the design bible rather than a source (`research/wiki/tech/semicolon.md` §Corrections).
+It is now the **code reveal**, with line 2 `MANY CODERS END AN INSTRUCTION WITH IT;` (read from
+the keyboard-card record's `code` field, one source) and two line-1 variants:
+- **A**, the save collected the Level 13 keyboard card: `YOU MET ITS NAME AT LEVEL 13.`
+- **B**, it did not (WOPR jump, or a save that cleared Level 13 before the beat existed):
+  `THE EIGHTH KEY HAS A NAME.`
+
+Both end on the glyph and **neither contains the word** — the confession still never names the
+key, so `js/main.js` stays off the INV-29 allowlist. "EVERY LINE" is gone; do not restore it.
+Latch unchanged (first Level 20 clear per save).
 
 ## Proposed — the menu is EMPTY
 

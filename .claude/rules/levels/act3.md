@@ -56,6 +56,7 @@ pre-rendered sprites. Cross-act tables live in [`../levels.md`](../levels.md).*
 - **Music:** Lyria prompt: *"sparse ambient mystery — solo piano over island wind, slow mechanical tones, long silences that feel intentional. The sound of a puzzle thinking."*
 - **Words unlocked:** cool, curl, cord, core, care, dare, race, face, lace, pace, mice, dice, rice, nice, slice, twice, crisp, crack, clock, click, stuck, thick, trick, track, cream, dream
 - **Phrases introduced:** Comma prompts now possible — "word, word" — two words with a pause between. No fanfare. Just language becoming more complex.
+- **The teaching beat — the eighth key gets its NAME** *(Trevor, 2026-10-31; product.md §The Key Names)*: the first time a saved game plays Level 13, the word `semicolon` is served as one guaranteed pattern at intro index 4 (just after C and comma have each appeared). Typed like any word; the wrong-key contract is untouched. On the last letter, without pausing: a non-modal two-line caption (`ITS NAME IS SEMICOLON.` / `IT CAN JOIN TWO SENTENCES.`), the `;` key glows on the guide, and a keyboard card is credited at once, shown again at LEVEL COMPLETE. **Name and writing role ONLY — no code meaning here, on any surface** (that waits for the Level 20 terminal). Facts: `research/wiki/tech/semicolon.md` ("first printed", Venice, February 1496; never 1494). Clock-exempt in Survival; never in Free Play; one beat per play. Spec: `docs/specs/semicolon-teaching-beat.md`.
 - **Narrative beat:** The cursor blinks. You read the screen. The game waits.
 
 ---

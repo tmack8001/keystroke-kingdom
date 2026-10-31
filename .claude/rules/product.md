@@ -97,6 +97,48 @@ Lowercase only (capitals need Shift); the untouched default **Player One** gets 
 moment; the golden first time persists in `kk-progress` and never re-fires (a rename
 earns a fresh one). Level 24's ALL-CAPS ceremony is unchanged.
 
+### The Key Names — a symbol key learns its NAME *(Trevor, 2026-10-31; spec: `docs/specs/semicolon-teaching-beat.md`)*
+
+Children do not know what most symbol keys are called, and the game taught only the reach.
+Each symbol key has two lessons, kept apart on purpose: a **literacy** lesson (its name, and
+what it does in writing) and a **code** lesson. Trevor's ruling for the eighth key, which
+resolves the old "the `;` card needs a ruling" item: **the name and the writing role are taught
+at Level 13; the programming meaning waits for the Level 20 terminal.** Facts come only from
+`research/wiki/tech/semicolon.md` (never model memory): the mark was **first printed**
+(never "invented") in Venice in **February 1496** (never 1494); *semi* means half; in writing it
+can join two sentences that belong together (never "ends a sentence" — a period does that);
+in code, **"many" languages, "instruction" not "line"**.
+
+- **The word is withheld until Level 13.** The `;` GLYPH is always shown (prompt, guide,
+  gallery) from Level 4 on. The WORD "semicolon" lives in one data module (`js/key-cards.js`)
+  and renders only on the beat, the keyboard card, and an owned gallery tile — never earlier.
+  INV-29 is amended to say exactly that.
+- **The beat (Level 13, first play per saved game).** The word `semicolon` is served as ONE
+  guaranteed pattern at intro index 4 — just after both new keys (C and comma) have each
+  appeared. The child types it like any word; the wrong-key contract is untouched (nudge, the
+  letter waits). On the last letter, and **without pausing play**: a non-modal two-line caption
+  in the gap band (`ITS NAME IS SEMICOLON.` / `IT CAN JOIN TWO SENTENCES.`), the `;` key
+  glows on the keyboard guide, and a keyboard card is credited at once. The card is shown again
+  on that play's LEVEL COMPLETE panel with the fuller literacy fact. **No code meaning appears
+  anywhere at Level 13** — not on the caption, the card, or the overlay, even on a save that
+  has already cleared Level 20.
+- **The latch is the collected card id** (`key-semicolon`) — no new storage. The beat takes that
+  play's one card slot and the Level 13 rotation counter does not advance. Never in Free Play.
+  Replays after collection serve the normal arcade card. Erasing a game clears the latch.
+- **Survival.** The beat pattern is clock-exempt (no timer, no quarter at risk on a lesson).
+  Every other guaranteed word keeps its clock; a suspected existing defect where a Survival
+  timeout can destroy one is tracked separately (re-queue, keep the clock).
+- **The code reveal (Level 20).** The one-time eighth-key confession becomes a couplet whose
+  second line is the code lesson, `MANY CODERS END AN INSTRUCTION WITH IT;`. Variant A (the save
+  met the name at Level 13): `YOU MET ITS NAME AT LEVEL 13.` Variant B (it did not): `THE EIGHTH
+  KEY HAS A NAME.` The old line "PROGRAMMERS END EVERY LINE WITH IT;" was **false** and is
+  corrected. Neither variant contains the word.
+- **Why not the Name Moment's slot:** at 1x that slot is effectively the last pattern, so the
+  caption would only ever show over the victory animation.
+- **Phase 2** applies the same mechanism to other symbols (`, . / - [ ] \ ` '`), each one only
+  after its own research pass; `=` gets no card (`1=1` / `1==1` already teach it); Shift
+  symbols wait on an input-contract decision.
+
 ### Opening Screen
 Styled after the classic arcade "READY PLAYER ONE" prompt — with a nod to the Spielberg film of the same name. Dark background, dramatic retro-futuristic pixel typography, scanline effect, cabinet glow. Press **Space** or **Enter** to begin.
 
@@ -132,7 +174,7 @@ In a dark corner of the arcade: a cabinet draped in a velvet curtain, barely glo
 - **Visuals:** Full color, rich backgrounds, dramatic reveal
 - **Music:** Starts mysterious and suspenseful, builds to massive celebratory fanfare
 - **Content:** Full home row unlocked, and with A comes the first real words the player can read: **dad, sad, fad, lad, ads, lads, lass, flask, falls, dads, asks, salad**. The double win — a whole level of patterns pays off the instant a real, readable word appears.
-- **The Mystery Key:** Never referred to as "semicolon" — it's *"the eighth key," "the final key," "the key to the right of L," "pressed by the right pinky"*
+- **The Mystery Key:** Never referred to as "semicolon" until Level 13 teaches its name (see §The Key Names); its code meaning waits for the Level 20 terminal. The `;` GLYPH is always shown. Until then it's *"the eighth key," "the final key," "the key to the right of L," "pressed by the right pinky"*
 - **Completion:** Huge celebration — the Mystery Cabinet begins to glow
 
 ### The Mystery Cabinet — Final Level
@@ -361,6 +403,15 @@ the EARLIEST level where its word becomes typeable. **Secret cards** (e.g. the W
 `joshua` card) are found only by typing a magic word — a hidden Skulltula that still counts
 toward the total. Collection is stored **per save slot** (see Save Slots below). Research
 (all citation-verified): `research/computing-history-moments.md`.
+
+**A fourth bank, `KEY_CARDS`** *(2026-10-31, `js/key-cards.js`)*: the keyboard cards of §The Key
+Names. Like the wing and act banks it is a SEPARATE array, so `TOTAL_CARDS` stays at the arcade
+bank's count and no existing save reads as less complete; the count line is scoped to its own
+bank (`KEYBOARD CARD n OF m`), and its LEVEL COMPLETE header reads **FOUND ON THE KEYBOARD**
+(arcade cards: FOUND ON THE ARCADE FLOOR; wing cards: FOUND BESIDE THE MACHINE). Each record carries a **reserved `topic` field** (`'keyboard'`)
+that nothing reads yet: Trevor wants every card in every bank to carry a topic later (math /
+programming / hacking / tech culture / the keyboard) so the gallery can group by topic — a
+separate follow-on spec, which is also where a card-detail view showing the code fact belongs.
 
 ## Save Slots — a saved game per player *(built 2026-07-19)*
 The single global save became **any number of independent saved games** (no cap — a family

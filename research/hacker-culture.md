@@ -155,8 +155,9 @@ title-screen egg gets a satisfying "oh, I know this" rather than a duplicate.
 - **hello world** (popularized by K&R, 1978; the example itself traces to Kernighan's 1972
   Bell Labs "B" tutorial) — awaits the Level 25 free-type mode; see [[hello-world]] for the
   already-built history-card version of this same research
-- **The eighth-key confession** — the semicolon's identity revealed only after Level 20,
-  as a programmer's rite: "PROGRAMMERS END EVERY LINE WITH IT;"
+- **The eighth-key confession** — the semicolon's code meaning revealed at Level 20,
+  as a programmer's rite: "MANY CODERS END AN INSTRUCTION WITH IT;" *(corrected 2026-10-31 from the
+  false original, "PROGRAMMERS END EVERY LINE WITH IT;" — see [[semicolon]])*
 - **Themed 404** ("LEVEL NOT FOUND. INSERT COIN TO CONTINUE.")
 - **Hopper's moth** as a rare clickable on the select screen
 
