@@ -675,7 +675,7 @@ engine serves the key's name as one guaranteed pattern and teaches it without pa
   it down at once on level end (`showLevelComplete`), game over, pause (Escape) and any screen change:
   `main.js` wraps the imported `showScreen` (`showScreenRaw`) and `screens.js` `showScreen` also hides it
   on any non-`game` screen. No focus, no key listener, no delay; no audio dependency.
-- **Reveal**: `showLevelComplete` shows the card with header `FOUND ON THE KEYBOARD`, body =
+- **Reveal**: `showLevelComplete` shows the card with header `FOUND UNDER THE KEYBOARD`, body =
   `record.literacyFact` (never `codeFact`), count `KEYBOARD CARD n OF m`, NEW tag from
   `Slots.collectCardId(...) || state.keyBeatNew` (the early credit means a second collect alone would say "not new").
 - **Survival**: the beat pattern is clock-exempt (see Survival wrapper above).
@@ -736,7 +736,7 @@ keypress skipping the celebration — go through `showCompleteOverlay()`, which 
 `#complete-overlay` and, if `state.completeCardShown` (set in `showLevelComplete` from whether
 `.history-card` is visible), plays `Audio.historyCard()` so the sound never precedes or gates the
 reveal. Level-complete's `CARD n OF N` uses `bankProgress(bankOf(card.id) || 'arcade', …)` (act
-cards included; a keyboard card reads `KEYBOARD CARD n OF m` under the header `FOUND ON THE KEYBOARD`, set on every reveal so it never leaks onto the next card). `showCollectionScreen(slot)` builds shelves via `collectionShelves` and calls
+cards included; a keyboard card reads `KEYBOARD CARD n OF m` under the header `FOUND UNDER THE KEYBOARD`, set on every reveal so it never leaks onto the next card). `showCollectionScreen(slot)` builds shelves via `collectionShelves` and calls
 `revealCollection()`; on the `collection` screen non-exit keys go to `scrollCollection`.
 `index.html` replaced `#collection-count`/`#collection-grid` with `#collection-shelves` + scroll
 markers, and the settings BLOCKED WORDS blurb now reads "BLOCKS EVERY WORD THE GAME MAKES UP — AND

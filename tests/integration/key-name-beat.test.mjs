@@ -1,5 +1,5 @@
 // Enforces: INV-155, INV-156, INV-157, INV-160, INV-161, INV-164 — docs/specs/semicolon-teaching-beat.md
-// §5.2/§5.3/§10 (the keyboard card's header reads FOUND ON THE KEYBOARD per the lane brief of 2026-10-31;
+// §5.2/§5.3/§10 (the keyboard card's header reads FOUND UNDER THE KEYBOARD per Trevor's ruling of 2026-11-04;
 // arcade cards keep FOUND ON THE ARCADE FLOOR); product.md §"The Key Names" (Trevor 2026-10-31: the name is taught at Level 13, the
 // programming meaning waits for the Level 20 terminal); CLAUDE.md §Wrong Keypress; levels/act3.md L13.
 //
@@ -107,7 +107,7 @@ describe('INV-155/157/160/161/164 — the Level 13 beat, played start to finish 
         count: document.getElementById('history-card-count').textContent,
         overlay: document.getElementById('complete-overlay').innerText,
       }));
-      assert.equal(card.header, 'FOUND ON THE KEYBOARD', 'a keyboard card was not found on the arcade floor');
+      assert.equal(card.header, 'FOUND UNDER THE KEYBOARD', 'a keyboard card is found under the keyboard');
       assert.equal(card.word, BEAT_WORD.toUpperCase());
       assert.equal(card.fact, BEAT.literacyFact, 'INV-161: the card body is the literacy lesson');
       assert.equal(card.title, BEAT.title);

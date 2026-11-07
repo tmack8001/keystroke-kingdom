@@ -1366,15 +1366,14 @@ function showLevelComplete() {
     // meaning: that waits for the Level 20 terminal (INV-161).
     const isKeyBeat = state.keyBeat && card === state.keyBeat;
     const isNew = isKeyBeat ? (Slots.collectCardId(card.id) || state.keyBeatNew) : Slots.collectCardId(card.id);
-    // Where the card was "found": a keyboard card comes off the keyboard, every
-    // other card the overlay can show (arcade, act) keeps the arcade-floor line.
-    // Set on every reveal, so a keyboard card never leaves its header behind for
-    // the next level's card. (The hardware wing draws its own "FOUND BESIDE THE
-    // MACHINE" on canvas and never reaches this overlay.)
+    // Every card the overlay can show was found in the arcade (Trevor, 2026-11-04:
+    // exploring the arcade is the premise). A keyboard card is found UNDER the keyboard
+    // (Trevor, 2026-11-04), the same "found beside the machine" register as the wing cards.
+    // Set on every reveal so a keyboard header never leaks onto the next card.
     const header = historyCard.querySelector('.history-card-header');
     if (header) {
       header.textContent = bankOf(card.id) === 'keyboard'
-        ? 'FOUND ON THE KEYBOARD'
+        ? 'FOUND UNDER THE KEYBOARD'
         : 'FOUND ON THE ARCADE FLOOR';
     }
     $('history-card-word').textContent = card.word.toUpperCase();

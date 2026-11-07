@@ -407,8 +407,8 @@ toward the total. Collection is stored **per save slot** (see Save Slots below).
 **A fourth bank, `KEY_CARDS`** *(2026-10-31, `js/key-cards.js`)*: the keyboard cards of §The Key
 Names. Like the wing and act banks it is a SEPARATE array, so `TOTAL_CARDS` stays at the arcade
 bank's count and no existing save reads as less complete; the count line is scoped to its own
-bank (`KEYBOARD CARD n OF m`), and its LEVEL COMPLETE header reads **FOUND ON THE KEYBOARD**
-(arcade cards: FOUND ON THE ARCADE FLOOR; wing cards: FOUND BESIDE THE MACHINE). Each record carries a **reserved `topic` field** (`'keyboard'`)
+bank (`KEYBOARD CARD n OF m`), and its LEVEL COMPLETE header reads **FOUND UNDER THE KEYBOARD**
+*(Trevor, 2026-11-04: a keyboard card keeps the keyboard in its header while still reading as a find in the arcade, like the wing's "beside the machine"; arcade cards: FOUND ON THE ARCADE FLOOR; wing cards: FOUND BESIDE THE MACHINE)*. Each record carries a **reserved `topic` field** (`'keyboard'`)
 that nothing reads yet: Trevor wants every card in every bank to carry a topic later (math /
 programming / hacking / tech culture / the keyboard) so the gallery can group by topic — a
 separate follow-on spec, which is also where a card-detail view showing the code fact belongs.

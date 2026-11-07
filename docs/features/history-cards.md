@@ -4,7 +4,7 @@ code: [js/history-cards.js, js/key-cards.js]
 rules: [research/computing-history-moments.md, research/hacker-culture.md, research/educational-software.md, docs/specs/act-exclusive-cards.md, docs/specs/hardware-wing.md, docs/specs/semicolon-teaching-beat.md, research/wiki/tech/semicolon.md, .claude/rules/product.md]
 screenshots: docs/screenshots/history-cards/
 capture: node docs/screenshots/capture-cards.js
-verified: 2026-10-31 (fourth bank KEY_CARDS: js/key-cards.js, keyCardForLevel, bankOf/bankProgress('keyboard'), KEYBOARD shelf, FOUND ON THE KEYBOARD header; earlier 2026-10-29: arcade bank 76; shelved gallery)
+verified: 2026-10-31 (fourth bank KEY_CARDS: js/key-cards.js, keyCardForLevel, bankOf/bankProgress('keyboard'), KEYBOARD shelf, header FOUND UNDER THE KEYBOARD; earlier 2026-10-29: arcade bank 76; shelved gallery)
 ---
 
 # History Cards
@@ -377,7 +377,7 @@ play of Level 13 for a save without `key-semicolon`, `startGame()` arms the beat
 `pickGuaranteedCard` and without bumping the level's card rotation, splicing the word at intro
 index 4 (`keyBeatSpliceIndex`). Typing it credits the card immediately (`Slots.collectCardId`),
 fires a caption + guide glow + prompt flourish, and the LEVEL COMPLETE card is revealed with the
-header **FOUND ON THE KEYBOARD** (every other card keeps FOUND ON THE ARCADE FLOOR), the
+header **FOUND UNDER THE KEYBOARD** (every other card keeps FOUND ON THE ARCADE FLOOR — the arcade is the premise), the
 literacy fact only, and the count line **`KEYBOARD CARD 1 OF 1`**. Free Play never arms it;
 replays after collection serve the arcade card as usual; erasing a game brings the beat back.
 
