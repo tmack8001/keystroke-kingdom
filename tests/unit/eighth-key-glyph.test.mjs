@@ -11,6 +11,7 @@
 // and imports cleanly in Node (its DOM access is inside functions).
 
 import { test, describe } from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { displayKey } from '../../js/ui/hud.js';
 import { LEVELS } from '../../js/levels.js';
@@ -41,5 +42,13 @@ describe('INV-140 — the eighth key shows its own mark', () => {
         assert.ok(!/semicolon/i.test(String(lvl[field] || '')), `LEVELS[${n}].${field}`);
       }
     }
+  });
+
+  test('the arcade select screen\'s Level 4 cabinet label shows the glyph, not a `?` stand-in', () => {
+    // A persona playtest (2026-11-07) found `A ?` here after the prompt and guide
+    // had already been fixed — the label is a data literal in cabinet-art.js.
+    const src = readFileSync(new URL('../../js/ui/cabinet-art.js', import.meta.url), 'utf8');
+    assert.ok(!/keys:\s*'[^']*\?[^']*'/.test(src), 'no cabinet `keys:` label may use `?`');
+    assert.match(src, /keys:\s*'A ;'/);
   });
 });

@@ -737,7 +737,7 @@ const CABINET_DATA = {
   },
   4: {
     label: 'LEVEL 4',
-    keys: 'A ?',
+    keys: 'A ;',
     era: '1981',
     // Galaga: "two-way joystick (left/right) plus fire button"
     controls: { stick: '2way',      buttons: 1 },
