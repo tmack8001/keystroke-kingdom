@@ -162,10 +162,28 @@ function isExpectedWordgenProbe404(msg) {
 // Wire console-error + page-error capture into `sink`, filtering the expected wordgen
 // probe 404 (announcing it once via `notify`, default console.log). Shared by
 // launchPage and captureGif so both treat the static-host fallback identically.
+// Chromium's own report that the HOST machine's audio device or renderer failed
+// (headless runs on a Mac whose output device is busy, asleep or absent). It is raised
+// by the browser, not by game code, and the game's audio is feature-guarded, so it is
+// environmental noise — the same class as the wordgen 404 above. Anything else the
+// audio code logs still counts.
+function isHostAudioDeviceError(m) {
+  return /^The AudioContext encountered an error from the audio device or the WebAudio renderer\.?$/.test(m.text().trim());
+}
+
 function wireConsoleCapture(page, sink, notify = console.log) {
   let wordgenNoted = false;
+  let audioNoted = false;
   page.on('console', m => {
     if (m.type() !== 'error') return;
+    if (isHostAudioDeviceError(m)) {
+      if (!audioNoted) {
+        audioNoted = true;
+        notify('  ℹ audio: the host audio device reported an error (environmental, headless; ' +
+          'not a game failure). Audio itself is not verifiable headless — check by ear.');
+      }
+      return;
+    }
     if (isExpectedWordgenProbe404(m)) {
       if (!wordgenNoted) {
         wordgenNoted = true;

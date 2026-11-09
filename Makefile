@@ -12,7 +12,10 @@ SMOKE_URL    := http://127.0.0.1:$(SMOKE_PORT)
 # just hangs) — a repeat foot-gun. `caffeinate -i CMD` runs CMD, prevents idle
 # sleep only while it runs, and exits with CMD's status (so `make` still sees
 # failures). Empty on systems without caffeinate, so the targets stay portable.
-CAFFEINATE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -i")
+# `-i` alone was not enough (2026-11-08): with the display/system allowed to idle,
+# tests took 450-1000 s each (one file 1026 s vs 46 s) and failed on timeouts. `-dimsu`
+# also holds the display, disk and system awake and asserts user activity.
+CAFFEINATE := $(shell command -v caffeinate >/dev/null 2>&1 && echo "caffeinate -dimsu")
 
 .DEFAULT_GOAL := help
 

@@ -53,6 +53,12 @@ DEV_URL=http://127.0.0.1:8834 node scripts/playtest.mjs --at=level:7
 Exit codes: **0** reached it, no console errors · **1** could not reach it, **or** any
 console error · **2** you asked for something that does not exist.
 
+Two console messages are filtered as environmental and announced once, never failed on
+(`scripts/kk-playwright.js`): the expected `/api/wordgen` 404 on a static host, and Chromium's
+*"The AudioContext encountered an error from the audio device or the WebAudio renderer."*
+(2026-11-08 — raised by the host machine's audio device in headless runs, not by game code).
+Audio is not verifiable headless either way: check it by ear on the real site.
+
 ## `--laps=N` — the second run is a different program
 
 Three of the seven issues that created this rule existed **only on the second run**
