@@ -113,7 +113,6 @@ Each verified open against source by the 2026-09-16 audit.
     distressed there is no exit. Revisit if a real child finds it long.
   - **Level 13 beat polish** (found by the final play gate; none blocking): the caption is ~9 px and sits 4 px above the keyboard (a 5-year-old will not read it; the glow and the card carry the lesson); Escape/pause drops the caption for that play and it does not return on resume (the card is already credited); the comma prompt follows the beat while a caption naming the semicolon is above it (the two glyphs look alike in Press Start 2P).
   - **Survival HUD reads `QUARTERS .` for a single coin** (persona playtest 2026-11-07, speedrunner:survival) — a plural label over one coin; decide whether one coin should read `QUARTER`.
-  - **Level 1's first-time hands diagram: verify it shows at the Level 1 PROMPT.** The first-timer persona (seed 11, 2026-11-07) saw the two-hand diagram on the KNOW YOUR KEYS preview but only the red RIGHT INDEX FINGER hint at the prompt, after a wrong key. `showHomeRowDiagram()` is called from `startGame` (`js/main.js` ~2060, first-ever Level 1) and the spec wants it under the first `j`; not yet confirmed either way by a clean first-time capture.
   - **ERASE ALL leaves `kk-friends` and `kk-stories`** (only `kk-slots` goes). "YOUR SETTINGS STAY" is
     true but does not mention friends; decide whether ERASE ALL should wipe them.
   - **L21's opening screen says TYPE YOUR NAME**, but L21 is dash and equals (`js/fullcircle.js`).
