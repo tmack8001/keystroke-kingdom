@@ -1,3 +1,11 @@
+---
+paths:
+  - "js/mystery.js"
+  - "js/basement.js"
+  - "js/commandcenter.js"
+  - "js/fullcircle.js"
+---
+
 # Cinematic Transitions & Opening Flow
 ## Keystroke Kingdom — Sequence Direction
 

@@ -1,3 +1,8 @@
+---
+paths:
+  - "js/themes/**"
+---
+
 # Theme Authoring Rules
 ## Keystroke Kingdom — everything a theme file must respect
 

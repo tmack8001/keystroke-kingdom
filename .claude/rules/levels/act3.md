@@ -1,3 +1,14 @@
+---
+paths:
+  - "js/themes/sonic.js"
+  - "js/themes/streetfighter.js"
+  - "js/themes/myst.js"
+  - "js/themes/dkc.js"
+  - "js/themes/pokemon.js"
+  - "js/commandcenter.js"
+  - "js/key-cards.js"
+---
+
 # Act 3 — The Basement (Levels 11–15)
 
 *Covers Levels 11–15 (keys V M B N C , X . Z / — the full letter keyboard plus core

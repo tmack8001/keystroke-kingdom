@@ -1,3 +1,14 @@
+---
+paths:
+  - "scripts/playtest.mjs"
+  - "scripts/personas.mjs"
+  - "scripts/record-playthrough.js"
+  - "scripts/kk-playwright.js"
+  - "js/speedway/**"
+  - "js/hardware/**"
+  - "js/textworld/**"
+---
+
 # Playtest Rule
 ## Keystroke Kingdom — you do not report gameplay work complete until you have played it
 

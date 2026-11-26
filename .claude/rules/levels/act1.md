@@ -1,3 +1,13 @@
+---
+paths:
+  - "js/themes/breakout.js"
+  - "js/themes/invaders.js"
+  - "js/themes/pacman.js"
+  - "js/themes/fighter.js"
+  - "js/themes/joust.js"
+  - "js/mystery.js"
+---
+
 # Act 1 — The Arcade (Levels 1–5)
 
 *Covers Levels 1–5 (keys J F D K S L A ; G H — the full home row) and the Mystery Beat.

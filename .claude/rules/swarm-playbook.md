@@ -1,3 +1,10 @@
+---
+paths:
+  - ".claude/agents/**"
+  - "docs/ROADMAP.md"
+  - "docs/roadmap-history.md"
+---
+
 # Agent Swarm Playbook
 ## Keystroke Kingdom — how we run multi-agent fix/build waves
 

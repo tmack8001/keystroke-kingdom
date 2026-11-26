@@ -1,3 +1,13 @@
+---
+paths:
+  - "js/themes/donkeykong.js"
+  - "js/themes/dragonlair.js"
+  - "js/themes/tetris.js"
+  - "js/themes/mario.js"
+  - "js/themes/zelda.js"
+  - "js/basement.js"
+---
+
 # Act 2 — The Computer Wing (Levels 6–10)
 
 *Covers Levels 6–10 (keys E I R U T Y W O Q P — the full top row). Era span 1981–1986;

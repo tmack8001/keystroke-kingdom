@@ -1,3 +1,13 @@
+---
+paths:
+  - "js/themes/**"
+  - "js/ui/**"
+  - "css/**"
+  - "index.html"
+  - "scripts/static-host-check.mjs"
+  - ".github/workflows/**"
+---
+
 # Visual Validation Rule
 ## Keystroke Kingdom — Required Check After Adding New Levels or Themes
 

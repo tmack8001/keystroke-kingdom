@@ -1,3 +1,12 @@
+---
+paths:
+  - "js/themes/terminal.js"
+  - "js/themes/wordprocessor.js"
+  - "js/ui/cabinet-art.js"
+  - "js/audio.js"
+  - "main.go"
+---
+
 # Hacker Culture Easter Eggs
 ## Keystroke Kingdom — The Hidden Layer
 

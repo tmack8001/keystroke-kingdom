@@ -1,3 +1,8 @@
+---
+paths:
+  - "tests/**"
+---
+
 # Testing Rules
 ## Keystroke Kingdom — load before writing tests or changing tested behavior
 

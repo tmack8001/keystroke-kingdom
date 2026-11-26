@@ -1,3 +1,13 @@
+---
+paths:
+  - "js/themes/simcity.js"
+  - "js/themes/goldeneye.js"
+  - "js/themes/ageofempires.js"
+  - "js/themes/ff7.js"
+  - "js/themes/terminal.js"
+  - "js/fullcircle.js"
+---
+
 # Act 4 — The Command Center (Levels 16–20)
 
 *Covers Levels 16–20 (keys 1 2 3 4 5 6 7 8 9 0 — the full number row). Era span 1997–2000;

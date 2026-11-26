@@ -1,3 +1,12 @@
+---
+paths:
+  - "js/levels.js"
+  - "js/history-cards.js"
+  - "js/key-cards.js"
+  - "tests/unit/curriculum.test.mjs"
+  - "tests/static/invariants.test.mjs"
+---
+
 # Level Scaffolding Reference
 ## Keystroke Kingdom — Full Curriculum Arc
 

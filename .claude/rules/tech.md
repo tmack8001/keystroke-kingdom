@@ -1,3 +1,12 @@
+---
+paths:
+  - "js/**"
+  - "main.go"
+  - "Makefile"
+  - "index.html"
+  - "css/**"
+---
+
 # Technical Design Document
 ## [Working Title: Home Row Heroes / Keystroke Kingdom]
 *Built by Trevor & Oona - a father and daughter game*

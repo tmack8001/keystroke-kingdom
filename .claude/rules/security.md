@@ -1,3 +1,11 @@
+---
+paths:
+  - "js/**"
+  - "main.go"
+  - "scripts/**"
+  - "index.html"
+---
+
 # Secure Coding Rules
 ## Keystroke Kingdom — conventions verified by the 2026-07-12 security review
 

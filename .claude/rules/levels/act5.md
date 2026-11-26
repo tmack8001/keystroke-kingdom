@@ -1,3 +1,13 @@
+---
+paths:
+  - "js/themes/outrun.js"
+  - "js/themes/qbert.js"
+  - "js/themes/missilecommand.js"
+  - "js/themes/highscore.js"
+  - "js/themes/wordprocessor.js"
+  - "js/keyboard-story*.js"
+---
+
 # Act 5 — Full Circle (Levels 21–25)
 
 *Covers Levels 21–25 (keys - = [ ] \ ` ' Shift Space Backspace — the last symbols, capitals,

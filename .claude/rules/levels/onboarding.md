@@ -1,3 +1,11 @@
+---
+paths:
+  - "js/slots.js"
+  - "js/ui/screens.js"
+  - "tests/integration/persistence-onboarding.test.mjs"
+  - "tests/integration/saved-game-routes.test.mjs"
+---
+
 # Onboarding — First-Time & Returning Player Entry Flows
 
 *Covers everything about entering the game rather than playing it: the first-time cold
