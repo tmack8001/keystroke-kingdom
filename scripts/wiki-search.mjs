@@ -13,9 +13,10 @@ const ROOT = join(PROJ, 'research');
 const JDIR = join(PROJ, 'docs', 'journal');
 const FDIR = join(PROJ, 'docs', 'features');
 // Skipped: generated views (learnings/observations/failures are rebuilt by --index),
-// schema docs, the dashboard (Dataview source), and the wiki's own index/log.
+// schema docs, the dashboard (Dataview source), the wiki's own index/log, and the
+// features inventory (QUICK-MAP.md: an index over docs/features/, not a feature page).
 const SKIP = new Set(['index.md', 'log.md', 'WIKI.md', 'JOURNAL.md', 'dashboard.md',
-  'learnings.md', 'observations.md', 'failures.md', 'README.md']);
+  'learnings.md', 'observations.md', 'failures.md', 'README.md', 'QUICK-MAP.md']);
 const IMPORTANCE_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 // ── Corpus loading ───────────────────────────────────────────────────────────

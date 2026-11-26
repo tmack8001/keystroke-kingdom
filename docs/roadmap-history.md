@@ -2310,3 +2310,25 @@ unchanged. Played: card `ada` and Name Moment both win after an expiry.
 **Decisions recorded (Trevor):** Phase 1 is the semicolon only; keyboard cards live in a new fourth bank
 (topic grouping is a separate follow-on spec); the keyboard card takes the first L13 play's card slot;
 guaranteed words are re-queued with the clock kept.
+
+---
+
+## 2026-11-24 — Context budget trim (rules path-scoped, CLAUDE.md slimmed)
+
+Claude Code warned that 19 instruction files totalled 237.9k chars against a 150k limit. CLAUDE.md said
+the rule files were "not auto-included", but every `.claude/rules/**/*.md` loads at session start unless
+it has `paths:` frontmatter, and three were also `@`-imported. Commit `6543b0d` (journal L54):
+
+- `paths:` frontmatter on every rule file except `product.md`, mapped to the files each governs. No rule
+  content was removed or relocated, so every cited path and the runtime read of `levels.md` in
+  `tests/static/invariants.test.mjs` still resolve.
+- The `@` imports of `product.md`, `tech.md` and `visual-validation.md` were removed from CLAUDE.md, and the
+  Built Features Quick Map moved verbatim to `docs/features/QUICK-MAP.md`.
+- Verified 2026-11-26 in a fresh session on the main checkout: `/memory` lists only the user and project
+  CLAUDE.md and `product.md`. Always-loaded context is ~39k chars (was ~238k). A worktree created before
+  the commit still loads the old set until it merges the commit.
+- Checks run 2026-11-26 on the combined tree (node 26.13.1): `make test-fast` 516 pass / 0 fail / 1 todo
+  + `go test` ok; `make static-host-check` PASS (79 resources, 70 ES modules); wiki `--lint` clean (434 pages)
+  and `--index` regenerated (L54 views). The lint first failed on `docs/features/QUICK-MAP.md`, which is an
+  inventory, not a feature page, so `scripts/wiki-search.mjs` now skips it like `README.md`. The full
+  `make test` integration run was not repeated after this commit (339/339 on the previous tree).
