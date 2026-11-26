@@ -25,7 +25,7 @@
 
 ### 1.1 ⚠️ Merge `static-hosting-2026-09` → `main` — the highest-stakes item on this board
 
-`main` has not moved since **2026-07-28** (`797c95c`). **60 commits** sit unmerged.
+`main` has not moved since **2026-07-28** (`797c95c`). **83 commits** sit unmerged (counted 2026-11-26; recount with `git rev-list --count main..static-hosting-2026-09`).
 
 Pages serves the repo root of `main` with no build step, so **every push to `main` is a deploy** — which
 means everything built since July is invisible to actual players: Act 7 THE SPEEDWAY, THE HARDWARE wing,
@@ -97,9 +97,6 @@ one.
 Each verified open against source by the 2026-09-16 audit.
 
 ### Player-facing
-
-> **Landed 2026-10-30/31 (UNCOMMITTED until the final gate passes):** the persona-playtest fix waves —
-> see `roadmap-history.md` for what was verified. If no commit exists for it, reconciliation was missed.
 
 - **Still open from the persona waves** (each seen by a persona tester; none fixed):
   - **Per-slot difficulty — its own PR.** `kk-settings` is global, so one save's Survival/WIZARD reaches
