@@ -35,5 +35,7 @@ shape: the prose asserted a property nobody re-checked).
 - Never `@`-import a file you also scope — the import defeats the scope.
 - Path-scoped rules fire on reads of matching files, so a brand-new file may not trigger its rule;
   keep a hook or a one-line pointer in CLAUDE.md for the must-read ones.
-- Unverified at write time: node was broken on this machine (simdjson dylib), so `/memory` was not
-  re-checked for the new total and `--index` was not regenerated.
+- Verified 2026-11-26 in a fresh session on the main checkout: `/memory` lists only the user and project
+  CLAUDE.md and `product.md`. A first check ran inside a worktree cut before the commit and looked like a
+  failure (63.9k tokens, 19 files); it was loading the old rules, so check scoping from a checkout that
+  has the change.
